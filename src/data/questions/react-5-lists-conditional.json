@@ -1,0 +1,145 @@
+{
+  "id": "react-5",
+  "title": "條件渲染與列表",
+  "questions": [
+    {
+      "id": "react-5-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "三元運算子切換畫面",
+      "docs": "https://react.dev/learn/conditional-rendering",
+      "story": "",
+      "prompt": "online 是 false。畫面顯示什麼？",
+      "code": "function Status({ online }) {\n  return <p>{online ? \"上線中\" : \"離線\"}</p>;\n}\n\n// 使用：<Status online={false} />",
+      "options": [
+        { "id": "a", "text": "離線" },
+        { "id": "b", "text": "上線中" },
+        { "id": "c", "text": "false" },
+        { "id": "d", "text": "上線中 和 離線 都顯示" }
+      ],
+      "answer": "a",
+      "explanation": "三元運算子「條件 ? A : B」是 JSX 裡的 if/else：online 是 false，走冒號後面的「離線」。JSX 的大括號裡不能直接寫 if 陳述式，所以三元是條件渲染的第一主力，讀 React 程式碼天天會遇到。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Status({ online }) {\n  return <p>{online ? \"上線中\" : \"離線\"}</p>;\n}\nconsole.log(renderToStaticMarkup(<Status online={false} />));", "expected": "<p>離線</p>" }
+        ]
+      }
+    },
+    {
+      "id": "react-5-q2",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用 map 渲染列表",
+      "docs": "https://react.dev/learn/rendering-lists",
+      "story": "",
+      "prompt": "把空格填起來，把待辦事項渲染成 <li> 清單",
+      "code": "function TodoList({ items }) {\n  return <ul>{____}</ul>;\n}\n\n// <TodoList items={[\"買菜\", \"寫程式\"]} />\n// 預期：<ul><li>買菜</li><li>寫程式</li></ul>",
+      "options": [
+        { "id": "a", "text": "items.map((it) => <li key={it}>{it}</li>)" },
+        { "id": "b", "text": "items.forEach((it) => <li key={it}>{it}</li>)" },
+        { "id": "c", "text": "for (const it of items) <li>{it}</li>" },
+        { "id": "d", "text": "<li>{items}</li>" }
+      ],
+      "answer": "a",
+      "explanation": "「資料陣列 → 元素陣列」就是 map 的工作，React 會把回傳的陣列攤開渲染；key 讓 React 認得每一項（列表必備）。選項 b 的 forEach 不回傳東西，畫面會是空的 <ul>（第一章的老坑在 React 重演）；選項 c 的 for 是陳述式，不能塞進 JSX 大括號；選項 d 把整個陣列塞進一個 <li>，字全部黏在一起。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction TodoList({ items }) {\n  return <ul>{items.map((it) => <li key={it}>{it}</li>)}</ul>;\n}\nconsole.log(renderToStaticMarkup(<TodoList items={[\"買菜\", \"寫程式\"]} />));", "expected": "<ul><li>買菜</li><li>寫程式</li></ul>" }
+        ]
+      }
+    },
+    {
+      "id": "react-5-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "forEach 渲染出一片空白",
+      "docs": "https://react.dev/learn/rendering-lists",
+      "story": "",
+      "prompt": "名單有資料，畫面上的清單卻是空的。哪裡錯了？",
+      "code": "function NameList({ names }) {\n  return (\n    <ul>\n      {names.forEach((n) => (\n        <li key={n}>{n}</li>\n      ))}\n    </ul>\n  );\n}\n\n// <NameList names={[\"小美\", \"小華\"]} /> → 畫面空空 ??",
+      "options": [
+        { "id": "a", "text": "forEach 的回傳值是 undefined，React 沒東西可渲染；要改用 map" },
+        { "id": "b", "text": "key 不能用中文字串" },
+        { "id": "c", "text": "<li> 外面要再包一層 <div>" },
+        { "id": "d", "text": "names 陣列要先排序才能渲染" }
+      ],
+      "answer": "a",
+      "explanation": "JSX 大括號渲染的是「表達式的值」：forEach 跑完回傳 undefined，React 對 undefined 的處理就是什麼都不畫——連錯都不報，最難察覺。裡面那些 <li> 有被做出來，但沒人回收就被丟掉了。「列表有資料但畫面空白」的第一嫌疑犯永遠是 forEach，改成 map 就活。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction NameList({ names }) {\n  return (\n    <ul>\n      {names.forEach((n) => (\n        <li key={n}>{n}</li>\n      ))}\n    </ul>\n  );\n}\nconsole.log(renderToStaticMarkup(<NameList names={[\"小美\", \"小華\"]} />));", "expected": "<ul></ul>" },
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction NameList({ names }) {\n  return (\n    <ul>\n      {names.map((n) => (\n        <li key={n}>{n}</li>\n      ))}\n    </ul>\n  );\n}\nconsole.log(renderToStaticMarkup(<NameList names={[\"小美\", \"小華\"]} />));", "expected": "<ul><li>小美</li><li>小華</li></ul>" }
+        ]
+      }
+    },
+    {
+      "id": "react-5-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "return null＝什麼都不渲染",
+      "docs": "https://react.dev/learn/conditional-rendering",
+      "story": "",
+      "prompt": "警告訊息是空字串。整個畫面渲染出什麼？",
+      "code": "function Alert({ msg }) {\n  if (!msg) return null;\n  return <div>警告：{msg}</div>;\n}\n\nfunction App() {\n  return (\n    <div>\n      <Alert msg=\"\" />\n      <p>今日內容</p>\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "只有「今日內容」，Alert 完全不出現" },
+        { "id": "b", "text": "「警告：」和「今日內容」" },
+        { "id": "c", "text": "會報錯，元件不能回傳 null" },
+        { "id": "d", "text": "「null」和「今日內容」" }
+      ],
+      "answer": "a",
+      "explanation": "空字串是 falsy，!msg 成立，提早 return null——而 null 對 React 來說就是「這裡什麼都不用畫」，完全合法（選項 c 是舊時代的迷思）。「沒資料就整個元件消失」用 return null 收在元件開頭，比在外面包一層條件乾淨，是實務很常見的守門寫法。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Alert({ msg }) {\n  if (!msg) return null;\n  return <div>警告：{msg}</div>;\n}\nfunction App() {\n  return (\n    <div>\n      <Alert msg=\"\" />\n      <p>今日內容</p>\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<div><p>今日內容</p></div>" }
+        ]
+      }
+    },
+    {
+      "id": "react-5-q5",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "&& 與三元在 0 的時候分道揚鑣",
+      "docs": "https://react.dev/learn/conditional-rendering",
+      "story": "",
+      "prompt": "通知數是 0。這兩種寫法渲染出來一樣嗎？",
+      "code": "function Badge({ count }) {\n  return (\n    <div>\n      {/* 版本一 */}\n      <span>{count && `${count} 則通知`}</span>\n      {/* 版本二 */}\n      <span>{count ? `${count} 則通知` : null}</span>\n    </div>\n  );\n}\n\n// <Badge count={0} />",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一的 span 裡多了一個 0，版本二是乾淨的空 span" },
+        { "id": "b", "text": "一樣，兩個 span 都是空的" },
+        { "id": "c", "text": "一樣，兩個都顯示「0 則通知」" },
+        { "id": "d", "text": "版本一會報錯" }
+      ],
+      "answer": "a",
+      "explanation": "又是那個 0！&& 遇到 falsy 左值會「回傳左值本身」——0 && ... 得到 0，React 把數字 0 畫出來。三元則明確走到 null，什麼都不畫。react-1 的購物車陷阱這次換個造型登場：計數類的條件渲染，用三元或 count > 0 && 才安全。這種題目多看幾眼，以後 code review 一秒抓到。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Badge({ count }) {\n  return (\n    <div>\n      <span>{count && `${count} 則通知`}</span>\n      <span>{count ? `${count} 則通知` : null}</span>\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<Badge count={0} />));", "expected": "<div><span>0</span><span></span></div>" }
+        ]
+      }
+    },
+    {
+      "id": "react-5-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "filter＋map 組合技",
+      "docs": "https://react.dev/learn/rendering-lists",
+      "story": "",
+      "prompt": "只上架有庫存的商品。渲染出什麼 HTML？",
+      "code": "const products = [\n  { id: 1, name: \"鍵盤\", stock: 3 },\n  { id: 2, name: \"滑鼠\", stock: 0 },\n  { id: 3, name: \"螢幕\", stock: 5 },\n];\n\nfunction Shelf() {\n  return (\n    <ul>\n      {products\n        .filter((p) => p.stock > 0)\n        .map((p) => <li key={p.id}>{p.name}</li>)}\n    </ul>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "<ul><li>鍵盤</li><li>螢幕</li></ul>" },
+        { "id": "b", "text": "<ul><li>鍵盤</li><li>滑鼠</li><li>螢幕</li></ul>" },
+        { "id": "c", "text": "<ul><li>滑鼠</li></ul>" },
+        { "id": "d", "text": "會報錯，JSX 裡不能串兩個方法" }
+      ],
+      "answer": "a",
+      "explanation": "鏈式呼叫從左讀到右：filter 先淘汰沒庫存的滑鼠，map 再把活下來的變成 <li>。大括號裡只要是表達式，串多長都合法。「先 filter 再 map」是列表渲染的高頻組合，第一章陣列關卡的招式在這裡全部派上用場——JS 練得穩，React 就只是換個舞台。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nconst products = [\n  { id: 1, name: \"鍵盤\", stock: 3 },\n  { id: 2, name: \"滑鼠\", stock: 0 },\n  { id: 3, name: \"螢幕\", stock: 5 },\n];\nfunction Shelf() {\n  return (\n    <ul>\n      {products\n        .filter((p) => p.stock > 0)\n        .map((p) => <li key={p.id}>{p.name}</li>)}\n    </ul>\n  );\n}\nconsole.log(renderToStaticMarkup(<Shelf />));", "expected": "<ul><li>鍵盤</li><li>螢幕</li></ul>" }
+        ]
+      }
+    }
+  ]
+}

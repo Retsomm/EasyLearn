@@ -1,25 +1,26 @@
 import { useState } from 'react'
 import { useProgress } from './hooks/useProgress'
 import { getLevel, getWrongQuestions } from './data/chapters'
+import { shuffle, sampleQuestions, QUIZ_SIZE } from './utils/quiz'
 import Home from './screens/Home'
 import ChapterMap from './screens/ChapterMap'
 import Quiz from './screens/Quiz'
 
-const REVIEW_SIZE = 6
+const REVIEW_SIZE = QUIZ_SIZE
 
 export default function App() {
   const { progress, answerQuestion, finishLevel, finishReview, exportProgress, importProgress } =
     useProgress()
   const [view, setView] = useState({ name: 'home' })
 
+  function startLevel(levelId) {
+    // 從關卡題池隨機抽題，重玩不重複
+    const level = getLevel(levelId)
+    setView({ name: 'quiz', levelId, questions: sampleQuestions(level.questions) })
+  }
+
   function startReview() {
-    // 抽最多 6 題錯題組成一輪重練（Fisher-Yates 洗牌，複本操作不動原順序）
-    const pool = [...getWrongQuestions(progress.wrongIds)]
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[pool[i], pool[j]] = [pool[j], pool[i]]
-    }
-    const picked = pool.slice(0, REVIEW_SIZE)
+    const picked = shuffle(getWrongQuestions(progress.wrongIds)).slice(0, REVIEW_SIZE)
     if (picked.length === 0) return
     setView({ name: 'review', questions: picked })
   }
@@ -29,7 +30,7 @@ export default function App() {
     return (
       <Quiz
         key={view.levelId}
-        level={level}
+        level={{ ...level, questions: view.questions }}
         progress={progress}
         answerQuestion={answerQuestion}
         finishLevel={finishLevel}
@@ -58,7 +59,7 @@ export default function App() {
     return (
       <ChapterMap
         progress={progress}
-        onStartLevel={(levelId) => setView({ name: 'quiz', levelId })}
+        onStartLevel={startLevel}
         onBack={() => setView({ name: 'home' })}
       />
     )

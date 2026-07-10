@@ -1,0 +1,144 @@
+{
+  "id": "jsa-7",
+  "title": "模組（import / export）",
+  "questions": [
+    {
+      "id": "jsa-7-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "具名匯出 vs 預設匯出",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Modules",
+      "story": "",
+      "prompt": "utils.js 同時有具名匯出和預設匯出。main.js 印出什麼？",
+      "code": "// utils.js\nexport const add = (a, b) => a + b;\nexport default function greet() {\n  return \"hi\";\n}\n\n// main.js\nimport greet, { add } from \"./utils.js\";\nconsole.log(greet(), add(1, 2));",
+      "options": [
+        { "id": "a", "text": "hi 3" },
+        { "id": "b", "text": "undefined 3" },
+        { "id": "c", "text": "會報錯，一個檔案不能有兩種匯出" },
+        { "id": "d", "text": "hi undefined" }
+      ],
+      "answer": "a",
+      "explanation": "一個模組可以有很多「具名匯出」（要用大括號按名字領）＋最多一個「預設匯出」（不用大括號，排第一個位置）。import greet, { add } 一行同時領兩種。這行語法你在每個 React 專案的檔案開頭都會看到——import React, { useState } 就是同一個句型。",
+      "verify": {
+        "checks": [
+          { "code": "(async () => {\n  const mod = await import(\"data:text/javascript,export const add = (a, b) => a + b; export default function greet() { return 'hi'; }\");\n  console.log(mod.default(), mod.add(1, 2));\n})();", "expected": "hi 3" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-7-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "具名匯入的名字必須對得上",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Modules",
+      "story": "",
+      "prompt": "utils.js 明明有加法函式，main.js 卻拿不到。哪裡錯了？",
+      "code": "// utils.js\nexport function sum(a, b) {\n  return a + b;\n}\n\n// main.js\nimport { add } from \"./utils.js\";   // B 行 💥\nconsole.log(add(1, 2));",
+      "options": [
+        { "id": "a", "text": "B 行的名字對不上：utils 匯出的叫 sum，大括號裡就得寫 sum（或用 as 改名）" },
+        { "id": "b", "text": "function 宣告不能被 export" },
+        { "id": "c", "text": "路徑要寫成 utils.js，不能加 ./" },
+        { "id": "d", "text": "main.js 少了 export" }
+      ],
+      "answer": "a",
+      "explanation": "大括號匯入是「按名字領貨」：人家匯出 sum，你領 add 就是查無此人。要嘛改成 import { sum }，要嘛領貨時改名 import { sum as add }。只有「預設匯出」才能隨便取名。打錯匯入名字的錯誤訊息很直白（does not provide an export named ...），看到它先對名字。",
+      "verify": {
+        "checks": [
+          { "code": "(async () => {\n  const mod = await import(\"data:text/javascript,export function sum(a, b) { return a + b; }\");\n  console.log(typeof mod.add, typeof mod.sum);\n})();", "expected": "undefined function" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-7-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "預設匯出，名字隨你取",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Modules",
+      "story": "",
+      "prompt": "config.js 預設匯出一個設定物件，main.js 卻用了不同的名字接。印出什麼？",
+      "code": "// config.js\nconst config = { theme: \"dark\" };\nexport default config;\n\n// main.js\nimport settings from \"./config.js\";\nconsole.log(settings.theme);",
+      "options": [
+        { "id": "a", "text": "dark" },
+        { "id": "b", "text": "undefined，名字不一樣接不到" },
+        { "id": "c", "text": "會報錯，settings 沒有被定義" },
+        { "id": "d", "text": "theme" }
+      ],
+      "answer": "a",
+      "explanation": "預設匯出是「不記名包裹」：進口的人愛叫它什麼都行，settings、config、abc 都接得到同一個東西。這解釋了為什麼不同專案裡 import React、import R 都能動。反過來說也是個小陷阱：預設匯出改名無感，重構時工具不會幫你抓不一致——所以不少團隊偏好具名匯出。",
+      "verify": {
+        "checks": [
+          { "code": "(async () => {\n  const mod = await import(\"data:text/javascript,const config = { theme: 'dark' }; export default config;\");\n  const settings = mod.default;\n  console.log(settings.theme);\n})();", "expected": "dark" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-7-q4",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "逐個領 vs 整包領（namespace）",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Modules",
+      "story": "",
+      "prompt": "一個用大括號逐個領，一個用 * as 整包領。兩段印出來一樣嗎？",
+      "code": "// utils.js\nexport function sum(a, b) { return a + b; }\n\n// 版本一\nimport { sum } from \"./utils.js\";\nconsole.log(sum(1, 2));\n\n// 版本二\nimport * as utils from \"./utils.js\";\nconsole.log(utils.sum(1, 2));",
+      "options": [
+        { "id": "a", "text": "一樣，都印 3" },
+        { "id": "b", "text": "不一樣：版本二的 utils.sum 是 undefined" },
+        { "id": "c", "text": "不一樣：版本二會報錯，* 不能當名字" },
+        { "id": "d", "text": "一樣，但版本二會多印一個物件" }
+      ],
+      "answer": "a",
+      "explanation": "import * as utils 是把該模組「所有具名匯出」打包成一個物件，之後用 utils.sum 點出來用，功能跟逐個領一模一樣。匯出很多、名字又怕撞的工具模組（像 import * as path）常用這招。讀 code 時看到 * as，把它當「這個模組的總目錄」就對了。",
+      "verify": {
+        "checks": [
+          { "code": "(async () => {\n  const utils = await import(\"data:text/javascript,export function sum(a, b) { return a + b; }\");\n  console.log(utils.sum(1, 2));\n})();", "expected": "3" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-7-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "export：把東西開放給別的檔案",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Modules",
+      "story": "",
+      "prompt": "把空格填起來，讓別的檔案可以 import { double }",
+      "code": "// utils.js\n____ const double = (n) => n * 2;\n\n// 別的檔案\n// import { double } from \"./utils.js\";  ← 要讓這行成立",
+      "options": [
+        { "id": "a", "text": "export" },
+        { "id": "b", "text": "module.exports =" },
+        { "id": "c", "text": "import" },
+        { "id": "d", "text": "public" }
+      ],
+      "answer": "a",
+      "explanation": "在宣告前面加 export，這個名字就上了模組的「對外貨架」。選項 b 是 Node 舊時代的 CommonJS 寫法（require 那套），跟 import/export 是兩套系統，混用會出事；選項 d 的 public 是別的語言的關鍵字。沒加 export 的東西完全私有——這也是模組的好處：預設藏好，想給才給。",
+      "verify": {
+        "checks": [
+          { "code": "(async () => {\n  const mod = await import(\"data:text/javascript,export const double = (n) => n * 2;\");\n  console.log(mod.double(21));\n})();", "expected": "42" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-7-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "模組是單例：大家 import 到同一份",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Modules",
+      "story": "",
+      "prompt": "a.js 和 b.js 都 import 了同一個計數器模組。b.js 印出什麼？",
+      "code": "// counter.js\nlet n = 0;\nexport const inc = () => ++n;\n\n// a.js（先執行）\nimport { inc } from \"./counter.js\";\ninc();\n\n// b.js（後執行）\nimport { inc } from \"./counter.js\";\nconsole.log(inc());",
+      "options": [
+        { "id": "a", "text": "2 —— 模組只載入一次，a 和 b 共用同一個 n" },
+        { "id": "b", "text": "1 —— 每個檔案 import 都拿到全新的模組" },
+        { "id": "c", "text": "0" },
+        { "id": "d", "text": "會報錯，同一個模組不能被 import 兩次" }
+      ],
+      "answer": "a",
+      "explanation": "模組系統有快取：第一次 import 時執行一次，之後誰再 import 都是領「同一份」——所以 a.js 加過的 1 會被 b.js 看到，再加變 2。這個單例特性是雙面刃：拿來放全域設定很方便，但模組裡的可變狀態（像這個 n）等於隱形的全域變數，誰改了很難追——jsa-2 closure 關卡「狀態放哪裡決定誰共用」的鐵律，在模組層級同樣成立。",
+      "verify": {
+        "checks": [
+          { "code": "(async () => {\n  const url = \"data:text/javascript,let n = 0; export const inc = () => ++n;\";\n  const m1 = await import(url);\n  const m2 = await import(url);\n  m1.inc();\n  console.log(m2.inc());\n})();", "expected": "2" }
+        ]
+      }
+    }
+  ]
+}

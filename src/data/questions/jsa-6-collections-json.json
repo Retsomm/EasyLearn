@@ -1,0 +1,145 @@
+{
+  "id": "jsa-6",
+  "title": "Map、Set 與 JSON",
+  "questions": [
+    {
+      "id": "jsa-6-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "Set 自動去重",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Set",
+      "story": "",
+      "prompt": "把有重複的標籤丟進 Set。size 是多少？",
+      "code": "const tags = new Set([\"js\", \"css\", \"js\", \"html\", \"css\"]);\nconsole.log(tags.size);",
+      "options": [
+        { "id": "a", "text": "3" },
+        { "id": "b", "text": "5" },
+        { "id": "c", "text": "2" },
+        { "id": "d", "text": "會報錯，Set 不能放重複的值" }
+      ],
+      "answer": "a",
+      "explanation": "Set 是「不收重複」的集合：塞進去的重複值被靜靜忽略（不報錯），剩下 js、css、html 三個。另外注意它的長度叫 size 不是 length——這是陣列和 Set 常見的混淆點。",
+      "verify": {
+        "checks": [
+          { "code": "const tags = new Set([\"js\", \"css\", \"js\", \"html\", \"css\"]);\nconsole.log(tags.size);", "expected": "3" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-6-q2",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "陣列去重的經典寫法",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Set",
+      "story": "",
+      "prompt": "把空格填起來，把重複的數字去掉，印出 [ 1, 2, 3 ]（要是陣列！）",
+      "code": "const nums = [1, 2, 2, 3, 3, 3];\nconst unique = ____;\nconsole.log(unique);",
+      "options": [
+        { "id": "a", "text": "[...new Set(nums)]" },
+        { "id": "b", "text": "new Set(nums)" },
+        { "id": "c", "text": "nums.unique()" },
+        { "id": "d", "text": "nums.filter((n) => n)" }
+      ],
+      "answer": "a",
+      "explanation": "兩步組合：new Set(nums) 去重，再用展開 [...] 把 Set 倒回陣列。選項 b 少了展開，拿到的是 Set 不是陣列（印出 Set(3) { 1, 2, 3 }，而且不能用 map/filter 那套陣列方法）；選項 c 的 unique 方法不存在；選項 d 只是過濾 falsy，重複的都還在。這行是實務上最常見的去重慣用句，看到要能秒懂。",
+      "verify": {
+        "checks": [
+          { "code": "const nums = [1, 2, 2, 3, 3, 3];\nconst unique = [...new Set(nums)];\nconsole.log(unique);", "expected": "[ 1, 2, 3 ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-6-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Map 的同鍵覆蓋",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Map",
+      "story": "",
+      "prompt": "同一個人投了兩次票。這段程式印出什麼？",
+      "code": "const votes = new Map();\nvotes.set(\"小美\", 2);\nvotes.set(\"小美\", 5);\nvotes.set(\"小華\", 1);\n\nconsole.log(votes.get(\"小美\"), votes.size);",
+      "options": [
+        { "id": "a", "text": "5 2" },
+        { "id": "b", "text": "2 3" },
+        { "id": "c", "text": "7 2" },
+        { "id": "d", "text": "5 3" }
+      ],
+      "answer": "a",
+      "explanation": "Map 一個鍵只有一格：對同一個鍵再 set 是「覆蓋」不是「累加」也不是「多一筆」，小美的 2 被 5 蓋掉，總共只有小美、小華兩個鍵。想累加要自己來：votes.set(\"小美\", (votes.get(\"小美\") ?? 0) + 1)——這也是計數器的標準寫法。",
+      "verify": {
+        "checks": [
+          { "code": "const votes = new Map();\nvotes.set(\"小美\", 2);\nvotes.set(\"小美\", 5);\nvotes.set(\"小華\", 1);\nconsole.log(votes.get(\"小美\"), votes.size);", "expected": "5 2" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-6-q4",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "Map 要用 get，不能用點記法",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Map/get",
+      "story": "",
+      "prompt": "設定明明存進去了，讀出來卻是 undefined。哪裡錯了？",
+      "code": "const config = new Map([[\"theme\", \"dark\"]]);\n\nconsole.log(config.theme);   // B 行：undefined ??",
+      "options": [
+        { "id": "a", "text": "B 行用了物件的點記法：Map 的資料要用 config.get(\"theme\") 拿" },
+        { "id": "b", "text": "Map 的初始化不能用陣列" },
+        { "id": "c", "text": "theme 這個鍵被 dark 覆蓋掉了" },
+        { "id": "d", "text": "要先 config.load() 才能讀" }
+      ],
+      "answer": "a",
+      "explanation": "Map 的資料存在自己的內部空間，不是掛在物件屬性上——config.theme 找的是「屬性」，當然沒有。存取一律走方法：get、set、has、delete。「從物件換成 Map 之後讀到 undefined」是很典型的遷移 bug，AI 改寫程式時偶爾也會漏改這種地方。",
+      "verify": {
+        "checks": [
+          { "code": "const config = new Map([[\"theme\", \"dark\"]]);\nconsole.log(config.theme);", "expected": "undefined" },
+          { "code": "const config = new Map([[\"theme\", \"dark\"]]);\nconsole.log(config.get(\"theme\"));", "expected": "dark" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-6-q5",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "淺拷貝 vs JSON 深拷貝",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify",
+      "story": "",
+      "prompt": "都是「複製一份再改名字」。改完之後，兩個版本的「原本資料」都安然無恙嗎？",
+      "code": "// 版本一：展開複製\nconst s1 = { user: { name: \"小美\" } };\nconst c1 = { ...s1 };\nc1.user.name = \"小華\";\nconsole.log(s1.user.name);\n\n// 版本二：JSON 複製\nconst s2 = { user: { name: \"小美\" } };\nconst c2 = JSON.parse(JSON.stringify(s2));\nc2.user.name = \"小王\";\nconsole.log(s2.user.name);",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一的原本被改成小華了，版本二的原本還是小美" },
+        { "id": "b", "text": "一樣，兩個原本都沒事" },
+        { "id": "c", "text": "一樣，兩個原本都被改了" },
+        { "id": "d", "text": "版本二會報錯，JSON 不能這樣用" }
+      ],
+      "answer": "a",
+      "explanation": "展開 {...s1} 只複製「第一層」——裡面的 user 還是同一個物件（淺拷貝），改 c1.user 等於改到本尊。JSON.stringify 把整棵樹印成字串再 parse 回來，每一層都是全新的（深拷貝）。第一章的參照陷阱在巢狀資料裡更兇。另外現代 JS 有更正規的 structuredClone()，不過 JSON 寫法在舊程式裡到處都是，要看得懂。",
+      "verify": {
+        "checks": [
+          { "code": "const s1 = { user: { name: \"小美\" } };\nconst c1 = { ...s1 };\nc1.user.name = \"小華\";\nconsole.log(s1.user.name);\nconst s2 = { user: { name: \"小美\" } };\nconst c2 = JSON.parse(JSON.stringify(s2));\nc2.user.name = \"小王\";\nconsole.log(s2.user.name);", "expected": "小華\n小美" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-6-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "JSON 化會弄丟什麼",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify",
+      "story": "",
+      "prompt": "物件過了一趟 JSON 再回來。這段程式印出什麼？",
+      "code": "const user = {\n  name: \"小美\",\n  greet() { return \"hi\"; },\n  tags: undefined,\n};\n\nconst copy = JSON.parse(JSON.stringify(user));\nconsole.log(\"greet\" in copy, \"tags\" in copy, copy.name);",
+      "options": [
+        { "id": "a", "text": "false false 小美" },
+        { "id": "b", "text": "true true 小美" },
+        { "id": "c", "text": "true false 小美" },
+        { "id": "d", "text": "會報錯，物件裡有函式不能 stringify" }
+      ],
+      "answer": "a",
+      "explanation": "JSON 是純資料格式，只認得字串、數字、布林、null、陣列、物件——函式和 undefined 不在名單上，stringify 時被直接丟掉（不報錯！）。所以 copy 只剩 name。這解釋了上一題深拷貝法的限制：資料裡有函式、Date、Map 時 JSON 複製會悄悄變形，存讀 localStorage 時也一樣要小心。",
+      "verify": {
+        "checks": [
+          { "code": "const user = {\n  name: \"小美\",\n  greet() { return \"hi\"; },\n  tags: undefined,\n};\nconst copy = JSON.parse(JSON.stringify(user));\nconsole.log(\"greet\" in copy, \"tags\" in copy, copy.name);", "expected": "false false 小美" }
+        ]
+      }
+    }
+  ]
+}

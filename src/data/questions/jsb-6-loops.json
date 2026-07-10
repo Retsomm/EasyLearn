@@ -1,0 +1,146 @@
+{
+  "id": "jsb-6",
+  "title": "迴圈與迭代",
+  "questions": [
+    {
+      "id": "jsb-6-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "for 迴圈累加",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/for",
+      "story": "",
+      "prompt": "從 1 加到 4。這段程式印出什麼？",
+      "code": "let total = 0;\nfor (let i = 1; i <= 4; i++) {\n  total += i;\n}\nconsole.log(total);",
+      "options": [
+        { "id": "a", "text": "10" },
+        { "id": "b", "text": "4" },
+        { "id": "c", "text": "1234" },
+        { "id": "d", "text": "5" }
+      ],
+      "answer": "a",
+      "explanation": "1 + 2 + 3 + 4 = 10。讀 for 迴圈的三格：起點 i = 1、續跑條件 i <= 4、每圈之後 i++。在腦中跑一遍小迴圈（trace）是讀 code 的基本功——之後遇到再複雜的迴圈，都是這招。",
+      "verify": {
+        "checks": [
+          { "code": "let total = 0;\nfor (let i = 1; i <= 4; i++) {\n  total += i;\n}\nconsole.log(total);", "expected": "10" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-6-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "for...of 拿值、for...in 拿索引",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/for...of",
+      "story": "",
+      "prompt": "of 和 in 只差一個字。這兩個迴圈各印出什麼？",
+      "code": "const colors = [\"紅\", \"綠\", \"藍\"];\n\nfor (const x of colors) console.log(x);\nfor (const x in colors) console.log(x);",
+      "options": [
+        { "id": "a", "text": "of 印 紅 綠 藍；in 印 0 1 2" },
+        { "id": "b", "text": "兩個都印 紅 綠 藍" },
+        { "id": "c", "text": "of 印 0 1 2；in 印 紅 綠 藍" },
+        { "id": "d", "text": "兩個都印 0 1 2" }
+      ],
+      "answer": "a",
+      "explanation": "for...of 走的是「內容物」（值），for...in 走的是「門牌號碼」（索引／鍵，而且是字串）。陣列幾乎永遠該用 of；in 是設計給物件鍵用的，拿來走陣列還會有奇怪的邊角行為。AI 偶爾會寫錯這兩個，症狀就是印出一堆 0 1 2。",
+      "verify": {
+        "checks": [
+          { "code": "const colors = [\"紅\", \"綠\", \"藍\"];\nfor (const x of colors) console.log(x);\nfor (const x in colors) console.log(x);", "expected": "紅\n綠\n藍\n0\n1\n2" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-6-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "差一錯誤（off-by-one）",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/for",
+      "story": "",
+      "prompt": "清單最後多印了一個 undefined。哪裡錯了？",
+      "code": "const items = [\"a\", \"b\", \"c\"];\nfor (let i = 0; i <= items.length; i++) {   // B 行\n  console.log(items[i]);\n}",
+      "options": [
+        { "id": "a", "text": "B 行的 <= 該是 <：索引最大只到 length - 1，多跑的那圈拿到 undefined" },
+        { "id": "b", "text": "i 應該從 1 開始" },
+        { "id": "c", "text": "items[i] 應該寫成 items.get(i)" },
+        { "id": "d", "text": "陣列最後少放一個元素" }
+      ],
+      "answer": "a",
+      "explanation": "長度 3 的陣列，合法索引是 0、1、2——items[3] 不存在，拿到 undefined。<= 讓迴圈多跑了一圈。這叫差一錯誤（off-by-one），是全人類工程師（和 AI）都會犯的經典錯。口訣：從 0 開始的迴圈配 < length，永遠不要 <=。",
+      "verify": {
+        "checks": [
+          { "code": "const items = [\"a\", \"b\", \"c\"];\nfor (let i = 0; i <= items.length; i++) {\n  console.log(items[i]);\n}", "expected": "a\nb\nc\nundefined" },
+          { "code": "const items = [\"a\", \"b\", \"c\"];\nfor (let i = 0; i < items.length; i++) {\n  console.log(items[i]);\n}", "expected": "a\nb\nc" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-6-q4",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "break 全停 vs continue 跳過",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/break",
+      "story": "",
+      "prompt": "一個用 break、一個用 continue。這兩段印出來一樣嗎？",
+      "code": "// 版本一\nfor (const n of [1, 2, 3, 4]) {\n  if (n === 3) break;\n  console.log(n);\n}\n\n// 版本二\nfor (const n of [1, 2, 3, 4]) {\n  if (n === 3) continue;\n  console.log(n);\n}",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一印 1 2，版本二印 1 2 4" },
+        { "id": "b", "text": "一樣，都印 1 2" },
+        { "id": "c", "text": "一樣，都印 1 2 4" },
+        { "id": "d", "text": "不一樣：版本一印 1 2 4，版本二印 1 2" }
+      ],
+      "answer": "a",
+      "explanation": "break 是「整個迴圈到此為止」，遇到 3 直接散場，4 沒機會出場。continue 是「這一圈跳過，下一圈照常」，只有 3 被略過，4 還是印了。找東西找到就停用 break（省時間），過濾不要的用 continue。",
+      "verify": {
+        "checks": [
+          { "code": "for (const n of [1, 2, 3, 4]) {\n  if (n === 3) break;\n  console.log(n);\n}", "expected": "1\n2" },
+          { "code": "for (const n of [1, 2, 3, 4]) {\n  if (n === 3) continue;\n  console.log(n);\n}", "expected": "1\n2\n4" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-6-q5",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "while：不知道要跑幾圈的時候",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/while",
+      "story": "",
+      "prompt": "怪物有 10 滴血，每回合扣 4。把空格填起來，算出幾回合能打倒牠（印出 3）",
+      "code": "let hp = 10;\nlet rounds = 0;\n____ (hp > 0) {\n  hp -= 4;\n  rounds++;\n}\nconsole.log(rounds);",
+      "options": [
+        { "id": "a", "text": "while" },
+        { "id": "b", "text": "for" },
+        { "id": "c", "text": "if" },
+        { "id": "d", "text": "until" }
+      ],
+      "answer": "a",
+      "explanation": "「事先不知道要跑幾圈、只知道停止條件」就是 while 的主場：血量還大於 0 就繼續打。10 → 6 → 2 → -2，共 3 回合。選 if 只會打一下就停；for 適合「圈數已知」的場合。用 while 務必確認條件終究會變 false，不然就是無限迴圈、瀏覽器當給你看。",
+      "verify": {
+        "checks": [
+          { "code": "let hp = 10;\nlet rounds = 0;\nwhile (hp > 0) {\n  hp -= 4;\n  rounds++;\n}\nconsole.log(rounds);", "expected": "3" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-6-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "走訪物件：Object.entries ＋解構",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/entries",
+      "story": "",
+      "prompt": "印出還有庫存的商品。這段程式印出什麼？",
+      "code": "const stock = { 蘋果: 3, 香蕉: 0 };\n\nfor (const [name, qty] of Object.entries(stock)) {\n  if (qty === 0) continue;\n  console.log(`${name} x${qty}`);\n}",
+      "options": [
+        { "id": "a", "text": "蘋果 x3" },
+        { "id": "b", "text": "蘋果 x3 和 香蕉 x0" },
+        { "id": "c", "text": "會報錯，物件不能用 for...of" },
+        { "id": "d", "text": "什麼都不印" }
+      ],
+      "answer": "a",
+      "explanation": "物件本身確實不能直接 for...of（選項 c 說對了一半），但 Object.entries 把它轉成 [[\"蘋果\", 3], [\"香蕉\", 0]] 這種陣列就可以了，搭配解構 [name, qty] 一次拿到鍵和值。香蕉庫存 0 被 continue 跳過。這是走訪物件最順手的組合技，實務出場率極高。",
+      "verify": {
+        "checks": [
+          { "code": "const stock = { 蘋果: 3, 香蕉: 0 };\nfor (const [name, qty] of Object.entries(stock)) {\n  if (qty === 0) continue;\n  console.log(`${name} x${qty}`);\n}", "expected": "蘋果 x3" }
+        ]
+      }
+    }
+  ]
+}

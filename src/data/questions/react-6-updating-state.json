@@ -1,0 +1,143 @@
+{
+  "id": "react-6",
+  "title": "更新物件與陣列 state",
+  "questions": [
+    {
+      "id": "react-6-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "更新 state 物件＝做一個新的",
+      "docs": "https://react.dev/learn/updating-objects-in-state",
+      "story": "",
+      "prompt": "這就是 React 更新物件 state 的標準動作。這段程式印出什麼？",
+      "code": "const user = { name: \"小美\", xp: 0 };\nconst next = { ...user, xp: 10 };\n\nconsole.log(user.xp, next.xp, user === next);",
+      "options": [
+        { "id": "a", "text": "0 10 false" },
+        { "id": "b", "text": "10 10 true" },
+        { "id": "c", "text": "0 10 true" },
+        { "id": "d", "text": "10 10 false" }
+      ],
+      "answer": "a",
+      "explanation": "{ ...user, xp: 10 } 做出一個「全新的」物件：舊的原封不動（xp 還是 0），新的蓋上 xp: 10，兩個是不同人所以 === 是 false。這個 false 正是 React 的命脈——setUser(next) 時 React 比對新舊是不是同一個物件，「不同」才知道要重繪。",
+      "verify": {
+        "checks": [
+          { "code": "const user = { name: \"小美\", xp: 0 };\nconst next = { ...user, xp: 10 };\nconsole.log(user.xp, next.xp, user === next);", "expected": "0 10 false" }
+        ]
+      }
+    },
+    {
+      "id": "react-6-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "改完同一個物件再 set，React 看不出差別",
+      "docs": "https://react.dev/learn/updating-objects-in-state",
+      "story": "",
+      "prompt": "點了加分按鈕，console 看得到 xp 變大，畫面卻不動。哪裡錯了？",
+      "code": "function Profile() {\n  const [user, setUser] = useState({ name: \"小美\", xp: 0 });\n\n  function addXp() {\n    user.xp += 10;     // B 行\n    setUser(user);     // C 行\n  }\n\n  return <button onClick={addXp}>{user.xp}</button>;\n}",
+      "options": [
+        { "id": "a", "text": "B 行直接改了原物件，C 行 set 回去的還是同一個物件，React 比對「沒變」就跳過重繪；要 setUser({ ...user, xp: user.xp + 10 })" },
+        { "id": "b", "text": "C 行應該寫 setUser()，不用傳參數" },
+        { "id": "c", "text": "xp 不能放在物件裡，要獨立一個 state" },
+        { "id": "d", "text": "onClick 少了括號" }
+      ],
+      "answer": "a",
+      "explanation": "React 判斷「要不要重繪」的方法很簡單：新舊 state 是不是同一個東西（Object.is 比對參照）。你改的和 set 回去的是同一個物件，React 一看「一樣嘛」就收工了——資料其實變了，畫面卻凍結。這就是 state 必須「不可變更新」的真正原因，不是潔癖，是 React 的偵測機制只認新物件。",
+      "verify": {
+        "checks": [],
+        "manual": "需要點擊互動觀察不重繪；機制依 react.dev updating-objects-in-state（Object.is 同參照跳過 re-render）"
+      }
+    },
+    {
+      "id": "react-6-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "push 改本尊、展開做新的",
+      "docs": "https://react.dev/learn/updating-arrays-in-state",
+      "story": "",
+      "prompt": "陣列版的同一件事。這段程式印出什麼？",
+      "code": "const list = [\"a\"];\nconst next = [...list, \"b\"];\nlist.push(\"c\");\n\nconsole.log(list, next, list === next);",
+      "options": [
+        { "id": "a", "text": "[ 'a', 'c' ] [ 'a', 'b' ] false" },
+        { "id": "b", "text": "[ 'a', 'c' ] [ 'a', 'b', 'c' ] false" },
+        { "id": "c", "text": "[ 'a', 'b', 'c' ] [ 'a', 'b', 'c' ] true" },
+        { "id": "d", "text": "[ 'a' ] [ 'a', 'b' ] false" }
+      ],
+      "answer": "a",
+      "explanation": "[...list, \"b\"] 生出獨立的新陣列，之後 push 只動到本尊 list，next 不受影響——兩條時間線分岔了。對應到 React：更新陣列 state 用展開（或 map/filter 這些「回傳新陣列」的方法），push、splice、sort 這些「就地修改」的方法碰 state 就是畫面不動的根源。",
+      "verify": {
+        "checks": [
+          { "code": "const list = [\"a\"];\nconst next = [...list, \"b\"];\nlist.push(\"c\");\nconsole.log(list, next, list === next);", "expected": "[ 'a', 'c' ] [ 'a', 'b' ] false" }
+        ]
+      }
+    },
+    {
+      "id": "react-6-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "不可變地刪除一筆",
+      "docs": "https://react.dev/learn/updating-arrays-in-state",
+      "story": "",
+      "prompt": "把空格填起來，用「不動原陣列」的方式刪掉指定的待辦",
+      "code": "const [todos, setTodos] = useState([\"買菜\", \"寫程式\", \"睡覺\"]);\n\nfunction remove(target) {\n  setTodos(____);\n}\n// remove(\"寫程式\") 之後畫面剩：買菜、睡覺",
+      "options": [
+        { "id": "a", "text": "todos.filter((t) => t !== target)" },
+        { "id": "b", "text": "todos.splice(todos.indexOf(target), 1)" },
+        { "id": "c", "text": "delete todos[1]" },
+        { "id": "d", "text": "todos.pop(target)" }
+      ],
+      "answer": "a",
+      "explanation": "filter 回傳「留下來的元素組成的新陣列」，原陣列毫髮無傷——完美符合 state 的規矩。選項 b 的 splice 就地挖掉還回傳「被刪的那筆」，set 進去的是錯的東西；選項 c 的 delete 留下一個空洞；選項 d 的 pop 根本不理參數、只會拔最後一個。React 刪除的口訣：刪＝filter，改＝map，加＝展開。",
+      "verify": {
+        "checks": [
+          { "code": "const todos = [\"買菜\", \"寫程式\", \"睡覺\"];\nconst target = \"寫程式\";\nconsole.log(todos.filter((t) => t !== target));\nconsole.log(todos.length);", "expected": "[ '買菜', '睡覺' ]\n3" }
+        ]
+      }
+    },
+    {
+      "id": "react-6-q5",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "map 換新 vs 偷改再複製",
+      "docs": "https://react.dev/learn/updating-arrays-in-state",
+      "story": "",
+      "prompt": "都是「把第二筆的分數改成 99」，畫面也都會更新。對「原本的資料」來說，這兩種寫法一樣嗎？",
+      "code": "// 版本一：map ＋展開，換一筆新的\nconst a = [{ v: 10 }, { v: 20 }];\nconst n1 = a.map((s, i) => (i === 1 ? { ...s, v: 99 } : s));\nconsole.log(a[1].v, n1[1].v);\n\n// 版本二：先偷改本尊，再複製外層\nconst b = [{ v: 10 }, { v: 20 }];\nb[1].v = 99;\nconst n2 = [...b];\nconsole.log(b[1].v, n2[1].v);",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一原本還是 20，版本二的原本已經被改成 99" },
+        { "id": "b", "text": "一樣，兩個原本都是 20" },
+        { "id": "c", "text": "一樣，兩個原本都被改成 99" },
+        { "id": "d", "text": "版本二會報錯" }
+      ],
+      "answer": "a",
+      "explanation": "版本一只給要改的那筆做新物件，原陣列裡的東西全部沒動（印出 20 99）。版本二雖然最後也做了新陣列，但 b[1].v = 99 那步已經污染了本尊（印出 99 99）——在 React 裡這叫「改到舊 state」，畫面當下看起來對，卻會讓「上一輪的資料」悄悄變質，之後做復原、比對變更、除錯時間旅行時全部露餡。改哪筆就換哪筆，別偷改。",
+      "verify": {
+        "checks": [
+          { "code": "const a = [{ v: 10 }, { v: 20 }];\nconst n1 = a.map((s, i) => (i === 1 ? { ...s, v: 99 } : s));\nconsole.log(a[1].v, n1[1].v);\nconst b = [{ v: 10 }, { v: 20 }];\nb[1].v = 99;\nconst n2 = [...b];\nconsole.log(b[1].v, n2[1].v);", "expected": "20 99\n99 99" }
+        ]
+      }
+    },
+    {
+      "id": "react-6-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "巢狀更新：每一層都要展開",
+      "docs": "https://react.dev/learn/updating-objects-in-state",
+      "story": "",
+      "prompt": "更新巢狀物件裡的名字。這段程式印出什麼？",
+      "code": "const state = { profile: { name: \"小美\" }, xp: 10 };\n\nconst next = {\n  ...state,\n  profile: { ...state.profile, name: \"小華\" },\n};\n\nconsole.log(state.profile.name, next.profile.name, state.xp === next.xp);",
+      "options": [
+        { "id": "a", "text": "小美 小華 true" },
+        { "id": "b", "text": "小華 小華 true" },
+        { "id": "c", "text": "小美 小華 false" },
+        { "id": "d", "text": "小美 小美 true" }
+      ],
+      "answer": "a",
+      "explanation": "要改深層的東西，路徑上的每一層都得換新：外層展開一次、profile 再展開一次，舊 state 完好（小美），新 state 更新（小華）。沒動到的 xp 直接沿用同一個值，所以 === 是 true——不用整棵樹重做，只換有變的那條路徑。這就是 jsa-6 淺深拷貝觀念在 React 的實戰應用；巢狀太深覺得展開很囉唆時，就是該把 state 拆平的訊號。",
+      "verify": {
+        "checks": [
+          { "code": "const state = { profile: { name: \"小美\" }, xp: 10 };\nconst next = {\n  ...state,\n  profile: { ...state.profile, name: \"小華\" },\n};\nconsole.log(state.profile.name, next.profile.name, state.xp === next.xp);", "expected": "小美 小華 true" }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+{
+  "id": "jsb-9",
+  "title": "正規表達式",
+  "questions": [
+    {
+      "id": "jsb-9-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "test：符不符合，一翻兩瞪眼",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Regular_expressions",
+      "story": "",
+      "prompt": "用正規表達式驗證台灣手機號碼格式。這段印出什麼？",
+      "code": "const re = /^09\\d{8}$/;\nconsole.log(re.test(\"0912345678\"));\nconsole.log(re.test(\"12345\"));",
+      "options": [
+        { "id": "a", "text": "true 和 false" },
+        { "id": "b", "text": "false 和 true" },
+        { "id": "c", "text": "true 和 true" },
+        { "id": "d", "text": "會報錯，斜線是除法" }
+      ],
+      "answer": "a",
+      "explanation": "兩條斜線 /.../ 之間就是正規表達式——描述字串長相的迷你語言。拆解這條：^ 開頭、09 字面上的 09、\\d{8} 連續 8 個數字、$ 結尾。\"0912345678\" 完全吻合是 true；\"12345\" 差太遠是 false。test 是正規表達式最簡單的用法：只回答符不符合。",
+      "verify": {
+        "checks": [
+          { "code": "const re = /^09\\d{8}$/;\nconsole.log(re.test(\"0912345678\"));\nconsole.log(re.test(\"12345\"));", "expected": "true\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-9-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "match 把符合的都撈出來",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/match",
+      "story": "",
+      "prompt": "從訂單字串撈出所有數字。這段印出什麼？",
+      "code": "const order = \"訂單A12之B34\";\nconsole.log(order.match(/\\d+/g));",
+      "options": [
+        { "id": "a", "text": "[ '12', '34' ]" },
+        { "id": "b", "text": "[ 12, 34 ]" },
+        { "id": "c", "text": "'1234'" },
+        { "id": "d", "text": "[ '1', '2', '3', '4' ]" }
+      ],
+      "answer": "a",
+      "explanation": "\\d+ 是「一個以上的連續數字」，g 旗標是「全部都要，不要找到一個就停」。+ 讓 12 被當成一組而不是拆成 1 和 2。注意撈出來的是「字串」陣列（有引號！），要拿去算數學得先 Number() 轉——上一關 toFixed 的教訓在這裡再次適用。",
+      "verify": {
+        "checks": [
+          { "code": "const order = \"訂單A12之B34\";\nconsole.log(order.match(/\\d+/g));", "expected": "[ '12', '34' ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-9-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "少了 g 旗標只處理第一個",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Regular_expressions",
+      "story": "",
+      "prompt": "想把電話全部打碼，結果只遮了一碼。哪裡錯了？",
+      "code": "const masked = \"0912345678\".replace(/\\d/, \"*\");\nconsole.log(masked);   // *912345678 ?? 想要全部變 *",
+      "options": [
+        { "id": "a", "text": "正規表達式少了 g 旗標，只換第一個符合的；要寫 /\\d/g" },
+        { "id": "b", "text": "\\d 只認得數字 0，其他數字要另外寫" },
+        { "id": "c", "text": "replace 不支援正規表達式" },
+        { "id": "d", "text": "星號是特殊字元，不能當替換文字" }
+      ],
+      "answer": "a",
+      "explanation": "上一關 replace 只換第一個的坑，正規表達式版的解法就是 g（global）旗標：/\\d/g 表示「每一個數字都處理」。旗標寫在收尾斜線後面，常見的還有 i（不分大小寫）。忘記 g 是正規表達式新手 bug 排行榜的不動冠軍。",
+      "verify": {
+        "checks": [
+          { "code": "const masked = \"0912345678\".replace(/\\d/, \"*\");\nconsole.log(masked);", "expected": "*912345678" },
+          { "code": "const masked = \"0912345678\".replace(/\\d/g, \"*\");\nconsole.log(masked);", "expected": "**********" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-9-q4",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "點是萬用字元，\\. 才是句點本人",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Regular_expressions",
+      "story": "",
+      "prompt": "只差一個反斜線。這兩條規則的行為一樣嗎？",
+      "code": "// 版本一\nconsole.log(/a.c/.test(\"a.c\"), /a.c/.test(\"abc\"));\n\n// 版本二\nconsole.log(/a\\.c/.test(\"a.c\"), /a\\.c/.test(\"abc\"));",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一兩個都 true，版本二只有 a.c 是 true" },
+        { "id": "b", "text": "一樣，都是 true true" },
+        { "id": "c", "text": "一樣，都是 true false" },
+        { "id": "d", "text": "版本二會報錯，反斜線不能加在點前面" }
+      ],
+      "answer": "a",
+      "explanation": "在正規表達式裡，. 是萬用字元——「隨便一個字都行」，所以 /a.c/ 連 abc 都放行。想比對「真正的句點」要加反斜線逃脫：\\. 。驗證 email、檔名、IP 時忘了逃脫句點，會讓 \"user@testXcom\" 這種怪字串也通過驗證——這是資安等級的細節。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(/a.c/.test(\"a.c\"), /a.c/.test(\"abc\"));\nconsole.log(/a\\.c/.test(\"a.c\"), /a\\.c/.test(\"abc\"));", "expected": "true true\ntrue false" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-9-q5",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "^ 和 $ 把整串鎖住",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Regular_expressions",
+      "story": "",
+      "prompt": "把空格填起來，讓函式只在「整串都是數字」時回傳 true（印出 true false）",
+      "code": "function isDigits(s) {\n  return ____.test(s);\n}\nconsole.log(isDigits(\"12345\"), isDigits(\"12a45\"));",
+      "options": [
+        { "id": "a", "text": "/^\\d+$/" },
+        { "id": "b", "text": "/\\d+/" },
+        { "id": "c", "text": "/^\\d$/" },
+        { "id": "d", "text": "\"\\\\d+\"" }
+      ],
+      "answer": "a",
+      "explanation": "^ 錨住開頭、$ 錨住結尾，兩頭一鎖，中間就必須「從頭到尾全是數字」。選項 b 沒鎖：只要字串裡「找得到」數字就 true，\"12a45\" 也過關——這是輸入驗證最常見的漏洞寫法；選項 c 沒有 +，只匹配「單一個」數字；選項 d 是字串，沒有 test 方法。驗證用的正規表達式，開頭結尾都要上鎖。",
+      "verify": {
+        "checks": [
+          { "code": "function isDigits(s) {\n  return /^\\d+$/.test(s);\n}\nconsole.log(isDigits(\"12345\"), isDigits(\"12a45\"));", "expected": "true false" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-9-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "括號分組：把要的部分抓出來",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Regular_expressions/Groups_and_backreferences",
+      "story": "",
+      "prompt": "從日期字串抓出年和月。這段印出什麼？",
+      "code": "const m = \"2026-07-10\".match(/(\\d{4})-(\\d{2})/);\nconsole.log(m[1], m[2]);",
+      "options": [
+        { "id": "a", "text": "2026 07" },
+        { "id": "b", "text": "2026-07 10" },
+        { "id": "c", "text": "07 10" },
+        { "id": "d", "text": "2026 7" }
+      ],
+      "answer": "a",
+      "explanation": "小括號是「捕獲組」：符合整條規則之餘，把括號內的部分各自裝袋。m[0] 是整段符合的 \"2026-07\"，m[1] 是第一組 \"2026\"，m[2] 是第二組 \"07\"（注意還是字串，07 的 0 都在）。從網址抓 ID、從檔名抓日期、從 log 抓錯誤碼，捕獲組是拆字串的瑞士刀。",
+      "verify": {
+        "checks": [
+          { "code": "const m = \"2026-07-10\".match(/(\\d{4})-(\\d{2})/);\nconsole.log(m[1], m[2]);", "expected": "2026 07" }
+        ]
+      }
+    }
+  ]
+}
