@@ -13,11 +13,15 @@ export default function App() {
   const [view, setView] = useState({ name: 'home' })
 
   function startReview() {
-    // 抽最多 6 題錯題組成一輪重練（洗牌避免每次順序相同）
-    const pool = getWrongQuestions(progress.wrongIds)
-    const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, REVIEW_SIZE)
-    if (shuffled.length === 0) return
-    setView({ name: 'review', questions: shuffled })
+    // 抽最多 6 題錯題組成一輪重練（Fisher-Yates 洗牌，複本操作不動原順序）
+    const pool = [...getWrongQuestions(progress.wrongIds)]
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[pool[i], pool[j]] = [pool[j], pool[i]]
+    }
+    const picked = pool.slice(0, REVIEW_SIZE)
+    if (picked.length === 0) return
+    setView({ name: 'review', questions: picked })
   }
 
   if (view.name === 'quiz') {

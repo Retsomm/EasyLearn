@@ -57,7 +57,7 @@ export default function Quiz({
     const perfect = correctCount === questions.length
     return (
       <div className="screen result-screen">
-        <Mascot xp={progress.xp + finalXp} mood="happy" />
+        <Mascot xp={progress.xp} mood="happy" />
         <h2 className="result-title">
           {perfect && <Icon name="trophy" size={24} />}
           {isReview ? '重練完成！' : perfect ? '全對！太神了' : '關卡完成！'}
