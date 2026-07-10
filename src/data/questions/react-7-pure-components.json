@@ -1,0 +1,143 @@
+{
+  "id": "react-7",
+  "title": "保持元件純粹",
+  "questions": [
+    {
+      "id": "react-7-q1",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "不純的元件：渲染兩次結果不同",
+      "docs": "https://react.dev/learn/keeping-components-pure",
+      "story": "",
+      "prompt": "這個元件在渲染時偷改了外面的變數。把它連續渲染兩次，輸出各是什麼？",
+      "code": "let guests = 0;\n\nfunction Cup() {\n  guests = guests + 1;   // 渲染時改外部變數！\n  return <p>第 {guests} 位客人的茶</p>;\n}\n\n// 連續渲染兩次 <Cup />",
+      "options": [
+        { "id": "a", "text": "第 1 位、第 2 位 —— 同一個元件每次渲染結果都不一樣" },
+        { "id": "b", "text": "第 1 位、第 1 位 —— 每次渲染都重來" },
+        { "id": "c", "text": "第 2 位、第 2 位" },
+        { "id": "d", "text": "會報錯，元件裡不能碰外部變數" }
+      ],
+      "answer": "a",
+      "explanation": "純函式的定義：同樣的輸入，永遠同樣的輸出。這個元件每渲染一次就把外部的 guests 加一，第二次渲染就變了樣——它不純。React 假設你的元件是純的（隨時可以重跑、跑幾次都一樣），不純的元件在快取、並行渲染時會出現「畫面隨機不一致」這種最難查的 bug。這題是 react.dev 官方的招牌範例。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nlet guests = 0;\nfunction Cup() {\n  guests = guests + 1;\n  return <p>第 {guests} 位客人的茶</p>;\n}\nconsole.log(renderToStaticMarkup(<Cup />));\nconsole.log(renderToStaticMarkup(<Cup />));", "expected": "<p>第 1 位客人的茶</p>\n<p>第 2 位客人的茶</p>" }
+        ]
+      }
+    },
+    {
+      "id": "react-7-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "不要改 props",
+      "docs": "https://react.dev/learn/keeping-components-pure",
+      "story": "",
+      "prompt": "打九折元件用了兩次之後，價格越打越低。哪裡錯了？",
+      "code": "function Discount({ item }) {\n  item.price = item.price * 0.9;   // B 行\n  return <p>{item.name}：{item.price} 元</p>;\n}\n\nconst kb = { name: \"鍵盤\", price: 100 };\n// 第一次渲染顯示 90 元，再渲染一次變 81 元 ??",
+      "options": [
+        { "id": "a", "text": "B 行直接改了 props 傳進來的物件，每渲染一次就打一次折；該用 const price = item.price * 0.9 算新值" },
+        { "id": "b", "text": "0.9 應該寫成 90%" },
+        { "id": "c", "text": "props 物件要先 JSON.parse 才能用" },
+        { "id": "d", "text": "元件不能同時顯示名字和價格" }
+      ],
+      "answer": "a",
+      "explanation": "props 是「借來看的」，不是給你改的——B 行改的是外面那個共用物件的本尊，渲染幾次折扣就疊幾次，別的元件看到的價格也被污染。正確做法是算一個區域的新值來顯示，原物件不碰。「同一個畫面越渲染越歪」就是 props 被改的招牌症狀。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Discount({ item }) {\n  item.price = item.price * 0.9;\n  return <p>{item.name}：{item.price} 元</p>;\n}\nconst kb = { name: \"鍵盤\", price: 100 };\nconsole.log(renderToStaticMarkup(<Discount item={kb} />));\nconsole.log(renderToStaticMarkup(<Discount item={kb} />));", "expected": "<p>鍵盤：90 元</p>\n<p>鍵盤：81 元</p>" },
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Discount({ item }) {\n  const price = item.price * 0.9;\n  return <p>{item.name}：{price} 元</p>;\n}\nconst kb = { name: \"鍵盤\", price: 100 };\nconsole.log(renderToStaticMarkup(<Discount item={kb} />));\nconsole.log(renderToStaticMarkup(<Discount item={kb} />));", "expected": "<p>鍵盤：90 元</p>\n<p>鍵盤：90 元</p>" }
+        ]
+      }
+    },
+    {
+      "id": "react-7-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "區域變數自己建自己改，完全合法",
+      "docs": "https://react.dev/learn/keeping-components-pure",
+      "story": "",
+      "prompt": "這個元件在渲染中 push 陣列。它是純的嗎？渲染出什麼？",
+      "code": "function List() {\n  const rows = [];\n  for (let i = 1; i <= 3; i++) {\n    rows.push(<li key={i}>第 {i} 項</li>);\n  }\n  return <ul>{rows}</ul>;\n}",
+      "options": [
+        { "id": "a", "text": "純的——rows 是這次渲染自己建的，改它不影響任何外人；渲染出三個 <li>" },
+        { "id": "b", "text": "不純，元件裡不能用 push" },
+        { "id": "c", "text": "會報錯，JSX 不能存進陣列" },
+        { "id": "d", "text": "只渲染出最後一個 <li>" }
+      ],
+      "answer": "a",
+      "explanation": "「純」的重點是不碰「函式外面」的東西：rows 是這次渲染裡自己出生的區域變數，怎麼改都是家務事，每次渲染重跑結果照樣相同。對照前兩題：改外部變數不行、改 props 不行、改自己的區域變數完全沒問題。界線畫清楚，就不會把「不可變」誤解成「什麼都不能改」。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction List() {\n  const rows = [];\n  for (let i = 1; i <= 3; i++) {\n    rows.push(<li key={i}>第 {i} 項</li>);\n  }\n  return <ul>{rows}</ul>;\n}\nconsole.log(renderToStaticMarkup(<List />));\nconsole.log(renderToStaticMarkup(<List />));", "expected": "<ul><li>第 1 項</li><li>第 2 項</li><li>第 3 項</li></ul>\n<ul><li>第 1 項</li><li>第 2 項</li><li>第 3 項</li></ul>" }
+        ]
+      }
+    },
+    {
+      "id": "react-7-q4",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "隨機數放裡面 vs 由外面傳入",
+      "docs": "https://react.dev/learn/keeping-components-pure",
+      "story": "",
+      "prompt": "都是抽籤元件。對「純不純」來說，這兩種寫法一樣嗎？",
+      "code": "// 版本一：自己擲骰子\nfunction Lucky() {\n  return <p>{Math.random() > 0.5 ? \"大吉\" : \"小吉\"}</p>;\n}\n\n// 版本二：結果由外面傳進來\nfunction Lucky2({ seed }) {\n  return <p>{seed > 0.5 ? \"大吉\" : \"小吉\"}</p>;\n}",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一同樣的 props 每次渲染結果可能不同（不純）；版本二同樣的 seed 永遠同結果（純）" },
+        { "id": "b", "text": "一樣，都是純的" },
+        { "id": "c", "text": "一樣，都不純，因為都用到了隨機數" },
+        { "id": "d", "text": "版本二會報錯，props 不能是數字" }
+      ],
+      "answer": "a",
+      "explanation": "版本一把「隨機」藏在渲染裡：React 哪天多渲染一次（嚴格模式、並行功能都會），籤就自己換了。版本二把隨機源移到外面（事件處理器或 state 裡擲骰子），元件只負責「同樣輸入畫同樣結果」——不純的部分被推到渲染之外，這正是 React 的設計哲學：渲染要純，副作用去事件和 effect 裡發生。",
+      "verify": {
+        "checks": [],
+        "manual": "版本一輸出隨機無法穩定比對；判定依 react.dev keeping-components-pure（渲染期間不可依賴隨機等外部狀態）"
+      }
+    },
+    {
+      "id": "react-7-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "sort 會改原陣列：先複製再排",
+      "docs": "https://react.dev/learn/keeping-components-pure",
+      "story": "",
+      "prompt": "排行榜要把分數由高到低排，但不能動到 props。把空格填起來",
+      "code": "function Ranking({ scores }) {\n  const sorted = ____.sort((a, b) => b - a);\n  return <p>最高分：{sorted[0]}</p>;\n}",
+      "options": [
+        { "id": "a", "text": "[...scores]" },
+        { "id": "b", "text": "scores" },
+        { "id": "c", "text": "scores.copy()" },
+        { "id": "d", "text": "new Array(scores)" }
+      ],
+      "answer": "a",
+      "explanation": "sort 是「就地排序」（jsb-3 的 splice 家族），直接對 scores 排等於偷改 props——外面共用這個陣列的人全遭殃。先展開複製一份再排，本尊安全。選項 c 的 copy 方法不存在；選項 d 做出的是「包著一個陣列的陣列」。順帶一提，新式的 toSorted() 方法天生回新陣列，看到也要認得。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Ranking({ scores }) {\n  const sorted = [...scores].sort((a, b) => b - a);\n  return <p>最高分：{sorted[0]}</p>;\n}\nconst data = [10, 50, 30];\nconsole.log(renderToStaticMarkup(<Ranking scores={data} />));\nconsole.log(data[0]);", "expected": "<p>最高分：50</p>\n10" }
+        ]
+      }
+    },
+    {
+      "id": "react-7-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "嚴格模式為什麼故意渲染兩次",
+      "docs": "https://react.dev/learn/keeping-components-pure",
+      "story": "",
+      "prompt": "開發模式下，元件裡的 console.log 每次都印兩遍。這是 bug 嗎？",
+      "code": "// main.jsx\n<StrictMode>\n  <App />\n</StrictMode>\n\n// App 裡\nfunction App() {\n  console.log(\"渲染了\");   // 開發時印兩次 ??\n  return <p>首頁</p>;\n}",
+      "options": [
+        { "id": "a", "text": "不是 bug：StrictMode 在開發模式故意渲染兩次，幫你揪出不純的元件；正式上線只跑一次" },
+        { "id": "b", "text": "是 bug，要把 StrictMode 拿掉才能上線" },
+        { "id": "c", "text": "是 React 的效能問題，換框架比較快" },
+        { "id": "d", "text": "console.log 本來就會自動印兩次" }
+      ],
+      "answer": "a",
+      "explanation": "StrictMode 的邏輯很聰明：純元件跑兩次結果一模一樣，使用者毫無感覺；不純的元件（像 q1 那杯茶）跑兩次就會現出原形。所以「開發時 log 印兩次」是體檢，不是病。很多人（和 AI）第一反應是把 StrictMode 拆掉——那等於把煙霧偵測器的電池拔了。留著它，讓它替你抓蟲。",
+      "verify": {
+        "checks": [],
+        "manual": "StrictMode 雙重渲染是開發模式的客戶端行為，SSR 驗不了；答案依 react.dev keeping-components-pure 的 StrictMode 說明"
+      }
+    }
+  ]
+}

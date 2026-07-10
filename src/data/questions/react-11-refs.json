@@ -1,0 +1,138 @@
+{
+  "id": "react-11",
+  "title": "refs：不觸發重繪的記憶",
+  "questions": [
+    {
+      "id": "react-11-q1",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "改 ref 不會重繪畫面",
+      "docs": "https://react.dev/learn/referencing-values-with-refs",
+      "story": "",
+      "prompt": "用 useRef 做計數器。按了三下之後，畫面上顯示多少？",
+      "code": "function Counter() {\n  const count = useRef(0);\n\n  function add() {\n    count.current = count.current + 1;\n    console.log(count.current);   // 有變大！\n  }\n\n  return <button onClick={add}>{count.current}</button>;\n}",
+      "options": [
+        { "id": "a", "text": "0 —— ref 改了不會觸發重繪，console 看得到 3 但畫面凍在 0" },
+        { "id": "b", "text": "3 —— ref 跟 state 一樣會更新畫面" },
+        { "id": "c", "text": "1 —— 只有第一下有效" },
+        { "id": "d", "text": "會報錯，ref 不能放數字" }
+      ],
+      "answer": "a",
+      "explanation": "ref 是「不驚動 React 的口袋」：current 隨你改，但改了 React 毫不知情，不會安排重繪——所以資料到了 3、畫面還是 0。這正好跟 state 互補：要顯示在畫面上的資料用 state（改了要重繪），不用顯示的幕後資料用 ref（改了不必重繪）。用錯邊，症狀就是這題。",
+      "verify": {
+        "checks": [],
+        "manual": "需要點擊互動觀察畫面不更新；機制依 react.dev referencing-values-with-refs（ref 變更不觸發 re-render）"
+      }
+    },
+    {
+      "id": "react-11-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "要顯示的資料不該放 ref",
+      "docs": "https://react.dev/learn/referencing-values-with-refs",
+      "story": "",
+      "prompt": "購物車數量顯示在畫面上，加入商品後數字卻不動。哪裡錯了？",
+      "code": "function Cart() {\n  const count = useRef(0);           // A 行\n\n  function addItem() {\n    count.current += 1;\n  }\n\n  return (\n    <div>\n      <span>購物車（{count.current}）</span>\n      <button onClick={addItem}>加入</button>\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "A 行選錯工具：數量要「顯示在畫面上」，該用 useState；ref 改了畫面不會跟" },
+        { "id": "b", "text": "addItem 少了 return" },
+        { "id": "c", "text": "span 裡不能放大括號" },
+        { "id": "d", "text": "+= 在 React 裡是被禁止的運算子" }
+      ],
+      "answer": "a",
+      "explanation": "選 state 還是 ref，判斷句只有一句：「這個值變的時候，畫面需不需要跟著變？」要 → useState；不要（計時器 id、上一次的滾動位置、外部函式庫的實例）→ useRef。購物車數量明明白白顯示在畫面上，用 ref 就是把顯示資料塞進了 React 看不見的口袋。",
+      "verify": {
+        "checks": [],
+        "manual": "需要點擊互動；判準依 react.dev referencing-values-with-refs（顯示資料用 state）"
+      }
+    },
+    {
+      "id": "react-11-q3",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "區域變數 vs ref：誰能活過重繪",
+      "docs": "https://react.dev/learn/referencing-values-with-refs",
+      "story": "",
+      "prompt": "都是「不顯示在畫面上」的計數。元件因為別的 state 重繪了幾次之後，這兩種寫法還一樣嗎？",
+      "code": "// 版本一：普通區域變數\nfunction A() {\n  let clicks = 0;\n  // 每次點擊 clicks += 1（不顯示）\n}\n\n// 版本二：ref\nfunction B() {\n  const clicks = useRef(0);\n  // 每次點擊 clicks.current += 1（不顯示）\n}",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一每次重繪函式重跑，clicks 歸零重生；版本二的 current 跨重繪存活" },
+        { "id": "b", "text": "一樣，兩個都能一直累加" },
+        { "id": "c", "text": "一樣，兩個都會在重繪時歸零" },
+        { "id": "d", "text": "版本一會報錯，元件裡不能宣告 let" }
+      ],
+      "answer": "a",
+      "explanation": "元件函式「每次重繪整個重跑」——let clicks = 0 這行也重跑，數到一半的值直接蒸發。useRef 的 current 由 React 保管在函式之外，重繪多少次都是同一個口袋。所以 ref 的完整定位是：「跨重繪存活、但改了不觸發重繪」的儲物櫃；普通變數連活過一次重繪都辦不到。",
+      "verify": {
+        "checks": [],
+        "manual": "需要多輪重繪互動；機制依 react.dev referencing-values-with-refs（ref 跨 render 保留）"
+      }
+    },
+    {
+      "id": "react-11-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用 ref 抓 DOM：聚焦輸入框",
+      "docs": "https://react.dev/learn/manipulating-the-dom-with-refs",
+      "story": "",
+      "prompt": "按下按鈕讓輸入框自動聚焦。把空格填起來",
+      "code": "function SearchBar() {\n  const inputRef = useRef(null);\n\n  return (\n    <div>\n      <input ref={inputRef} />\n      <button onClick={() => ____.focus()}>開始搜尋</button>\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "inputRef.current" },
+        { "id": "b", "text": "inputRef" },
+        { "id": "c", "text": "input" },
+        { "id": "d", "text": "document.querySelector(\"input\")" }
+      ],
+      "answer": "a",
+      "explanation": "把 ref 掛到 JSX 的 ref 屬性上，React 會在畫面掛載後把「真正的 DOM 節點」放進 current——所以是 inputRef.current.focus()。選項 b 少了 .current，ref 物件本身沒有 focus 方法；選項 d 繞過 React 直接查 DOM，小範例能動，但元件一多就會抓錯目標，是該戒掉的寫法。聚焦、捲動、量尺寸，是 ref 抓 DOM 的三大正當用途。",
+      "verify": {
+        "checks": [],
+        "manual": "需要瀏覽器 DOM 與點擊；機制依 react.dev manipulating-the-dom-with-refs"
+      }
+    },
+    {
+      "id": "react-11-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "渲染途中 ref.current 還是 null",
+      "docs": "https://react.dev/learn/manipulating-the-dom-with-refs",
+      "story": "",
+      "prompt": "在渲染途中就想用 inputRef。第一次渲染時，console 印出什麼？",
+      "code": "function Form() {\n  const inputRef = useRef(null);\n\n  console.log(inputRef.current);   // 第一次渲染時印什麼？\n\n  useEffect(() => {\n    console.log(inputRef.current); // 這裡又印什麼？\n  }, []);\n\n  return <input ref={inputRef} />;\n}",
+      "options": [
+        { "id": "a", "text": "先印 null，effect 裡才印出 input 的 DOM 節點" },
+        { "id": "b", "text": "兩次都印出 DOM 節點" },
+        { "id": "c", "text": "兩次都印 null" },
+        { "id": "d", "text": "先印 DOM 節點，effect 裡印 null" }
+      ],
+      "answer": "a",
+      "explanation": "時間軸是關鍵：渲染途中畫面根本還沒生出來，current 當然是 null（初始值）；React 把 DOM 掛好之後才填入 current，而 useEffect 剛好跑在那之後（react-4 學過的時序），所以 effect 裡拿得到節點。「Cannot read properties of null (reading 'focus')」十之八九就是在渲染途中偷用了 ref。",
+      "verify": {
+        "checks": [],
+        "manual": "需要瀏覽器掛載流程；時序依 react.dev manipulating-the-dom-with-refs（commit 後才填入 current）"
+      }
+    },
+    {
+      "id": "react-11-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "計時器 id 的最佳住所",
+      "docs": "https://react.dev/learn/referencing-values-with-refs",
+      "story": "",
+      "prompt": "碼表元件要存 setInterval 的 id，之後按停止時清除。id 放哪裡最對？",
+      "code": "function Stopwatch() {\n  // 需求：start 時 setInterval 拿到 id，\n  // stop 時 clearInterval(id)。\n  // id 本身不顯示在畫面上。\n  // id 該存在哪？\n}",
+      "options": [
+        { "id": "a", "text": "useRef —— 要跨重繪存活，但它變了不需要畫面跟著變" },
+        { "id": "b", "text": "useState —— 所有資料都該放 state" },
+        { "id": "c", "text": "普通的 let 變數 —— 反正只是個數字" },
+        { "id": "d", "text": "localStorage —— 存久一點比較保險" }
+      ],
+      "answer": "a",
+      "explanation": "用刪去法收尾這一章：let 活不過重繪（q3），id 會弄丟、interval 再也清不掉；useState 能存，但改 id 會觸發一次毫無意義的重繪，還可能連鎖觸發 effect；localStorage 是跨「關閉網頁」的持久化，跟這需求無關。「跨重繪存活＋不影響畫面」的資料，useRef 是量身訂做的答案——這也是它在真實程式裡最常見的用法。",
+      "verify": {
+        "checks": [],
+        "manual": "屬設計選擇題，無單一執行輸出；判準依 react.dev referencing-values-with-refs 的使用時機"
+      }
+    }
+  ]
+}

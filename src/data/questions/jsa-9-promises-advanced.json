@@ -1,0 +1,147 @@
+{
+  "id": "jsa-9",
+  "title": "Promise 進階",
+  "questions": [
+    {
+      "id": "jsa-9-q1",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Promise.all 的結果照「傳入順序」排",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/all",
+      "story": "",
+      "prompt": "慢的排前面、快的排後面一起等。結果陣列長什麼樣？",
+      "code": "const fast = new Promise((r) => setTimeout(() => r(\"快\"), 10));\nconst slow = new Promise((r) => setTimeout(() => r(\"慢\"), 50));\n\nPromise.all([slow, fast]).then((res) => console.log(res));",
+      "options": [
+        { "id": "a", "text": "[ '慢', '快' ] —— 照傳入的順序" },
+        { "id": "b", "text": "[ '快', '慢' ] —— 照完成的順序" },
+        { "id": "c", "text": "'慢'（只回第一個）" },
+        { "id": "d", "text": "順序隨機，每次不一定" }
+      ],
+      "answer": "a",
+      "explanation": "Promise.all 等全員到齊後，把結果按「你傳進去的順序」排好還你——跟誰先跑完無關。這個保證很重要：同時抓使用者資料和訂單資料時，res[0] 永遠是使用者、res[1] 永遠是訂單，不會因為網路快慢而對調。",
+      "verify": {
+        "checks": [
+          { "code": "const fast = new Promise((r) => setTimeout(() => r(\"快\"), 10));\nconst slow = new Promise((r) => setTimeout(() => r(\"慢\"), 50));\nPromise.all([slow, fast]).then((res) => console.log(res));", "expected": "[ '慢', '快' ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-9-q2",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "Promise.race：誰先到聽誰的",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/race",
+      "story": "",
+      "prompt": "資料 10 毫秒就回來、逾時警報設在 50 毫秒。把空格填起來，讓「先發生的那個」決定結果（印出「資料」）",
+      "code": "const timeout = new Promise((_, reject) =>\n  setTimeout(() => reject(new Error(\"逾時\")), 50)\n);\nconst data = new Promise((r) => setTimeout(() => r(\"資料\"), 10));\n\n____([data, timeout])\n  .then((res) => console.log(res))\n  .catch((err) => console.log(err.message));",
+      "options": [
+        { "id": "a", "text": "Promise.race" },
+        { "id": "b", "text": "Promise.all" },
+        { "id": "c", "text": "Promise.wait" },
+        { "id": "d", "text": "setTimeout" }
+      ],
+      "answer": "a",
+      "explanation": "race 是賽跑：第一個有結果的（不管成功失敗）就定案。資料 10ms 先到，印「資料」，晚到的逾時警報沒人理。這是「請求逾時保護」的經典寫法。選項 b 的 all 會等到 50ms 的 reject 發生，反而印出「逾時」——語意完全相反；選項 c 不存在。",
+      "verify": {
+        "checks": [
+          { "code": "const timeout = new Promise((_, reject) =>\n  setTimeout(() => reject(new Error(\"逾時\")), 50)\n);\nconst data = new Promise((r) => setTimeout(() => r(\"資料\"), 10));\nPromise.race([data, timeout])\n  .then((res) => console.log(res))\n  .catch((err) => console.log(err.message));", "expected": "資料" },
+          { "code": "const timeout = new Promise((_, reject) =>\n  setTimeout(() => reject(new Error(\"逾時\")), 50)\n);\nconst data = new Promise((r) => setTimeout(() => r(\"資料\"), 10));\nPromise.all([data, timeout])\n  .then((res) => console.log(res))\n  .catch((err) => console.log(err.message));", "expected": "逾時" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-9-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "forEach 不會等 async callback",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach",
+      "story": "",
+      "prompt": "在 forEach 裡 await 加總，結果卻是 0。哪裡錯了？",
+      "code": "async function main() {\n  const ids = [1, 2];\n  let total = 0;\n\n  ids.forEach(async (id) => {          // B 行\n    total += await Promise.resolve(id);\n  });\n\n  console.log(total);   // 0 ??\n}\nmain();",
+      "options": [
+        { "id": "a", "text": "forEach 不會等 async callback 跑完就往下走；要改用 for...of 搭配 await" },
+        { "id": "b", "text": "total 應該宣告成 const" },
+        { "id": "c", "text": "Promise.resolve 不能放在 await 後面" },
+        { "id": "d", "text": "ids 陣列太短，至少要三個元素" }
+      ],
+      "answer": "a",
+      "explanation": "forEach 把 async callback 一個個「發射出去」就不管了——它根本不認得 Promise，不會等。console.log 跑的時候加總都還沒發生，所以是 0。這是真實專案裡出現率極高的 async 陷阱。要逐一等就用 for...of + await；想並行等全部就 Promise.all(ids.map(...))。記住：forEach 和 await 是絕配的反義詞。",
+      "verify": {
+        "checks": [
+          { "code": "async function main() {\n  const ids = [1, 2];\n  let total = 0;\n  ids.forEach(async (id) => {\n    total += await Promise.resolve(id);\n  });\n  console.log(total);\n}\nmain();", "expected": "0" },
+          { "code": "async function main() {\n  const ids = [1, 2];\n  let total = 0;\n  for (const id of ids) {\n    total += await Promise.resolve(id);\n  }\n  console.log(total);\n}\nmain();", "expected": "3" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-9-q4",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "all 全滅 vs allSettled 各自結案",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled",
+      "story": "",
+      "prompt": "兩個請求一成一敗。用 all 和用 allSettled 等它們，結果一樣嗎？",
+      "code": "const ok = Promise.resolve(1);\nconst bad = Promise.reject(new Error(\"X\"));\n\n// 版本一\nPromise.all([ok, bad])\n  .then((res) => console.log(\"成功\", res))\n  .catch(() => console.log(\"失敗\"));\n\n// 版本二\nPromise.allSettled([ok, bad]).then((res) =>\n  console.log(res[0].status, res[1].status)\n);",
+      "options": [
+        { "id": "a", "text": "不一樣：all 直接走 catch 印「失敗」；allSettled 印 fulfilled rejected，兩筆都拿得到" },
+        { "id": "b", "text": "一樣，兩個都走失敗路線" },
+        { "id": "c", "text": "一樣，兩個都拿到完整結果" },
+        { "id": "d", "text": "版本二會報錯，allSettled 不存在" }
+      ],
+      "answer": "a",
+      "explanation": "all 是「一票否決」：任何一個 reject，整包立刻失敗，成功的那筆也拿不到。allSettled 是「等大家都有結果」：每筆各自標 fulfilled 或 rejected，全部交給你自己分揀。批次寄信、批次上傳這種「部分失敗不該毀掉全部」的場景，用 allSettled 才對——AI 產的程式常不假思索用 all，值得你多看一眼。",
+      "verify": {
+        "checks": [
+          { "code": "const ok = Promise.resolve(1);\nconst bad = Promise.reject(new Error(\"X\"));\nPromise.all([ok, bad])\n  .then((res) => console.log(\"成功\", res))\n  .catch(() => console.log(\"失敗\"));", "expected": "失敗" },
+          { "code": "const ok = Promise.resolve(1);\nconst bad = Promise.reject(new Error(\"X\"));\nPromise.allSettled([ok, bad]).then((res) =>\n  console.log(res[0].status, res[1].status)\n);", "expected": "fulfilled rejected" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-9-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "all 的一票否決：成功的也拿不到",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/all",
+      "story": "",
+      "prompt": "A 請求其實成功了。這段程式印出什麼？",
+      "code": "const a = Promise.resolve(\"A 的資料\");\nconst b = Promise.reject(new Error(\"B 掛了\"));\n\nPromise.all([a, b])\n  .then((res) => console.log(\"拿到\", res))\n  .catch((err) => console.log(\"錯誤：\" + err.message));",
+      "options": [
+        { "id": "a", "text": "錯誤：B 掛了 —— A 的資料再成功也拿不到" },
+        { "id": "b", "text": "拿到 [ 'A 的資料' ]" },
+        { "id": "c", "text": "先印 拿到，再印 錯誤" },
+        { "id": "d", "text": "拿到 [ 'A 的資料', undefined ]" }
+      ],
+      "answer": "a",
+      "explanation": "all 只有兩種結局：全員成功走 then，或第一個失敗出現時整包走 catch——不存在「部分成功」的中間地帶，A 的資料被連坐丟掉了。除錯時的含義：畫面一片空白不代表所有請求都掛了，可能只是其中一個拖累全家。要救 A 的資料，就是上一題的 allSettled。",
+      "verify": {
+        "checks": [
+          { "code": "const a = Promise.resolve(\"A 的資料\");\nconst b = Promise.reject(new Error(\"B 掛了\"));\nPromise.all([a, b])\n  .then((res) => console.log(\"拿到\", res))\n  .catch((err) => console.log(\"錯誤：\" + err.message));", "expected": "錯誤：B 掛了" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-9-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "catch 之後，鏈會復活",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch",
+      "story": "",
+      "prompt": "catch 裡回傳了備用值。後面的 then 還會執行嗎？",
+      "code": "Promise.reject(new Error(\"斷線\"))\n  .catch(() => \"改用快取\")\n  .then((res) => console.log(\"結果：\" + res));",
+      "options": [
+        { "id": "a", "text": "結果：改用快取 —— catch 回傳值後，鏈恢復成功狀態繼續走" },
+        { "id": "b", "text": "什麼都不印，失敗過的鏈就死了" },
+        { "id": "c", "text": "結果：undefined" },
+        { "id": "d", "text": "結果：Error: 斷線" }
+      ],
+      "answer": "a",
+      "explanation": "catch 不只是「記錄錯誤」，它是急救站：只要在裡面 return 一個值，這條鏈就被救活，後面的 then 拿著備用值繼續走。這是「斷線就用快取、失敗就給預設值」的優雅寫法。反過來注意：catch 裡什麼都不 return，下一棒收到的是 undefined（選項 c 的情況）——救活歸救活，記得給值。",
+      "verify": {
+        "checks": [
+          { "code": "Promise.reject(new Error(\"斷線\"))\n  .catch(() => \"改用快取\")\n  .then((res) => console.log(\"結果：\" + res));", "expected": "結果：改用快取" }
+        ]
+      }
+    }
+  ]
+}

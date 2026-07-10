@@ -1,0 +1,145 @@
+{
+  "id": "jsa-5",
+  "title": "類別（class）",
+  "questions": [
+    {
+      "id": "jsa-5-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "class 的基本結構",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes",
+      "story": "",
+      "prompt": "用 class 做一隻寵物。這段程式印出什麼？",
+      "code": "class Pet {\n  constructor(name) {\n    this.name = name;\n  }\n  speak() {\n    return `${this.name}：啾啾`;\n  }\n}\n\nconst p = new Pet(\"皮皮\");\nconsole.log(p.speak());",
+      "options": [
+        { "id": "a", "text": "皮皮：啾啾" },
+        { "id": "b", "text": "undefined：啾啾" },
+        { "id": "c", "text": "name：啾啾" },
+        { "id": "d", "text": "會報錯" }
+      ],
+      "answer": "a",
+      "explanation": "class 是「物件的製造模具」：new Pet(\"皮皮\") 開一個新物件，constructor 立刻執行，把名字掛到 this 上。之後呼叫 p.speak()，this 就是 p 本人（第二章 this 關卡的規則：誰的方法誰呼叫）。讀懂 class 很重要——AI 和很多函式庫的程式碼都長這樣。",
+      "verify": {
+        "checks": [
+          { "code": "class Pet {\n  constructor(name) {\n    this.name = name;\n  }\n  speak() {\n    return `${this.name}：啾啾`;\n  }\n}\nconst p = new Pet(\"皮皮\");\nconsole.log(p.speak());", "expected": "皮皮：啾啾" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-5-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "class 一定要用 new",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes/constructor",
+      "story": "",
+      "prompt": "想做一隻寵物，程式卻直接爆炸。哪裡錯了？",
+      "code": "class Pet {\n  constructor(name) {\n    this.name = name;\n  }\n}\n\nconst p = Pet(\"皮皮\");   // B 行 💥\nconsole.log(p.name);",
+      "options": [
+        { "id": "a", "text": "B 行少了 new：class 不能像一般函式那樣直接呼叫" },
+        { "id": "b", "text": "constructor 拼錯了" },
+        { "id": "c", "text": "class 裡不能用 this" },
+        { "id": "d", "text": "Pet 要先 export 才能用" }
+      ],
+      "answer": "a",
+      "explanation": "錯誤訊息會說得很白：Class constructor Pet cannot be invoked without 'new'。class 跟舊式的建構函式不同，它強制要求 new——這其實是保護你：忘了 new 的舊式函式會默默把屬性掛到全域，class 則直接報錯讓你當場發現。看到這句錯誤訊息，補上 new 就對了。",
+      "verify": {
+        "checks": [
+          { "code": "class Pet {\n  constructor(name) {\n    this.name = name;\n  }\n}\nconst p = Pet(\"皮皮\");\nconsole.log(p.name);", "expectError": "cannot be invoked without 'new'" },
+          { "code": "class Pet {\n  constructor(name) {\n    this.name = name;\n  }\n}\nconst p = new Pet(\"皮皮\");\nconsole.log(p.name);", "expected": "皮皮" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-5-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "extends 繼承與 super",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes/extends",
+      "story": "",
+      "prompt": "Dog 繼承 Animal 並加料。這段程式印出什麼？",
+      "code": "class Animal {\n  constructor(name) {\n    this.name = name;\n  }\n  intro() {\n    return `我是${this.name}`;\n  }\n}\n\nclass Dog extends Animal {\n  intro() {\n    return super.intro() + \"，汪！\";\n  }\n}\n\nconsole.log(new Dog(\"旺旺\").intro());",
+      "options": [
+        { "id": "a", "text": "我是旺旺，汪！" },
+        { "id": "b", "text": "我是旺旺" },
+        { "id": "c", "text": "，汪！" },
+        { "id": "d", "text": "會報錯，Dog 沒有 constructor" }
+      ],
+      "answer": "a",
+      "explanation": "extends 讓 Dog 拿到 Animal 的全部家當（包括 constructor，所以選項 d 不對——沒寫就自動沿用爸爸的）。Dog 自己的 intro 蓋掉了 Animal 的版本，但用 super.intro() 還是叫得到爸爸的原版，接上「，汪！」加料。「覆寫再借用原版」是繼承最常見的模式。",
+      "verify": {
+        "checks": [
+          { "code": "class Animal {\n  constructor(name) {\n    this.name = name;\n  }\n  intro() {\n    return `我是${this.name}`;\n  }\n}\nclass Dog extends Animal {\n  intro() {\n    return super.intro() + \"，汪！\";\n  }\n}\nconsole.log(new Dog(\"旺旺\").intro());", "expected": "我是旺旺，汪！" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-5-q4",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "class 與 closure 工廠是同一件事的兩種寫法",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes",
+      "story": "",
+      "prompt": "一個用 class、一個用 closure 工廠（第二章的老朋友）。兩段印出來一樣嗎？",
+      "code": "// 版本一\nclass Counter {\n  count = 0;\n  add() { return ++this.count; }\n}\nconst a = new Counter();\nconst b = new Counter();\na.add(); a.add();\nconsole.log(a.add(), b.add());\n\n// 版本二\nfunction makeCounter() {\n  let count = 0;\n  return { add: () => ++count };\n}\nconst c = makeCounter();\nconst d = makeCounter();\nc.add(); c.add();\nconsole.log(c.add(), d.add());",
+      "options": [
+        { "id": "a", "text": "一樣，都印 3 1" },
+        { "id": "b", "text": "不一樣：class 版的 a、b 共用同一個 count" },
+        { "id": "c", "text": "不一樣：closure 版會報錯" },
+        { "id": "d", "text": "一樣，都印 2 1" }
+      ],
+      "answer": "a",
+      "explanation": "兩版都是「每做一個新的，就有自己獨立的 count」：class 靠 new 開新物件掛 this.count，closure 靠每次呼叫工廠生出新變數。a 被叫三次（別忘了 console.log 括號裡那次）是 3，b 第一次是 1。這兩種寫法你在真實程式裡都會遇到，認出「它們在做同一件事」是讀 code 功力的重要一步。",
+      "verify": {
+        "checks": [
+          { "code": "class Counter {\n  count = 0;\n  add() { return ++this.count; }\n}\nconst a = new Counter();\nconst b = new Counter();\na.add(); a.add();\nconsole.log(a.add(), b.add());\nfunction makeCounter() {\n  let count = 0;\n  return { add: () => ++count };\n}\nconst c = makeCounter();\nconst d = makeCounter();\nc.add(); c.add();\nconsole.log(c.add(), d.add());", "expected": "3 1\n3 1" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-5-q5",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "子類別的 constructor 要先 super",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/super",
+      "story": "",
+      "prompt": "Vip 繼承 User 又要多存一個等級。把空格填起來，讓程式印出「小美 3」",
+      "code": "class User {\n  constructor(name) {\n    this.name = name;\n  }\n}\n\nclass Vip extends User {\n  constructor(name, level) {\n    ____;\n    this.level = level;\n  }\n}\n\nconst v = new Vip(\"小美\", 3);\nconsole.log(v.name, v.level);",
+      "options": [
+        { "id": "a", "text": "super(name)" },
+        { "id": "b", "text": "this.name = name" },
+        { "id": "c", "text": "User(name)" },
+        { "id": "d", "text": "new User(name)" }
+      ],
+      "answer": "a",
+      "explanation": "子類別自己寫 constructor 時，規則很硬：碰 this 之前必須先呼叫 super()——它負責執行爸爸的 constructor、把 this 準備好。選項 b 跳過 super 直接碰 this，會報 ReferenceError；選項 c 是普通呼叫 class（上上題的錯）；選項 d 做出一個沒人接住的新物件，跟現在這個 this 無關。",
+      "verify": {
+        "checks": [
+          { "code": "class User {\n  constructor(name) {\n    this.name = name;\n  }\n}\nclass Vip extends User {\n  constructor(name, level) {\n    super(name);\n    this.level = level;\n  }\n}\nconst v = new Vip(\"小美\", 3);\nconsole.log(v.name, v.level);", "expected": "小美 3" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-5-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "static 方法屬於類別，不屬於實例",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes/static",
+      "story": "",
+      "prompt": "double 標了 static。這段程式印出什麼？",
+      "code": "class MathKit {\n  static double(n) {\n    return n * 2;\n  }\n}\n\nconst kit = new MathKit();\nconsole.log(MathKit.double(5));\nconsole.log(typeof kit.double);",
+      "options": [
+        { "id": "a", "text": "10 然後 undefined" },
+        { "id": "b", "text": "10 然後 function" },
+        { "id": "c", "text": "兩行都報錯" },
+        { "id": "d", "text": "undefined 然後 function" }
+      ],
+      "answer": "a",
+      "explanation": "static 方法掛在「類別本身」，用 MathKit.double 呼叫，跟做出來的實例無關——kit 身上根本沒有 double，typeof 回 undefined。你早就用過這個模式：Object.keys、Array.isArray、Promise.all 全是 static 方法。看到 Xxx.方法() 這種呼叫，就知道它是類別層級的工具函式。",
+      "verify": {
+        "checks": [
+          { "code": "class MathKit {\n  static double(n) {\n    return n * 2;\n  }\n}\nconst kit = new MathKit();\nconsole.log(MathKit.double(5));\nconsole.log(typeof kit.double);", "expected": "10\nundefined" }
+        ]
+      }
+    }
+  ]
+}

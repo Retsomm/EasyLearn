@@ -1,0 +1,146 @@
+{
+  "id": "jsb-7",
+  "title": "數字與日期",
+  "questions": [
+    {
+      "id": "jsb-7-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "0.1 + 0.2 的世界名場面",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Number",
+      "story": "",
+      "prompt": "最簡單的小數加法。這段程式印出什麼？",
+      "code": "console.log(0.1 + 0.2);\nconsole.log(0.1 + 0.2 === 0.3);",
+      "options": [
+        { "id": "a", "text": "0.30000000000000004 和 false" },
+        { "id": "b", "text": "0.3 和 true" },
+        { "id": "c", "text": "0.3 和 false" },
+        { "id": "d", "text": "會報錯" }
+      ],
+      "answer": "a",
+      "explanation": "電腦用二進位存小數，0.1 和 0.2 都存不準，加起來多出一條小尾巴。這不是 JavaScript 的 bug，所有用 IEEE 754 的語言都一樣。實務對策：金額用「分」為單位存整數，或比較時用誤差範圍（Math.abs(a - b) < Number.EPSILON）。看到 0.30000000000000004 不要慌，它是老朋友。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(0.1 + 0.2);\nconsole.log(0.1 + 0.2 === 0.3);", "expected": "0.30000000000000004\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-7-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "parseInt 與 Number 的個性差異",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/parseInt",
+      "story": "",
+      "prompt": "同一個字串 \"42px\"，兩種轉數字的方式。各印出什麼？",
+      "code": "console.log(parseInt(\"42px\"));\nconsole.log(Number(\"42px\"));",
+      "options": [
+        { "id": "a", "text": "42 和 NaN" },
+        { "id": "b", "text": "NaN 和 NaN" },
+        { "id": "c", "text": "42 和 42" },
+        { "id": "d", "text": "NaN 和 42" }
+      ],
+      "answer": "a",
+      "explanation": "parseInt 是「從頭盡量讀」：讀到 42 碰到 p 就停手交卷。Number 是「全有或全無」：整串必須是合法數字，混了字母直接 NaN。抓 CSS 值（\"42px\"）用 parseInt 剛好；驗證使用者輸入是不是「純數字」用 Number 比較嚴謹。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(parseInt(\"42px\"));\nconsole.log(Number(\"42px\"));", "expected": "42\nNaN" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-7-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "toFixed 回傳的是字串",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Number/toFixed",
+      "story": "",
+      "prompt": "四捨五入到兩位後加上運費，總價卻變成一串怪數字。哪裡錯了？",
+      "code": "const price = 19.987;\nconst rounded = price.toFixed(2);   // A 行\nconst total = rounded + 5;          // B 行\nconsole.log(total);                 // 19.995 ?? 預期 24.99",
+      "options": [
+        { "id": "a", "text": "toFixed 回傳「字串」，B 行的 + 變成黏字串；要先 Number(rounded) 再加" },
+        { "id": "b", "text": "toFixed(2) 應該寫 toFixed(\"2\")" },
+        { "id": "c", "text": "運費 5 要寫成 5.00 才能相加" },
+        { "id": "d", "text": "A 行要用 Math.round 才對" }
+      ],
+      "answer": "a",
+      "explanation": "toFixed 的本職是「格式化給人看」，所以回傳字串 \"19.99\"——接著 \"19.99\" + 5 就黏成 \"19.995\"（第一章的字串加法陷阱穿了新衣服）。要繼續算數學就先轉回來：Number(rounded) + 5。原則：toFixed 放在「最後要顯示」的那一刻，中間運算全程用數字。",
+      "verify": {
+        "checks": [
+          { "code": "const price = 19.987;\nconst rounded = price.toFixed(2);\nconst total = rounded + 5;\nconsole.log(total);", "expected": "19.995" },
+          { "code": "const price = 19.987;\nconst rounded = price.toFixed(2);\nconst total = Number(rounded) + 5;\nconsole.log(total);", "expected": "24.99" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-7-q4",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "round 四捨五入、floor 無條件捨去",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Math/round",
+      "story": "",
+      "prompt": "同樣處理 4.6 和 4.4，round 和 floor 的結果一樣嗎？",
+      "code": "// 版本一\nconsole.log(Math.round(4.6), Math.round(4.4));\n\n// 版本二\nconsole.log(Math.floor(4.6), Math.floor(4.4));",
+      "options": [
+        { "id": "a", "text": "不一樣：round 印 5 4，floor 印 4 4" },
+        { "id": "b", "text": "一樣，都印 5 4" },
+        { "id": "c", "text": "一樣，都印 4 4" },
+        { "id": "d", "text": "不一樣：round 印 5 5，floor 印 4 4" }
+      ],
+      "answer": "a",
+      "explanation": "round 看小數決定進退（4.6 進位成 5、4.4 捨去成 4）；floor 一律往下踩（兩個都變 4），還有個兄弟 ceil 一律往上。挑哪個看業務規則：點數不足一元捨去用 floor、分頁數要無條件進位用 ceil——用錯的話帳目會差一塊錢，這種 bug 找起來最痛。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(Math.round(4.6), Math.round(4.4));\nconsole.log(Math.floor(4.6), Math.floor(4.4));", "expected": "5 4\n4 4" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-7-q5",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "擲一顆公平的骰子",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Math/random",
+      "story": "",
+      "prompt": "把空格填起來，做出 1 到 6 均勻分布的骰子",
+      "code": "const dice = ____;\n// 需求：整數、範圍 1~6、每個數字機率相同",
+      "options": [
+        { "id": "a", "text": "Math.floor(Math.random() * 6) + 1" },
+        { "id": "b", "text": "Math.round(Math.random() * 6)" },
+        { "id": "c", "text": "Math.random() * 6" },
+        { "id": "d", "text": "Math.random(1, 6)" }
+      ],
+      "answer": "a",
+      "explanation": "Math.random() 給 0（含）到 1（不含）的小數：乘 6 變成 0~5.999...，floor 踩成 0~5，加 1 得到 1~6，每格機率相等。選項 b 的 round 會產生 0 和 6，而且 1~5 的機率是 0 和 6 的兩倍（分布歪掉）；選項 c 是小數；選項 d——Math.random 根本不收參數，範圍要自己算。",
+      "verify": {
+        "checks": [
+          { "code": "let ok = true;\nconst seen = new Set();\nfor (let i = 0; i < 5000; i++) {\n  const dice = Math.floor(Math.random() * 6) + 1;\n  if (!Number.isInteger(dice) || dice < 1 || dice > 6) ok = false;\n  seen.add(dice);\n}\nconsole.log(ok, seen.size);", "expected": "true 6" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-7-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "Date 的月份從 0 起算",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Date",
+      "story": "",
+      "prompt": "想建立「2026 年 7 月 10 日」而寫下這段程式。印出什麼？實際上建立的是幾月？",
+      "code": "const d = new Date(2026, 7, 10);\nconsole.log(d.getMonth(), d.getDate());",
+      "options": [
+        { "id": "a", "text": "7 10 —— 但這其實是「8 月」10 日，月份從 0 起算" },
+        { "id": "b", "text": "7 10 —— 就是 7 月 10 日，沒問題" },
+        { "id": "c", "text": "6 10 —— 是 7 月 10 日" },
+        { "id": "d", "text": "會報錯，月份不能超過 6" }
+      ],
+      "answer": "a",
+      "explanation": "Date 的月份是 0～11：0 是一月、7 是「八月」——但日期（getDate）又是正常的 1 起算，只有月份特立獨行。這是 JavaScript 最著名的歷史包袱之一，生日提醒慢一個月、報表跨錯月，兇手常常是它。要 7 月就得寫 new Date(2026, 6, 10)。碰 Date 的月份時，永遠多看一眼。",
+      "verify": {
+        "checks": [
+          { "code": "const d = new Date(2026, 7, 10);\nconsole.log(d.getMonth(), d.getDate());", "expected": "7 10" },
+          { "code": "const d = new Date(2026, 6, 10);\nconsole.log(d.getMonth() + 1);", "expected": "7" }
+        ]
+      }
+    }
+  ]
+}

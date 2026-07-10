@@ -1,0 +1,140 @@
+{
+  "id": "react-8",
+  "title": "元件間共享 state",
+  "questions": [
+    {
+      "id": "react-8-q1",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "單一資料源：一份資料餵兩個元件",
+      "docs": "https://react.dev/learn/sharing-state-between-components",
+      "story": "",
+      "prompt": "價格只存在父層，傳給兩個子元件。渲染出什麼？",
+      "code": "function Price({ value }) {\n  return <p>價格：{value}</p>;\n}\nfunction Summary({ value }) {\n  return <p>總計：{value}</p>;\n}\n\nfunction App() {\n  const price = 100;   // 想像這是父層的 state\n  return (\n    <div>\n      <Price value={price} />\n      <Summary value={price} />\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "<div><p>價格：100</p><p>總計：100</p></div> —— 兩處永遠同步" },
+        { "id": "b", "text": "只有第一個元件拿得到 value" },
+        { "id": "c", "text": "會報錯，同一個變數不能傳給兩個元件" },
+        { "id": "d", "text": "<div><p>價格：100</p><p>總計：undefined</p></div>" }
+      ],
+      "answer": "a",
+      "explanation": "資料只有一份、住在父層，兩個子元件都從同一個源頭領——父層改了，兩邊自動一起變，不可能不同步。這就是「單一資料源」（single source of truth）：要讓多個元件顯示同一份資料，答案永遠是往上放，而不是各自存一份再想辦法對齊。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Price({ value }) {\n  return <p>價格：{value}</p>;\n}\nfunction Summary({ value }) {\n  return <p>總計：{value}</p>;\n}\nfunction App() {\n  const price = 100;\n  return (\n    <div>\n      <Price value={price} />\n      <Summary value={price} />\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<div><p>價格：100</p><p>總計：100</p></div>" }
+        ]
+      }
+    },
+    {
+      "id": "react-8-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "同名的 state 不等於同一個 state",
+      "docs": "https://react.dev/learn/sharing-state-between-components",
+      "story": "",
+      "prompt": "兩個搜尋框想要連動，在左邊打字右邊卻不動。哪裡錯了？",
+      "code": "function SearchA() {\n  const [keyword, setKeyword] = useState(\"\");\n  return <input value={keyword} onChange={(e) => setKeyword(e.target.value)} />;\n}\n\nfunction SearchB() {\n  const [keyword, setKeyword] = useState(\"\");   // 名字一樣，應該會同步吧??\n  return <input value={keyword} onChange={(e) => setKeyword(e.target.value)} />;\n}",
+      "options": [
+        { "id": "a", "text": "state 是每個元件私有的，變數名一樣也是兩份獨立記憶；要連動就把 keyword 搬到共同的父層，用 props 傳下來" },
+        { "id": "b", "text": "setKeyword 不能在 onChange 裡呼叫" },
+        { "id": "c", "text": "兩個元件的 useState 初始值要設成不同字串" },
+        { "id": "d", "text": "input 少了 name 屬性所以不同步" }
+      ],
+      "answer": "a",
+      "explanation": "useState 的記憶是「跟著元件實例走」的（jsa-2 closure 關卡的獨立記憶空間，正是這個機制）——SearchA 和 SearchB 各有各的 keyword，名字相同純屬巧合。想同步，標準手術叫「狀態上移」（lifting state up）：把 state 搬到兩者最近的共同父層，父層把值和修改函式一起用 props 發下去。",
+      "verify": {
+        "checks": [],
+        "manual": "需要打字互動觀察不同步；機制依 react.dev sharing-state-between-components（state 為元件實例私有）"
+      }
+    },
+    {
+      "id": "react-8-q3",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "資料往下、事件往上",
+      "docs": "https://react.dev/learn/sharing-state-between-components",
+      "story": "",
+      "prompt": "子元件按鈕呼叫父層給的 onAdd。連按兩下後，畫面顯示多少？",
+      "code": "function AddButton({ onAdd }) {\n  return <button onClick={() => onAdd(10)}>+10</button>;\n}\n\nfunction Parent() {\n  const [xp, setXp] = useState(0);\n  return (\n    <div>\n      <AddButton onAdd={(n) => setXp(xp + n)} />\n      <p>XP：{xp}</p>\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "20 —— 每按一下重繪一次，下一次的 xp 已是新值" },
+        { "id": "b", "text": "10 —— 跟快照題一樣，第二下無效" },
+        { "id": "c", "text": "0 —— 子元件不能改父層的 state" },
+        { "id": "d", "text": "會報錯，函式不能當 props 傳" }
+      ],
+      "answer": "a",
+      "explanation": "這就是「資料往下、事件往上」：xp 用 props 流下去顯示，子元件的點擊透過 onAdd 回報上來、由擁有 state 的父層修改。跟 react-3 快照題的差別在「兩次點擊隔著一次重繪」：第一下用 xp=0 算出 10，重繪後新的 onAdd 抓到 xp=10，第二下算出 20。快照只在「同一次事件裡連寫多次」才會咬人。",
+      "verify": {
+        "checks": [],
+        "manual": "需要點擊互動；行為依 react.dev sharing-state-between-components 與 state-as-a-snapshot（跨事件的重繪間 closure 更新）"
+      }
+    },
+    {
+      "id": "react-8-q4",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "直接用 props vs 把 props 抄進自己的 state",
+      "docs": "https://react.dev/learn/sharing-state-between-components",
+      "story": "",
+      "prompt": "都是顯示父層傳來的名字。父層之後把 name 改成「小華」，兩個版本的畫面一樣嗎？",
+      "code": "// 版本一：直接用 props\nfunction Tag1({ name }) {\n  return <p>{name}</p>;\n}\n\n// 版本二：把 props 抄進自己的 state\nfunction Tag2({ name }) {\n  const [localName] = useState(name);   // 只在第一次渲染時抄一份\n  return <p>{localName}</p>;\n}",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一跟著變成小華；版本二停在第一次抄的舊名字" },
+        { "id": "b", "text": "一樣，都會變成小華" },
+        { "id": "c", "text": "一樣，都停在舊名字" },
+        { "id": "d", "text": "版本二會報錯，useState 不能吃 props" }
+      ],
+      "answer": "a",
+      "explanation": "useState(name) 的初始值「只在元件第一次出生時」被讀取一次，之後 props 再怎麼更新，這份私人抄本都不會跟著改——畫面就凍結在舊資料。這個反模式叫「把 props 鏡像進 state」，是資料不同步 bug 的高產區（AI 也常寫出來）。原則：能直接用 props 就直接用，state 只放「這個元件自己產生的資料」。",
+      "verify": {
+        "checks": [],
+        "manual": "需要 props 變更的多輪渲染；機制依 react.dev（useState 初始值僅在初次渲染採用）"
+      }
+    },
+    {
+      "id": "react-8-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "把資料一路傳下去（props drilling）",
+      "docs": "https://react.dev/learn/sharing-state-between-components",
+      "story": "",
+      "prompt": "Dashboard 收到 xp 後要交給內層的 Stat 顯示。把空格填起來",
+      "code": "function Stat({ xp }) {\n  return <p>XP：{xp}</p>;\n}\n\nfunction Dashboard({ xp }) {\n  return <section>____</section>;\n}\n\n// <Dashboard xp={50} /> → <section><p>XP：50</p></section>",
+      "options": [
+        { "id": "a", "text": "<Stat xp={xp} />" },
+        { "id": "b", "text": "<Stat />" },
+        { "id": "c", "text": "<Stat xp=\"xp\" />" },
+        { "id": "d", "text": "<Stat xp={50} />" }
+      ],
+      "answer": "a",
+      "explanation": "中繼站元件要「接了再傳」：Dashboard 收到的 xp 得親手放進 <Stat xp={xp} />，props 不會自動穿透。選項 b 沒傳，Stat 收到 undefined；選項 c 用引號傳了「xp」三個字母（react-2 的坑）；選項 d 寫死 50，父層改值它也不動。層層轉手太深時會很煩——那就是 Context（下下關）出場的時機。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Stat({ xp }) {\n  return <p>XP：{xp}</p>;\n}\nfunction Dashboard({ xp }) {\n  return <section><Stat xp={xp} /></section>;\n}\nconsole.log(renderToStaticMarkup(<Dashboard xp={50} />));", "expected": "<section><p>XP：50</p></section>" }
+        ]
+      }
+    },
+    {
+      "id": "react-8-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "同一份資料存兩份，遲早出事",
+      "docs": "https://react.dev/learn/sharing-state-between-components",
+      "story": "",
+      "prompt": "購物車數量同時存在兩個元件各自的 state 裡。長期來看會發生什麼？",
+      "code": "function CartIcon() {\n  const [count, setCount] = useState(0);   // 存一份\n  // ...\n}\nfunction CartPage() {\n  const [count, setCount] = useState(0);   // 又存一份\n  // ...\n}",
+      "options": [
+        { "id": "a", "text": "兩份數字遲早對不上（一邊加了另一邊不知道），畫面出現「圖示寫 3、頁面寫 2」的靈異現象" },
+        { "id": "b", "text": "React 會自動偵測同名 state 並幫忙同步" },
+        { "id": "c", "text": "不會有問題，反正初始值都是 0" },
+        { "id": "d", "text": "會報錯，count 這個名字已被使用" }
+      ],
+      "answer": "a",
+      "explanation": "重複的 state 就像兩本各記各的帳，遲早對不齊——而且壞的時候不報錯，只是畫面各說各話，除錯特別花時間。React 完全不會幫你同步（選項 b 是美好的幻想）。解法回到本關主題：數量只存一份在共同父層（或全域狀態），兩個元件都當「顯示器」。設計 state 的第一個提問永遠是：「這份資料的唯一真相該住在哪？」",
+      "verify": {
+        "checks": [],
+        "manual": "屬架構設計判斷，無單一可執行輸出；依 react.dev sharing-state-between-components 的單一資料源原則"
+      }
+    }
+  ]
+}

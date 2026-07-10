@@ -1,0 +1,138 @@
+{
+  "id": "react-9",
+  "title": "state 的保留與重置",
+  "questions": [
+    {
+      "id": "react-9-q1",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "同位置同元件，state 會被保留",
+      "docs": "https://react.dev/learn/preserving-and-resetting-state",
+      "story": "",
+      "prompt": "計數器已經按到 5。父層重新渲染、props 的顏色從紅變藍之後，計數器顯示多少？",
+      "code": "function Counter({ color }) {\n  const [count, setCount] = useState(0);\n  return (\n    <button style={{ color }} onClick={() => setCount(count + 1)}>\n      {count}\n    </button>\n  );\n}\n\n// 父層原本渲染 <Counter color=\"red\" />（已按到 5）\n// 之後改渲染 <Counter color=\"blue\" />",
+      "options": [
+        { "id": "a", "text": "5 —— 同一個位置、同一種元件，state 原封不動，只有顏色變了" },
+        { "id": "b", "text": "0 —— props 一變 state 就重置" },
+        { "id": "c", "text": "會報錯，props 改變時不能保留 state" },
+        { "id": "d", "text": "5 或 0 隨機，看 React 心情" }
+      ],
+      "answer": "a",
+      "explanation": "React 認 state 的方式是「元件樹上的位置＋元件種類」，不是 props：位置沒變、還是 Counter，記憶就繼續用，props 只是換了新值流進來。這解釋了很多「奇怪」的現象——例如切換使用者但表單內容沒清空。想在某個時機強制歸零？那是 key 的工作（下一題）。",
+      "verify": {
+        "checks": [],
+        "manual": "需要多輪渲染與點擊互動；機制依 react.dev preserving-and-resetting-state（同位置同型別保留 state）"
+      }
+    },
+    {
+      "id": "react-9-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "換 key＝整組打掉重練",
+      "docs": "https://react.dev/learn/preserving-and-resetting-state",
+      "story": "",
+      "prompt": "同一個 Counter 已按到 5。父層把 key 從 \"a\" 換成 \"b\" 之後，顯示多少？",
+      "code": "// 原本：<Counter key=\"a\" />（已按到 5）\n// 之後：<Counter key=\"b\" />",
+      "options": [
+        { "id": "a", "text": "0 —— key 變了，React 把舊的整個拆掉、裝一個全新的，state 歸零" },
+        { "id": "b", "text": "5 —— key 只影響列表排序" },
+        { "id": "c", "text": "會報錯，key 不能中途更換" },
+        { "id": "d", "text": "10 —— 新舊兩個 state 相加" }
+      ],
+      "answer": "a",
+      "explanation": "key 是元件的身分證：號碼一換，React 認定「這是別人」，舊實例連同 state 一起火化，新實例從 useState 初始值重新出生。這是「強制重置」的官方正解——切換使用者時讓表單歸零，寫 <ProfileForm key={userId} /> 一行搞定，比在 useEffect 裡手動清空每個欄位乾淨得多。",
+      "verify": {
+        "checks": [],
+        "manual": "需要多輪渲染互動；機制依 react.dev preserving-and-resetting-state（key 變更觸發重建）"
+      }
+    },
+    {
+      "id": "react-9-q3",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "用 index 當 key，刪除時 state 錯位",
+      "docs": "https://react.dev/learn/preserving-and-resetting-state",
+      "story": "",
+      "prompt": "每列有個輸入框。刪掉第一列後，原本打在第二列的字竟然跑到第一列。哪裡錯了？",
+      "code": "{rows.map((row, index) => (\n  <RowEditor key={index} row={row} />   // B 行\n))}\n// RowEditor 內部有自己的 useState 存輸入中的文字",
+      "options": [
+        { "id": "a", "text": "B 行用 index 當 key：刪除後每列的 index 全部往前補位，React 誤以為「還是原來那批元件」，state 跟錯了主人；要用資料自帶的穩定 id" },
+        { "id": "b", "text": "RowEditor 不能有自己的 state" },
+        { "id": "c", "text": "map 的第二個參數不是 index" },
+        { "id": "d", "text": "刪除功能本身寫錯了" }
+      ],
+      "answer": "a",
+      "explanation": "刪掉第 0 列後，原本的第 1 列變成新的第 0 列——key 還是 0！React 對照新舊樹：「key 0 還在嘛」，於是把舊 key 0 的 state（第一列的輸入文字）留給了現在排第一的列。資料會增刪、排序的列表，key 必須用資料自身的穩定 id。這是 React 面試與實務的雙料經典題。",
+      "verify": {
+        "checks": [],
+        "manual": "需要刪除互動觀察 state 錯位；機制依 react.dev preserving-and-resetting-state（index key 與 state 對應）"
+      }
+    },
+    {
+      "id": "react-9-q4",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "key 用 id vs 用 index，什麼時候有差",
+      "docs": "https://react.dev/learn/preserving-and-resetting-state",
+      "story": "",
+      "prompt": "一個用 id、一個用 index 當 key。如果這個列表「永遠只會整批顯示、不增刪不排序」，兩種寫法的行為一樣嗎？",
+      "code": "// 版本一\n{items.map((item) => <Row key={item.id} item={item} />)}\n\n// 版本二\n{items.map((item, i) => <Row key={i} item={item} />)}",
+      "options": [
+        { "id": "a", "text": "這種靜態列表下行為一樣；但只要未來加上增刪或排序，版本二就會出現上一題的 state 錯位" },
+        { "id": "b", "text": "永遠不一樣，index 當 key 一律直接報錯" },
+        { "id": "c", "text": "永遠一樣，key 只是拿來消除 console 警告的" },
+        { "id": "d", "text": "版本一比較慢，id 比 index 難比對" }
+      ],
+      "answer": "a",
+      "explanation": "誠實地說：靜態列表用 index 當 key 不會壞——這也是為什麼很多教學範例這樣寫。問題在「未來」：需求一改成可刪可排，炸彈就引爆，而且症狀詭異難查。所以工程上的慣例是一律用穩定 id，把「這個列表以後會不會變動」的賭注直接消掉。讀 AI 產的程式看到 key={index}，該在心裡亮一盞黃燈。",
+      "verify": {
+        "checks": [],
+        "manual": "差異僅在增刪排序的互動情境出現；依 react.dev preserving-and-resetting-state 與 rendering-lists 的 key 準則"
+      }
+    },
+    {
+      "id": "react-9-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用 key 強制表單重置",
+      "docs": "https://react.dev/learn/preserving-and-resetting-state",
+      "story": "",
+      "prompt": "切換使用者時，個人資料表單要整個歸零重來。把空格填起來",
+      "code": "function App({ userId }) {\n  return <ProfileForm key={____} userId={userId} />;\n}",
+      "options": [
+        { "id": "a", "text": "userId" },
+        { "id": "b", "text": "\"profile\"" },
+        { "id": "c", "text": "Math.random()" },
+        { "id": "d", "text": "0" }
+      ],
+      "answer": "a",
+      "explanation": "key 綁 userId：換人 → key 變 → 舊表單連 state 整組拆掉、新表單乾乾淨淨出生，一行解決。選項 b 和 d 是寫死的 key，換人也不變、等於沒設；選項 c 最毒——每次渲染 key 都不同，表單「每一次重繪」都被打掉重練，打一個字就重置一次。key 要「該變的時候變，不該變的時候穩定」。",
+      "verify": {
+        "checks": [],
+        "manual": "需要切換 userId 的互動；機制依 react.dev preserving-and-resetting-state（以 key 重置元件）"
+      }
+    },
+    {
+      "id": "react-9-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "同位置換了「不同種類」的元件",
+      "docs": "https://react.dev/learn/preserving-and-resetting-state",
+      "story": "",
+      "prompt": "同一個位置，從 <TextTab />（內部計數到 5）切換成 <ImageTab /> 再切回來。TextTab 顯示多少？",
+      "code": "// 第一階段：<div>{tab === \"text\" ? <TextTab /> : <ImageTab />}</div>\n// TextTab 內部 state 按到 5\n// 切到 image 再切回 text",
+      "options": [
+        { "id": "a", "text": "0 —— 同位置一旦換過「不同種類」的元件，舊 state 就被銷毀，切回來是全新實例" },
+        { "id": "b", "text": "5 —— React 會幫每個分頁保留各自的 state" },
+        { "id": "c", "text": "5 —— 因為變數名還是 TextTab" },
+        { "id": "d", "text": "會報錯，三元運算子不能切換不同元件" }
+      ],
+      "answer": "a",
+      "explanation": "位置相同但「種類」變了（TextTab → ImageTab），React 就把整棵子樹拆掉；切回來時的 TextTab 是重新出生的，記憶歸零。想讓分頁各自記住狀態？兩條路：state 上移到父層保管，或兩個分頁都掛著、用 CSS 隱藏不顯示的那個。「切個分頁資料就不見」是新手最常回報的靈異現象，成因就是這條規則。",
+      "verify": {
+        "checks": [],
+        "manual": "需要切換互動觀察 state 銷毀；機制依 react.dev preserving-and-resetting-state（同位置不同型別即重建）"
+      }
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+{
+  "id": "jsb-5",
+  "title": "流程控制與錯誤處理",
+  "questions": [
+    {
+      "id": "jsb-5-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "if / else if 的判斷順序",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/if...else",
+      "story": "",
+      "prompt": "成績是 75 分。這段程式印出什麼？",
+      "code": "const score = 75;\nif (score >= 90) {\n  console.log(\"優等\");\n} else if (score >= 60) {\n  console.log(\"及格\");\n} else {\n  console.log(\"不及格\");\n}",
+      "options": [
+        { "id": "a", "text": "及格" },
+        { "id": "b", "text": "優等" },
+        { "id": "c", "text": "及格 和 不及格 都印" },
+        { "id": "d", "text": "什麼都不印" }
+      ],
+      "answer": "a",
+      "explanation": "if / else if 是由上往下逐個檢查，命中一個就結束，後面的看都不看。75 過不了 90 的門檻、過得了 60，印出及格就收工。條件的「順序」很重要：如果把 >= 60 寫在最上面，90 分的人也只會拿到及格。",
+      "verify": {
+        "checks": [
+          { "code": "const score = 75;\nif (score >= 90) {\n  console.log(\"優等\");\n} else if (score >= 60) {\n  console.log(\"及格\");\n} else {\n  console.log(\"不及格\");\n}", "expected": "及格" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-5-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "switch 忘了 break 會往下漏",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/switch",
+      "story": "",
+      "prompt": "使用者明明是基本方案，畫面卻連專業方案的訊息一起印出來。哪裡錯了？",
+      "code": "const plan = \"basic\";\nswitch (plan) {\n  case \"basic\":\n    console.log(\"基本方案\");   // A 區\n  case \"pro\":\n    console.log(\"專業方案\");   // B 區\n    break;\n  default:\n    console.log(\"未知方案\");\n}",
+      "options": [
+        { "id": "a", "text": "case \"basic\" 的結尾少了 break，執行完會直接「漏」進下一個 case" },
+        { "id": "b", "text": "case 不能用字串比對" },
+        { "id": "c", "text": "default 必須寫在最前面" },
+        { "id": "d", "text": "switch 括號裡要寫 plan === \"basic\"" }
+      ],
+      "answer": "a",
+      "explanation": "switch 的 case 只是「入口」，不是「隔間」——進場後會一路往下執行，直到撞見 break 才停。少了 break，基本方案跑完就漏進專業方案。這叫 fall-through，是 switch 最經典的坑；每個 case 結尾記得 break（或 return）。",
+      "verify": {
+        "checks": [
+          { "code": "const plan = \"basic\";\nswitch (plan) {\n  case \"basic\":\n    console.log(\"基本方案\");\n  case \"pro\":\n    console.log(\"專業方案\");\n    break;\n  default:\n    console.log(\"未知方案\");\n}", "expected": "基本方案\n專業方案" },
+          { "code": "const plan = \"basic\";\nswitch (plan) {\n  case \"basic\":\n    console.log(\"基本方案\");\n    break;\n  case \"pro\":\n    console.log(\"專業方案\");\n    break;\n  default:\n    console.log(\"未知方案\");\n}", "expected": "基本方案" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-5-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "truthy 與 falsy",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Truthy",
+      "story": "",
+      "prompt": "這三個 if 的條件都不是布林值。最後印出哪些字母？",
+      "code": "if (\"0\") console.log(\"A\");\nif ([]) console.log(\"B\");\nif (\"\") console.log(\"C\");\nconsole.log(\"done\");",
+      "options": [
+        { "id": "a", "text": "A B done" },
+        { "id": "b", "text": "只有 done" },
+        { "id": "c", "text": "B done" },
+        { "id": "d", "text": "A B C done" }
+      ],
+      "answer": "a",
+      "explanation": "if 會把條件轉成布林來判斷。falsy 只有固定幾個：false、0、\"\"（空字串）、null、undefined、NaN——背起來。字串 \"0\" 有內容所以是 truthy（跟數字 0 不同人！）；空陣列 [] 也是 truthy（很反直覺，判斷「有沒有資料」要用 arr.length）。空字串 \"\" 是 falsy，C 不印。",
+      "verify": {
+        "checks": [
+          { "code": "if (\"0\") console.log(\"A\");\nif ([]) console.log(\"B\");\nif (\"\") console.log(\"C\");\nconsole.log(\"done\");", "expected": "A\nB\ndone" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-5-q4",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "提早 return 等於隱形的 else",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/if...else",
+      "story": "",
+      "prompt": "AI 重構時把 else 拿掉了。這兩個函式行為一樣嗎？",
+      "code": "// 版本一\nfunction check(age) {\n  if (age >= 18) return \"成人\";\n  return \"未成年\";\n}\n\n// 版本二\nfunction check2(age) {\n  if (age >= 18) return \"成人\";\n  else return \"未成年\";\n}\n\nconsole.log(check(20), check(15), check2(20), check2(15));",
+      "options": [
+        { "id": "a", "text": "一樣：return 之後函式就結束了，走不到下一行，等於隱形的 else" },
+        { "id": "b", "text": "不一樣：版本一兩個 return 都會執行" },
+        { "id": "c", "text": "不一樣：版本一 20 歲會拿到「未成年」" },
+        { "id": "d", "text": "版本一會報錯，if 後面一定要有 else" }
+      ],
+      "answer": "a",
+      "explanation": "return 是硬煞車：成立就直接帶著值離場，後面的程式碼根本輪不到。所以「if + return」天然就有 else 的效果，這種寫法叫提早返回（early return），巢狀條件很多時能讓程式扁平好讀——AI 重構很愛做這件事，看懂它就不會以為邏輯被改壞了。",
+      "verify": {
+        "checks": [
+          { "code": "function check(age) {\n  if (age >= 18) return \"成人\";\n  return \"未成年\";\n}\nfunction check2(age) {\n  if (age >= 18) return \"成人\";\n  else return \"未成年\";\n}\nconsole.log(check(20), check(15), check2(20), check2(15));", "expected": "成人 未成年 成人 未成年" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-5-q5",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "用 try 接住會爆炸的程式",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/try...catch",
+      "story": "",
+      "prompt": "JSON.parse 遇到壞資料會直接爆炸。把空格填起來，讓壞資料時回傳 null 而不是整個程式掛掉",
+      "code": "function parse(json) {\n  ____ {\n    return JSON.parse(json);\n  } catch (err) {\n    return null;\n  }\n}\nconsole.log(parse(\"{壞掉的json\"));",
+      "options": [
+        { "id": "a", "text": "try" },
+        { "id": "b", "text": "if" },
+        { "id": "c", "text": "check" },
+        { "id": "d", "text": "safe" }
+      ],
+      "answer": "a",
+      "explanation": "try 的意思是「這段可能會爆，爆了別當機，交給 catch 處理」。JSON.parse 吃到格式錯的字串會 throw，沒有 try/catch 整個程式就停了。解析外部資料（API 回應、localStorage、使用者輸入）永遠要包 try——外面來的東西都不可信。",
+      "verify": {
+        "checks": [
+          { "code": "function parse(json) {\n  try {\n    return JSON.parse(json);\n  } catch (err) {\n    return null;\n  }\n}\nconsole.log(parse(\"{壞掉的json\"));", "expected": "null" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-5-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "throw 之後的流程去哪了",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/throw",
+      "story": "",
+      "prompt": "第二次提款超過餘額。這段程式印出什麼？",
+      "code": "function withdraw(balance, amount) {\n  if (amount > balance) {\n    throw new Error(\"餘額不足\");\n  }\n  return balance - amount;\n}\n\ntry {\n  console.log(withdraw(100, 50));\n  console.log(withdraw(50, 80));\n  console.log(\"完成\");\n} catch (err) {\n  console.log(\"錯誤：\" + err.message);\n}",
+      "options": [
+        { "id": "a", "text": "50 然後 錯誤：餘額不足" },
+        { "id": "b", "text": "50 然後 錯誤：餘額不足 然後 完成" },
+        { "id": "c", "text": "只印 錯誤：餘額不足" },
+        { "id": "d", "text": "50 然後 -30 然後 完成" }
+      ],
+      "answer": "a",
+      "explanation": "第一次提款正常印出 50。第二次 throw 的瞬間，try 區塊剩下的程式全部作廢——「完成」永遠不會印——控制權直接跳進 catch。這就是例外處理的流程：throw 像拉警報，就近的 catch 接手，中間的程式碼跳過。追蹤「哪些行被跳過了」是讀懂錯誤處理的關鍵。",
+      "verify": {
+        "checks": [
+          { "code": "function withdraw(balance, amount) {\n  if (amount > balance) {\n    throw new Error(\"餘額不足\");\n  }\n  return balance - amount;\n}\n\ntry {\n  console.log(withdraw(100, 50));\n  console.log(withdraw(50, 80));\n  console.log(\"完成\");\n} catch (err) {\n  console.log(\"錯誤：\" + err.message);\n}", "expected": "50\n錯誤：餘額不足" }
+        ]
+      }
+    }
+  ]
+}

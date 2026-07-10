@@ -1,0 +1,145 @@
+{
+  "id": "jsb-8",
+  "title": "文字處理",
+  "questions": [
+    {
+      "id": "jsb-8-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "slice 切字串（負數從尾巴數）",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/slice",
+      "story": "",
+      "prompt": "從 \"JavaScript\" 切兩刀。各印出什麼？",
+      "code": "const s = \"JavaScript\";\nconsole.log(s.slice(0, 4));\nconsole.log(s.slice(-6));",
+      "options": [
+        { "id": "a", "text": "Java 和 Script" },
+        { "id": "b", "text": "Java 和 aScrip" },
+        { "id": "c", "text": "Jav 和 Script" },
+        { "id": "d", "text": "JavaS 和 cript" }
+      ],
+      "answer": "a",
+      "explanation": "slice(0, 4) 取索引 0 到 3（結尾那格不含，跟陣列的 slice 同一套規則）。負數是「從尾巴倒數」：-6 表示取最後 6 個字，正好是 Script。「開頭含、結尾不含」這條規則背熟，切字串就不會再差一個字。",
+      "verify": {
+        "checks": [
+          { "code": "const s = \"JavaScript\";\nconsole.log(s.slice(0, 4));\nconsole.log(s.slice(-6));", "expected": "Java\nScript" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-8-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "split 拆開、join 接回",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/split",
+      "story": "",
+      "prompt": "CSV 字串拆開再用另一個符號接回。這段印出什麼？",
+      "code": "const csv = \"紅,綠,藍\";\nconst arr = csv.split(\",\");\nconsole.log(arr.length, arr[1]);\nconsole.log(arr.join(\"｜\"));",
+      "options": [
+        { "id": "a", "text": "3 綠 然後 紅｜綠｜藍" },
+        { "id": "b", "text": "3 紅 然後 紅｜綠｜藍" },
+        { "id": "c", "text": "5 綠 然後 紅,綠,藍" },
+        { "id": "d", "text": "3 綠 然後 紅,綠,藍" }
+      ],
+      "answer": "a",
+      "explanation": "split(\",\") 沿著逗號把字串剪成陣列 [\"紅\", \"綠\", \"藍\"]（索引 1 是綠），join(\"｜\") 再用新分隔符黏回字串。split 進、join 出，是「字串 ↔ 陣列」之間的雙向門，處理 CSV、標籤、網址參數都靠這對搭檔。",
+      "verify": {
+        "checks": [
+          { "code": "const csv = \"紅,綠,藍\";\nconst arr = csv.split(\",\");\nconsole.log(arr.length, arr[1]);\nconsole.log(arr.join(\"｜\"));", "expected": "3 綠\n紅｜綠｜藍" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-8-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "replace 只換第一個",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/replaceAll",
+      "story": "",
+      "prompt": "想把所有的貓都換成兔，結果只換了一隻。哪裡錯了？",
+      "code": "const text = \"貓 狗 貓\";\nconsole.log(text.replace(\"貓\", \"兔\"));   // 兔 狗 貓 ??",
+      "options": [
+        { "id": "a", "text": "replace 傳字串時只換「第一個」符合的；全換要用 replaceAll" },
+        { "id": "b", "text": "中文字不能當搜尋目標" },
+        { "id": "c", "text": "要先 split 才能 replace" },
+        { "id": "d", "text": "replace 的參數順序寫反了" }
+      ],
+      "answer": "a",
+      "explanation": "replace 給字串當目標時，找到第一個就收工——這個行為騙過無數人。全部替換有兩條路：replaceAll(\"貓\", \"兔\")，或用正規表達式加 g 旗標 replace(/貓/g, \"兔\")（下一關會正式見到它）。「怎麼只換了一個」的瞬間，你現在知道該想起誰了。",
+      "verify": {
+        "checks": [
+          { "code": "const text = \"貓 狗 貓\";\nconsole.log(text.replace(\"貓\", \"兔\"));", "expected": "兔 狗 貓" },
+          { "code": "const text = \"貓 狗 貓\";\nconsole.log(text.replaceAll(\"貓\", \"兔\"));", "expected": "兔 狗 兔" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-8-q4",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "字串方法不會改變原字串",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/toUpperCase",
+      "story": "",
+      "prompt": "都呼叫了 toUpperCase，差別只在有沒有接回傳值。兩段印出來一樣嗎？",
+      "code": "// 版本一\nconst name = \"amy\";\nname.toUpperCase();\nconsole.log(name);\n\n// 版本二\nconst name2 = \"amy\";\nconst upper = name2.toUpperCase();\nconsole.log(upper);",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一印 amy（沒變），版本二印 AMY" },
+        { "id": "b", "text": "一樣，都印 AMY" },
+        { "id": "c", "text": "一樣，都印 amy" },
+        { "id": "d", "text": "版本一會報錯，const 字串不能呼叫方法" }
+      ],
+      "answer": "a",
+      "explanation": "字串是不可變的（immutable）：所有字串方法都是「做一個新的還你」，原字串一根毛都不會動。版本一算出了 \"AMY\" 卻沒人接，當場蒸發。「呼叫了方法卻沒效果」的 bug，九成是忘了接回傳值——toUpperCase、trim、replace、slice 全家都這樣。",
+      "verify": {
+        "checks": [
+          { "code": "const name = \"amy\";\nname.toUpperCase();\nconsole.log(name);\nconst name2 = \"amy\";\nconst upper = name2.toUpperCase();\nconsole.log(upper);", "expected": "amy\nAMY" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-8-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "trim 掃掉頭尾空白",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/trim",
+      "story": "",
+      "prompt": "使用者輸入帶了頭尾空白。把空格填起來，印出乾淨的 [皮皮]",
+      "code": "const input = \"  皮皮  \";\nconst clean = ____;\nconsole.log(`[${clean}]`);",
+      "options": [
+        { "id": "a", "text": "input.trim()" },
+        { "id": "b", "text": "input.replace(\" \", \"\")" },
+        { "id": "c", "text": "input.strip()" },
+        { "id": "d", "text": "input.slice(1, -1)" }
+      ],
+      "answer": "a",
+      "explanation": "trim 專門清「頭尾」的空白（含 tab、換行），字串中間的不動。選項 b 的 replace 只清掉第一個空白（上上題的坑）；選項 c 的 strip 是 Python 的方法，JS 沒有——AI 在兩種語言間切換時真的會寫錯這個；選項 d 只硬切一個字，空白多幾個就失效。表單輸入先 trim 再驗證，是後端前端通用的好習慣。",
+      "verify": {
+        "checks": [
+          { "code": "const input = \"  皮皮  \";\nconst clean = input.trim();\nconsole.log(`[${clean}]`);", "expected": "[皮皮]" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-8-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "padStart 補零對齊",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/padStart",
+      "story": "",
+      "prompt": "把編號補成固定三位數。這段印出什麼？",
+      "code": "const n = 7;\nconsole.log(String(n).padStart(3, \"0\"));\nconsole.log(\"128\".padStart(3, \"0\"));",
+      "options": [
+        { "id": "a", "text": "007 和 128" },
+        { "id": "b", "text": "700 和 128" },
+        { "id": "c", "text": "007 和 0128" },
+        { "id": "d", "text": "0007 和 0128" }
+      ],
+      "answer": "a",
+      "explanation": "padStart(3, \"0\") 的意思是「總長不足 3 就在前面補 0」：\"7\" 補成 \"007\"；\"128\" 已經滿 3 位，一個都不補。注意它是字串方法，數字要先 String(n) 轉過去。訂單編號、倒數計時的 09:05、日期的 07 月，全是它的主場（往後補則用兄弟 padEnd）。",
+      "verify": {
+        "checks": [
+          { "code": "const n = 7;\nconsole.log(String(n).padStart(3, \"0\"));\nconsole.log(\"128\".padStart(3, \"0\"));", "expected": "007\n128" }
+        ]
+      }
+    }
+  ]
+}

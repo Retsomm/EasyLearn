@@ -1,0 +1,146 @@
+{
+  "id": "jsa-8",
+  "title": "迭代器與產生器",
+  "questions": [
+    {
+      "id": "jsa-8-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "generator：可以暫停的函式",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Iterators_and_generators",
+      "story": "",
+      "prompt": "function 後面多了一顆星星。這段程式印出什麼？",
+      "code": "function* count() {\n  yield 1;\n  yield 2;\n  yield 3;\n}\n\nconst g = count();\nconsole.log(g.next().value);\nconsole.log(g.next().value);",
+      "options": [
+        { "id": "a", "text": "1 然後 2" },
+        { "id": "b", "text": "1 然後 1" },
+        { "id": "c", "text": "3 然後 3" },
+        { "id": "d", "text": "[1, 2, 3] 印兩次" }
+      ],
+      "answer": "a",
+      "explanation": "function* 是產生器（generator）：一種「可以暫停」的函式。每次呼叫 next()，它跑到下一個 yield 就停下來交出值——像自動販賣機，按一次掉一罐，還記得賣到第幾罐。第一次 next 拿到 1，第二次接著拿 2。",
+      "verify": {
+        "checks": [
+          { "code": "function* count() {\n  yield 1;\n  yield 2;\n  yield 3;\n}\nconst g = count();\nconsole.log(g.next().value);\nconsole.log(g.next().value);", "expected": "1\n2" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-8-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "generator 可以直接展開",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Iterators_and_generators",
+      "story": "",
+      "prompt": "把產生器丟進展開語法。這段程式印出什麼？",
+      "code": "function* range(n) {\n  for (let i = 1; i <= n; i++) {\n    yield i;\n  }\n}\n\nconsole.log([...range(4)]);",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3, 4 ]" },
+        { "id": "b", "text": "[ 4 ]" },
+        { "id": "c", "text": "[ Generator ]" },
+        { "id": "d", "text": "會報錯，generator 不能展開" }
+      ],
+      "answer": "a",
+      "explanation": "產生器天生就是「可迭代物」（iterable），展開語法會自動一直 next 到底，把吐出來的值收成陣列。這正是 Set 能 [...new Set()]、字串能 [...s] 的同一套機制——JS 裡所有「可以被走訪的東西」都講這套共通語言。",
+      "verify": {
+        "checks": [
+          { "code": "function* range(n) {\n  for (let i = 1; i <= n; i++) {\n    yield i;\n  }\n}\nconsole.log([...range(4)]);", "expected": "[ 1, 2, 3, 4 ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-8-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "yield 只能住在 function* 裡",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function*",
+      "story": "",
+      "prompt": "想寫個產生器，程式卻連跑都跑不起來。哪裡錯了？",
+      "code": "function count() {   // A 行\n  yield 1;           // B 行 💥 SyntaxError\n  yield 2;\n}",
+      "options": [
+        { "id": "a", "text": "A 行少了星號：yield 只能用在 function* 產生器裡" },
+        { "id": "b", "text": "yield 後面要加分號兩個" },
+        { "id": "c", "text": "B 行要寫成 return yield 1" },
+        { "id": "d", "text": "count 這個名字是保留字" }
+      ],
+      "answer": "a",
+      "explanation": "沒有星號的普通函式看不懂 yield，直接語法錯誤、整個檔案跑不起來。星號是產生器的身分證：function* 或簡寫方法裡的 *count()。順帶一提，這跟 async/await 的關係很像——await 也只能住在 async function 裡，JS 用「函式的標記」決定裡面能用什麼特殊關鍵字。",
+      "verify": {
+        "checks": [
+          { "code": "function count() {\n  yield 1;\n}", "expectError": "Unexpected number" },
+          { "code": "function* count() {\n  yield 1;\n  yield 2;\n}\nconsole.log([...count()]);", "expected": "[ 1, 2 ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-8-q4",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "for...of 吃所有可迭代物",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Iterators_and_generators",
+      "story": "",
+      "prompt": "一個走陣列、一個走產生器。這兩個 for...of 印出來一樣嗎？",
+      "code": "// 版本一\nfor (const x of [1, 2, 3]) {\n  console.log(x);\n}\n\n// 版本二\nfunction* gen() {\n  yield 1;\n  yield 2;\n  yield 3;\n}\nfor (const x of gen()) {\n  console.log(x);\n}",
+      "options": [
+        { "id": "a", "text": "一樣，都印 1 2 3" },
+        { "id": "b", "text": "不一樣：版本二只印一次 1" },
+        { "id": "c", "text": "不一樣：版本二印 {value: 1, done: false} 這種物件" },
+        { "id": "d", "text": "版本二會報錯，for...of 只吃陣列" }
+      ],
+      "answer": "a",
+      "explanation": "for...of 不在乎對象是陣列、字串、Set、Map 還是產生器——只要是可迭代物，它就用同一套「next 到底」的協議走完。value/done 的包裝（選項 c）是 for...of 在底層自動拆掉的。理解「iterable 是一個通用介面」之後，很多 API 為什麼互通就說得通了。",
+      "verify": {
+        "checks": [
+          { "code": "for (const x of [1, 2, 3]) {\n  console.log(x);\n}\nfunction* gen() {\n  yield 1;\n  yield 2;\n  yield 3;\n}\nfor (const x of gen()) {\n  console.log(x);\n}", "expected": "1\n2\n3\n1\n2\n3" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-8-q5",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "yield 交值、return 收攤",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function*",
+      "story": "",
+      "prompt": "把空格填起來，讓骰子產生器吐出 [ 1, 2, 3 ]",
+      "code": "function* dice(n) {\n  for (let i = 0; i < n; i++) {\n    ____ i + 1;\n  }\n}\n\nconsole.log([...dice(3)]);",
+      "options": [
+        { "id": "a", "text": "yield" },
+        { "id": "b", "text": "return" },
+        { "id": "c", "text": "console.log" },
+        { "id": "d", "text": "await" }
+      ],
+      "answer": "a",
+      "explanation": "yield 是「交出一個值，原地待命」；return 是「宣布收攤」——第一圈就 return 的話，產生器直接結束，而且 return 的值不算在迭代結果裡，展開會得到空陣列 []。選項 c 只是印出來、什麼都沒交；選項 d 的 await 住在 async 函式裡，走錯棚了。",
+      "verify": {
+        "checks": [
+          { "code": "function* dice(n) {\n  for (let i = 0; i < n; i++) {\n    yield i + 1;\n  }\n}\nconsole.log([...dice(3)]);", "expected": "[ 1, 2, 3 ]" },
+          { "code": "function* dice(n) {\n  for (let i = 0; i < n; i++) {\n    return i + 1;\n  }\n}\nconsole.log([...dice(3)]);", "expected": "[]" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-8-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "懶惰執行：呼叫時不跑，next 才跑",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Iterators_and_generators",
+      "story": "",
+      "prompt": "呼叫 lazy() 的當下，「算 1」會被印出來嗎？這段的輸出順序是？",
+      "code": "function* lazy() {\n  console.log(\"算 1\");\n  yield 1;\n  console.log(\"算 2\");\n  yield 2;\n}\n\nconst g = lazy();\nconsole.log(\"開始\");\ng.next();",
+      "options": [
+        { "id": "a", "text": "開始 → 算 1" },
+        { "id": "b", "text": "算 1 → 開始" },
+        { "id": "c", "text": "算 1 → 算 2 → 開始" },
+        { "id": "d", "text": "開始 → 算 1 → 算 2" }
+      ],
+      "answer": "a",
+      "explanation": "呼叫 lazy() 只是「領號碼牌」，函式本體一行都還沒跑——所以先印「開始」。第一次 next() 才真正開跑，印「算 1」後在 yield 停住；「算 2」要等下一次 next 才會出現。這叫懶惰執行（lazy evaluation）：要多少算多少，處理超大資料流時是省資源的利器。",
+      "verify": {
+        "checks": [
+          { "code": "function* lazy() {\n  console.log(\"算 1\");\n  yield 1;\n  console.log(\"算 2\");\n  yield 2;\n}\nconst g = lazy();\nconsole.log(\"開始\");\ng.next();", "expected": "開始\n算 1" }
+        ]
+      }
+    }
+  ]
+}

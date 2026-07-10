@@ -1,0 +1,145 @@
+{
+  "id": "react-10",
+  "title": "Reducer 與 Context",
+  "questions": [
+    {
+      "id": "react-10-q1",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "reducer 就是一個純函式",
+      "docs": "https://react.dev/learn/extracting-state-logic-into-a-reducer",
+      "story": "",
+      "prompt": "把 reducer 當普通函式手動餵兩個 action。最後印出多少？",
+      "code": "function reducer(state, action) {\n  switch (action.type) {\n    case \"add\":\n      return { count: state.count + action.n };\n    case \"reset\":\n      return { count: 0 };\n    default:\n      return state;\n  }\n}\n\nlet s = { count: 0 };\ns = reducer(s, { type: \"add\", n: 5 });\ns = reducer(s, { type: \"add\", n: 3 });\nconsole.log(s.count);",
+      "options": [
+        { "id": "a", "text": "8" },
+        { "id": "b", "text": "3" },
+        { "id": "c", "text": "5" },
+        { "id": "d", "text": "會報錯，reducer 只能給 React 呼叫" }
+      ],
+      "answer": "a",
+      "explanation": "reducer 一點都不神秘：就是「(目前狀態, 發生了什麼) → 新狀態」的純函式，脫離 React 也能跑、能測。0 加 5 再加 3 是 8。useReducer 只是讓 React 幫你保管 state、你用 dispatch 丟 action 進來——把「怎麼變」的邏輯全部集中到一個函式裡，元件就變乾淨了。",
+      "verify": {
+        "checks": [
+          { "code": "function reducer(state, action) {\n  switch (action.type) {\n    case \"add\":\n      return { count: state.count + action.n };\n    case \"reset\":\n      return { count: 0 };\n    default:\n      return state;\n  }\n}\nlet s = { count: 0 };\ns = reducer(s, { type: \"add\", n: 5 });\ns = reducer(s, { type: \"add\", n: 3 });\nconsole.log(s.count);", "expected": "8" }
+        ]
+      }
+    },
+    {
+      "id": "react-10-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "reducer 也不准偷改 state",
+      "docs": "https://react.dev/learn/extracting-state-logic-into-a-reducer",
+      "story": "",
+      "prompt": "dispatch 之後畫面不更新。檢查 reducer，哪裡錯了？",
+      "code": "function reducer(state, action) {\n  switch (action.type) {\n    case \"add\":\n      state.count += action.n;   // B 行\n      return state;              // C 行\n    default:\n      return state;\n  }\n}",
+      "options": [
+        { "id": "a", "text": "B 行直接改 state 再回傳同一個物件：React 比對新舊是同一個參照，判定沒變、跳過重繪；要 return { count: state.count + action.n }" },
+        { "id": "b", "text": "switch 不能用在 reducer 裡" },
+        { "id": "c", "text": "C 行的 return 是多餘的" },
+        { "id": "d", "text": "action.n 要先轉成字串" }
+      ],
+      "answer": "a",
+      "explanation": "react-6 的鐵律在 reducer 裡原封不動：資料變了，但「參照」沒變，React 的 Object.is 一比——同一人，收工。畫面凍結、資料其實有動，是 reducer 寫壞的招牌症狀。reducer 必須回傳「新物件」。這題的驗證直接跑給你看：改完後新舊是同一個參照。",
+      "verify": {
+        "checks": [
+          { "code": "function reducer(state, action) {\n  state.count += action.n;\n  return state;\n}\nconst s = { count: 0 };\nconst s2 = reducer(s, { type: \"add\", n: 5 });\nconsole.log(s === s2, s2.count);", "expected": "true 5" },
+          { "code": "function reducer(state, action) {\n  return { count: state.count + action.n };\n}\nconst s = { count: 0 };\nconst s2 = reducer(s, { type: \"add\", n: 5 });\nconsole.log(s === s2, s.count, s2.count);", "expected": "false 0 5" }
+        ]
+      }
+    },
+    {
+      "id": "react-10-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Context：不用一層層傳的資料通道",
+      "docs": "https://react.dev/learn/passing-data-deeply-with-context",
+      "story": "",
+      "prompt": "Button 沒收到任何 props，卻能拿到主題。渲染出什麼？",
+      "code": "const ThemeContext = createContext(\"light\");\n\nfunction Button() {\n  const theme = useContext(ThemeContext);\n  return <button>{theme} 模式</button>;\n}\n\nfunction App() {\n  return (\n    <ThemeContext.Provider value=\"dark\">\n      <Button />\n    </ThemeContext.Provider>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "<button>dark 模式</button>" },
+        { "id": "b", "text": "<button>light 模式</button>" },
+        { "id": "c", "text": "會報錯，Button 沒有收到 props" },
+        { "id": "d", "text": "<button>undefined 模式</button>" }
+      ],
+      "answer": "a",
+      "explanation": "Context 像 Wi-Fi：Provider 是基地台（廣播 value=\"dark\"），useContext 是連線裝置——不管隔幾層元件，直接收訊，完全不用 props 一站站傳。主題、登入使用者、語系這種「全家都要用」的資料是它的主場。但別上癮：一般的資料流還是 props 優先，Context 用太兇會讓元件的依賴變隱形。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nimport { createContext, useContext } from 'react'\nconst ThemeContext = createContext(\"light\");\nfunction Button() {\n  const theme = useContext(ThemeContext);\n  return <button>{theme} 模式</button>;\n}\nfunction App() {\n  return (\n    <ThemeContext.Provider value=\"dark\">\n      <Button />\n    </ThemeContext.Provider>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<button>dark 模式</button>" }
+        ]
+      }
+    },
+    {
+      "id": "react-10-q4",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "有沒有 Provider，差在預設值",
+      "docs": "https://react.dev/learn/passing-data-deeply-with-context",
+      "story": "",
+      "prompt": "同一個 Button，一個包在 Provider 裡、一個沒有。渲染結果一樣嗎？",
+      "code": "const ThemeContext = createContext(\"light\");\n\nfunction Button() {\n  const theme = useContext(ThemeContext);\n  return <button>{theme} 模式</button>;\n}\n\n// 版本一\n<ThemeContext.Provider value=\"dark\">\n  <Button />\n</ThemeContext.Provider>\n\n// 版本二（沒有 Provider）\n<Button />",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一是 dark 模式，版本二拿到 createContext 的預設值 light 模式" },
+        { "id": "b", "text": "一樣，都是 dark 模式" },
+        { "id": "c", "text": "版本二會報錯，useContext 沒有 Provider 就爆炸" },
+        { "id": "d", "text": "版本二渲染出 undefined 模式" }
+      ],
+      "answer": "a",
+      "explanation": "收不到基地台訊號時，useContext 不會爆炸（選項 c 是常見誤解），它安靜地退回 createContext(\"light\") 那個預設值。這既是保險也是陷阱：忘記包 Provider 不報錯，只是畫面「怎麼一直是預設主題」。除錯口訣：Context 值不對，先往上找 Provider 在不在、包的範圍對不對。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nimport { createContext, useContext } from 'react'\nconst ThemeContext = createContext(\"light\");\nfunction Button() {\n  const theme = useContext(ThemeContext);\n  return <button>{theme} 模式</button>;\n}\nconsole.log(renderToStaticMarkup(<ThemeContext.Provider value=\"dark\"><Button /></ThemeContext.Provider>));\nconsole.log(renderToStaticMarkup(<Button />));", "expected": "<button>dark 模式</button>\n<button>light 模式</button>" }
+        ]
+      }
+    },
+    {
+      "id": "react-10-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "dispatch 丟的是「描述事件的物件」",
+      "docs": "https://react.dev/learn/extracting-state-logic-into-a-reducer",
+      "story": "",
+      "prompt": "reducer 認得 { type: \"add\", n: 數字 }。把空格填起來，讓按鈕加 10 分",
+      "code": "const [state, dispatch] = useReducer(reducer, { count: 0 });\n\n<button onClick={() => dispatch(____)}>加 10 分</button>",
+      "options": [
+        { "id": "a", "text": "{ type: \"add\", n: 10 }" },
+        { "id": "b", "text": "\"add\"" },
+        { "id": "c", "text": "reducer(state, \"add\")" },
+        { "id": "d", "text": "state.count + 10" }
+      ],
+      "answer": "a",
+      "explanation": "dispatch 丟的是 action——一個「描述發生了什麼事」的物件，慣例用 type 說事件名、其他欄位帶資料，reducer 那邊的 switch 就是接這個 type。選項 b 少了資料欄位、格式也對不上 reducer 的預期；選項 c 自己呼叫 reducer 算出來的值沒有交給 React，畫面不會動；選項 d 丟的是算好的數字，reducer 看不懂。",
+      "verify": {
+        "checks": [
+          { "code": "function reducer(state, action) {\n  switch (action.type) {\n    case \"add\":\n      return { count: state.count + action.n };\n    default:\n      return state;\n  }\n}\nconst next = reducer({ count: 0 }, { type: \"add\", n: 10 });\nconsole.log(next.count);", "expected": "10" }
+        ]
+      }
+    },
+    {
+      "id": "react-10-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "巢狀 Provider：聽最近的那台",
+      "docs": "https://react.dev/learn/passing-data-deeply-with-context",
+      "story": "",
+      "prompt": "兩層 Provider 疊在一起。最裡面的 Button 渲染出什麼？",
+      "code": "const ThemeContext = createContext(\"light\");\n\nfunction Button() {\n  const theme = useContext(ThemeContext);\n  return <button>{theme} 模式</button>;\n}\n\nfunction App() {\n  return (\n    <ThemeContext.Provider value=\"dark\">\n      <ThemeContext.Provider value=\"pink\">\n        <Button />\n      </ThemeContext.Provider>\n    </ThemeContext.Provider>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "<button>pink 模式</button> —— useContext 讀「往上最近」的那個 Provider" },
+        { "id": "b", "text": "<button>dark 模式</button> —— 外層優先" },
+        { "id": "c", "text": "<button>light 模式</button> —— 疊兩層會互相抵銷回到預設" },
+        { "id": "d", "text": "會報錯，同一個 Context 不能疊兩層" }
+      ],
+      "answer": "a",
+      "explanation": "useContext 沿著元件樹往上找，「第一個遇到的 Provider」勝出——內層的 pink 蓋掉外層的 dark，跟 CSS 的就近原則、變數的作用域遮蔽是同一種直覺。這個特性很實用：整站深色，但某個區塊（例如預覽卡片）想強制另一種主題，包一層內層 Provider 就好。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nimport { createContext, useContext } from 'react'\nconst ThemeContext = createContext(\"light\");\nfunction Button() {\n  const theme = useContext(ThemeContext);\n  return <button>{theme} 模式</button>;\n}\nfunction App() {\n  return (\n    <ThemeContext.Provider value=\"dark\">\n      <ThemeContext.Provider value=\"pink\">\n        <Button />\n      </ThemeContext.Provider>\n    </ThemeContext.Provider>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<button>pink 模式</button>" }
+        ]
+      }
+    }
+  ]
+}
