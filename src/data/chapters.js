@@ -40,3 +40,16 @@ export function getLevel(levelId) {
   }
   return null
 }
+
+// 從錯題本 id 集合撈出題目本體（照章節順序）
+export function getWrongQuestions(wrongIds) {
+  const out = []
+  for (const ch of chapters) {
+    for (const level of ch.levels) {
+      for (const q of level.questions) {
+        if (wrongIds[q.id]) out.push(q)
+      }
+    }
+  }
+  return out
+}

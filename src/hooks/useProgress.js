@@ -6,6 +6,10 @@ const defaultProgress = {
   xp: 0,
   // { [levelId]: { best: 答對題數, total: 題數 } }
   completedLevels: {},
+  // 錯題本：{ [questionId]: true }，答對即移除
+  wrongIds: {},
+  // 連續學習天數：{ count, last: 'YYYY-MM-DD' }
+  streak: { count: 0, last: null },
 }
 
 function load() {
@@ -19,6 +23,25 @@ function load() {
   }
 }
 
+function todayStr() {
+  return new Date().toLocaleDateString('en-CA') // 本地時區的 YYYY-MM-DD
+}
+
+function yesterdayStr() {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  return d.toLocaleDateString('en-CA')
+}
+
+function bumpStreak(streak) {
+  const today = todayStr()
+  if (streak.last === today) return streak
+  return {
+    count: streak.last === yesterdayStr() ? streak.count + 1 : 1,
+    last: today,
+  }
+}
+
 export function useProgress() {
   const [progress, setProgress] = useState(load)
 
@@ -26,12 +49,23 @@ export function useProgress() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(progress))
   }, [progress])
 
+  // 每答一題就更新錯題本：答錯記入、答對移除
+  function answerQuestion(questionId, correct) {
+    setProgress((p) => {
+      const wrongIds = { ...p.wrongIds }
+      if (correct) delete wrongIds[questionId]
+      else wrongIds[questionId] = true
+      return { ...p, wrongIds }
+    })
+  }
+
   function finishLevel(levelId, correct, total, xpEarned) {
     setProgress((p) => {
       const prev = p.completedLevels[levelId]
       return {
         ...p,
         xp: p.xp + xpEarned,
+        streak: bumpStreak(p.streak),
         completedLevels: {
           ...p.completedLevels,
           [levelId]: {
@@ -41,6 +75,15 @@ export function useProgress() {
         },
       }
     })
+  }
+
+  // 錯題重練結束：只加 XP 和 streak，不動關卡紀錄
+  function finishReview(xpEarned) {
+    setProgress((p) => ({
+      ...p,
+      xp: p.xp + xpEarned,
+      streak: bumpStreak(p.streak),
+    }))
   }
 
   function exportProgress() {
@@ -70,5 +113,12 @@ export function useProgress() {
     reader.readAsText(file)
   }
 
-  return { progress, finishLevel, exportProgress, importProgress }
+  return {
+    progress,
+    answerQuestion,
+    finishLevel,
+    finishReview,
+    exportProgress,
+    importProgress,
+  }
 }

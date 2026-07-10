@@ -1,14 +1,16 @@
 import { useRef, useState } from 'react'
 import Mascot from '../components/Mascot'
 import Icon from '../components/Icons'
-import { chapters } from '../data/chapters'
+import { chapters, getWrongQuestions } from '../data/chapters'
 
-export default function Home({ progress, onStart, exportProgress, importProgress }) {
+export default function Home({ progress, onStart, onReview, exportProgress, importProgress }) {
   const fileRef = useRef(null)
   const [importMsg, setImportMsg] = useState('')
 
   const totalLevels = chapters.reduce((n, ch) => n + ch.levels.length, 0)
   const doneLevels = Object.keys(progress.completedLevels).length
+  const wrongCount = getWrongQuestions(progress.wrongIds).length
+  const streak = progress.streak?.count ?? 0
 
   function handleImportFile(e) {
     const file = e.target.files[0]
@@ -25,12 +27,26 @@ export default function Home({ progress, onStart, exportProgress, importProgress
       <h1 className="app-title">EasyLearn</h1>
       <p className="app-subtitle">看懂 code・抓得到 bug・改得動程式</p>
 
+      {streak > 0 && (
+        <div className="streak-badge">
+          <Icon name="flame" size={16} />
+          連續學習 {streak} 天
+        </div>
+      )}
+
       <Mascot xp={progress.xp} />
 
       <button className="primary-btn start-btn" onClick={onStart}>
         {doneLevels === 0 ? '開始學習' : '繼續學習'}
         <Icon name="rocket" size={20} />
       </button>
+
+      {wrongCount > 0 && (
+        <button className="secondary-btn review-btn" onClick={onReview}>
+          <Icon name="rotate-ccw" size={17} />
+          錯題重練（{wrongCount} 題）
+        </button>
+      )}
 
       <div className="home-stats">
         已完成 {doneLevels} / {totalLevels} 關
