@@ -155,6 +155,59 @@ button {
   max-width: 280px;
 }
 
+.secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--card);
+  color: var(--ink);
+  border: 2px solid var(--option-border);
+  border-radius: var(--radius);
+  padding: 13px 28px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.review-btn {
+  margin-top: 12px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.review-btn .icon {
+  color: var(--wrong);
+}
+
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--badge-bg);
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 6px 14px;
+  margin-bottom: 16px;
+}
+
+.review-banner {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--card);
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.review-banner .icon {
+  color: var(--wrong);
+}
+
 .home-stats {
   margin-top: 16px;
   color: var(--ink-soft);
