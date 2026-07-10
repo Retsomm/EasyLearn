@@ -1,0 +1,146 @@
+{
+  "id": "jsb-3",
+  "title": "陣列操作",
+  "questions": [
+    {
+      "id": "jsb-3-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "filter 篩選",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/filter",
+      "story": "",
+      "prompt": "從成績單裡挑出及格的分數。這段印出什麼？",
+      "code": "const scores = [55, 80, 92, 40];\nconst passed = scores.filter((s) => s >= 60);\nconsole.log(passed);",
+      "options": [
+        { "id": "a", "text": "[ 80, 92 ]" },
+        { "id": "b", "text": "[ 55, 40 ]" },
+        { "id": "c", "text": "[ true, false ]" },
+        { "id": "d", "text": "80" }
+      ],
+      "answer": "a",
+      "explanation": "filter 拿著條件「大於等於 60」一個一個過篩，留下通過的組成新陣列。記法：filter 回傳的永遠是陣列（就算只剩一個、甚至零個元素也是陣列）。",
+      "verify": {
+        "checks": [
+          { "code": "const scores = [55, 80, 92, 40];\nconst passed = scores.filter((s) => s >= 60);\nconsole.log(passed);", "expected": "[ 80, 92 ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-3-q2",
+      "type": "find-bug",
+      "difficulty": 1,
+      "topic": "forEach 沒有回傳值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach",
+      "story": "",
+      "prompt": "想把名字全部轉大寫，結果 upper 是 undefined。為什麼？",
+      "code": "const names = [\"ann\", \"bob\"];\nconst upper = names.forEach((n) => n.toUpperCase());\nconsole.log(upper);  // undefined ??",
+      "options": [
+        { "id": "a", "text": "forEach 不會回傳新陣列，這裡該用 map" },
+        { "id": "b", "text": "toUpperCase 拼錯了" },
+        { "id": "c", "text": "names 陣列是空的" },
+        { "id": "d", "text": "箭頭函式不能放進 forEach" }
+      ],
+      "answer": "a",
+      "explanation": "forEach 只負責「每個都跑一遍」，跑完什麼都不還你（回傳 undefined）。要「每個都變身然後收集起來」得用 map。口訣：要拿新陣列用 map，純粹跑一輪副作用才用 forEach。",
+      "verify": {
+        "checks": [
+          { "code": "const names = [\"ann\", \"bob\"];\nconst upper = names.forEach((n) => n.toUpperCase());\nconsole.log(upper);", "expected": "undefined" },
+          { "code": "const names = [\"ann\", \"bob\"];\nconst upper = names.map((n) => n.toUpperCase());\nconsole.log(upper);", "expected": "[ 'ANN', 'BOB' ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-3-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "find 只找第一個",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/find",
+      "story": "",
+      "prompt": "名單裡有兩位 VIP。這段程式印出誰？",
+      "code": "const users = [\n  { name: \"小華\", vip: true },\n  { name: \"小美\", vip: true },\n];\nconst u = users.find((x) => x.vip);\nconsole.log(u.name);",
+      "options": [
+        { "id": "a", "text": "小華" },
+        { "id": "b", "text": "小美" },
+        { "id": "c", "text": "小華和小美都印" },
+        { "id": "d", "text": "會報錯" }
+      ],
+      "answer": "a",
+      "explanation": "find 找到第一個符合條件的就立刻收工，後面看都不看，而且回傳的是元素本身（不是陣列）。要「全部符合的」請用 filter。find／filter 用反了是列表功能常見的 bug。",
+      "verify": {
+        "checks": [
+          { "code": "const users = [\n  { name: \"小華\", vip: true },\n  { name: \"小美\", vip: true },\n];\nconst u = users.find((x) => x.vip);\nconsole.log(u.name);", "expected": "小華" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-3-q4",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "slice 與 splice",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/splice",
+      "story": "",
+      "prompt": "slice 和 splice 只差一個字母。這兩段的行為一樣嗎？",
+      "code": "// 版本一\nconst a = [1, 2, 3, 4];\nconsole.log(a.slice(0, 2), a.length);\n\n// 版本二\nconst b = [1, 2, 3, 4];\nconsole.log(b.splice(0, 2), b.length);",
+      "options": [
+        { "id": "a", "text": "一樣，都印 [ 1, 2 ] 4" },
+        { "id": "b", "text": "不一樣：回傳值一樣，但 splice 把原陣列挖掉了，length 剩 2" },
+        { "id": "c", "text": "不一樣：slice 會報錯" },
+        { "id": "d", "text": "一樣，都印 [ 1, 2 ] 2" }
+      ],
+      "answer": "b",
+      "explanation": "兩個都回傳 [1, 2]，但 slice 是「影印」——原陣列毫髮無傷；splice 是「剪下」——原陣列真的被挖掉兩個元素。改到原資料的方法（splice、sort、reverse…）在 React 裡是大忌，先認得它們。",
+      "verify": {
+        "checks": [
+          { "code": "const a = [1, 2, 3, 4];\nconsole.log(a.slice(0, 2), a.length);\nconst b = [1, 2, 3, 4];\nconsole.log(b.splice(0, 2), b.length);", "expected": "[ 1, 2 ] 4\n[ 1, 2 ] 2" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-3-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "includes 檢查是否存在",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/includes",
+      "story": "",
+      "prompt": "把空格填起來，檢查標籤裡有沒有 react，讓程式印出「有 react」",
+      "code": "const tags = [\"js\", \"react\", \"css\"];\nif (____) {\n  console.log(\"有 react\");\n}",
+      "options": [
+        { "id": "a", "text": "tags.includes(\"react\")" },
+        { "id": "b", "text": "tags.contains(\"react\")" },
+        { "id": "c", "text": "tags.has(\"react\")" },
+        { "id": "d", "text": "\"react\" in tags" }
+      ],
+      "answer": "a",
+      "explanation": "陣列檢查「有沒有這個值」用 includes。contains 不存在（會報錯）；has 是 Set 和 Map 的方法；in 檢查的是「索引存不存在」不是值——\"react\" in tags 其實是 false。這幾個很容易被 AI 混著用，看到要能認出來。",
+      "verify": {
+        "checks": [
+          { "code": "const tags = [\"js\", \"react\", \"css\"];\nif (tags.includes(\"react\")) {\n  console.log(\"有 react\");\n}", "expected": "有 react" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-3-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "sort 預設按字串排序",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/sort",
+      "story": "",
+      "prompt": "把數字由小到大排序……真的嗎？這段印出什麼？",
+      "code": "const nums = [25, 100, 9];\nnums.sort();\nconsole.log(nums);",
+      "options": [
+        { "id": "a", "text": "[ 9, 25, 100 ]" },
+        { "id": "b", "text": "[ 100, 25, 9 ]" },
+        { "id": "c", "text": "[ 25, 100, 9 ]" },
+        { "id": "d", "text": "會報錯" }
+      ],
+      "answer": "b",
+      "explanation": "sort 不給比較函式時，會把元素當「字串」逐字比較：\"100\" 的第一個字 1 比 \"25\" 的 2 小，所以 100 排最前面。要按數字排序必須寫 nums.sort((a, b) => a - b)。排行榜順序詭異的時候，八成是這個。",
+      "verify": {
+        "checks": [
+          { "code": "const nums = [25, 100, 9];\nnums.sort();\nconsole.log(nums);", "expected": "[ 100, 25, 9 ]" },
+          { "code": "const nums = [25, 100, 9];\nnums.sort((a, b) => a - b);\nconsole.log(nums);", "expected": "[ 9, 25, 100 ]" }
+        ]
+      }
+    }
+  ]
+}

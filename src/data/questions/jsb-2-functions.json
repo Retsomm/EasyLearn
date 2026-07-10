@@ -1,0 +1,146 @@
+{
+  "id": "jsb-2",
+  "title": "函式基礎",
+  "questions": [
+    {
+      "id": "jsb-2-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "參數預設值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/Default_parameters",
+      "story": "",
+      "prompt": "這個打招呼函式被呼叫了兩次。會印出什麼？",
+      "code": "function greet(name = \"訪客\") {\n  return \"歡迎，\" + name;\n}\nconsole.log(greet());\nconsole.log(greet(\"阿明\"));",
+      "options": [
+        { "id": "a", "text": "歡迎，訪客 然後 歡迎，阿明" },
+        { "id": "b", "text": "歡迎，undefined 然後 歡迎，阿明" },
+        { "id": "c", "text": "會報錯，因為第一次呼叫少給參數" },
+        { "id": "d", "text": "歡迎，訪客 然後 歡迎，訪客" }
+      ],
+      "answer": "a",
+      "explanation": "name = \"訪客\" 是參數預設值：沒傳參數時自動補上「訪客」，有傳就用傳進來的。少了預設值的話，第一次呼叫會印出「歡迎，undefined」——很多上線的尷尬文案就是這樣來的。",
+      "verify": {
+        "checks": [
+          { "code": "function greet(name = \"訪客\") {\n  return \"歡迎，\" + name;\n}\nconsole.log(greet());\nconsole.log(greet(\"阿明\"));", "expected": "歡迎，訪客\n歡迎，阿明" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-2-q2",
+      "type": "find-bug",
+      "difficulty": 1,
+      "topic": "忘記 return",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/return",
+      "story": "",
+      "prompt": "加法函式算出來卻是 undefined。問題出在哪？",
+      "code": "function add(a, b) {\n  const sum = a + b;\n}\nconst result = add(2, 3);\nconsole.log(result);  // undefined ??",
+      "options": [
+        { "id": "a", "text": "函式裡少了 return sum" },
+        { "id": "b", "text": "a + b 應該寫成 a plus b" },
+        { "id": "c", "text": "add(2, 3) 的參數順序錯了" },
+        { "id": "d", "text": "console.log 不能印變數" }
+      ],
+      "answer": "a",
+      "explanation": "函式裡確實算出了 sum，但沒有 return，算完就默默丟掉了——沒有 return 的函式一律回傳 undefined。「函式有跑但拿到 undefined」的時候，第一件事就是檢查有沒有 return。",
+      "verify": {
+        "checks": [
+          { "code": "function add(a, b) {\n  const sum = a + b;\n}\nconst result = add(2, 3);\nconsole.log(result);", "expected": "undefined" },
+          { "code": "function add(a, b) {\n  const sum = a + b;\n  return sum;\n}\nconst result = add(2, 3);\nconsole.log(result);", "expected": "5" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-2-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "箭頭函式",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/Arrow_functions",
+      "story": "",
+      "prompt": "箭頭函式搭配 map 是 React 裡的日常組合。這段印出什麼？",
+      "code": "const double = (n) => n * 2;\nconst nums = [1, 2, 3].map(double);\nconsole.log(nums);",
+      "options": [
+        { "id": "a", "text": "[ 2, 4, 6 ]" },
+        { "id": "b", "text": "[ 1, 2, 3 ]" },
+        { "id": "c", "text": "6" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "double 是「把數字乘以 2」的箭頭函式，map 拿著它對每個元素各跑一次，收集成新陣列 [2, 4, 6]。注意 map 給的是新陣列，原本的 [1, 2, 3] 完全沒變。",
+      "verify": {
+        "checks": [
+          { "code": "const double = (n) => n * 2;\nconst nums = [1, 2, 3].map(double);\nconsole.log(nums);", "expected": "[ 2, 4, 6 ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-2-q4",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "箭頭函式的隱含回傳",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/Arrow_functions",
+      "story": "",
+      "prompt": "AI 重構時幫箭頭函式加了大括號。這兩個函式行為一樣嗎？",
+      "code": "const f1 = (n) => n + 1;\nconst f2 = (n) => { n + 1 };\n\nconsole.log(f1(1), f2(1));",
+      "options": [
+        { "id": "a", "text": "一樣，都回傳 2" },
+        { "id": "b", "text": "不一樣：f1 回傳 2，f2 回傳 undefined" },
+        { "id": "c", "text": "不一樣：f2 會報錯" },
+        { "id": "d", "text": "一樣，都回傳 undefined" }
+      ],
+      "answer": "b",
+      "explanation": "沒有大括號的箭頭函式會自動回傳算式結果；一旦加上大括號，就變成普通函式主體，要自己寫 return。f2 算了 n + 1 卻沒 return，所以回傳 undefined。這是 AI 重構程式時的高頻翻車點，看到「加了大括號的箭頭函式」記得檢查 return。",
+      "verify": {
+        "checks": [
+          { "code": "const f1 = (n) => n + 1;\nconst f2 = (n) => { n + 1 };\nconsole.log(f1(1), f2(1));", "expected": "2 undefined" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-2-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "把函式當參數傳（callback）",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/map",
+      "story": "",
+      "prompt": "把空格填起來，讓所有價格翻倍，印出 [ 200, 400, 600 ]",
+      "code": "const prices = [100, 200, 300];\nconst doubled = prices.map(____);\nconsole.log(doubled);",
+      "options": [
+        { "id": "a", "text": "(p) => p * 2" },
+        { "id": "b", "text": "p * 2" },
+        { "id": "c", "text": "(p) => { p * 2 }" },
+        { "id": "d", "text": "double(p)" }
+      ],
+      "answer": "a",
+      "explanation": "map 的括號裡要放一個「函式」，它會對每個元素各執行一次。選項 b 只是一個算式（p 根本不存在，會報錯）；選項 c 加了大括號卻沒 return，會得到 [undefined, undefined, undefined]——上一題的陷阱又出現了。",
+      "verify": {
+        "checks": [
+          { "code": "const prices = [100, 200, 300];\nconst doubled = prices.map((p) => p * 2);\nconsole.log(doubled);", "expected": "[ 200, 400, 600 ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-2-q6",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "累加時漏了 +=",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Addition_assignment",
+      "story": "",
+      "prompt": "算購物車總價，預期 30 卻印出 20。哪一行有 bug？",
+      "code": "function total(items) {\n  let sum = 0;                 // A 行\n  for (const item of items) {\n    sum = item.price;          // B 行\n  }\n  return sum;                  // C 行\n}\nconsole.log(total([{ price: 10 }, { price: 20 }]));",
+      "options": [
+        { "id": "a", "text": "A 行：sum 不該從 0 開始" },
+        { "id": "b", "text": "B 行：= 應該是 +=，現在每圈都在覆蓋而不是累加" },
+        { "id": "c", "text": "C 行：return 的位置錯了" },
+        { "id": "d", "text": "沒有 bug，30 才是錯的預期" }
+      ],
+      "answer": "b",
+      "explanation": "每一圈迴圈都把 sum「整個換成」當前價格，前面加的全部歸零——所以最後只剩最後一項的 20。改成 sum += item.price 才是「加上去」。輸出是最後一個元素的值，是「= 寫成 +=」這類 bug 的經典指紋。",
+      "verify": {
+        "checks": [
+          { "code": "function total(items) {\n  let sum = 0;\n  for (const item of items) {\n    sum = item.price;\n  }\n  return sum;\n}\nconsole.log(total([{ price: 10 }, { price: 20 }]));", "expected": "20" },
+          { "code": "function total(items) {\n  let sum = 0;\n  for (const item of items) {\n    sum += item.price;\n  }\n  return sum;\n}\nconsole.log(total([{ price: 10 }, { price: 20 }]));", "expected": "30" }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+{
+  "id": "jsb-1",
+  "title": "變數與型別",
+  "questions": [
+    {
+      "id": "jsb-1-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "let 的區塊作用域",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/let",
+      "story": "",
+      "prompt": "AI 幫你寫了一段折扣邏輯。這段程式會印出什麼？",
+      "code": "let price = 100;\nif (true) {\n  let price = 250;\n}\nconsole.log(price);",
+      "options": [
+        { "id": "a", "text": "100" },
+        { "id": "b", "text": "250" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "會報錯" }
+      ],
+      "answer": "a",
+      "explanation": "大括號裡的 let price 是一個「新的」變數，只活在 { } 裡面；出了大括號它就消失了，外面的 price 從頭到尾沒被動過。這是 AI 產的程式裡很常見的隱形 bug 來源：同名變數其實是兩個不同的人。",
+      "verify": {
+        "checks": [
+          { "code": "let price = 100;\nif (true) {\n  let price = 250;\n}\nconsole.log(price);", "expected": "100" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-1-q2",
+      "type": "find-bug",
+      "difficulty": 1,
+      "topic": "const 不能重新賦值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/const",
+      "story": "",
+      "prompt": "這段購物車程式跑到某一行會爆炸。哪一行會報錯？",
+      "code": "const cart = [];\ncart.push(\"蘋果\");      // A 行\ncart = [\"香蕉\"];        // B 行\nconsole.log(cart);",
+      "options": [
+        { "id": "a", "text": "A 行報錯" },
+        { "id": "b", "text": "B 行報錯" },
+        { "id": "c", "text": "兩行都報錯" },
+        { "id": "d", "text": "都不會報錯" }
+      ],
+      "answer": "b",
+      "explanation": "const 鎖住的是「名牌」不是「內容物」：cart 這個名字不能改指到別的陣列（B 行爆炸），但往陣列裡加東西完全沒問題（A 行合法）。所以 const 陣列還是可以 push 的。",
+      "verify": {
+        "checks": [
+          { "code": "const cart = [];\ncart.push(\"蘋果\");\ncart = [\"香蕉\"];\nconsole.log(cart);", "expectError": "Assignment to constant variable" },
+          { "code": "const cart = [];\ncart.push(\"蘋果\");\nconsole.log(cart[0]);", "expected": "蘋果" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-1-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "字串與數字的加減",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Addition",
+      "story": "",
+      "prompt": "表單抓回來的數字常常是字串。這段程式會印出什麼？",
+      "code": "const a = \"5\" + 3;\nconst b = \"5\" - 3;\nconsole.log(a, b);",
+      "options": [
+        { "id": "a", "text": "53 2" },
+        { "id": "b", "text": "8 2" },
+        { "id": "c", "text": "53 53" },
+        { "id": "d", "text": "8 8" }
+      ],
+      "answer": "a",
+      "explanation": "+ 遇到字串會變成「黏字串」：\"5\" + 3 黏成 \"53\"。但 - 沒有字串版本，只好把 \"5\" 轉成數字算出 2。這就是為什麼表單數字沒轉型時，加總會黏出一長串怪數字。",
+      "verify": {
+        "checks": [
+          { "code": "const a = \"5\" + 3;\nconst b = \"5\" - 3;\nconsole.log(a, b);", "expected": "53 2" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-1-q4",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "== 與 === 的差別",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Strict_equality",
+      "story": "",
+      "prompt": "AI 把 == 改成了 ===。當 count 是數字 0 的時候，這兩版行為一樣嗎？",
+      "code": "// 版本一\nif (count == \"0\") { console.log(\"歸零\"); }\n\n// 版本二\nif (count === \"0\") { console.log(\"歸零\"); }",
+      "options": [
+        { "id": "a", "text": "一樣，兩版都會印「歸零」" },
+        { "id": "b", "text": "不一樣：版本一會印，版本二不會" },
+        { "id": "c", "text": "不一樣：版本二會印，版本一不會" },
+        { "id": "d", "text": "一樣，兩版都不會印" }
+      ],
+      "answer": "b",
+      "explanation": "== 會偷偷轉型再比：數字 0 和字串 \"0\" 被它當成一樣。=== 是嚴格比對，型別不同直接判定不相等，所以版本二什麼都不印。實務上幾乎永遠該用 ===，行為才可預測。",
+      "verify": {
+        "checks": [
+          { "code": "const count = 0;\nif (count == \"0\") { console.log(\"歸零\"); }", "expected": "歸零" },
+          { "code": "const count = 0;\nif (count === \"0\") { console.log(\"歸零\"); }\nconsole.log(\"結束\");", "expected": "結束" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-1-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "typeof 的回傳值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/typeof",
+      "story": "",
+      "prompt": "除錯時最常用的 typeof，有一個著名的陷阱。這段會印出什麼？",
+      "code": "console.log(typeof \"99\");\nconsole.log(typeof null);",
+      "options": [
+        { "id": "a", "text": "string 和 object" },
+        { "id": "b", "text": "number 和 null" },
+        { "id": "c", "text": "string 和 null" },
+        { "id": "d", "text": "number 和 object" }
+      ],
+      "answer": "a",
+      "explanation": "\"99\" 加了引號就是字串，typeof 回 string——這也是表單數字 bug 的除錯線索。而 typeof null 回 object 是 JavaScript 歷史悠久的著名 bug，為了相容性永遠不會修了，背起來就好。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(typeof \"99\");\nconsole.log(typeof null);", "expected": "string\nobject" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-1-q6",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "樣板字串（template literals）",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Template_literals",
+      "story": "",
+      "prompt": "把空格填起來，讓程式印出「哈囉，小美！」",
+      "code": "const name = \"小美\";\nconst msg = ____;\nconsole.log(msg);",
+      "options": [
+        { "id": "a", "text": "`哈囉，${name}！`" },
+        { "id": "b", "text": "\"哈囉，${name}！\"" },
+        { "id": "c", "text": "`哈囉，$name！`" },
+        { "id": "d", "text": "\"哈囉，name！\"" }
+      ],
+      "answer": "a",
+      "explanation": "樣板字串要用反引號 `（鍵盤左上角），${} 裡面放變數。選項 b 用了一般引號，${name} 會被原封不動印出來；選項 c 少了大括號，$name 也只是普通文字。三個條件缺一不可：反引號、$、大括號。",
+      "verify": {
+        "checks": [
+          { "code": "const name = \"小美\";\nconst msg = `哈囉，${name}！`;\nconsole.log(msg);", "expected": "哈囉，小美！" }
+        ]
+      }
+    }
+  ]
+}

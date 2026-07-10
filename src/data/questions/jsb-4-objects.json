@@ -1,0 +1,146 @@
+{
+  "id": "jsb-4",
+  "title": "物件與解構",
+  "questions": [
+    {
+      "id": "jsb-4-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "解構賦值與預設值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment",
+      "story": "",
+      "prompt": "從使用者資料裡解構出欄位。這段印出什麼？",
+      "code": "const user = { name: \"小傑\", level: 3 };\nconst { name, xp = 0 } = user;\nconsole.log(name, xp);",
+      "options": [
+        { "id": "a", "text": "小傑 0" },
+        { "id": "b", "text": "小傑 undefined" },
+        { "id": "c", "text": "小傑 3" },
+        { "id": "d", "text": "會報錯，因為 user 裡沒有 xp" }
+      ],
+      "answer": "a",
+      "explanation": "解構是「按名字從物件裡拿東西」：name 拿到了小傑；xp 在物件裡不存在，但寫了 = 0 預設值就補上 0，不會報錯也不會是 undefined。React 元件的 props 幾乎都這樣寫，這個語法每天都會見到。",
+      "verify": {
+        "checks": [
+          { "code": "const user = { name: \"小傑\", level: 3 };\nconst { name, xp = 0 } = user;\nconsole.log(name, xp);", "expected": "小傑 0" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-4-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "物件是傳參照不是複製",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Spread_syntax",
+      "story": "",
+      "prompt": "只想改 copy 的主題色，base 卻跟著變了。哪一行是禍首？",
+      "code": "const base = { theme: \"dark\" };\nconst copy = base;            // A 行\ncopy.theme = \"light\";         // B 行\nconsole.log(base.theme);      // light ?? 預期 dark",
+      "options": [
+        { "id": "a", "text": "A 行：= 只是幫同一個物件多取一個名字，該用 { ...base } 複製" },
+        { "id": "b", "text": "B 行：物件屬性不能用 = 修改" },
+        { "id": "c", "text": "console.log 印錯變數了" },
+        { "id": "d", "text": "沒有 bug，這樣本來就對" }
+      ],
+      "answer": "a",
+      "explanation": "const copy = base 沒有複製任何東西——兩個名字指著同一個物件，改誰都是改到本尊。要真的複製一份，用展開語法 { ...base }。「改 A 結果 B 也變了」是物件參照 bug 的經典症狀，React 的 state 出怪事十之八九是它。",
+      "verify": {
+        "checks": [
+          { "code": "const base = { theme: \"dark\" };\nconst copy = base;\ncopy.theme = \"light\";\nconsole.log(base.theme);", "expected": "light" },
+          { "code": "const base = { theme: \"dark\" };\nconst copy = { ...base };\ncopy.theme = \"light\";\nconsole.log(base.theme, copy.theme);", "expected": "dark light" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-4-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "可選串連 ?.",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Optional_chaining",
+      "story": "",
+      "prompt": "API 回傳的 data 是 null。這段程式會發生什麼事？",
+      "code": "const res = { data: null };\nconsole.log(res.data?.list);\nconsole.log(res.data.list);",
+      "options": [
+        { "id": "a", "text": "先印 undefined，然後第二行報錯" },
+        { "id": "b", "text": "印兩次 undefined" },
+        { "id": "c", "text": "兩行都報錯" },
+        { "id": "d", "text": "先印 null，然後印 undefined" }
+      ],
+      "answer": "a",
+      "explanation": "?. 遇到 null 會溫柔地放棄，整串直接回 undefined 不報錯；第二行的 . 就沒這麼客氣了，對 null 硬拿屬性直接炸出 TypeError。「Cannot read properties of null」是前端最常見的錯誤訊息之一，解法通常就是補個 ?. 或先檢查資料。",
+      "verify": {
+        "checks": [
+          { "code": "const res = { data: null };\nconsole.log(res.data?.list);", "expected": "undefined" },
+          { "code": "const res = { data: null };\nconsole.log(res.data.list);", "expectError": "Cannot read properties of null" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-4-q4",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "展開語法的先後順序",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Spread_syntax",
+      "story": "",
+      "prompt": "都是「展開 a 再設定 x: 9」，只是順序不同。這兩行印的東西一樣嗎？",
+      "code": "const a = { x: 1, y: 1 };\n\n// 版本一\nconsole.log({ ...a, x: 9 });\n\n// 版本二\nconsole.log({ x: 9, ...a });",
+      "options": [
+        { "id": "a", "text": "一樣，都是 { x: 9, y: 1 }" },
+        { "id": "b", "text": "不一樣：版本一 x 是 9，版本二 x 被蓋回 1" },
+        { "id": "c", "text": "不一樣：版本二會報錯，展開必須放最前面" },
+        { "id": "d", "text": "一樣，都是 { x: 1, y: 1 }" }
+      ],
+      "answer": "b",
+      "explanation": "物件字面值裡「寫在後面的蓋掉前面的」。版本一先展開 a 再用 x: 9 蓋上去，得到 x: 9；版本二先寫 x: 9，又被後面展開的 a.x = 1 蓋回去。更新 state 時把展開放錯邊，更新就會「無聲失效」——這題答對代表你能救回很多人卡半天的 bug。",
+      "verify": {
+        "checks": [
+          { "code": "const a = { x: 1, y: 1 };\nconsole.log({ ...a, x: 9 });\nconsole.log({ x: 9, ...a });", "expected": "{ x: 9, y: 1 }\n{ x: 1, y: 1 }" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-4-q5",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "參數解構",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment",
+      "story": "",
+      "prompt": "把空格填起來，直接在參數裡解構，印出「小傑（Lv.3）」",
+      "code": "function showUser(____) {\n  console.log(`${name}（Lv.${level}）`);\n}\nshowUser({ name: \"小傑\", level: 3 });",
+      "options": [
+        { "id": "a", "text": "{ name, level }" },
+        { "id": "b", "text": "name, level" },
+        { "id": "c", "text": "[name, level]" },
+        { "id": "d", "text": "user" }
+      ],
+      "answer": "a",
+      "explanation": "傳進來的是一個物件，參數寫 { name, level } 就地拆開最省事。選項 b 會把整個物件塞給 name、level 拿到 undefined；選項 d 能跑但函式裡就得寫 user.name——而題目裡直接用了 name。這個寫法就是 React 元件接 props 的標準姿勢。",
+      "verify": {
+        "checks": [
+          { "code": "function showUser({ name, level }) {\n  console.log(`${name}（Lv.${level}）`);\n}\nshowUser({ name: \"小傑\", level: 3 });", "expected": "小傑（Lv.3）" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-4-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "Object.keys",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/keys",
+      "story": "",
+      "prompt": "檢查寵物物件有哪些欄位。這段印出什麼？",
+      "code": "const pet = { name: \"皮皮\", stage: 2 };\nconst keys = Object.keys(pet);\nconsole.log(keys.length, keys[0]);",
+      "options": [
+        { "id": "a", "text": "2 name" },
+        { "id": "b", "text": "2 皮皮" },
+        { "id": "c", "text": "1 name" },
+        { "id": "d", "text": "2 undefined" }
+      ],
+      "answer": "a",
+      "explanation": "Object.keys 回傳「欄位名稱」組成的陣列：['name', 'stage']，長度 2、第一個是 'name'。想拿「值」用 Object.values，想一次拿名稱＋值用 Object.entries。除錯時想快速看物件長什麼樣，這三兄弟很好用。",
+      "verify": {
+        "checks": [
+          { "code": "const pet = { name: \"皮皮\", stage: 2 };\nconst keys = Object.keys(pet);\nconsole.log(keys.length, keys[0]);", "expected": "2 name" }
+        ]
+      }
+    }
+  ]
+}
