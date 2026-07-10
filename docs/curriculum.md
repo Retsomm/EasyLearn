@@ -50,6 +50,9 @@
 
 ## 產題規則備忘
 
-- 每關 6 題，難度遞增，fill-in 佔 1 題；規格見 `question-format.md`
+- **題池抽題制**：每關的 questions 是「題池」，進關時隨機抽 `QUIZ_SIZE`（6）題、
+  依難度排序作答（`src/utils/quiz.js`）——題池大於 6 題後，重玩才會遇到不同題。
+  題池目標每關 12–18 題（**尚未擴池**，目前每關 6 題，抽題等於全上）
+- 產題以 6 題為一組：難度遞增、fill-in 佔 1 題；規格見 `question-format.md`
 - 純 JS 題全部要過執行驗證；React 渲染類用 jsx check；互動類標 manual 待人工審
 - 新關卡一律 append 在章節尾端，不插隊——避免打亂既有玩家的解鎖進度
