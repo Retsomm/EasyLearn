@@ -1,0 +1,146 @@
+{
+  "id": "jsa-4",
+  "title": "async / await",
+  "questions": [
+    {
+      "id": "jsa-4-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "await 等結果出來再往下",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/await",
+      "story": "",
+      "prompt": "用 await 領養寵物。這段印出什麼？",
+      "code": "function getPet() {\n  return Promise.resolve(\"皮皮\");\n}\n\nasync function main() {\n  const pet = await getPet();\n  console.log(\"領養了\", pet);\n}\nmain();",
+      "options": [
+        { "id": "a", "text": "領養了 皮皮" },
+        { "id": "b", "text": "領養了 Promise { '皮皮' }" },
+        { "id": "c", "text": "領養了 undefined" },
+        { "id": "d", "text": "會報錯，getPet 不是 async 函式" }
+      ],
+      "answer": "a",
+      "explanation": "await 的意思是「等這個 Promise 開獎，把裡面的值拿出來給我」。所以 pet 拿到的是皮皮本人，不是包著皮皮的 Promise 盒子。被 await 的函式本身不需要是 async，只要它回傳 Promise 就行。",
+      "verify": {
+        "checks": [
+          { "code": "function getPet() {\n  return Promise.resolve(\"皮皮\");\n}\n\nasync function main() {\n  const pet = await getPet();\n  console.log(\"領養了\", pet);\n}\nmain();", "expected": "領養了 皮皮" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-4-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "async 函式回傳的永遠是 Promise",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/async_function",
+      "story": "",
+      "prompt": "async 函式明明 return 10，直接印它卻怪怪的。這段印出什麼？",
+      "code": "async function getXp() {\n  return 10;\n}\n\nconsole.log(getXp());\ngetXp().then((xp) => console.log(xp));",
+      "options": [
+        { "id": "a", "text": "Promise { 10 } 然後 10" },
+        { "id": "b", "text": "10 然後 10" },
+        { "id": "c", "text": "undefined 然後 10" },
+        { "id": "d", "text": "10 然後 Promise { 10 }" }
+      ],
+      "answer": "a",
+      "explanation": "只要掛上 async，函式的回傳值就會自動被裝進 Promise 盒子——return 10 實際上是 return 一個裝著 10 的 Promise。要拿到裡面的值，得用 .then 或 await 開盒。畫面上出現「[object Promise]」這種怪字時，幾乎都是忘了開盒。",
+      "verify": {
+        "checks": [
+          { "code": "async function getXp() {\n  return 10;\n}\n\nconsole.log(getXp());\ngetXp().then((xp) => console.log(xp));", "expected": "Promise { 10 }\n10" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-4-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "忘了寫 await",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/await",
+      "story": "",
+      "prompt": "畫面上印出了一坨 Promise 而不是關卡名。哪一行有 bug？",
+      "code": "async function loadLevel() {\n  return \"第一關\";\n}\n\nasync function main() {\n  const level = loadLevel();     // B 行\n  console.log(\"進入\", level);\n}\nmain();",
+      "options": [
+        { "id": "a", "text": "B 行少了 await，拿到的是 Promise 盒子不是裡面的值" },
+        { "id": "b", "text": "loadLevel 不該是 async 函式" },
+        { "id": "c", "text": "main 裡面不能呼叫其他 async 函式" },
+        { "id": "d", "text": "console.log 不支援印字串變數" }
+      ],
+      "answer": "a",
+      "explanation": "呼叫 async 函式卻沒加 await，拿到的是還沒開的 Promise 盒子。補上 await 就能拿到「第一關」。這是真實專案裡出現率最高的 async bug——而且它不報錯、靜靜地把怪東西塞進你的畫面，所以要練到一眼認出「進入 Promise { ... }」這種症狀。",
+      "verify": {
+        "checks": [
+          { "code": "async function loadLevel() {\n  return \"第一關\";\n}\n\nasync function main() {\n  const level = loadLevel();\n  console.log(\"進入\", level);\n}\nmain();", "expected": "進入 Promise { '第一關' }" },
+          { "code": "async function loadLevel() {\n  return \"第一關\";\n}\n\nasync function main() {\n  const level = await loadLevel();\n  console.log(\"進入\", level);\n}\nmain();", "expected": "進入 第一關" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-4-q4",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "逐一等 vs 一起等",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/all",
+      "story": "",
+      "prompt": "A 任務要 50 毫秒、B 任務要 10 毫秒。這兩種寫法印出的順序一樣嗎？",
+      "code": "const wait = (ms, tag) =>\n  new Promise((r) => setTimeout(() => { console.log(tag); r(); }, ms));\n\n// 版本一：逐一等\nasync function seq() {\n  await wait(50, \"A\");\n  await wait(10, \"B\");\n}\n\n// 版本二：先全部啟動再等\nasync function par() {\n  const a = wait(50, \"A\");\n  const b = wait(10, \"B\");\n  await a;\n  await b;\n}",
+      "options": [
+        { "id": "a", "text": "一樣，都是 A → B" },
+        { "id": "b", "text": "不一樣：版本一 A → B，版本二 B → A" },
+        { "id": "c", "text": "不一樣：版本二只會印 B" },
+        { "id": "d", "text": "一樣，都是 B → A" }
+      ],
+      "answer": "b",
+      "explanation": "版本一是排隊：等 A 做完（50ms）才開始做 B，總共約 60ms。版本二先把兩個任務都「按下開始」，同時進行——B 只要 10ms 所以先喊完成，總共約 50ms。互不依賴的請求用版本二（或更正式的 Promise.all）能省下大把時間；AI 寫的 await 串常常是不必要的排隊，看懂這題你就會優化它。",
+      "verify": {
+        "checks": [
+          { "code": "const wait = (ms, tag) =>\n  new Promise((r) => setTimeout(() => { console.log(tag); r(); }, ms));\nasync function seq() {\n  await wait(50, \"A\");\n  await wait(10, \"B\");\n}\nseq();", "expected": "A\nB" },
+          { "code": "const wait = (ms, tag) =>\n  new Promise((r) => setTimeout(() => { console.log(tag); r(); }, ms));\nasync function par() {\n  const a = wait(50, \"A\");\n  const b = wait(10, \"B\");\n  await a;\n  await b;\n}\npar();", "expected": "B\nA" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-4-q5",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "Promise.all 一起等",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/all",
+      "story": "",
+      "prompt": "把空格填起來，同時等兩個請求完成並相加，印出 3",
+      "code": "const getA = async () => 1;\nconst getB = async () => 2;\n\nasync function main() {\n  const [a, b] = await ____;\n  console.log(a + b);\n}\nmain();",
+      "options": [
+        { "id": "a", "text": "Promise.all([getA(), getB()])" },
+        { "id": "b", "text": "Promise.all(getA(), getB())" },
+        { "id": "c", "text": "[getA(), getB()]" },
+        { "id": "d", "text": "getA() + getB()" }
+      ],
+      "answer": "a",
+      "explanation": "Promise.all 收一個「陣列」，等裡面全部完成後，把結果按原順序裝成陣列還你——正好可以解構成 a、b。選項 b 少了陣列括號會直接報錯；選項 c 沒有等，解構出來的是兩個還沒開的 Promise 盒子，相加變成一串怪字。多個互不依賴的請求，Promise.all 是標準答案。",
+      "verify": {
+        "checks": [
+          { "code": "const getA = async () => 1;\nconst getB = async () => 2;\n\nasync function main() {\n  const [a, b] = await Promise.all([getA(), getB()]);\n  console.log(a + b);\n}\nmain();", "expected": "3" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-4-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "try/catch 接住 await 的失敗",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/async_function",
+      "story": "",
+      "prompt": "伺服器忙線，但程式有備案。這段印出什麼？",
+      "code": "async function load() {\n  try {\n    return await Promise.reject(new Error(\"伺服器忙線\"));\n  } catch (err) {\n    return \"改用快取資料\";\n  }\n}\nload().then((r) => console.log(r));",
+      "options": [
+        { "id": "a", "text": "改用快取資料" },
+        { "id": "b", "text": "伺服器忙線" },
+        { "id": "c", "text": "程式直接報錯停止" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "await 一個失敗的 Promise 會把失敗「丟」出來，被 try/catch 穩穩接住，走進備案回傳快取資料。這就是 async/await 的優雅之處：非同步的錯誤處理長得跟同步的 try/catch 一模一樣。注意 return await 少了 await 的話，reject 會逃過這個 catch——魔鬼藏在細節裡。",
+      "verify": {
+        "checks": [
+          { "code": "async function load() {\n  try {\n    return await Promise.reject(new Error(\"伺服器忙線\"));\n  } catch (err) {\n    return \"改用快取資料\";\n  }\n}\nload().then((r) => console.log(r));", "expected": "改用快取資料" }
+        ]
+      }
+    }
+  ]
+}

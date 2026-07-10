@@ -1,0 +1,147 @@
+{
+  "id": "jsa-1",
+  "title": "this 與作用域",
+  "questions": [
+    {
+      "id": "jsa-1-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "方法裡的 this",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/this",
+      "story": "",
+      "prompt": "物件的方法用了 this。這段印出什麼？",
+      "code": "const player = {\n  name: \"皮皮\",\n  intro() {\n    return `我是 ${this.name}`;\n  },\n};\nconsole.log(player.intro());",
+      "options": [
+        { "id": "a", "text": "我是 皮皮" },
+        { "id": "b", "text": "我是 undefined" },
+        { "id": "c", "text": "我是 this.name" },
+        { "id": "d", "text": "會報錯" }
+      ],
+      "answer": "a",
+      "explanation": "用 player.intro() 這種「誰的方法誰來呼叫」的寫法時，this 就是點前面那個物件——player。所以 this.name 拿到皮皮。記住這個基準線，接下來的題目都是在破壞它。",
+      "verify": {
+        "checks": [
+          { "code": "const player = {\n  name: \"皮皮\",\n  intro() {\n    return `我是 ${this.name}`;\n  },\n};\nconsole.log(player.intro());", "expected": "我是 皮皮" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-1-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "方法拆下來 this 就丟了",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/this",
+      "story": "",
+      "prompt": "把方法存進變數再呼叫，名字就不見了。問題出在哪？",
+      "code": "const user = {\n  name: \"小美\",\n  hello() {\n    return \"嗨，\" + this.name;\n  },\n};\nconst fn = user.hello;   // B 行\nconsole.log(fn());       // 嗨，undefined ??",
+      "options": [
+        { "id": "a", "text": "B 行把方法「拆離」了物件，fn() 呼叫時 this 不再是 user" },
+        { "id": "b", "text": "hello 方法裡不能用 this" },
+        { "id": "c", "text": "user 物件裡沒有 name 屬性" },
+        { "id": "d", "text": "console.log 不能印函式的回傳值" }
+      ],
+      "answer": "a",
+      "explanation": "this 是「呼叫的當下」才決定的：user.hello() 有 user 在點前面，this 是 user；但 fn() 前面什麼都沒有，this 就跟 user 無關了。React 舊 class 元件要 bind(this) 就是為了這件事。解法：fn = () => user.hello() 或 user.hello.bind(user)。",
+      "verify": {
+        "checks": [
+          { "code": "const user = {\n  name: \"小美\",\n  hello() {\n    return \"嗨，\" + this.name;\n  },\n};\nconst fn = user.hello;\nconsole.log(fn());", "expected": "嗨，undefined" },
+          { "code": "const user = {\n  name: \"小美\",\n  hello() {\n    return \"嗨，\" + this.name;\n  },\n};\nconst fn = user.hello.bind(user);\nconsole.log(fn());", "expected": "嗨，小美" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-1-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "物件方法別用箭頭函式",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/Arrow_functions",
+      "story": "",
+      "prompt": "同一個物件，一個一般方法、一個箭頭函式方法。這段印出什麼？",
+      "code": "const dog = {\n  name: \"旺旺\",\n  bark() {\n    return `汪！我是 ${this.name}`;\n  },\n  bark2: () => `汪！我是 ${this.name}`,\n};\nconsole.log(dog.bark());\nconsole.log(dog.bark2());",
+      "options": [
+        { "id": "a", "text": "兩行都印 汪！我是 旺旺" },
+        { "id": "b", "text": "汪！我是 旺旺 然後 汪！我是 undefined" },
+        { "id": "c", "text": "汪！我是 undefined 然後 汪！我是 旺旺" },
+        { "id": "d", "text": "第二行會報錯" }
+      ],
+      "answer": "b",
+      "explanation": "箭頭函式沒有自己的 this——它直接沿用「定義它的地方」的 this，跟誰呼叫它無關。物件字面值不會建立 this，所以 bark2 的 this 不是 dog。口訣：物件方法用一般寫法，callback 裡才用箭頭函式（下下題就會看到它當救星）。",
+      "verify": {
+        "checks": [
+          { "code": "const dog = {\n  name: \"旺旺\",\n  bark() {\n    return `汪！我是 ${this.name}`;\n  },\n  bark2: () => `汪！我是 ${this.name}`,\n};\nconsole.log(dog.bark());\nconsole.log(dog.bark2());", "expected": "汪！我是 旺旺\n汪！我是 undefined" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-1-q4",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "var 與 let 在迴圈裡的差別",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/let",
+      "story": "",
+      "prompt": "只把 var 換成 let。這兩段印出來的東西一樣嗎？",
+      "code": "// 版本一\nfor (var i = 0; i < 3; i++) {\n  setTimeout(() => console.log(i));\n}\n\n// 版本二\nfor (let i = 0; i < 3; i++) {\n  setTimeout(() => console.log(i));\n}",
+      "options": [
+        { "id": "a", "text": "一樣，都印 0 1 2" },
+        { "id": "b", "text": "不一樣：版本一印 3 3 3，版本二印 0 1 2" },
+        { "id": "c", "text": "不一樣：版本一印 0 1 2，版本二印 3 3 3" },
+        { "id": "d", "text": "一樣，都印 3 3 3" }
+      ],
+      "answer": "b",
+      "explanation": "var 的 i 整個迴圈只有一個，等 setTimeout 執行時迴圈早跑完了，三個函式看到的都是最後的 3。let 每一圈都是一個全新的 i，各自被記住（這就是 closure，下一關的主角）。這題是面試出場率最高的題目之一。",
+      "verify": {
+        "checks": [
+          { "code": "for (var i = 0; i < 3; i++) {\n  setTimeout(() => console.log(i));\n}", "expected": "3\n3\n3" },
+          { "code": "for (let i = 0; i < 3; i++) {\n  setTimeout(() => console.log(i));\n}", "expected": "0\n1\n2" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-1-q5",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "callback 裡用箭頭函式保住 this",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/Arrow_functions",
+      "story": "",
+      "prompt": "把空格填起來，幫每個人的薪水加上 this.bonus，印出 [ 130, 150 ]",
+      "code": "const team = {\n  bonus: 100,\n  applyAll(salaries) {\n    return salaries.map(____);\n  },\n};\nconsole.log(team.applyAll([30, 50]));",
+      "options": [
+        { "id": "a", "text": "(s) => s + this.bonus" },
+        { "id": "b", "text": "function (s) { return s + this.bonus; }" },
+        { "id": "c", "text": "(s) => s + bonus" },
+        { "id": "d", "text": "s + this.bonus" }
+      ],
+      "answer": "a",
+      "explanation": "這裡箭頭函式是救星：它沿用 applyAll 的 this（也就是 team），所以拿得到 bonus。選項 b 的一般函式在 map 裡 this 會跟 team 脫鉤，加出 NaN；選項 c 的 bonus 沒這個變數，直接報錯。上一題說「物件方法別用箭頭」，這題說「callback 要用箭頭」——this 的一體兩面。",
+      "verify": {
+        "checks": [
+          { "code": "const team = {\n  bonus: 100,\n  applyAll(salaries) {\n    return salaries.map((s) => s + this.bonus);\n  },\n};\nconsole.log(team.applyAll([30, 50]));", "expected": "[ 130, 150 ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-1-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "提升（hoisting）與暫時死區",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/var",
+      "story": "",
+      "prompt": "在宣告之前就使用變數，var 和 let 的下場不同。這段會發生什麼？",
+      "code": "console.log(a);\nvar a = 1;\n\nconsole.log(b);\nlet b = 2;",
+      "options": [
+        { "id": "a", "text": "先印 undefined，然後第二個 console.log 報錯" },
+        { "id": "b", "text": "印 undefined 和 undefined" },
+        { "id": "c", "text": "印 1 和 2" },
+        { "id": "d", "text": "第一個 console.log 就報錯" }
+      ],
+      "answer": "a",
+      "explanation": "var 會被「提升」：宣告先偷偷搬到最上面但還沒賦值，所以拿到 undefined 不報錯——這常讓 bug 靜悄悄地溜過。let 也有提升，但在宣告行之前是「暫時死區」，碰它就直接報錯。報錯反而是好事：問題當場現形，而不是變成之後難查的 undefined。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(a);\nvar a = 1;", "expected": "undefined" },
+          { "code": "console.log(b);\nlet b = 2;", "expectError": "Cannot access 'b' before initialization" }
+        ]
+      }
+    }
+  ]
+}

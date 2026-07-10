@@ -1,0 +1,146 @@
+{
+  "id": "jsa-3",
+  "title": "非同步基礎",
+  "questions": [
+    {
+      "id": "jsa-3-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "setTimeout 永遠先讓路",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/Window/setTimeout",
+      "story": "",
+      "prompt": "延遲設成 0 毫秒，就會馬上執行嗎？這段印出什麼？",
+      "code": "console.log(\"A\");\nsetTimeout(() => console.log(\"B\"), 0);\nconsole.log(\"C\");",
+      "options": [
+        { "id": "a", "text": "A C B" },
+        { "id": "b", "text": "A B C" },
+        { "id": "c", "text": "B A C" },
+        { "id": "d", "text": "A C（B 不會印）" }
+      ],
+      "answer": "a",
+      "explanation": "setTimeout 是「把工作排進待辦清單」，就算延遲是 0，也要等目前手上的程式全部跑完才輪到它。所以同步的 A、C 先印完，B 才上場。非同步世界的第一條鐵律：排隊的永遠晚於正在跑的。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(\"A\");\nsetTimeout(() => console.log(\"B\"), 0);\nconsole.log(\"C\");", "expected": "A\nC\nB" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-3-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "資料還沒回來就急著用",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/Window/setTimeout",
+      "story": "",
+      "prompt": "模擬從伺服器抓使用者資料，結果程式直接爆炸。為什麼？",
+      "code": "let user = null;\nsetTimeout(() => {\n  user = { name: \"小美\" };   // 模擬 0.01 秒後資料回來\n}, 10);\nconsole.log(user.name);       // 💥 TypeError",
+      "options": [
+        { "id": "a", "text": "console.log 跑的時候資料還沒回來，user 還是 null；要在 callback 裡面用資料" },
+        { "id": "b", "text": "setTimeout 的時間設太短了，改成 1000 就好" },
+        { "id": "c", "text": "user 不能先設成 null" },
+        { "id": "d", "text": "物件不能放在 setTimeout 裡建立" }
+      ],
+      "answer": "a",
+      "explanation": "console.log 是同步的，馬上就跑；資料要 10 毫秒後才回來——先用後到，當然是 null。把時間改長改短都沒用，順序才是重點：想用非同步的資料，程式就得寫在「資料到手之後」的位置（callback 裡，或之後學的 await 之後）。這是所有「Cannot read properties of null」裡最經典的一種。",
+      "verify": {
+        "checks": [
+          { "code": "let user = null;\nsetTimeout(() => {\n  user = { name: \"小美\" };\n}, 10);\nconsole.log(user.name);", "expectError": "Cannot read properties of null" },
+          { "code": "let user = null;\nsetTimeout(() => {\n  user = { name: \"小美\" };\n  console.log(user.name);\n}, 10);", "expected": "小美" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-3-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Promise 的 then 也要排隊",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise",
+      "story": "",
+      "prompt": "點了珍奶之後先滑手機。這段印出的順序是？",
+      "code": "console.log(\"點餐\");\nPromise.resolve(\"珍奶\").then((d) => {\n  console.log(\"拿到\", d);\n});\nconsole.log(\"先滑手機\");",
+      "options": [
+        { "id": "a", "text": "點餐 → 先滑手機 → 拿到 珍奶" },
+        { "id": "b", "text": "點餐 → 拿到 珍奶 → 先滑手機" },
+        { "id": "c", "text": "拿到 珍奶 → 點餐 → 先滑手機" },
+        { "id": "d", "text": "點餐 → 先滑手機（珍奶永遠拿不到）" }
+      ],
+      "answer": "a",
+      "explanation": "就算 Promise 已經是完成狀態（resolve 了），.then 裡的程式還是要排隊，等目前的同步程式全部跑完才執行。所以「先滑手機」搶在「拿到珍奶」前面。.then 的意思是「好了之後再做」，不是「馬上做」。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(\"點餐\");\nPromise.resolve(\"珍奶\").then((d) => {\n  console.log(\"拿到\", d);\n});\nconsole.log(\"先滑手機\");", "expected": "點餐\n先滑手機\n拿到 珍奶" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-3-q4",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "then 鏈裡的大括號陷阱",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/then",
+      "story": "",
+      "prompt": "AI 重構時幫 then 裡的箭頭函式加了大括號。這兩段印出來一樣嗎？",
+      "code": "// 版本一\nPromise.resolve(10)\n  .then((n) => n * 2)\n  .then((n) => console.log(n));\n\n// 版本二\nPromise.resolve(10)\n  .then((n) => { n * 2 })\n  .then((n) => console.log(n));",
+      "options": [
+        { "id": "a", "text": "一樣，都印 20" },
+        { "id": "b", "text": "不一樣：版本一印 20，版本二印 undefined" },
+        { "id": "c", "text": "不一樣：版本二會報錯" },
+        { "id": "d", "text": "一樣，都印 undefined" }
+      ],
+      "answer": "b",
+      "explanation": "then 鏈是接力賽：上一棒 return 什麼，下一棒就收到什麼。版本二加了大括號卻沒寫 return，等於上一棒空手交棒，下一棒收到 undefined。第一章見過的「大括號吃掉回傳值」陷阱，在 Promise 鏈裡殺傷力更大，因為錯誤會沿著鏈往下傳很遠才被發現。",
+      "verify": {
+        "checks": [
+          { "code": "Promise.resolve(10)\n  .then((n) => n * 2)\n  .then((n) => console.log(n));", "expected": "20" },
+          { "code": "Promise.resolve(10)\n  .then((n) => { n * 2 })\n  .then((n) => console.log(n));", "expected": "undefined" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-3-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用 catch 接住失敗",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch",
+      "story": "",
+      "prompt": "請求失敗了。把空格填起來，接住錯誤並印出「出錯： 斷線了」",
+      "code": "Promise.reject(new Error(\"斷線了\"))\n  .____((err) => console.log(\"出錯：\", err.message));",
+      "options": [
+        { "id": "a", "text": "catch" },
+        { "id": "b", "text": "then" },
+        { "id": "c", "text": "finally" },
+        { "id": "d", "text": "error" }
+      ],
+      "answer": "a",
+      "explanation": "失敗的 Promise 要用 catch 接，沒人接的話錯誤會往上炸（Node 會直接把程式停掉）。then 只接成功那條路；finally 成功失敗都會跑但拿不到錯誤；error 這個方法不存在。抓資料的鏈尾端掛一個 catch，是最基本的保命符。",
+      "verify": {
+        "checks": [
+          { "code": "Promise.reject(new Error(\"斷線了\"))\n  .catch((err) => console.log(\"出錯：\", err.message));", "expected": "出錯： 斷線了" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-3-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "Promise 比 setTimeout 先執行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise",
+      "story": "",
+      "prompt": "計時器和 Promise 同時排隊，誰先？這段印出的順序是？",
+      "code": "setTimeout(() => console.log(\"計時器\"), 0);\nPromise.resolve().then(() => console.log(\"Promise\"));\nconsole.log(\"同步\");",
+      "options": [
+        { "id": "a", "text": "同步 → Promise → 計時器" },
+        { "id": "b", "text": "同步 → 計時器 → Promise" },
+        { "id": "c", "text": "計時器 → Promise → 同步" },
+        { "id": "d", "text": "Promise → 同步 → 計時器" }
+      ],
+      "answer": "a",
+      "explanation": "排隊其實有兩條：Promise 的 then 排在「快速通道」（微任務），setTimeout 排在「一般通道」（巨任務）。同步程式跑完後，快速通道會先清空，才輪到一般通道。所以順序是：同步 → Promise → 計時器。這是資深面試官最愛的順序題，答對代表你真的懂事件圈。",
+      "verify": {
+        "checks": [
+          { "code": "setTimeout(() => console.log(\"計時器\"), 0);\nPromise.resolve().then(() => console.log(\"Promise\"));\nconsole.log(\"同步\");", "expected": "同步\nPromise\n計時器" }
+        ]
+      }
+    }
+  ]
+}
