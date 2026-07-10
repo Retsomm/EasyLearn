@@ -1,0 +1,138 @@
+{
+  "id": "react-4",
+  "title": "hooks 規則與 useEffect",
+  "questions": [
+    {
+      "id": "react-4-q1",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "effect 在渲染之後才跑",
+      "docs": "https://react.dev/learn/synchronizing-with-effects",
+      "story": "",
+      "prompt": "render 和 effect 誰先誰後？元件第一次掛載時，主控台印出的順序是？",
+      "code": "function App() {\n  useEffect(() => {\n    console.log(\"B：effect 執行\");\n  }, []);\n\n  console.log(\"A：正在渲染\");\n  return <p>首頁</p>;\n}",
+      "options": [
+        { "id": "a", "text": "A 先，B 後" },
+        { "id": "b", "text": "B 先，A 後" },
+        { "id": "c", "text": "只印 A，B 不會執行" },
+        { "id": "d", "text": "同時印，順序隨機" }
+      ],
+      "answer": "a",
+      "explanation": "useEffect 的字面意思是「副作用」：React 先專心把畫面算完、畫到螢幕上（A），之後才回頭執行 effect（B）。所以 effect 裡拿得到已經存在的畫面，適合放「畫面好了之後才做」的事——抓資料、訂閱、操作 document。",
+      "verify": {
+        "checks": [],
+        "manual": "useEffect 在 SSR 不執行，需要瀏覽器環境；答案依 react.dev synchronizing-with-effects（effect 在 commit 後執行）"
+      }
+    },
+    {
+      "id": "react-4-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "Hook 不能放在 if 裡",
+      "docs": "https://react.dev/reference/rules/rules-of-hooks",
+      "story": "",
+      "prompt": "想「有需要才建立 state」，結果 React 直接報錯。哪裡違規了？",
+      "code": "function Profile({ isVip }) {\n  if (isVip) {\n    const [badge, setBadge] = useState(\"⭐\");   // B 行\n  }\n  const [name, setName] = useState(\"小美\");\n  return <p>{name}</p>;\n}",
+      "options": [
+        { "id": "a", "text": "B 行把 useState 放進 if：Hook 必須每次渲染都以相同順序執行，不能寫在條件、迴圈裡" },
+        { "id": "b", "text": "badge 的初始值不能是 emoji" },
+        { "id": "c", "text": "一個元件最多只能有一個 useState" },
+        { "id": "d", "text": "isVip 沒有預設值" }
+      ],
+      "answer": "a",
+      "explanation": "React 記 state 靠的是「呼叫順序」：第一個 useState、第二個 useState……像便當店叫號。放進 if 之後，isVip 一變，叫號順序整個亂掉，React 就把別人的 state 發給你。所以鐵律：Hook 只能寫在元件最上層。想條件式地「用」state 可以，條件式地「宣告」不行。",
+      "verify": {
+        "checks": [],
+        "manual": "違規要在 isVip 改變的第二次渲染才爆發，需互動環境；答案依 react.dev rules-of-hooks"
+      }
+    },
+    {
+      "id": "react-4-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "空依賴陣列＝只跑一次",
+      "docs": "https://react.dev/learn/synchronizing-with-effects",
+      "story": "",
+      "prompt": "想讓瀏覽器分頁標題跟著 XP 更新。之後 xp 從 0 漲到 50，標題會變嗎？",
+      "code": "function Game({ xp }) {\n  useEffect(() => {\n    document.title = `XP：${xp}`;\n  }, []);   // 注意這裡\n\n  return <p>目前 XP：{xp}</p>;\n}",
+      "options": [
+        { "id": "a", "text": "不會，標題停在「XP：0」；畫面裡的數字倒是會更新" },
+        { "id": "b", "text": "會，標題跟著變成「XP：50」" },
+        { "id": "c", "text": "會報錯，useEffect 裡不能碰 document" },
+        { "id": "d", "text": "標題和畫面都不會更新" }
+      ],
+      "answer": "a",
+      "explanation": "依賴陣列是 effect 的「鬧鐘設定」：[] 代表只在第一次掛載時響一次，之後 xp 再怎麼變都不再執行。JSX 裡的 {xp} 每輪渲染都重算所以照常更新，於是出現「畫面對、標題錯」的分裂現象。要跟著 xp 動，依賴要寫 [xp]。依賴陣列漏東西是 React 圈公認最陰的 bug 來源。",
+      "verify": {
+        "checks": [],
+        "manual": "需要 props 變更的多輪渲染與 document，SSR 驗不了；答案依 react.dev synchronizing-with-effects（空依賴只在 mount 執行）"
+      }
+    },
+    {
+      "id": "react-4-q4",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "沒寫依賴陣列 vs 空陣列",
+      "docs": "https://react.dev/reference/react/useEffect",
+      "story": "",
+      "prompt": "只差一個 []。這兩個 effect 的行為一樣嗎？",
+      "code": "// 版本一\nuseEffect(() => {\n  console.log(\"執行了\");\n});\n\n// 版本二\nuseEffect(() => {\n  console.log(\"執行了\");\n}, []);",
+      "options": [
+        { "id": "a", "text": "一樣，都只在掛載時跑一次" },
+        { "id": "b", "text": "不一樣：版本一「每次渲染後」都跑，版本二只跑一次" },
+        { "id": "c", "text": "不一樣：版本一會報錯，依賴陣列是必填" },
+        { "id": "d", "text": "不一樣：版本一完全不會執行" }
+      ],
+      "answer": "b",
+      "explanation": "第二個參數整個省略＝「不設鬧鐘條件」＝每次渲染後都執行；[] 才是「只響一次」。差一個 [] 差很多：版本一裡如果放了 setState 或 API 請求，每次渲染觸發 effect、effect 又觸發渲染——無限迴圈就是這樣煉成的。AI 產的 useEffect 忘寫依賴陣列時，你要能一眼看出風險。",
+      "verify": {
+        "checks": [],
+        "manual": "需要多輪渲染觀察執行次數；答案依 react.dev useEffect 參考文件（省略依賴＝每次 render 後執行）"
+      }
+    },
+    {
+      "id": "react-4-q5",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "effect 要收拾自己的攤子（cleanup）",
+      "docs": "https://react.dev/learn/synchronizing-with-effects",
+      "story": "",
+      "prompt": "計時器在元件消失後還在跑，會漏記憶體。把空格填起來，讓元件卸載時停掉它",
+      "code": "useEffect(() => {\n  const id = setInterval(tick, 1000);\n  return ____;\n}, []);",
+      "options": [
+        { "id": "a", "text": "() => clearInterval(id)" },
+        { "id": "b", "text": "clearInterval(id)" },
+        { "id": "c", "text": "id" },
+        { "id": "d", "text": "什麼都不用回傳" }
+      ],
+      "answer": "a",
+      "explanation": "effect 回傳的函式是「打烊清單」：元件卸載（或 effect 重跑）時 React 才執行它。選項 b 少包一層函式，等於「現在就」把計時器停掉——才剛開就關門。開了東西就要收：計時器、事件監聽、訂閱，都在回傳的清理函式裡關掉，不然元件死了它們還陰魂不散。",
+      "verify": {
+        "checks": [],
+        "manual": "cleanup 時機需卸載流程才能觀察；答案依 react.dev synchronizing-with-effects（return cleanup function）"
+      }
+    },
+    {
+      "id": "react-4-q6",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "渲染中直接 setState＝無限迴圈",
+      "docs": "https://react.dev/learn/state-as-a-snapshot",
+      "story": "",
+      "prompt": "頁面一打開就當掉，錯誤訊息寫著 Too many re-renders。哪一行是兇手？",
+      "code": "function Welcome() {\n  const [visits, setVisits] = useState(0);\n\n  setVisits(visits + 1);   // B 行：想記錄「看過一次」\n\n  return <p>第 {visits} 次來訪</p>;\n}",
+      "options": [
+        { "id": "a", "text": "B 行在渲染途中直接 setState：渲染→setState→再渲染→再 setState……無限迴圈" },
+        { "id": "b", "text": "visits + 1 應該寫成 visits++" },
+        { "id": "c", "text": "useState(0) 要改成 useState(1)" },
+        { "id": "d", "text": "<p> 標籤裡不能放兩段文字" }
+      ],
+      "answer": "a",
+      "explanation": "元件函式的本體會在「每次渲染」時執行，在裡面裸奔一句 setState，等於每次渲染都預約下一次渲染——React 跑幾十輪後急煞車，丟出 Too many re-renders。修法看意圖：回應點擊就搬進事件處理器，「掛載時做一次」就搬進 useEffect(..., [])。看到這個錯誤訊息，找「渲染路徑上裸奔的 setState」就對了。",
+      "verify": {
+        "checks": [],
+        "manual": "無限重繪保護只在瀏覽器端 React 觸發；答案依 react.dev（rendering 期間呼叫 setState 的錯誤行為）"
+      }
+    }
+  ]
+}

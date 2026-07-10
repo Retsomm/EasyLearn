@@ -50,8 +50,11 @@
 - 一個 check 可同時有 `expected`（比對錯誤發生前的輸出）與 `expectError`
 - `fill-in` 題：check 的 code 必須是「空格填入正確選項後」的完整程式碼
 - `find-bug` 題：建議兩個 check——原始碼呈現 bug 行為＋修正版呈現正確行為
-- 無法自動驗證的題目（React 元件、純觀念題）：`"checks": []` 並加 `"manual": "原因"`，
-  這類題**必須**人工審
+- **React/JSX 題**：check 改用 `jsx` 欄位（取代 `code`），驗證腳本會用 esbuild 轉譯後執行；
+  搭配 `import { renderToStaticMarkup } from 'react-dom/server'` 把元件渲染成 HTML 字串
+  console.log 出來比對 `expected`。渲染結果類題目一律要這樣驗
+- 無法自動驗證的題目（需要點擊互動、useEffect 時序等瀏覽器行為）：`"checks": []` 並加
+  `"manual": "原因"`，這類題**必須**人工審
 
 ## 題型比例
 

@@ -1,20 +1,25 @@
 import CodeBlock from './CodeBlock'
+import Icon from './Icons'
 
-const TYPE_LABELS = {
-  'predict-output': '🔮 預測輸出',
-  'find-bug': '🐛 抓蟲',
-  'same-or-not': '🔍 改壞了嗎',
-  'fill-in': '✍️ 動手填空',
+const TYPE_META = {
+  'predict-output': { icon: 'eye', label: '預測輸出' },
+  'find-bug': { icon: 'bug', label: '抓蟲' },
+  'same-or-not': { icon: 'search', label: '改壞了嗎' },
+  'fill-in': { icon: 'pencil', label: '動手填空' },
 }
 
 export default function QuestionCard({ question, selected, onSelect, onNext, isLast }) {
   const answered = selected !== null
   const correct = answered && selected === question.answer
+  const typeMeta = TYPE_META[question.type]
 
   return (
     <div className="question-card">
       <div className="question-meta">
-        <span className="type-badge">{TYPE_LABELS[question.type]}</span>
+        <span className="type-badge">
+          <Icon name={typeMeta.icon} size={14} />
+          {typeMeta.label}
+        </span>
         <span className="topic-label">{question.topic}</span>
       </div>
 
@@ -45,14 +50,17 @@ export default function QuestionCard({ question, selected, onSelect, onNext, isL
       {answered && (
         <div className={`feedback ${correct ? 'feedback-correct' : 'feedback-wrong'}`}>
           <div className="feedback-title">
-            {correct ? '🎉 答對了！+10 XP' : '💡 沒關係，弄懂它才是重點 +2 XP'}
+            <Icon name={correct ? 'check-circle' : 'lightbulb'} size={20} />
+            {correct ? '答對了！+10 XP' : '沒關係，弄懂它才是重點 +2 XP'}
           </div>
           <p className="feedback-explanation">{question.explanation}</p>
           <a className="docs-link" href={question.docs} target="_blank" rel="noreferrer">
-            📖 延伸閱讀：官方文件
+            <Icon name="book-open" size={16} />
+            延伸閱讀：官方文件
           </a>
           <button className="primary-btn next-btn" onClick={onNext}>
-            {isLast ? '看結算 🏁' : '下一題 →'}
+            {isLast ? '看結算' : '下一題'}
+            <Icon name={isLast ? 'flag' : 'arrow-right'} size={18} />
           </button>
         </div>
       )}

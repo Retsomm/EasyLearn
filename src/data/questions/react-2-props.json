@@ -1,0 +1,145 @@
+{
+  "id": "react-2",
+  "title": "props 資料流",
+  "questions": [
+    {
+      "id": "react-2-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "props 與預設值",
+      "docs": "https://react.dev/learn/passing-props-to-a-component",
+      "story": "",
+      "prompt": "Greet 元件被用了兩次，一次沒給 name。畫面顯示什麼？",
+      "code": "function Greet({ name = \"訪客\" }) {\n  return <p>哈囉，{name}</p>;\n}\n\nfunction App() {\n  return (\n    <div>\n      <Greet />\n      <Greet name=\"阿明\" />\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "哈囉，訪客 和 哈囉，阿明" },
+        { "id": "b", "text": "哈囉，undefined 和 哈囉，阿明" },
+        { "id": "c", "text": "會報錯，第一個 Greet 少給 name" },
+        { "id": "d", "text": "哈囉，訪客 和 哈囉，訪客" }
+      ],
+      "answer": "a",
+      "explanation": "props 就是「呼叫元件時傳進來的參數物件」，{ name = \"訪客\" } 是第一章學過的解構＋預設值，原封不動搬到 React 來用。沒傳 name 就補上訪客。你在 JS 章練的每一招，到 React 都是日常。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Greet({ name = \"訪客\" }) {\n  return <p>哈囉，{name}</p>;\n}\nfunction App() {\n  return (\n    <div>\n      <Greet />\n      <Greet name=\"阿明\" />\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<div><p>哈囉，訪客</p><p>哈囉，阿明</p></div>" }
+        ]
+      }
+    },
+    {
+      "id": "react-2-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "引號傳 props 是字串",
+      "docs": "https://react.dev/learn/passing-props-to-a-component",
+      "story": "",
+      "prompt": "玩家得了 5 分要加 10 分獎勵，畫面卻顯示「總分：510」。哪裡錯了？",
+      "code": "function Score({ points }) {\n  return <p>總分：{points + 10}</p>;\n}\n\nfunction App() {\n  return <Score points=\"5\" />;   // B 行\n}",
+      "options": [
+        { "id": "a", "text": "B 行用引號傳值，points 是字串 \"5\"，+ 變成黏字串；要寫 points={5}" },
+        { "id": "b", "text": "Score 元件裡不能做加法" },
+        { "id": "c", "text": "points + 10 要寫成 points +10（空格問題）" },
+        { "id": "d", "text": "沒有 bug，510 是對的" }
+      ],
+      "answer": "a",
+      "explanation": "引號傳的 props 永遠是字串——\"5\" + 10 就黏出 \"510\"（第一章的字串加法陷阱在 React 重演）。數字、布林、變數都要走大括號：points={5}。畫面出現黏在一起的怪數字，第一件事就是查 props 是不是被引號傳成了字串。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Score({ points }) {\n  return <p>總分：{points + 10}</p>;\n}\nconsole.log(renderToStaticMarkup(<Score points=\"5\" />));", "expected": "<p>總分：510</p>" },
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Score({ points }) {\n  return <p>總分：{points + 10}</p>;\n}\nconsole.log(renderToStaticMarkup(<Score points={5} />));", "expected": "<p>總分：15</p>" }
+        ]
+      }
+    },
+    {
+      "id": "react-2-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "title 走屬性、內容走 children",
+      "docs": "https://react.dev/learn/passing-props-to-a-component",
+      "story": "",
+      "prompt": "Frame 元件同時收一般 prop 和 children。渲染出什麼 HTML？",
+      "code": "function Frame({ title, children }) {\n  return (\n    <section>\n      <h2>{title}</h2>\n      {children}\n    </section>\n  );\n}\n\nfunction App() {\n  return <Frame title=\"公告\">今天晚上停機維護</Frame>;\n}",
+      "options": [
+        { "id": "a", "text": "<section><h2>公告</h2>今天晚上停機維護</section>" },
+        { "id": "b", "text": "<section><h2>今天晚上停機維護</h2>公告</section>" },
+        { "id": "c", "text": "<section><h2>公告</h2></section>（children 不見了）" },
+        { "id": "d", "text": "會報錯，不能同時用 props 和 children" }
+      ],
+      "answer": "a",
+      "explanation": "兩條通道並行不衝突：標籤上的 title=\"公告\" 走屬性通道，標籤中間的文字走 children 通道，元件裡各自放到該去的位置。設計元件時的慣例：結構性的小資料（標題、類型）用具名 prop，大塊內容用 children。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Frame({ title, children }) {\n  return (\n    <section>\n      <h2>{title}</h2>\n      {children}\n    </section>\n  );\n}\nfunction App() {\n  return <Frame title=\"公告\">今天晚上停機維護</Frame>;\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<section><h2>公告</h2>今天晚上停機維護</section>" }
+        ]
+      }
+    },
+    {
+      "id": "react-2-q4",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "布林 props 的簡寫",
+      "docs": "https://react.dev/learn/passing-props-to-a-component",
+      "story": "",
+      "prompt": "AI 把 disabled={true} 簡寫成 disabled。這兩種寫法效果一樣嗎？",
+      "code": "function Button({ disabled }) {\n  return <button disabled={disabled}>送出</button>;\n}\n\n// 版本一\n<Button disabled />\n\n// 版本二\n<Button disabled={true} />",
+      "options": [
+        { "id": "a", "text": "一樣：prop 只寫名字不給值，就等於 ={true}" },
+        { "id": "b", "text": "不一樣：版本一的 disabled 是 undefined" },
+        { "id": "c", "text": "不一樣：版本一會報錯" },
+        { "id": "d", "text": "不一樣：版本一的 disabled 是字串 \"disabled\"" }
+      ],
+      "answer": "a",
+      "explanation": "JSX 的慣例：prop 只寫名字就是 true 的簡寫，跟 HTML 的 <input disabled> 一脈相承。讀 AI 或元件庫的程式碼會大量遇到這種簡寫（<Modal open />、<Input required />），認得它就不會誤以為少寫了值。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Button({ disabled }) {\n  return <button disabled={disabled}>送出</button>;\n}\nconsole.log(renderToStaticMarkup(<Button disabled />));\nconsole.log(renderToStaticMarkup(<Button disabled={true} />));", "expected": "<button disabled=\"\">送出</button>\n<button disabled=\"\">送出</button>" }
+        ]
+      }
+    },
+    {
+      "id": "react-2-q5",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "props 解構的標準姿勢",
+      "docs": "https://react.dev/learn/passing-props-to-a-component",
+      "story": "",
+      "prompt": "把空格填起來，讓元件收到 text 並顯示 <h1>嗨</h1>",
+      "code": "function Title(____) {\n  return <h1>{text}</h1>;\n}\n\n// 使用：<Title text=\"嗨\" />",
+      "options": [
+        { "id": "a", "text": "{ text }" },
+        { "id": "b", "text": "text" },
+        { "id": "c", "text": "props" },
+        { "id": "d", "text": "[text]" }
+      ],
+      "answer": "a",
+      "explanation": "React 把所有 props 打包成一個物件塞給元件的第一個參數，{ text } 就地解構拿出來（第一章物件關卡的參數解構，在 React 是每天寫的標準姿勢）。選項 c 的 props 能收到東西，但函式裡就得寫 props.text——而題目裡直接用了 text，會報 text is not defined。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Title({ text }) {\n  return <h1>{text}</h1>;\n}\nconsole.log(renderToStaticMarkup(<Title text=\"嗨\" />));", "expected": "<h1>嗨</h1>" }
+        ]
+      }
+    },
+    {
+      "id": "react-2-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "|| 與 ?? 給預設值的差別",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing",
+      "story": "",
+      "prompt": "折扣是 0 元（合法的值！）。同一個 discount 用 || 和 ?? 給預設字，畫面顯示什麼？",
+      "code": "function Price({ discount }) {\n  return (\n    <p>折扣：{discount || \"無\"}｜{discount ?? \"無\"}</p>\n  );\n}\n\n// 使用：<Price discount={0} />",
+      "options": [
+        { "id": "a", "text": "折扣：無｜0" },
+        { "id": "b", "text": "折扣：0｜0" },
+        { "id": "c", "text": "折扣：無｜無" },
+        { "id": "d", "text": "折扣：0｜無" }
+      ],
+      "answer": "a",
+      "explanation": "|| 看到任何 falsy（0、空字串、false）都換成右邊——0 元折扣被當成「無」，這是 bug！?? 只在 null 和 undefined 時才用預設值，0 被保留下來。「值可能是 0 或空字串」的場合一律用 ??，這是 AI 產的程式裡值得主動巡查的高風險點。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Price({ discount }) {\n  return (\n    <p>折扣：{discount || \"無\"}｜{discount ?? \"無\"}</p>\n  );\n}\nconsole.log(renderToStaticMarkup(<Price discount={0} />));", "expected": "<p>折扣：無｜0</p>" }
+        ]
+      }
+    }
+  ]
+}

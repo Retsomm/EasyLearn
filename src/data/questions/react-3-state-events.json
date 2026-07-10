@@ -1,0 +1,138 @@
+{
+  "id": "react-3",
+  "title": "state 與事件",
+  "questions": [
+    {
+      "id": "react-3-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "setState 觸發重繪",
+      "docs": "https://react.dev/learn/state-a-components-memory",
+      "story": "",
+      "prompt": "按鈕按了三下。畫面上顯示什麼數字？",
+      "code": "function Counter() {\n  const [count, setCount] = useState(0);\n  return (\n    <button onClick={() => setCount(count + 1)}>\n      {count}\n    </button>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "3" },
+        { "id": "b", "text": "0（畫面不會變）" },
+        { "id": "c", "text": "1（只有第一下有效）" },
+        { "id": "d", "text": "會報錯" }
+      ],
+      "answer": "a",
+      "explanation": "每按一下：setCount 通知 React「資料變了」，React 重新執行 Counter 函式（重繪），useState 交回最新的值。按三下就重繪三次，一路 1、2、3。state 的本質：元件的專屬記憶＋改變時自動重繪畫面。",
+      "verify": {
+        "checks": [],
+        "manual": "需要點擊互動與瀏覽器 DOM，renderToStaticMarkup 驗不了；答案依 react.dev state 文件"
+      }
+    },
+    {
+      "id": "react-3-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "直接改變數不會重繪",
+      "docs": "https://react.dev/learn/state-a-components-memory",
+      "story": "",
+      "prompt": "按了半天按鈕，畫面上的數字動都不動。哪裡出了問題？",
+      "code": "function Counter() {\n  let [count, setCount] = useState(0);\n\n  function add() {\n    count = count + 1;   // B 行\n    console.log(count);  // 明明有變大！\n  }\n\n  return <button onClick={add}>{count}</button>;\n}",
+      "options": [
+        { "id": "a", "text": "B 行直接改變數，React 根本不知道要重繪；必須用 setCount(count + 1)" },
+        { "id": "b", "text": "useState(0) 的初始值不能是 0" },
+        { "id": "c", "text": "onClick 應該寫 onClick={add()}" },
+        { "id": "d", "text": "console.log 擋住了重繪" }
+      ],
+      "answer": "a",
+      "explanation": "count 只是一般的區域變數，直接改它就像在影印本上塗改——正本（React 管理的 state）毫無感覺，也就不會重繪。console.log 看得到變化更迷惑人：資料真的變了，只是畫面沒跟上。「資料有變、畫面沒變」的症狀，答案幾乎都是：忘了走 setState。",
+      "verify": {
+        "checks": [],
+        "manual": "需要點擊互動；答案依 react.dev state-a-components-memory（直接改變數不觸發 re-render）"
+      }
+    },
+    {
+      "id": "react-3-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "state 是當下的快照",
+      "docs": "https://react.dev/learn/state-as-a-snapshot",
+      "story": "",
+      "prompt": "一次想加 3 分，連寫三行 setCount。按一下之後 count 是多少？",
+      "code": "function Counter() {\n  const [count, setCount] = useState(0);\n\n  function addThree() {\n    setCount(count + 1);\n    setCount(count + 1);\n    setCount(count + 1);\n  }\n\n  return <button onClick={addThree}>{count}</button>;\n}",
+      "options": [
+        { "id": "a", "text": "1" },
+        { "id": "b", "text": "3" },
+        { "id": "c", "text": "0" },
+        { "id": "d", "text": "2" }
+      ],
+      "answer": "a",
+      "explanation": "這次點擊裡，count 是這輪渲染的「快照」，三行都在算 0 + 1——等於同一句話說三遍。setCount 不會當場改掉 count，它只是預約下一輪渲染。想連續加工，要用更新函式 setCount(c => c + 1)（下一題就是它）。這題是 React 面試的照妖鏡，答對代表真的懂渲染模型。",
+      "verify": {
+        "checks": [],
+        "manual": "需要點擊互動；答案依 react.dev state-as-a-snapshot（同輪渲染中 count 固定為快照值）"
+      }
+    },
+    {
+      "id": "react-3-q4",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "直接給值 vs 更新函式",
+      "docs": "https://react.dev/learn/queueing-a-series-of-state-updates",
+      "story": "",
+      "prompt": "都是連寫兩行加分。按一下之後，兩個版本的結果一樣嗎？（count 從 0 開始）",
+      "code": "// 版本一\nsetCount(count + 1);\nsetCount(count + 1);\n\n// 版本二\nsetCount((c) => c + 1);\nsetCount((c) => c + 1);",
+      "options": [
+        { "id": "a", "text": "一樣，都變 2" },
+        { "id": "b", "text": "不一樣：版本一變 1，版本二變 2" },
+        { "id": "c", "text": "不一樣：版本一變 2，版本二變 1" },
+        { "id": "d", "text": "一樣，都變 1" }
+      ],
+      "answer": "b",
+      "explanation": "版本一兩行都在算「快照的 0」+ 1，重複預約同一個結果。版本二傳的是更新函式：React 排隊依序執行，第一個拿 0 算出 1，第二個接著拿 1 算出 2——像接力而不是各說各話。要根據「上一個結果」繼續算的時候，永遠用函式版 setCount(c => c + 1)。",
+      "verify": {
+        "checks": [],
+        "manual": "需要點擊互動；答案依 react.dev queueing-a-series-of-state-updates（updater function 依序消化佇列）"
+      }
+    },
+    {
+      "id": "react-3-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "onClick 要傳函式，不是呼叫它",
+      "docs": "https://react.dev/learn/responding-to-events",
+      "story": "",
+      "prompt": "把空格填起來，讓「按下按鈕時」才執行 handleDelete",
+      "code": "function TrashButton({ handleDelete }) {\n  return <button onClick={____}>刪除</button>;\n}",
+      "options": [
+        { "id": "a", "text": "handleDelete" },
+        { "id": "b", "text": "handleDelete()" },
+        { "id": "c", "text": "\"handleDelete\"" },
+        { "id": "d", "text": "onClick(handleDelete)" }
+      ],
+      "answer": "a",
+      "explanation": "onClick 要收「一個函式」，等點擊發生時 React 才幫你呼叫它。選項 b 多了括號，變成「渲染的當下就立刻執行」——刪除鈕還沒人按，東西就先被刪了，這是 React 新手災情排行榜前三名的 bug。要傳參數時用箭頭函式包一層：onClick={() => handleDelete(id)}。",
+      "verify": {
+        "checks": [],
+        "manual": "需要點擊互動驗證時機差異；答案依 react.dev responding-to-events（pass, don't call）"
+      }
+    },
+    {
+      "id": "react-3-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "setState 之後馬上讀，讀到舊值",
+      "docs": "https://react.dev/learn/state-as-a-snapshot",
+      "story": "",
+      "prompt": "改完名字馬上 console.log。按下按鈕後，主控台印出什麼？",
+      "code": "function Profile() {\n  const [name, setName] = useState(\"小美\");\n\n  function change() {\n    setName(\"小華\");\n    console.log(name);   // 印什麼？\n  }\n\n  return <button onClick={change}>{name}</button>;\n}",
+      "options": [
+        { "id": "a", "text": "小美（舊值），但畫面會更新成小華" },
+        { "id": "b", "text": "小華" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "會報錯，setState 之後不能 console.log" }
+      ],
+      "answer": "a",
+      "explanation": "setName 是「預約下一輪渲染」，不是當場改值——這輪函式裡的 name 從頭到尾都是快照「小美」。下一輪渲染 name 才會是小華，畫面因此更新。「setState 之後馬上 log 出舊值」不是 bug，是渲染模型的正常行為；除錯時被這個現象騙過的人不計其數，現在你免疫了。",
+      "verify": {
+        "checks": [],
+        "manual": "需要點擊互動；答案依 react.dev state-as-a-snapshot（setState 不改變當輪快照）"
+      }
+    }
+  ]
+}
