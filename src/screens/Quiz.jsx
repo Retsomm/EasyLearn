@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import QuestionCard from '../components/QuestionCard'
-import Mascot from '../components/Mascot'
+import Mascot, { getStage } from '../components/Mascot'
 import Icon from '../components/Icons'
 
 const XP_CORRECT = 10
@@ -106,6 +106,16 @@ export default function Quiz({
             />
           ))}
         </div>
+        <span
+          key={`${index}-${selected ?? 'waiting'}`}
+          className={`quiz-pet ${
+            selected === null ? '' : selected === question.answer ? 'pet-happy' : 'pet-sad'
+          }`}
+          role="img"
+          aria-label="皮皮"
+        >
+          {getStage(progress.xp).emoji}
+        </span>
         <span className="quiz-counter">
           {index + 1}/{questions.length}
         </span>
