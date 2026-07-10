@@ -1,0 +1,145 @@
+{
+  "id": "jsa-2",
+  "title": "closure（閉包）",
+  "questions": [
+    {
+      "id": "jsa-2-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "函式記得自己的出生地",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "makeCounter 執行完就結束了，count 還活著嗎？這段印出什麼？",
+      "code": "function makeCounter() {\n  let count = 0;\n  return () => ++count;\n}\nconst next = makeCounter();\nconsole.log(next());\nconsole.log(next());",
+      "options": [
+        { "id": "a", "text": "1 然後 2" },
+        { "id": "b", "text": "1 然後 1" },
+        { "id": "c", "text": "0 然後 1" },
+        { "id": "d", "text": "報錯，count 已經不存在了" }
+      ],
+      "answer": "a",
+      "explanation": "被回傳的箭頭函式「背著」它出生地的變數 count 一起活下去——這就是 closure。每次呼叫 next()，動的都是同一個 count，所以 1、2 一路累加。函式不只是程式碼，還帶著它出生時的環境。",
+      "verify": {
+        "checks": [
+          { "code": "function makeCounter() {\n  let count = 0;\n  return () => ++count;\n}\nconst next = makeCounter();\nconsole.log(next());\nconsole.log(next());", "expected": "1\n2" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-2-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "每次呼叫都是新的記憶空間",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "呼叫了兩次 makeCounter。a 和 b 共用同一個 count 嗎？",
+      "code": "function makeCounter() {\n  let count = 0;\n  return () => ++count;\n}\nconst a = makeCounter();\nconst b = makeCounter();\na();\na();\nconsole.log(a(), b());",
+      "options": [
+        { "id": "a", "text": "3 1" },
+        { "id": "b", "text": "3 4" },
+        { "id": "c", "text": "3 3" },
+        { "id": "d", "text": "1 1" }
+      ],
+      "answer": "a",
+      "explanation": "每呼叫一次 makeCounter，就誕生一個全新的 count——a 和 b 各自帶著自己的，互不干擾。a 被叫了三次所以是 3，b 第一次被叫所以是 1。這個「各自獨立的記憶」正是 React 每個元件實例的 state 互不干擾的原理。",
+      "verify": {
+        "checks": [
+          { "code": "function makeCounter() {\n  let count = 0;\n  return () => ++count;\n}\nconst a = makeCounter();\nconst b = makeCounter();\na();\na();\nconsole.log(a(), b());", "expected": "3 1" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-2-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "變數宣告在外面就變共用",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "兩個計數器互相污染，b 第一次就跳到 3。哪裡出了問題？",
+      "code": "let count = 0;               // A 行\nfunction makeCounter() {\n  return () => ++count;\n}\nconst a = makeCounter();\nconst b = makeCounter();\na();\na();\nconsole.log(b());  // 3 ?? 預期 1",
+      "options": [
+        { "id": "a", "text": "A 行：count 宣告在函式外面，所有計數器都共用它，該搬進 makeCounter 裡" },
+        { "id": "b", "text": "++count 應該寫成 count++" },
+        { "id": "c", "text": "makeCounter 不能被呼叫兩次" },
+        { "id": "d", "text": "沒有 bug，3 才是對的" }
+      ],
+      "answer": "a",
+      "explanation": "count 住在函式外面，就只有一份，大家都來加它。搬進 makeCounter 裡，每次呼叫才會生出獨立的一份（上一題的行為）。「狀態放哪裡」決定「誰共用它」——變數宣告的位置從來不是小事。",
+      "verify": {
+        "checks": [
+          { "code": "let count = 0;\nfunction makeCounter() {\n  return () => ++count;\n}\nconst a = makeCounter();\nconst b = makeCounter();\na();\na();\nconsole.log(b());", "expected": "3" },
+          { "code": "function makeCounter() {\n  let count = 0;\n  return () => ++count;\n}\nconst a = makeCounter();\nconst b = makeCounter();\na();\na();\nconsole.log(b());", "expected": "1" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-2-q4",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "柯里化（curry）讀得懂嗎",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "版本一是 AI 很愛寫的「函式回傳函式」。這兩段印出來一樣嗎？",
+      "code": "// 版本一\nfunction add(a) {\n  return (b) => a + b;\n}\nconsole.log(add(2)(3));\n\n// 版本二\nfunction addBoth(a, b) {\n  return a + b;\n}\nconsole.log(addBoth(2, 3));",
+      "options": [
+        { "id": "a", "text": "一樣，都印 5" },
+        { "id": "b", "text": "不一樣：版本一印出一個函式" },
+        { "id": "c", "text": "不一樣：版本一會報錯，不能連續兩組括號" },
+        { "id": "d", "text": "不一樣：版本一印 23" }
+      ],
+      "answer": "a",
+      "explanation": "add(2) 回傳一個「記得 a 是 2」的函式（closure！），緊接的 (3) 馬上呼叫它，2 + 3 = 5。連續兩組括號完全合法，只是分兩段收參數。這種寫法在 React 的事件處理裡很常見（例如 onClick={handle(id)}），看懂它就不會再被嚇到。",
+      "verify": {
+        "checks": [
+          { "code": "function add(a) {\n  return (b) => a + b;\n}\nconsole.log(add(2)(3));\nfunction addBoth(a, b) {\n  return a + b;\n}\nconsole.log(addBoth(2, 3));", "expected": "5\n5" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-2-q5",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "用 closure 做私有狀態",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "把空格填起來，讓分數正確累加，印出 15",
+      "code": "function createGame() {\n  let score = 0;\n  return {\n    add(points) { ____ },\n    total() { return score; },\n  };\n}\nconst g = createGame();\ng.add(10);\ng.add(5);\nconsole.log(g.total());",
+      "options": [
+        { "id": "a", "text": "score += points;" },
+        { "id": "b", "text": "this.score += points;" },
+        { "id": "c", "text": "let score = points;" },
+        { "id": "d", "text": "score = points;" }
+      ],
+      "answer": "a",
+      "explanation": "add 和 total 都背著同一個 score（closure），直接 score += points 就能累加。選項 b 的 this.score 是在物件身上另開一個欄位，跟 closure 裡的 score 是兩個世界；選項 d 每次「覆蓋」而不是累加，只會剩 5——第一章那個 = 與 += 的坑又來了。外面完全碰不到 score，這就是最輕量的「私有變數」。",
+      "verify": {
+        "checks": [
+          { "code": "function createGame() {\n  let score = 0;\n  return {\n    add(points) { score += points; },\n    total() { return score; },\n  };\n}\nconst g = createGame();\ng.add(10);\ng.add(5);\nconsole.log(g.total());", "expected": "15" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-2-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "closure 抓的是變數，不是當下的值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "setTimeout 排程之後，msg 又被改了。最後印出哪一版？",
+      "code": "function delayedLog() {\n  let msg = \"第一版\";\n  setTimeout(() => console.log(msg), 10);\n  msg = \"第二版\";\n}\ndelayedLog();",
+      "options": [
+        { "id": "a", "text": "第二版" },
+        { "id": "b", "text": "第一版" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "報錯，msg 在函式結束後就消失了" }
+      ],
+      "answer": "a",
+      "explanation": "closure 記住的是「msg 這個變數本身」，不是排程當下的值。等 10 毫秒後函式真的執行時，去看 msg——它已經被改成第二版了。「非同步 callback 讀到的是未來的值」這個特性，正是下一關非同步世界的入口。",
+      "verify": {
+        "checks": [
+          { "code": "function delayedLog() {\n  let msg = \"第一版\";\n  setTimeout(() => console.log(msg), 10);\n  msg = \"第二版\";\n}\ndelayedLog();", "expected": "第二版" }
+        ]
+      }
+    }
+  ]
+}
