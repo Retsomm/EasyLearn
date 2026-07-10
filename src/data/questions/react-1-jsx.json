@@ -1,0 +1,146 @@
+{
+  "id": "react-1",
+  "title": "元件與 JSX",
+  "questions": [
+    {
+      "id": "react-1-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "大括號裡是活的 JavaScript",
+      "docs": "https://react.dev/learn/javascript-in-jsx-with-curly-braces",
+      "story": "",
+      "prompt": "JSX 裡的大括號會執行運算嗎？畫面上顯示什麼？",
+      "code": "function Badge() {\n  const level = 3;\n  return <span>Lv.{level + 1}</span>;\n}",
+      "options": [
+        { "id": "a", "text": "Lv.4" },
+        { "id": "b", "text": "Lv.{level + 1}" },
+        { "id": "c", "text": "Lv.3 + 1" },
+        { "id": "d", "text": "會報錯，JSX 裡不能做運算" }
+      ],
+      "answer": "a",
+      "explanation": "JSX 的大括號是「開一扇窗回到 JavaScript」：裡面放的是真的程式，level + 1 會被算成 4。任何合法的 JS 算式都能放——變數、函式呼叫、三元運算子。第二章讀懂的那些 JS，就是要在這扇窗裡用的。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Badge() {\n  const level = 3;\n  return <span>Lv.{level + 1}</span>;\n}\nconsole.log(renderToStaticMarkup(<Badge />));", "expected": "<span>Lv.4</span>" }
+        ]
+      }
+    },
+    {
+      "id": "react-1-q2",
+      "type": "find-bug",
+      "difficulty": 1,
+      "topic": "元件名必須大寫開頭",
+      "docs": "https://react.dev/learn/your-first-component",
+      "story": "",
+      "prompt": "卡片元件寫好了，畫面卻是一片空白。問題出在哪？",
+      "code": "function card() {\n  return <div>會員卡</div>;\n}\n\nfunction App() {\n  return <card />;   // 畫面空白 ??\n}",
+      "options": [
+        { "id": "a", "text": "元件名要大寫開頭：小寫的 <card /> 會被當成 HTML 標籤，函式根本沒被執行" },
+        { "id": "b", "text": "card 函式少了 return" },
+        { "id": "c", "text": "<card /> 要寫成 <card></card> 才會執行" },
+        { "id": "d", "text": "App 裡不能只回傳一個元件" }
+      ],
+      "answer": "a",
+      "explanation": "JSX 用「大小寫」判斷身分：大寫開頭是你的元件（會執行函式），小寫開頭當成 HTML 內建標籤。<card /> 被當成一個不存在的 HTML 標籤原樣送出，card 函式從頭到尾沒人呼叫。改名成 Card 就活了。畫面一片空白又不報錯的時候，先檢查元件的大小寫。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction card() {\n  return <div>會員卡</div>;\n}\nfunction App() {\n  return <card />;\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<card></card>" },
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Card() {\n  return <div>會員卡</div>;\n}\nfunction App() {\n  return <Card />;\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<div>會員卡</div>" }
+        ]
+      }
+    },
+    {
+      "id": "react-1-q3",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "屬性的引號 vs 大括號",
+      "docs": "https://react.dev/learn/javascript-in-jsx-with-curly-braces",
+      "story": "",
+      "prompt": "想把圖片寬度設成變數 size。這兩種寫法效果一樣嗎？",
+      "code": "const size = 40;\n\n// 版本一\n<img src={url} width=\"size\" />\n\n// 版本二\n<img src={url} width={size} />",
+      "options": [
+        { "id": "a", "text": "一樣，都是寬度 40" },
+        { "id": "b", "text": "不一樣：版本一的寬度是文字 \"size\"（壞掉），版本二才是 40" },
+        { "id": "c", "text": "不一樣：版本二會報錯，屬性一定要用引號" },
+        { "id": "d", "text": "一樣，React 會自動把 \"size\" 換成變數的值" }
+      ],
+      "answer": "b",
+      "explanation": "引號裡的東西是「純文字」，width=\"size\" 就是把四個字母 s-i-z-e 當寬度，瀏覽器看不懂只好無視。要用變數就得開大括號那扇窗：width={size}。AI 產的 JSX 偶爾會把該用大括號的地方寫成引號，圖片尺寸、連結網址怪怪的時候先看這裡。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nconst size = 40;\nconsole.log(renderToStaticMarkup(<img width=\"size\" />));\nconsole.log(renderToStaticMarkup(<img width={size} />));", "expected": "<img width=\"size\"/>\n<img width=\"40\"/>" }
+        ]
+      }
+    },
+    {
+      "id": "react-1-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "&& 條件渲染的 0 陷阱",
+      "docs": "https://react.dev/learn/conditional-rendering",
+      "story": "",
+      "prompt": "購物車是空的（count 是 0），本來想「沒東西就什麼都不顯示」。畫面上出現什麼？",
+      "code": "function Cart({ count }) {\n  return (\n    <div>\n      {count && <p>共 {count} 件商品</p>}\n    </div>\n  );\n}\n\n// 使用：<Cart count={0} />",
+      "options": [
+        { "id": "a", "text": "畫面上孤零零地顯示一個 0" },
+        { "id": "b", "text": "什麼都不顯示（空的 div）" },
+        { "id": "c", "text": "顯示「共 0 件商品」" },
+        { "id": "d", "text": "會報錯" }
+      ],
+      "answer": "a",
+      "explanation": "&& 的規則是：左邊是 falsy 就「回傳左邊的值」——0 && 任何東西 得到 0，而 React 會把數字 0 老老實實渲染出來！於是畫面上出現一個謎之 0。這是 React 圈最有名的陷阱之一，修法：count > 0 && ...，讓左邊變成 false（false 不會被渲染）。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Cart({ count }) {\n  return (\n    <div>\n      {count && <p>共 {count} 件商品</p>}\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<Cart count={0} />));", "expected": "<div>0</div>" },
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Cart({ count }) {\n  return (\n    <div>\n      {count > 0 && <p>共 {count} 件商品</p>}\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<Cart count={0} />));", "expected": "<div></div>" }
+        ]
+      }
+    },
+    {
+      "id": "react-1-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "在 JSX 裡插入變數",
+      "docs": "https://react.dev/learn/javascript-in-jsx-with-curly-braces",
+      "story": "",
+      "prompt": "把空格填起來，讓畫面顯示「歡迎，小美！」（name 的值是 \"小美\"）",
+      "code": "function Welcome({ name }) {\n  return <h1>歡迎，____！</h1>;\n}",
+      "options": [
+        { "id": "a", "text": "{name}" },
+        { "id": "b", "text": "${name}" },
+        { "id": "c", "text": "name" },
+        { "id": "d", "text": "{\"name\"}" }
+      ],
+      "answer": "a",
+      "explanation": "JSX 插變數用單純的大括號 {name}。選項 b 的 ${name} 是樣板字串的語法（第一章學過的），只在反引號字串裡有效，在 JSX 裡會被當純文字印出「${name}」；選項 c 直接印出 name 三個字母；選項 d 印出帶引號的字串內容 name。兩套插值語法別搞混：反引號配 ${}，JSX 配 {}。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Welcome({ name }) {\n  return <h1>歡迎，{name}！</h1>;\n}\nconsole.log(renderToStaticMarkup(<Welcome name=\"小美\" />));", "expected": "<h1>歡迎，小美！</h1>" }
+        ]
+      }
+    },
+    {
+      "id": "react-1-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "元件組合與 children",
+      "docs": "https://react.dev/learn/passing-props-to-a-component",
+      "story": "",
+      "prompt": "Item 元件把 children 包進 <li>。這段渲染出什麼 HTML？",
+      "code": "function Item({ children }) {\n  return <li>{children}</li>;\n}\n\nfunction App() {\n  return (\n    <ul>\n      <Item>蘋果</Item>\n      <Item>香蕉</Item>\n    </ul>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "<ul><li>蘋果</li><li>香蕉</li></ul>" },
+        { "id": "b", "text": "<ul>蘋果香蕉</ul>" },
+        { "id": "c", "text": "<ul><Item>蘋果</Item><Item>香蕉</Item></ul>" },
+        { "id": "d", "text": "會報錯，元件標籤中間不能放文字" }
+      ],
+      "answer": "a",
+      "explanation": "寫在元件標籤「中間」的內容，會自動變成一個叫 children 的 prop 傳進去——Item 收到「蘋果」，包上 <li> 吐回來。這就是元件組合：外層決定內容，內層決定包裝。像 <Card>、<Layout> 這種「殼」元件全靠 children 運作，看懂它就看懂大部分元件庫的用法。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Item({ children }) {\n  return <li>{children}</li>;\n}\nfunction App() {\n  return (\n    <ul>\n      <Item>蘋果</Item>\n      <Item>香蕉</Item>\n    </ul>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<ul><li>蘋果</li><li>香蕉</li></ul>" }
+        ]
+      }
+    }
+  ]
+}

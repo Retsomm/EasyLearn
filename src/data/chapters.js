@@ -7,6 +7,10 @@ import jsa1 from './questions/jsa-1-this-scope.json'
 import jsa2 from './questions/jsa-2-closures.json'
 import jsa3 from './questions/jsa-3-async-basics.json'
 import jsa4 from './questions/jsa-4-async-await.json'
+import react1 from './questions/react-1-jsx.json'
+import react2 from './questions/react-2-props.json'
+import react3 from './questions/react-3-state-events.json'
+import react4 from './questions/react-4-hooks.json'
 
 export const chapters = [
   {
@@ -25,8 +29,7 @@ export const chapters = [
     id: 'react',
     title: 'React',
     emoji: '⚛️',
-    comingSoon: true,
-    levels: [],
+    levels: [react1, react2, react3, react4],
   },
 ]
 
