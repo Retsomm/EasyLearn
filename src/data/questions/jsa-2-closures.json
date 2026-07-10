@@ -41,7 +41,7 @@
         { "id": "d", "text": "1 1" }
       ],
       "answer": "a",
-      "explanation": "每呼叫一次 makeCounter，就誕生一個全新的 count——a 和 b 各自帶著自己的，互不干擾。a 被叫了三次所以是 3，b 第一次被叫所以是 1。這個「各自獨立的記憶」正是 React 每個元件實例的 state 互不干擾的原理。",
+      "explanation": "先數清楚兩種呼叫：makeCounter 跑了兩次，做出 a、b 兩個「各自帶著自己 count」的計數器，互不干擾。再看 a 被呼叫幾次——a(); a(); 是兩次，而 console.log(a(), b()) 要先執行括號裡的函式才有值可印，所以 a 在這裡又跑了第三次、b 才第一次上場，於是印出 3 1。這個「各自獨立的記憶」正是 React 每個元件實例的 state 互不干擾的原理。",
       "verify": {
         "checks": [
           { "code": "function makeCounter() {\n  let count = 0;\n  return () => ++count;\n}\nconst a = makeCounter();\nconst b = makeCounter();\na();\na();\nconsole.log(a(), b());", "expected": "3 1" }

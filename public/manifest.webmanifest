@@ -1,0 +1,28 @@
+{
+  "name": "EasyLearn — 邊玩邊學 JavaScript 與 React",
+  "short_name": "EasyLearn",
+  "description": "為轉職生設計的 JS/React 養成式學習遊戲：看懂 code、抓得到 bug、改得動程式",
+  "lang": "zh-TW",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#201d29",
+  "theme_color": "#201d29",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

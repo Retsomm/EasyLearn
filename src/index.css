@@ -440,6 +440,31 @@ button {
   flex-shrink: 0;
 }
 
+.quiz-pet {
+  font-size: 26px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.quiz-pet.pet-happy {
+  animation: pet-hop 0.5s ease-in-out 2;
+}
+
+.quiz-pet.pet-sad {
+  animation: pet-shake 0.4s ease-in-out 1;
+}
+
+@keyframes pet-hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px) scale(1.15); }
+}
+
+@keyframes pet-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px) rotate(-8deg); }
+  75% { transform: translateX(4px) rotate(8deg); }
+}
+
 .question-card {
   background: var(--card);
   border-radius: var(--radius);
