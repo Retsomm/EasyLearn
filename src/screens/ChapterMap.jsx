@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { chapters } from '../data/chapters'
+import Icon from '../components/Icons'
 
 function ChapterList({ progress, onOpenChapter, onBack }) {
   return (
     <div className="screen map-screen">
       <div className="screen-header">
         <button className="back-btn" onClick={onBack} aria-label="回首頁">
-          ←
+          <Icon name="arrow-left" size={20} />
         </button>
         <h2>選擇章節</h2>
       </div>
@@ -20,7 +21,9 @@ function ChapterList({ progress, onOpenChapter, onBack }) {
             disabled={ch.comingSoon}
             onClick={() => onOpenChapter(ch.id)}
           >
-            <span className="chapter-emoji">{ch.emoji}</span>
+            <span className="chapter-emoji">
+              <Icon name={ch.icon} size={30} />
+            </span>
             <span className="chapter-info">
               <span className="chapter-name">{ch.title}</span>
               <span className="chapter-progress">
@@ -35,7 +38,9 @@ function ChapterList({ progress, onOpenChapter, onBack }) {
                 />
               </span>
             )}
-            <span className="chapter-arrow">›</span>
+            <span className="chapter-arrow">
+              <Icon name="chevron-right" size={22} />
+            </span>
           </button>
         )
       })}
@@ -48,10 +53,10 @@ function LevelList({ chapter, progress, onStartLevel, onBack }) {
     <div className="screen map-screen">
       <div className="screen-header">
         <button className="back-btn" onClick={onBack} aria-label="回章節清單">
-          ←
+          <Icon name="arrow-left" size={20} />
         </button>
-        <h2>
-          {chapter.emoji} {chapter.title}
+        <h2 className="level-list-title">
+          <Icon name={chapter.icon} size={22} /> {chapter.title}
         </h2>
       </div>
 
@@ -59,6 +64,7 @@ function LevelList({ chapter, progress, onStartLevel, onBack }) {
         const record = progress.completedLevels[level.id]
         const prevDone = i === 0 || progress.completedLevels[chapter.levels[i - 1].id]
         const locked = !prevDone
+        const statusIcon = locked ? 'lock' : record ? 'check-circle' : 'play'
         return (
           <button
             key={level.id}
@@ -66,7 +72,9 @@ function LevelList({ chapter, progress, onStartLevel, onBack }) {
             disabled={locked}
             onClick={() => onStartLevel(level.id)}
           >
-            <span className="level-icon">{locked ? '🔒' : record ? '✅' : '▶️'}</span>
+            <span className={`level-icon status-${statusIcon}`}>
+              <Icon name={statusIcon} size={20} />
+            </span>
             <span className="level-name">
               {i + 1}. {level.title}
             </span>

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import Mascot from '../components/Mascot'
+import Icon from '../components/Icons'
 import { chapters } from '../data/chapters'
 
 export default function Home({ progress, onStart, exportProgress, importProgress }) {
@@ -13,7 +14,7 @@ export default function Home({ progress, onStart, exportProgress, importProgress
     const file = e.target.files[0]
     if (!file) return
     importProgress(file, (ok) => {
-      setImportMsg(ok ? '✅ 進度匯入成功！' : '❌ 檔案格式不對，匯入失敗')
+      setImportMsg(ok ? '進度匯入成功！' : '檔案格式不對，匯入失敗')
       setTimeout(() => setImportMsg(''), 3000)
     })
     e.target.value = ''
@@ -27,7 +28,8 @@ export default function Home({ progress, onStart, exportProgress, importProgress
       <Mascot xp={progress.xp} />
 
       <button className="primary-btn start-btn" onClick={onStart}>
-        {doneLevels === 0 ? '開始學習 🚀' : '繼續學習 🚀'}
+        {doneLevels === 0 ? '開始學習' : '繼續學習'}
+        <Icon name="rocket" size={20} />
       </button>
 
       <div className="home-stats">
@@ -36,10 +38,12 @@ export default function Home({ progress, onStart, exportProgress, importProgress
 
       <div className="progress-io">
         <button className="text-btn" onClick={exportProgress}>
+          <Icon name="download" size={15} />
           匯出進度
         </button>
         <span className="io-divider">・</span>
         <button className="text-btn" onClick={() => fileRef.current.click()}>
+          <Icon name="upload" size={15} />
           匯入進度
         </button>
         <input ref={fileRef} type="file" accept=".json" hidden onChange={handleImportFile} />

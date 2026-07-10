@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import QuestionCard from '../components/QuestionCard'
 import Mascot from '../components/Mascot'
+import Icon from '../components/Icons'
 
 const XP_CORRECT = 10
 const XP_WRONG = 2
@@ -43,7 +44,10 @@ export default function Quiz({ level, progress, finishLevel, onExit }) {
     return (
       <div className="screen result-screen">
         <Mascot xp={progress.xp + finalXp} mood="happy" />
-        <h2>{perfect ? '全對！太神了 🏆' : '關卡完成！'}</h2>
+        <h2 className="result-title">
+          {perfect && <Icon name="trophy" size={24} />}
+          {perfect ? '全對！太神了' : '關卡完成！'}
+        </h2>
         <div className="result-stats">
           <div className="stat-row">
             <span>答對題數</span>
@@ -68,7 +72,7 @@ export default function Quiz({ level, progress, finishLevel, onExit }) {
     <div className="screen quiz-screen">
       <div className="quiz-header">
         <button className="back-btn" onClick={onExit} aria-label="離開關卡">
-          ✕
+          <Icon name="x" size={20} />
         </button>
         <div className="progress-dots">
           {questions.map((q, i) => (

@@ -16,19 +16,19 @@ export const chapters = [
   {
     id: 'js-basics',
     title: 'JavaScript 基礎',
-    emoji: '🌱',
+    icon: 'sprout',
     levels: [jsb1, jsb2, jsb3, jsb4],
   },
   {
     id: 'js-advanced',
     title: 'JavaScript 進階',
-    emoji: '🚀',
+    icon: 'rocket',
     levels: [jsa1, jsa2, jsa3, jsa4],
   },
   {
     id: 'react',
     title: 'React',
-    emoji: '⚛️',
+    icon: 'atom',
     levels: [react1, react2, react3, react4],
   },
 ]
