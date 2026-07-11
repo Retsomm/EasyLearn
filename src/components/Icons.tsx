@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 // 線型圖示集：24x24 viewBox、stroke=currentColor（路徑取自 lucide.dev，ISC License）
 const PATHS = {
   'arrow-left': (
@@ -178,23 +180,31 @@ const PATHS = {
       <path d="M8.3 16.3c-.8 1.1-2 1.7-3.3 1.7H2" />
     </>
   ),
+} satisfies Record<string, ReactNode>
+
+export type IconName = keyof typeof PATHS
+
+interface IconProps {
+  name: IconName
+  size?: number
+  className?: string
 }
 
-export default function Icon({ name, size = 18, className = '' }) {
-  return (
-    <svg
-      className={`icon ${className}`}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {PATHS[name]}
-    </svg>
-  )
-}
+const Icon = ({ name, size = 18, className = '' }: IconProps) => (
+  <svg
+    className={`icon ${className}`}
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    {PATHS[name]}
+  </svg>
+)
+
+export default Icon

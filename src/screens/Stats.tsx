@@ -1,10 +1,11 @@
 import Icon from '../components/Icons'
 import { chapters } from '../data/chapters'
 import { todayStr } from '../hooks/useProgress'
+import type { Progress } from '../types'
 
 const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
 
-function getLast7Dates() {
+const getLast7Dates = (): Date[] => {
   const today = new Date()
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today)
@@ -13,7 +14,11 @@ function getLast7Dates() {
   })
 }
 
-export default function Stats({ progress }) {
+interface StatsProps {
+  progress: Progress
+}
+
+const Stats = ({ progress }: StatsProps) => {
   const dailyStats = progress.dailyStats ?? {}
   const chapterStats = progress.chapterStats ?? {}
 
@@ -117,3 +122,5 @@ export default function Stats({ progress }) {
     </div>
   )
 }
+
+export default Stats

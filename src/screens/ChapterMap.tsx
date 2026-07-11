@@ -1,8 +1,16 @@
 import { chapters } from '../data/chapters'
-import Icon from '../components/Icons'
+import Icon, { type IconName } from '../components/Icons'
+import type { Progress } from '../types'
+
+interface ChapterMapProps {
+  chapterId: string | null
+  progress: Progress
+  onStartLevel: (levelId: string) => void
+  onBack: () => void
+}
 
 // 章節清單顯示在 Home 頁；這裡只負責單一章節的關卡清單
-export default function ChapterMap({ chapterId, progress, onStartLevel, onBack }) {
+const ChapterMap = ({ chapterId, progress, onStartLevel, onBack }: ChapterMapProps) => {
   const chapter = chapters.find((ch) => ch.id === chapterId)
   if (!chapter) return null
   return (
@@ -20,7 +28,7 @@ export default function ChapterMap({ chapterId, progress, onStartLevel, onBack }
         const record = progress.completedLevels[level.id]
         const prevDone = i === 0 || progress.completedLevels[chapter.levels[i - 1].id]
         const locked = !prevDone
-        const statusIcon = locked ? 'lock' : record ? 'check-circle' : 'play'
+        const statusIcon: IconName = locked ? 'lock' : record ? 'check-circle' : 'play'
         return (
           <button
             key={level.id}
@@ -47,3 +55,5 @@ export default function ChapterMap({ chapterId, progress, onStartLevel, onBack }
     </div>
   )
 }
+
+export default ChapterMap

@@ -6,17 +6,21 @@ export const STAGES = [
   { min: 700, emoji: '🦉', name: '智慧貓頭鷹皮皮', hint: '牠已經能看懂 PR 了' },
 ]
 
-export function getStage(xp) {
+export const getStage = (xp: number) => {
   let stage = STAGES[0]
   for (const s of STAGES) if (xp >= s.min) stage = s
   return stage
 }
 
-export function getNextStage(xp) {
-  return STAGES.find((s) => s.min > xp) ?? null
+export const getNextStage = (xp: number) => STAGES.find((s) => s.min > xp) ?? null
+
+interface MascotProps {
+  xp: number
+  mood?: string
+  size?: 'lg' | 'sm'
 }
 
-export default function Mascot({ xp, mood = 'idle', size = 'lg' }) {
+const Mascot = ({ xp, mood = 'idle', size = 'lg' }: MascotProps) => {
   const stage = getStage(xp)
   const next = getNextStage(xp)
   const progressToNext = next
@@ -44,3 +48,5 @@ export default function Mascot({ xp, mood = 'idle', size = 'lg' }) {
     </div>
   )
 }
+
+export default Mascot

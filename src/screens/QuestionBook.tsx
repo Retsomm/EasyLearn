@@ -1,7 +1,17 @@
 import Icon from '../components/Icons'
 import QuestionReview from '../components/QuestionReview'
+import type { Question, WrongEntry } from '../types'
 
-export default function QuestionBook({ kind, entries, savedIds, onToggleSave, onBack, onReview }) {
+interface QuestionBookProps {
+  kind: 'wrong' | 'saved'
+  entries: WrongEntry[] | Question[]
+  savedIds: Record<string, boolean>
+  onToggleSave: (questionId: string) => void
+  onBack: () => void
+  onReview?: () => void
+}
+
+const QuestionBook = ({ kind, entries, savedIds, onToggleSave, onBack, onReview }: QuestionBookProps) => {
   const isWrong = kind === 'wrong'
   const title = isWrong ? '錯題本' : '收藏題目'
 
@@ -28,14 +38,14 @@ export default function QuestionBook({ kind, entries, savedIds, onToggleSave, on
       ) : (
         <div className="book-list">
           {entries.map((item) => {
-            const question = isWrong ? item.question : item
+            const question = isWrong ? (item as WrongEntry).question : (item as Question)
             return (
               <QuestionReview
                 key={question.id}
                 question={question}
                 saved={!!savedIds[question.id]}
                 onToggleSave={onToggleSave}
-                meta={isWrong ? item : null}
+                meta={isWrong ? (item as WrongEntry) : null}
               />
             )
           })}
@@ -44,3 +54,5 @@ export default function QuestionBook({ kind, entries, savedIds, onToggleSave, on
     </div>
   )
 }
+
+export default QuestionBook

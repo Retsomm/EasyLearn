@@ -1,16 +1,24 @@
+import type { KeyboardEvent } from 'react'
 import Icon from '../components/Icons'
 import { getWrongQuestions } from '../data/chapters'
+import type { Progress } from '../types'
 
-function handleActivateKey(handler) {
-  return (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      handler()
-    }
+const handleActivateKey = (handler: () => void) => (e: KeyboardEvent) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault()
+    handler()
   }
 }
 
-export default function Notes({ progress, onOpenWrongBook, onOpenSavedBook, onReview, onPracticeSaved }) {
+interface NotesProps {
+  progress: Progress
+  onOpenWrongBook: () => void
+  onOpenSavedBook: () => void
+  onReview: () => void
+  onPracticeSaved: () => void
+}
+
+const Notes = ({ progress, onOpenWrongBook, onOpenSavedBook, onReview, onPracticeSaved }: NotesProps) => {
   const wrongCount = getWrongQuestions(progress.wrongIds ?? {}).length
   const savedCount = Object.keys(progress.savedIds ?? {}).length
 
@@ -72,3 +80,5 @@ export default function Notes({ progress, onOpenWrongBook, onOpenSavedBook, onRe
     </div>
   )
 }
+
+export default Notes

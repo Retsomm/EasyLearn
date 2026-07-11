@@ -1,11 +1,13 @@
+import type { ReactNode } from 'react'
+
 // 輕量語法上色：註解、字串、關鍵字、數字（零依賴，題目片段夠用）
 const TOKEN_RE =
   /(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`)|\b(const|let|var|function|return|if|else|for|of|in|new|typeof|class|import|export|from|true|false|null|undefined)\b|(\b\d+(?:\.\d+)?\b)/g
 
-function highlight(code) {
-  const parts = []
+const highlight = (code: string): ReactNode[] => {
+  const parts: ReactNode[] = []
   let last = 0
-  let m
+  let m: RegExpExecArray | null
   let key = 0
   while ((m = TOKEN_RE.exec(code)) !== null) {
     if (m.index > last) parts.push(code.slice(last, m.index))
@@ -22,10 +24,14 @@ function highlight(code) {
   return parts
 }
 
-export default function CodeBlock({ code }) {
-  return (
-    <pre className="code-block">
-      <code>{highlight(code)}</code>
-    </pre>
-  )
+interface CodeBlockProps {
+  code: string
 }
+
+const CodeBlock = ({ code }: CodeBlockProps) => (
+  <pre className="code-block">
+    <code>{highlight(code)}</code>
+  </pre>
+)
+
+export default CodeBlock
