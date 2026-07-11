@@ -24,7 +24,6 @@ const Notes = ({ progress, onOpenWrongBook, onOpenSavedBook, onReview, onPractic
 
   return (
     <div className="screen notes-screen">
-      <h2 className="page-title">精選筆記</h2>
 
       <div
         className="note-card note-card-wrong"

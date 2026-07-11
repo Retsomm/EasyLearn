@@ -22,6 +22,11 @@
   --streak-to: #16b891;
   --chart-count: #7c86ff;
   --chart-accuracy: #2f9e6b;
+  --heat-0: #3a3648;
+  --heat-1: #585386;
+  --heat-2: #6c72c2;
+  --heat-3: #7c86ff;
+  --heat-4: #a8adff;
   --wrong-card-from: #6e2430;
   --wrong-card-to: #4c1a24;
   --saved-card-from: #7a4a12;
@@ -421,11 +426,6 @@ button {
   color: var(--wrong);
 }
 
-.progress-io {
-  margin-top: 28px;
-  font-size: 14px;
-}
-
 .text-btn {
   display: inline-flex;
   align-items: center;
@@ -438,13 +438,8 @@ button {
   padding: 4px;
 }
 
-.io-divider {
-  color: var(--locked);
-}
-
-.import-msg {
-  margin-top: 8px;
-  font-size: 14px;
+.danger-btn {
+  color: var(--wrong);
 }
 
 .storage-note {
@@ -1093,6 +1088,120 @@ button {
   font-weight: 700;
 }
 
+.heatmap-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.heatmap-row {
+  display: flex;
+  gap: 6px;
+}
+
+.heatmap-weekday-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.heatmap-month-spacer {
+  height: 14px;
+}
+
+.heatmap-weekday {
+  height: 11px;
+  line-height: 11px;
+  font-size: 9px;
+  color: var(--ink-soft);
+}
+
+.heatmap-scroll {
+  overflow-x: visible;
+  scrollbar-width: thin;
+}
+
+@media (max-width: 640px) {
+  .heatmap-scroll {
+    overflow-x: auto;
+  }
+}
+
+.heatmap-inner {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.heatmap-months {
+  display: flex;
+  gap: 3px;
+  height: 14px;
+}
+
+.heatmap-month-label {
+  width: 11px;
+  flex-shrink: 0;
+  font-size: 9px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.heatmap-grid {
+  display: flex;
+  gap: 3px;
+}
+
+.heatmap-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.heatmap-cell {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  background: var(--heat-0);
+}
+
+.heatmap-cell-blank {
+  background: transparent;
+}
+
+.heatmap-level-0 {
+  background: var(--heat-0);
+}
+
+.heatmap-level-1 {
+  background: var(--heat-1);
+}
+
+.heatmap-level-2 {
+  background: var(--heat-2);
+}
+
+.heatmap-level-3 {
+  background: var(--heat-3);
+}
+
+.heatmap-level-4 {
+  background: var(--heat-4);
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
 .chapter-stat-list {
   display: flex;
   flex-direction: column;
@@ -1124,15 +1233,201 @@ button {
 }
 
 /* ── 個人資料 ─────────────────────── */
+.profile-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.profile-card .section-title {
+  margin: 0 0 12px;
+  align-self: flex-start;
+}
+
 .profile-screen .mascot {
   margin-top: 8px;
+}
+
+.growth-toggle {
+  margin-top: 10px;
+}
+
+.growth-toggle .icon {
+  transition: transform 0.15s ease;
+}
+
+.growth-toggle .icon.is-open {
+  transform: rotate(90deg);
+}
+
+.growth-history {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.growth-history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--option-bg);
+  opacity: 0.5;
+}
+
+.growth-history-item.is-reached {
+  opacity: 1;
+}
+
+.growth-history-item.is-current {
+  background: var(--badge-bg);
+  outline: 1px solid var(--primary);
+  outline-offset: -1px;
+}
+
+.growth-history-emoji {
+  font-size: 22px;
+  width: 28px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.growth-history-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.growth-history-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.growth-history-xp {
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.account-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 24px 0 8px;
+}
+
+.login-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100dvh - 60px);
+  padding: 24px;
+}
+
+.login-box {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px 28px;
+  max-width: 340px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.login-box .page-title {
+  margin: 4px 0 0;
+}
+
+.login-desc {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 12px;
+}
+
+.account-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.account-avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background-color: var(--option-bg);
+  background-size: cover;
+  background-repeat: no-repeat;
+  box-shadow: var(--shadow);
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  touch-action: none;
+  user-select: none;
+}
+
+.account-avatar.is-repositioning {
+  cursor: grab;
+  outline: 2px dashed var(--primary);
+  outline-offset: 3px;
+}
+
+.account-avatar.is-repositioning:active {
+  cursor: grabbing;
+}
+
+.account-avatar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 10px;
+}
+
+.account-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.account-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.account-name-input {
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--option-border);
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: var(--bg);
+  color: var(--ink);
 }
 
 .profile-stat-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-  margin-top: 24px;
 }
 
 .profile-stat {
