@@ -72,9 +72,9 @@
     詳見 [[project-status]] 第十二階段。
   - [x] Clerk 接入（登入／登出 UI、匿名試玩不強制登入）—— **2026-07-11 完成，使用者已在本地實測登入/登出/
     頭像上傳/名稱編輯皆成功**
-    - 裝 `@clerk/react`（新版 Core 3，取代已棄用的 `@clerk/clerk-react`），`main.tsx` 用 `ClerkProvider`
-      包住 `App`，key 讀 `VITE_CLERK_PUBLISHABLE_KEY`（注意：Clerk Dashboard 的 API Keys 頁預設複製區塊是
-      Next.js 命名 `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`，Vite 專案要手動改成 `VITE_` 開頭，這裡踩過一次坑）
+    - 裝 `@clerk/nextjs`，`src/app/layout.tsx` 用 `ClerkProvider` 包住 `App`，
+      key 讀 `.env.example` 定義的 `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`／`CLERK_SECRET_KEY`
+      （框架已從 Vite 換成 Next.js，跟 Clerk Dashboard API Keys 頁預設複製的命名一致，不用再手動改前綴）
     - 未登入時「個人資料」分頁整個換成獨立登入頁（`.login-screen`），navbar 文字動態變成「登入」；
       登入後顯示完整個人資料頁，分頁文字變回「個人資料」（`Navbar.tsx` 用 `useUser()` 動態算 label）
     - 個人資料頁登入後新增可編輯的頭像＋單欄名稱（`src/components/AccountHeader.tsx`）：

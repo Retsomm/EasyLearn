@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
@@ -23,36 +24,46 @@ export const POST = async (request: Request) => {
 
   const existing = await prisma.wrongEntry.findUnique({ where: { userId_questionId: { userId, questionId } } })
 
+  const writes: Prisma.PrismaPromise<unknown>[] = []
+
   if (correct) {
     if (existing) {
       const box = existing.box + 1
-      if (box > GRADUATE_BOX) {
-        await prisma.wrongEntry.delete({ where: { userId_questionId: { userId, questionId } } })
-      } else {
-        await prisma.wrongEntry.update({ where: { userId_questionId: { userId, questionId } }, data: { box } })
-      }
+      writes.push(
+        box > GRADUATE_BOX
+          ? prisma.wrongEntry.delete({ where: { userId_questionId: { userId, questionId } } })
+          : prisma.wrongEntry.update({ where: { userId_questionId: { userId, questionId } }, data: { box } }),
+      )
     }
   } else {
-    await prisma.wrongEntry.upsert({
-      where: { userId_questionId: { userId, questionId } },
-      update: { count: { increment: 1 }, lastWrong: today, box: 1 },
-      create: { userId, questionId, count: 1, lastWrong: today, box: 1 },
-    })
+    writes.push(
+      prisma.wrongEntry.upsert({
+        where: { userId_questionId: { userId, questionId } },
+        update: { count: { increment: 1 }, lastWrong: today, box: 1 },
+        create: { userId, questionId, count: 1, lastWrong: today, box: 1 },
+      }),
+    )
   }
 
-  await prisma.dailyStat.upsert({
-    where: { userId_date: { userId, date: today } },
-    update: { total: { increment: 1 }, correct: { increment: correct ? 1 : 0 } },
-    create: { userId, date: today, total: 1, correct: correct ? 1 : 0 },
-  })
+  writes.push(
+    prisma.dailyStat.upsert({
+      where: { userId_date: { userId, date: today } },
+      update: { total: { increment: 1 }, correct: { increment: correct ? 1 : 0 } },
+      create: { userId, date: today, total: 1, correct: correct ? 1 : 0 },
+    }),
+  )
 
   if (chapterId) {
-    await prisma.chapterStat.upsert({
-      where: { userId_chapterId: { userId, chapterId } },
-      update: { total: { increment: 1 }, correct: { increment: correct ? 1 : 0 } },
-      create: { userId, chapterId, total: 1, correct: correct ? 1 : 0 },
-    })
+    writes.push(
+      prisma.chapterStat.upsert({
+        where: { userId_chapterId: { userId, chapterId } },
+        update: { total: { increment: 1 }, correct: { increment: correct ? 1 : 0 } },
+        create: { userId, chapterId, total: 1, correct: correct ? 1 : 0 },
+      }),
+    )
   }
+
+  await prisma.$transaction(writes)
 
   const { progress } = await loadFullProgress(userId)
   return NextResponse.json({ progress })

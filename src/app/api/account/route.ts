@@ -8,10 +8,10 @@ export const DELETE = async () => {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-  await prisma.user.deleteMany({ where: { id: userId } })
-
   const client = await clerkClient()
   await client.users.deleteUser(userId)
+
+  await prisma.user.deleteMany({ where: { id: userId } })
 
   return NextResponse.json({ ok: true })
 }
