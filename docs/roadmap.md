@@ -67,11 +67,17 @@
   - [ ] 進度同步策略：本地優先、背景上傳、衝突時取較高值（XP、best 取 max）
   - [ ] 首次登入時把 localStorage 進度搬上雲端
 
-### 2. 經驗值成長可視化
+### 2. 經驗值成長可視化 ✅ 2026-07-11
 - 現況：`xpLog: { 'YYYY-MM-DD': number }` 資料層已完成；近 7 日做題量／正確率雙圖、分科正確率已在
   「學習數據」頁做出來了（見上方「已完成」）
-- [ ] 等級制：XP 換算等級與稱號，Home 顯示等級進度條（目前只有吉祥物 4 階段進化，沒有正式等級稱號）
-- [ ] 月曆 heatmap（GitHub style）呈現更長期的學習量，目前只有近 7 日
+- [x] 等級制：**不做獨立的等級稱號系統**（第一版做過 `src/utils/level.ts`＋Home 進度條卡片＋Profile
+  徽章，使用者要求拿掉，只留吉祥物一套）。改成擴充既有 `Mascot.tsx`：`STAGES` 從蛋→貓頭鷹 4 階段
+  （0～700 XP 封頂）改成「行星的成長史」12 階段（星際塵埃→…→黑洞，0～7000 XP），成長曲線拉長但沿用同一套元件
+- [x] 月曆 heatmap（GitHub style）：Stats 頁新增「近半年學習熱力圖」，26 週×7 天格線，
+  依 `dailyStats` 做題量分 5 級著色，`overflow-x: auto` 橫向捲動＋掛載時自動捲到最右邊（今天）。
+  色階（`--heat-0`~`--heat-4`，以 `--chart-count` 的靛色為基準）用 dataviz skill 的
+  `validate_palette.js --ordinal --mode dark` 驗證通過（monotone lightness／ΔL≥0.06／light-end 對比 2.05:1）
+- `tsc --noEmit`／`yarn build` 通過；這次沒有用 Playwright 灌模擬資料驗證畫面，實際互動請使用者自行測試
 
 ### 3. 全真模考
 - 2026-07-11：navbar 原本預留的 disabled 分頁已移除，換成「個人資料」頁（見上方「已完成」）。
@@ -107,6 +113,6 @@
 3. ~~錯題本強化＋收藏~~（已完成，2026-07-11）
 4. ~~題目 schema 驗證 script~~（已完成：`scripts/validate-questions.mjs`）
 5. ~~網頁版導覽改版＋學習數據視覺化~~（已完成，2026-07-11：navbar／首頁重構／精選筆記頁／學習數據頁）
-6. 全真模考（navbar 已預留 disabled 分頁，實作優先度看使用者需求）
-7. 等級稱號＋月曆 heatmap（經驗值可視化的剩餘部分）
+6. ~~等級稱號＋月曆 heatmap~~（已完成，2026-07-11：經驗值可視化的剩餘部分）
+7. 全真模考（navbar 已預留 disabled 分頁，實作優先度看使用者需求）
 8. Clerk ＋雲端同步（工程最大，牽涉後端選型，放在功能穩定後）

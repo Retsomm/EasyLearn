@@ -101,7 +101,7 @@ const Quiz = ({
         <p className="result-hint">
           {isReview && questions.some((q) => progress.wrongIds[q.id])
             ? '還沒畢業的錯題會留著，繼續練會更熟練！'
-            : '皮皮吃飽了，明天也要來餵牠喔！'}
+            : '你的星球又長大了一點，明天也要回來澆灌它喔！'}
         </p>
         <button className="primary-btn" onClick={onExit}>
           {exitTo === 'home' ? '回首頁' : exitTo === 'notes' ? '返回筆記' : '返回關卡地圖'}
@@ -130,7 +130,7 @@ const Quiz = ({
             selected === null ? '' : selected === question.answer ? 'pet-happy' : 'pet-sad'
           }`}
           role="img"
-          aria-label="皮皮"
+          aria-label={getStage(progress.xp).name}
         >
           {getStage(progress.xp).emoji}
         </span>
