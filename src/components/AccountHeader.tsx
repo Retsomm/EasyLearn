@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from 'react'
-import { useUser } from '@clerk/react'
+import { useUser } from '@clerk/nextjs'
 import Icon from './Icons'
 
 type ClerkUser = NonNullable<ReturnType<typeof useUser>['user']>

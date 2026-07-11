@@ -41,15 +41,7 @@ const navGroupOfChapter = (levelId: string): string | null => {
 }
 
 const App = () => {
-  const {
-    progress,
-    answerQuestion,
-    toggleSaved,
-    finishLevel,
-    finishReview,
-    exportProgress,
-    importProgress,
-  } = useProgress()
+  const { progress, answerQuestion, toggleSaved, finishLevel, finishReview } = useProgress()
   const [view, setView] = useState<View>({ name: 'home' })
 
   const startLevel = (levelId: string) => {
@@ -187,7 +179,7 @@ const App = () => {
   } else if (view.name === 'stats') {
     content = <Stats progress={progress} />
   } else if (view.name === 'profile') {
-    content = <Profile progress={progress} exportProgress={exportProgress} importProgress={importProgress} />
+    content = <Profile progress={progress} />
   } else {
     content = (
       <Home

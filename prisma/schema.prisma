@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// id 直接用 Clerk 的 userId，不另建帳密系統
+model User {
+  id          String   @id
+  xp          Int      @default(0)
+  streakCount Int      @default(0)
+  streakLast  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  completedLevels CompletedLevel[]
+  wrongEntries    WrongEntry[]
+  savedQuestions  SavedQuestion[]
+  xpLogs          XpLog[]
+  dailyStats      DailyStat[]
+  chapterStats    ChapterStat[]
+}
+
+model CompletedLevel {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  levelId String
+  best    Int
+  total   Int
+
+  @@unique([userId, levelId])
+}
+
+// Leitner 盒制錯題本
+model WrongEntry {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  questionId String
+  count      Int
+  lastWrong  String?
+  box        Int
+
+  @@unique([userId, questionId])
+}
+
+model SavedQuestion {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  questionId String
+
+  @@unique([userId, questionId])
+}
+
+model XpLog {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date   String
+  amount Int
+
+  @@unique([userId, date])
+}
+
+model DailyStat {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date    String
+  total   Int
+  correct Int
+
+  @@unique([userId, date])
+}
+
+model ChapterStat {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  chapterId String
+  total     Int
+  correct   Int
+
+  @@unique([userId, chapterId])
+}

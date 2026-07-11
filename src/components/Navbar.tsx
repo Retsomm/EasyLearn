@@ -1,4 +1,4 @@
-import { useUser } from '@clerk/react'
+import { useUser } from '@clerk/nextjs'
 import Icon, { type IconName } from './Icons'
 
 interface NavItem {

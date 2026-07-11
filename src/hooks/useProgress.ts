@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useUser } from '@clerk/nextjs'
 import type { DailyStat, Progress, Streak, WrongEntryMeta } from '../types'
 
 const STORAGE_KEY = 'easylearn-progress-v1'
@@ -80,12 +81,61 @@ const bumpStreak = (streak: Streak): Streak => {
   }
 }
 
-export const useProgress = () => {
-  const [progress, setProgress] = useState(load)
+// 已登入時打的 API 都回傳伺服器組好的權威 Progress，直接拿來覆蓋樂觀更新的本地 state
+const postJson = async (url: string, body: unknown): Promise<Progress> => {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const data = (await res.json()) as { progress: Progress }
+  return data.progress
+}
 
+export const useProgress = () => {
+  const { isSignedIn, isLoaded } = useUser()
+  // 初始值固定用 defaultProgress（不能在這裡就呼叫 load()）：Next.js 會先在伺服器端 SSR 這個
+  // 'use client' 元件一次，伺服器沒有 localStorage，會跟瀏覽器端讀到的真實資料兜不起來，
+  // 造成 hydration mismatch。改成掛載後才用 effect 讀 localStorage，兩邊初始渲染才會一致。
+  const [progress, setProgress] = useState(defaultProgress)
+  const [hydrated, setHydrated] = useState(false)
+  const migratedRef = useRef(false)
+
+  // 掛載後立刻補讀一次本機 localStorage（不用等 Clerk 的 isLoaded），訪客模式才能馬上看到資料
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress))
-  }, [progress])
+    setProgress(load())
+    setHydrated(true)
+  }, [])
+
+  // 訪客模式：跟以前一樣，任何 progress 變動都寫回 localStorage。
+  // 用 hydrated 擋住「掛載當下那一輪」：那一輪 progress 還是初始的 defaultProgress，
+  // 這裡如果沒擋，會搶在上面那個 effect 讀到真資料之前，先把 localStorage 洗成空的
+  useEffect(() => {
+    if (!hydrated) return
+    if (!isSignedIn) localStorage.setItem(STORAGE_KEY, JSON.stringify(progress))
+  }, [progress, isSignedIn, hydrated])
+
+  // 登入狀態切換：登入時去讀資料庫（第一次登入且資料庫是空的，就把訪客進度搬過去）；
+  // 登出則換回讀本機 localStorage，恢復訪客模式
+  useEffect(() => {
+    if (!isLoaded) return
+    if (!isSignedIn) {
+      migratedRef.current = false
+      setProgress(load())
+      return
+    }
+    if (migratedRef.current) return
+    migratedRef.current = true
+    ;(async () => {
+      const res = await fetch('/api/progress')
+      const data = (await res.json()) as { progress: Progress; isNew: boolean }
+      if (data.isNew) {
+        setProgress(await postJson('/api/progress/migrate-local', load()))
+      } else {
+        setProgress(data.progress)
+      }
+    })()
+  }, [isLoaded, isSignedIn])
 
   // 每答一題就更新錯題本（Leitner 盒制）：
   // 答錯 → 記入／重置回第 1 盒；答對 → 升一盒，超過畢業盒才移出錯題本
@@ -111,6 +161,12 @@ export const useProgress = () => {
       const chapterStats = chapterId ? bumpCounter(p.chapterStats, chapterId, correct) : p.chapterStats
       return { ...p, wrongIds, dailyStats, chapterStats }
     })
+
+    if (isSignedIn) {
+      postJson('/api/progress/answer', { questionId, correct, chapterId, today: todayStr() })
+        .then(setProgress)
+        .catch((err) => console.error('answerQuestion sync failed', err))
+    }
   }
 
   // 收藏／取消收藏題目
@@ -121,6 +177,12 @@ export const useProgress = () => {
       else savedIds[questionId] = true
       return { ...p, savedIds }
     })
+
+    if (isSignedIn) {
+      postJson('/api/progress/save-toggle', { questionId })
+        .then(setProgress)
+        .catch((err) => console.error('toggleSaved sync failed', err))
+    }
   }
 
   const finishLevel = (levelId: string, correct: number, total: number, xpEarned: number) => {
@@ -140,6 +202,12 @@ export const useProgress = () => {
         },
       }
     })
+
+    if (isSignedIn) {
+      postJson('/api/progress/finish-level', { levelId, correct, total, xpEarned, today: todayStr() })
+        .then(setProgress)
+        .catch((err) => console.error('finishLevel sync failed', err))
+    }
   }
 
   // 錯題重練結束：只加 XP 和 streak，不動關卡紀錄
@@ -150,33 +218,12 @@ export const useProgress = () => {
       streak: bumpStreak(p.streak),
       xpLog: bumpXpLog(p.xpLog, xpEarned),
     }))
-  }
 
-  const exportProgress = () => {
-    const blob = new Blob([JSON.stringify(progress, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'easylearn-progress.json'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const importProgress = (file: File, onDone?: (ok: boolean) => void) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      try {
-        const data = JSON.parse(reader.result as string)
-        if (typeof data.xp !== 'number' || typeof data.completedLevels !== 'object') {
-          throw new Error('格式不對')
-        }
-        setProgress({ ...defaultProgress, ...data, wrongIds: migrateWrongIds(data.wrongIds) })
-        onDone?.(true)
-      } catch {
-        onDone?.(false)
-      }
+    if (isSignedIn) {
+      postJson('/api/progress/finish-review', { xpEarned, today: todayStr() })
+        .then(setProgress)
+        .catch((err) => console.error('finishReview sync failed', err))
     }
-    reader.readAsText(file)
   }
 
   return {
@@ -185,7 +232,5 @@ export const useProgress = () => {
     toggleSaved,
     finishLevel,
     finishReview,
-    exportProgress,
-    importProgress,
   }
 }

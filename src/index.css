@@ -426,10 +426,6 @@ button {
   color: var(--wrong);
 }
 
-.progress-io {
-  font-size: 14px;
-}
-
 .text-btn {
   display: inline-flex;
   align-items: center;
@@ -442,13 +438,8 @@ button {
   padding: 4px;
 }
 
-.io-divider {
-  color: var(--locked);
-}
-
-.import-msg {
-  margin-top: 8px;
-  font-size: 14px;
+.danger-btn {
+  color: var(--wrong);
 }
 
 .storage-note {
@@ -1128,8 +1119,14 @@ button {
 }
 
 .heatmap-scroll {
-  overflow-x: auto;
+  overflow-x: visible;
   scrollbar-width: thin;
+}
+
+@media (max-width: 640px) {
+  .heatmap-scroll {
+    overflow-x: auto;
+  }
 }
 
 .heatmap-inner {
@@ -1325,8 +1322,12 @@ button {
   color: var(--ink-soft);
 }
 
-.logout-btn {
-  align-self: center;
+.account-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
   margin: 24px 0 8px;
 }
 
