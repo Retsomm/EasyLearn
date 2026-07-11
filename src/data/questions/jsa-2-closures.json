@@ -193,7 +193,7 @@
       "type": "predict-output",
       "difficulty": 3,
       "topic": "debounce 防抖：closure 記住計時器，取消前一次排程",
-      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/API/setTimeout",
       "story": "",
       "prompt": "debounce 讓短時間內連續呼叫，最後只真正執行一次。這段印出什麼？",
       "code": "function debounce(fn, delay) {\n  let timer;\n  return function (...args) {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn(...args), delay);\n  };\n}\nlet calls = 0;\nconst log = debounce(() => { calls++; }, 20);\nlog();\nlog();\nlog();\nsetTimeout(() => console.log(calls), 60);",

@@ -217,19 +217,19 @@
       "id": "jsb-2-q10",
       "type": "same-or-not",
       "difficulty": 3,
-      "topic": "傳數字是複本、傳物件是本尊",
+      "topic": "參數都按值傳遞；物件值是參照，改內容會外洩",
       "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Functions",
       "story": "",
       "prompt": "兩個函式都在裡面改參數。外面的資料一樣安全嗎？",
       "code": "// 版本一：改數字參數\nfunction addTen(n) {\n  n += 10;\n}\nlet score = 5;\naddTen(score);\nconsole.log(score);\n\n// 版本二：改物件參數\nfunction levelUp(p) {\n  p.level += 1;\n}\nconst pet = { level: 1 };\nlevelUp(pet);\nconsole.log(pet.level);",
       "options": [
-        { "id": "a", "text": "不一樣：score 還是 5（傳進去的是複本），pet.level 變 2（傳進去的是同一個物件）" },
+        { "id": "a", "text": "不一樣：score 還是 5（n 拿到的是數字 5 的複本，改 n 不影響 score），pet.level 變 2（p 拿到的是「指向 pet 這個物件」的參照複本，p 跟 pet 指向同一個物件，改 p.level 就是改那個物件本身）" },
         { "id": "b", "text": "一樣，兩個都被改了" },
         { "id": "c", "text": "一樣，兩個都沒被改" },
         { "id": "d", "text": "版本二會報錯，函式不能改物件" }
       ],
       "answer": "a",
-      "explanation": "數字、字串、布林傳進函式時複印一份，裡面怎麼改都不干外面的事；物件和陣列傳的是「同一個東西的門牌」，函式裡一改，外面就變了——jsb-4 的參照觀念在函式參數上重演。「函式呼叫完，我的資料被改了」的悲劇，兇手永遠是物件參數。",
+      "explanation": "JavaScript 的函式參數永遠是按值傳遞：呼叫函式時，實參的「值」會複製一份給參數。差別在於數字這種原始型別的值就是數字本身，複本改了跟原本的變數無關；物件的值則是一個參照（指向該物件的門牌），複製的是這個門牌，不是物件本身——p 跟 pet 兩個門牌指向同一棟房子，透過 p 去改 level，pet 當然也看得到。但如果在函式裡把 p 重新賦值成另一個新物件（p = { level: 99 }），只是讓 p 這個門牌改指別的地方，pet 仍然指向原本的房子，不會受影響。「函式呼叫完，我的資料被改了」的悲劇，兇手永遠是物件的內容被動了手腳，而不是參數本身被「傳址」。",
       "verify": {
         "checks": [
           { "code": "function addTen(n) {\n  n += 10;\n}\nlet score = 5;\naddTen(score);\nconsole.log(score);\nfunction levelUp(p) {\n  p.level += 1;\n}\nconst pet = { level: 1 };\nlevelUp(pet);\nconsole.log(pet.level);", "expected": "5\n2" }

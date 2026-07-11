@@ -228,7 +228,7 @@
         { "id": "d", "text": "報錯，Promise.all 不能傳空陣列" }
       ],
       "answer": "a",
-      "explanation": "空陣列裡沒有任何成員要等，Promise.all([]) 會立刻進入「已解決」狀態，結果是空陣列 []。不過 then 裡的 callback 仍然是微任務，一定要等目前這輪同步程式碼跑完才輪得到它執行，所以「同步先跑」還是搶先印出來。這也順便複習了微任務排隊的規則：resolve 得再快，also 得排隊。",
+      "explanation": "空陣列裡沒有任何成員要等，Promise.all([]) 會立刻進入「已解決」狀態，結果是空陣列 []。不過 then 裡的 callback 仍然是微任務，一定要等目前這輪同步程式碼跑完才輪得到它執行，所以「同步先跑」還是搶先印出來。這也順便複習了微任務排隊的規則：resolve 得再快，then 也得排隊。",
       "verify": {
         "checks": [
           { "code": "Promise.all([]).then((res) => console.log(res));\nconsole.log(\"同步先跑\");", "expected": "同步先跑\n[]" }
@@ -251,7 +251,7 @@
         { "id": "d", "text": "不一樣：finally 只能接在成功的鏈上，接在 reject 後面會報錯" }
       ],
       "answer": "a",
-      "explanation": "finally 不管成功失敗都會跑一次，而且它「不插手」結果——原本該成功的鏈繼續往 then 走、該失敗的鏈繼續往 catch 走，值原封不動地穿過 finally。這正適合關 loading、清 timer 這種「不管結果如何都要做一次」的收尾動作，不用在 then 跟 catch 裡各寫一遍。",
+      "explanation": "finally 不管成功失敗都會跑一次，正常情況下它「不插手」結果——原本該成功的鏈繼續往 then 走、該失敗的鏈繼續往 catch 走，值原封不動地穿過 finally。這正適合關 loading、清 timer 這種「不管結果如何都要做一次」的收尾動作，不用在 then 跟 catch 裡各寫一遍。但這個「不插手」有個例外：如果 finally 的 callback 自己 throw 錯誤、或回傳一個 rejected 的 Promise，就會用這個新的錯誤蓋掉原本的結果，讓整條鏈變成 rejected——所以 finally 裡的收尾動作最好保持單純，避免自己又拋出例外。",
       "verify": {
         "checks": [
           { "code": "Promise.resolve(\"成功資料\")\n  .finally(() => console.log(\"關閉 loading\"))\n  .then((res) => console.log(\"結果：\" + res));", "expected": "關閉 loading\n結果：成功資料" },
@@ -275,7 +275,7 @@
         { "id": "d", "text": "會報錯，Promise.resolve 不能傳 Promise 進去" }
       ],
       "answer": "a",
-      "explanation": "Promise.resolve 有個貼心規則：如果丟進去的東西本身已經是 thenable／Promise，它不會再包一層，而是直接沿用那個 Promise 最終的結果。所以 wrapped 骨子裡就是 inner，.then 拿到的是攤平後的 5，不是巢狀的 Promise。這也是為什麼 JS 世界幾乎看不到「Promise 疊 Promise」的窘境。",
+      "explanation": "Promise.resolve 有個貼心規則：如果丟進去的東西本身已經是原生 Promise，它不會再包一層，而是直接把那個 Promise 原封不動地回傳——wrapped 跟 inner 其實是同一個物件（wrapped === inner）。如果丟進去的是一般的 thenable（帶 then 方法但不是原生 Promise 的物件），Promise.resolve 則會另外建立一個新的 Promise，只是這個新 Promise 的結果會沿用 thenable 最終決議的值。不管哪一種，.then 拿到的都是攤平後的值而不是巢狀的 Promise，這也是為什麼 JS 世界幾乎看不到「Promise 疊 Promise」的窘境。",
       "verify": {
         "checks": [
           { "code": "const inner = Promise.resolve(5);\nconst wrapped = Promise.resolve(inner);\nwrapped.then((val) => console.log(val));", "expected": "5" }

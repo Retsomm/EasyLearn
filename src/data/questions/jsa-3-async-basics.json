@@ -170,7 +170,7 @@
       "type": "predict-output",
       "difficulty": 1,
       "topic": "多個 setTimeout 依延遲時間排序",
-      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/Window/setTimeout",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/API/setTimeout",
       "story": "",
       "prompt": "三個計時器不是照寫的順序登記，是照延遲時間排隊。這段印出的順序是？",
       "code": "setTimeout(() => console.log(\"C\"), 30);\nsetTimeout(() => console.log(\"A\"), 0);\nsetTimeout(() => console.log(\"B\"), 10);\nconsole.log(\"同步\");",
@@ -264,16 +264,16 @@
       "topic": "沒人接住的 rejected Promise 會讓程式當掉",
       "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch",
       "story": "",
-      "prompt": "AI 寫的程式忘了幫這個 reject 加 catch。實際跑起來會怎樣？",
+      "prompt": "AI 寫的程式忘了幫這個 reject 加 catch。以 Node.js 預設行為為準，實際跑起來會怎樣？",
       "code": "Promise.reject(new Error(\"斷線了\"));   // 沒有接 .catch\nconsole.log(\"同步先印\");",
       "options": [
-        { "id": "a", "text": "先印出「同步先印」，接著整個程式因為沒人處理的 rejected Promise 而丟出未處理的錯誤、當掉" },
+        { "id": "a", "text": "先印出「同步先印」，接著在 Node.js 預設行為下，整個程式因為沒人處理的 rejected Promise 而丟出未處理的錯誤、當掉" },
         { "id": "b", "text": "什麼都不會印，Promise.reject 這行就直接讓程式停住" },
         { "id": "c", "text": "印出「同步先印」，錯誤被自動吞掉，程式正常結束不受影響" },
         { "id": "d", "text": "先印出錯誤訊息，才印「同步先印」" }
       ],
       "answer": "a",
-      "explanation": "Promise.reject 建立的失敗 Promise 是同步「排進去」的，不會馬上讓程式停下，所以「同步先印」照樣先印出來。但只要這個 rejected Promise 一直沒有 catch 接住，等到微任務輪到它結算時，就會變成一個「未處理的 Promise 拒絕」（unhandled rejection）——現代 Node.js 預設會把它當成沒接住的例外直接讓程式當掉。教訓：每個可能失敗的 Promise 鏈尾端都該有 catch，就像 q5 教的一樣。",
+      "explanation": "Promise.reject 建立的失敗 Promise 是同步「排進去」的，不會馬上讓程式停下，所以「同步先印」照樣先印出來。但只要這個 rejected Promise 一直沒有 catch 接住，等到微任務輪到它結算時，就會變成一個「未處理的 Promise 拒絕」（unhandled rejection）。這裡的當掉是 Node.js 的預設行為——瀏覽器環境通常只會觸發一個 unhandledrejection 事件、印出警告，不會直接讓整頁當掉。教訓：每個可能失敗的 Promise 鏈尾端都該有 catch，就像 q5 教的一樣。",
       "verify": {
         "checks": [
           { "code": "Promise.reject(new Error(\"斷線了\"));\nconsole.log(\"同步先印\");", "expected": "同步先印", "expectError": "斷線了" }

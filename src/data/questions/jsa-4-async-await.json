@@ -273,7 +273,7 @@
         { "id": "d", "text": "undefined，因為兩個同時開始無法判斷誰先" }
       ],
       "answer": "a",
-      "explanation": "Promise.race 顧名思義是賽跑：丟進去的 Promise 同時起跑，誰第一個決議（不管成功或失敗）就用誰的結果，其他還沒跑完的就被晾在一邊、不再理會。這裡「快」只花 10 毫秒，比「慢」的 50 毫秒早到終點，所以 winner 拿到的是「快」。常見用途是幫請求加逾時：Promise.race([fetchData(), timeout(3000)])，看誰先到就用誰的結果。",
+      "explanation": "Promise.race 顧名思義是賽跑：丟進去的 Promise 同時起跑，誰第一個決議（不管成功或失敗）就用誰的結果。其他還沒決議的 Promise 並不會被取消，它們照樣會繼續跑下去，只是跑完之後的結果不會再被 race 採用。這裡「快」只花 10 毫秒，比「慢」的 50 毫秒早到終點，所以 winner 拿到的是「快」（「慢」還是會在 50 毫秒後把自己跑完，只是沒人理會它的結果）。常見用途是幫請求加逾時：Promise.race([fetchData(), timeout(3000)])，看誰先到就用誰的結果。",
       "verify": {
         "checks": [
           { "code": "const wait = (ms, tag) => new Promise((r) => setTimeout(() => r(tag), ms));\nasync function main() {\n  const winner = await Promise.race([wait(50, \"慢\"), wait(10, \"快\")]);\n  console.log(winner);\n}\nmain();", "expected": "快" }

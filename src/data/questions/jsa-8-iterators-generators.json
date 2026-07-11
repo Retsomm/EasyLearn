@@ -227,7 +227,7 @@
         { "id": "d", "text": "會報錯，generator 不能是無限的" }
       ],
       "answer": "a",
-      "explanation": "while (true) 讓這個 generator 理論上可以永遠 yield 下去，但因為 generator 是「懶惰執行」——for...of 每跑一輪才跟它要一個值，要多少算多少——只要迴圈裡有 break，就會在被要求交出第 4 個值「之前」提早喊停，剩下的 while 迴圈永遠不會被執行到。這正是無限 generator 的典型用法：拿來表示一個沒有終點的序列（像自動遞增的 ID），實際要用多少完全由外面的迴圈決定，不會真的卡死。",
+      "explanation": "while (true) 讓這個 generator 理論上可以永遠 yield 下去，但因為 generator 是「懶惰執行」——for...of 每跑一輪才跟它要一個值，要多少算多少。這裡 for...of 確實有跟 generator 要到第 4 個值（n 會拿到 4），只是 break 的判斷式 n > 3 在 push 之前就先成立，所以 4 沒有被塞進 result，迴圈也就此喊停，剩下的 while 迴圈不會再被執行到。這正是無限 generator 的典型用法：拿來表示一個沒有終點的序列（像自動遞增的 ID），實際要用多少完全由外面的迴圈決定，不會真的卡死。",
       "verify": {
         "checks": [
           { "code": "function* naturals() {\n  let n = 1;\n  while (true) {\n    yield n++;\n  }\n}\nconst result = [];\nfor (const n of naturals()) {\n  if (n > 3) break;\n  result.push(n);\n}\nconsole.log(result);", "expected": "[ 1, 2, 3 ]" }

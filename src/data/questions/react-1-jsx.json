@@ -181,7 +181,7 @@
         { "id": "d", "text": "圖片路徑要寫成絕對網址才行" }
       ],
       "answer": "a",
-      "explanation": "HTML 允許 <img>、<br>、<input> 這類「沒有內容」的標籤開了就不用收尾，但 JSX 比較嚴格：標籤中間沒有 children，就一定要自己閉合，寫成 <img ... />。這條規則對所有標籤都成立，不只 img——自訂元件沒有 children 時（例如 <Spinner />）也是同樣寫法。",
+      "explanation": "HTML 允許 <img>、<br>、<input> 這類「沒有內容」的標籤開了就不用收尾，但 JSX 比較嚴格：標籤中間沒有 children，就一定要自己閉合，寫成 <img ... />。這條規則對所有標籤都成立，不只 img——自訂元件沒有 children 時（例如 <Spinner />）也是同樣寫法。驗證輸出裡 <img> 前面多出的 <link rel=\"preload\" as=\"image\" .../>，是 React 19 針對 <img> 自動注入的圖片預載提示，跟這題的自我閉合規則無關，看到不用意外。",
       "verify": {
         "checks": [
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Avatar() {\n  return <img src=\"/me.png\" />;\n}\nconsole.log(renderToStaticMarkup(<Avatar />));", "expected": "<link rel=\"preload\" as=\"image\" href=\"/me.png\"/><img src=\"/me.png\"/>" }
@@ -228,7 +228,7 @@
         { "id": "d", "text": "小美 要用大括號包起來才合法" }
       ],
       "answer": "a",
-      "explanation": "JSX 的 return 骨子裡就是「一個函式呼叫」，函式只能 return 一個值，所以兩個並排的標籤必須先合併成一個節點——包一個 <div>，或用上一題的 Fragment <>...</> 避免多一層 DOM。這是初學者最常撞到的建置錯誤之一，錯誤訊息通常會寫 Adjacent JSX elements must be wrapped。",
+      "explanation": "JSX 的 return 骨子裡就是「一個函式呼叫」，函式只能 return 一個值，所以兩個並排的標籤必須先合併成一個節點——包一個 <div>，或用前面 q7 教過的 Fragment <>...</> 避免多一層 DOM。這是初學者最常撞到的建置錯誤之一，錯誤訊息通常會寫 Adjacent JSX elements must be wrapped。",
       "verify": {
         "checks": [
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Bio() {\n  return (\n    <>\n      <h1>小美</h1>\n      <p>前端工程師</p>\n    </>\n  );\n}\nconsole.log(renderToStaticMarkup(<Bio />));", "expected": "<h1>小美</h1><p>前端工程師</p>" }
@@ -239,19 +239,19 @@
       "id": "react-1-q11",
       "type": "same-or-not",
       "difficulty": 1,
-      "topic": "class 要寫成 className",
+      "topic": "class 在 JSX 裡是未知屬性，正式寫法是 className",
       "docs": "https://react.dev/learn/writing-markup-with-jsx",
       "story": "",
-      "prompt": "AI 抄了一段純 HTML 貼進 JSX，樣式完全沒套用。這兩種寫法效果一樣嗎？",
+      "prompt": "AI 抄了一段純 HTML 貼進 JSX。這兩種寫法渲染出的 HTML 完全一樣嗎？",
       "code": "// 版本一\n<div class=\"card\">內容</div>\n\n// 版本二\n<div className=\"card\">內容</div>",
       "options": [
-        { "id": "a", "text": "不一樣：class 是 JS 的保留字，JSX 認得的是 className；用 class 不會報錯，但實際渲染出的屬性不一樣" },
-        { "id": "b", "text": "一樣，React 會自動把 class 換成 className" },
+        { "id": "a", "text": "HTML 輸出剛好一樣，都是 <div class=\"card\">——className 是 React 認得的正式屬性，渲染時會轉成 DOM 的 class；class 則是 React 不認得的屬性，被原樣印出，兩邊巧合長一樣。但用 class 在開發模式下會跳出主控台警告 Invalid DOM property `class`. Did you mean `className`?，代表這不是官方支援的寫法" },
+        { "id": "b", "text": "一樣，因為 React 會自動把 class 轉換成 className 屬性" },
         { "id": "c", "text": "不一樣：版本一會直接建置失敗" },
-        { "id": "d", "text": "一樣，兩者都不會被渲染出來" }
+        { "id": "d", "text": "不一樣：兩者渲染出的屬性名稱不同，一個是 class、一個是 className" }
       ],
       "answer": "a",
-      "explanation": "class 在 JavaScript 裡是保留給 class 語法用的關鍵字，JSX 沿用 JS 的規則，所以 DOM 的 class 屬性在 JSX 裡改名叫 className，這樣才不會撞名。忘記改名，React 不會報錯、但也不會把它當成標準的 class 處理——渲染出來的 HTML 屬性名稱就是不一樣，樣式套用邏輯因此「壞掉但不出聲」，是很容易被忽略的一種 bug。",
+      "explanation": "class 在 JavaScript 裡是保留給 class 語法用的關鍵字，JSX 沿用 JS 的規則，把 DOM 的 class 屬性改名叫 className，這樣才不會撞名。React 認得 className，渲染時會把它轉成 DOM 上的 class 屬性；class 則不是 React 認得的屬性，但恰好被當成一般（未知）屬性原樣印出，兩者輸出的 HTML 字串因此剛好都是 <div class=\"card\">。差別在於開發模式下用 class 會跳出主控台警告，提醒你這不是官方支援的寫法——只是巧合沒有直接壞掉，不代表可以放心混用，正式寫法還是要用 className。",
       "verify": {
         "checks": [
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nconsole.log(renderToStaticMarkup(<div class=\"card\">內容</div>));\nconsole.log(renderToStaticMarkup(<div className=\"card\">內容</div>));", "expected": "<div class=\"card\">內容</div>\n<div class=\"card\">內容</div>" }

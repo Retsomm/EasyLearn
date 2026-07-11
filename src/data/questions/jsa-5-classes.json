@@ -146,7 +146,7 @@
       "type": "predict-output",
       "difficulty": 2,
       "topic": "getter/setter 讓存取像屬性一樣",
-      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes/get",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/get",
       "story": "",
       "prompt": "c.area 看起來像個普通屬性，其實背後在跑一段計算。這段印出什麼？",
       "code": "class Circle {\n  constructor(radius) {\n    this.radius = radius;\n  }\n  get area() {\n    return Math.PI * this.radius ** 2;\n  }\n  set radius(r) {\n    this._radius = r < 0 ? 0 : r;\n  }\n  get radius() {\n    return this._radius;\n  }\n}\nconst c = new Circle(2);\nconsole.log(c.area.toFixed(2));\nc.radius = -5;\nconsole.log(c.radius);",
