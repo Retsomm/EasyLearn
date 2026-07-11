@@ -140,6 +140,6 @@
 4. ~~題目 schema 驗證 script~~（已完成：`scripts/validate-questions.mjs`）
 5. ~~網頁版導覽改版＋學習數據視覺化~~（已完成，2026-07-11：navbar／首頁重構／精選筆記頁／學習數據頁）
 6. ~~等級稱號＋月曆 heatmap~~（已完成，2026-07-11：經驗值可視化的剩餘部分）
-7. 全真模考（navbar 已預留 disabled 分頁，實作優先度看使用者需求）
+7. 全真模考（navbar 原預留的 disabled 分頁已移除，目前無 UI 佔位，實作優先度看使用者需求）
 8. ~~Clerk ＋雲端同步~~（架構已完成，2026-07-11：Next.js＋Prisma＋Supabase，正規化資料表＋雙模式
    `useProgress`。**尚待使用者實測**：填 `.env.local`、跑 `prisma migrate dev`、實際登入驗證資料搬移與讀寫）

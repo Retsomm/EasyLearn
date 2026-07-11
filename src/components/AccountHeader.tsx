@@ -58,6 +58,9 @@ const AccountHeader = ({ user }: AccountHeaderProps) => {
       await user.setProfileImage({ file })
       setPos(DEFAULT_POS)
       await saveMetadata(DEFAULT_POS)
+    } catch (err) {
+      console.error('avatar upload failed', err)
+      alert('上傳照片失敗，請稍後再試')
     } finally {
       setUploading(false)
     }
@@ -74,8 +77,13 @@ const AccountHeader = ({ user }: AccountHeaderProps) => {
   }
 
   const confirmReposition = async () => {
-    setIsRepositioning(false)
-    await saveMetadata(pos)
+    try {
+      await saveMetadata(pos)
+      setIsRepositioning(false)
+    } catch (err) {
+      console.error('save avatar position failed', err)
+      alert('儲存頭像位置失敗，請稍後再試')
+    }
   }
 
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -104,8 +112,11 @@ const AccountHeader = ({ user }: AccountHeaderProps) => {
     if (!trimmed) return
     setSavingName(true)
     try {
-      await user.update({ firstName: trimmed, lastName: '' })
+      await user.update({ firstName: trimmed })
       setNameEditing(false)
+    } catch (err) {
+      console.error('save name failed', err)
+      alert('儲存名稱失敗，請稍後再試')
     } finally {
       setSavingName(false)
     }
