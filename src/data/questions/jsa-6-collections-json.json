@@ -140,6 +140,144 @@
           { "code": "const user = {\n  name: \"小美\",\n  greet() { return \"hi\"; },\n  tags: undefined,\n};\nconst copy = JSON.parse(JSON.stringify(user));\nconsole.log(\"greet\" in copy, \"tags\" in copy, copy.name);", "expected": "false false 小美" }
         ]
       }
+    },
+    {
+      "id": "jsa-6-q7",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "Set 判斷成員：has",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Set/has",
+      "story": "",
+      "prompt": "想確認某人在不在名單裡，不用真的找出來、只想知道有沒有。這段印出什麼？",
+      "code": "const vip = new Set([\"小美\", \"小華\"]);\nconsole.log(vip.has(\"小美\"), vip.has(\"小王\"));",
+      "options": [
+        { "id": "a", "text": "true false" },
+        { "id": "b", "text": "false true" },
+        { "id": "c", "text": "1 0" },
+        { "id": "d", "text": "會報錯，Set 沒有 has 方法" }
+      ],
+      "answer": "a",
+      "explanation": "has() 是 Set 用來問「這個值在不在裡面」的方法，回傳單純的布林值，不是索引也不會因為找不到而報錯。它比陣列的 includes() 快很多——Set 底層設計就是為了讓「查有沒有」變成瞬間的事，資料量大時差異會很明顯。",
+      "verify": {
+        "checks": [
+          { "code": "const vip = new Set([\"小美\", \"小華\"]);\nconsole.log(vip.has(\"小美\"), vip.has(\"小王\"));", "expected": "true false" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-6-q8",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "Map 用 for...of 走訪 [key, value]",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Map",
+      "story": "",
+      "prompt": "把空格填起來，把每個人的分數一行一行印出來",
+      "code": "const scores = new Map([\n  [\"小美\", 90],\n  [\"小華\", 80],\n]);\n\nfor (const [name, score] of scores) {\n  ____\n}",
+      "options": [
+        { "id": "a", "text": "console.log(name, score);" },
+        { "id": "b", "text": "console.log(scores[name]);" },
+        { "id": "c", "text": "console.log(score, name.value);" },
+        { "id": "d", "text": "console.log(name.key, name.value);" }
+      ],
+      "answer": "a",
+      "explanation": "Map 是可迭代物，for...of 走過去時每一輪拿到的是一個 [key, value] 兩格陣列，用解構 const [name, score] 直接拆開最乾脆。選項 b 又掉回「Map 要用 get 不能用點記法／中括號屬性」的坑；選項 c、d 把 name 誤當成還包著 key/value 的物件，但它已經被解構成單純的字串了。",
+      "verify": {
+        "checks": [
+          { "code": "const scores = new Map([\n  [\"小美\", 90],\n  [\"小華\", 80],\n]);\nfor (const [name, score] of scores) {\n  console.log(name, score);\n}", "expected": "小美 90\n小華 80" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-6-q9",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "JSON.stringify 的縮排參數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify",
+      "story": "",
+      "prompt": "AI 產生的程式碼裡，JSON.stringify 後面多塞了兩個參數。這段印出什麼？",
+      "code": "const user = { name: \"小美\", age: 20 };\nconsole.log(JSON.stringify(user, null, 2));",
+      "options": [
+        { "id": "a", "text": "帶縮排、換行的美化版 JSON 字串" },
+        { "id": "b", "text": "跟不加參數完全一樣，一行印完" },
+        { "id": "c", "text": "會報錯，stringify 只能傳一個參數" },
+        { "id": "d", "text": "只印出 2" }
+      ],
+      "answer": "a",
+      "explanation": "JSON.stringify(值, replacer, space) 其實有三個參數：第二個 replacer 是過濾/轉換用的（沒有就傳 null），第三個 space 是縮排量——傳數字 2 就會用 2 個空白幫你把結果排版成一行一個屬性、方便肉眼看的樣子。存檔案、寫進 console 除錯或當範例展示時很常這樣用；真的要塞進 API 或 localStorage 省空間時，通常還是省略這兩個參數印成緊湊的一行。",
+      "verify": {
+        "checks": [
+          { "code": "const user = { name: \"小美\", age: 20 };\nconsole.log(JSON.stringify(user, null, 2));", "expected": "{\n  \"name\": \"小美\",\n  \"age\": 20\n}" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-6-q10",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "structuredClone：內建深拷貝",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/structuredClone",
+      "story": "",
+      "prompt": "跟前面 JSON 深拷貝那招比，這個內建函式做的事一樣嗎？",
+      "code": "const original = { user: { name: \"小美\" } };\nconst copy = structuredClone(original);\ncopy.user.name = \"小華\";\nconsole.log(original.user.name, copy.user.name);",
+      "options": [
+        { "id": "a", "text": "一樣：原本不受影響，印出 小美 小華" },
+        { "id": "b", "text": "不一樣：structuredClone 其實是淺拷貝，原本也被改了" },
+        { "id": "c", "text": "會報錯，structuredClone 不是真的存在" },
+        { "id": "d", "text": "一樣，但兩邊都變成 小華" }
+      ],
+      "answer": "a",
+      "explanation": "structuredClone() 是瀏覽器／Node 內建的深拷貝函式，效果跟 JSON.parse(JSON.stringify(x)) 這招很像（每一層都複製成全新物件），但它更正規：能處理 Date、Map、Set、循環參照這些 JSON 會處理不好或直接報錯的東西，唯獨一樣不能複製函式。需要深拷貝時，比起 JSON 兩件套，這是現代寫法應該優先想到的工具。",
+      "verify": {
+        "checks": [
+          { "code": "const original = { user: { name: \"小美\" } };\nconst copy = structuredClone(original);\ncopy.user.name = \"小華\";\nconsole.log(original.user.name, copy.user.name);", "expected": "小美 小華" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-6-q11",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "Map 轉物件：Object.fromEntries",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/fromEntries",
+      "story": "",
+      "prompt": "手上有個 Map，但要傳給只吃一般物件的舊函式。把空格填起來，讓 obj 印出 { a: 1, b: 2 }",
+      "code": "const map = new Map([\n  [\"a\", 1],\n  [\"b\", 2],\n]);\nconst obj = ____;\nconsole.log(obj);",
+      "options": [
+        { "id": "a", "text": "Object.fromEntries(map)" },
+        { "id": "b", "text": "Object.entries(map)" },
+        { "id": "c", "text": "map.toObject()" },
+        { "id": "d", "text": "JSON.parse(map)" }
+      ],
+      "answer": "a",
+      "explanation": "Object.fromEntries 吃一串 [key, value] 配對（陣列或任何可迭代物都行），組回一個普通物件——正好是 Map 天生的資料形狀，直接餵給它就轉換完成。反過來，物件轉 Map 就用 new Map(Object.entries(obj))，兩個函式互為逆運算，這條路線比手動 for 迴圈組資料乾淨很多。選項 c 的方法不存在，選項 d 的 JSON.parse 是拿字串轉物件，跟 Map 完全對不上。",
+      "verify": {
+        "checks": [
+          { "code": "const map = new Map([\n  [\"a\", 1],\n  [\"b\", 2],\n]);\nconst obj = Object.fromEntries(map);\nconsole.log(obj);", "expected": "{ a: 1, b: 2 }" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-6-q12",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Map.keys() 與 Map.values()",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Map/keys",
+      "story": "",
+      "prompt": "只想要鍵，或只想要值，不想要整組 [key, value]。這段印出什麼？",
+      "code": "const map = new Map([\n  [\"a\", 1],\n  [\"b\", 2],\n]);\nconsole.log([...map.keys()]);\nconsole.log([...map.values()]);",
+      "options": [
+        { "id": "a", "text": "[ 'a', 'b' ] 然後 [ 1, 2 ]" },
+        { "id": "b", "text": "[ 1, 2 ] 然後 [ 'a', 'b' ]" },
+        { "id": "c", "text": "[ ['a',1], ['b',2] ] 兩次" },
+        { "id": "d", "text": "會報錯，Map 沒有 keys/values 方法" }
+      ],
+      "answer": "a",
+      "explanation": "Map 提供三個各司其職的走訪方法：keys() 只給鍵、values() 只給值、entries()（也就是直接 for...of 這個 Map 時用的）給一組一組的 [key, value]。三個都回傳可迭代物，所以都能用展開語法收成陣列。需要哪一種資料，就直接點對應的方法，不用自己再用 map() 從 entries 裡挑。",
+      "verify": {
+        "checks": [
+          { "code": "const map = new Map([\n  [\"a\", 1],\n  [\"b\", 2],\n]);\nconsole.log([...map.keys()]);\nconsole.log([...map.values()]);", "expected": "[ 'a', 'b' ]\n[ 1, 2 ]" }
+        ]
+      }
     }
   ]
 }

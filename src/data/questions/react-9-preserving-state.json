@@ -133,6 +133,138 @@
         "checks": [],
         "manual": "需要切換互動觀察 state 銷毀；機制依 react.dev preserving-and-resetting-state（同位置不同型別即重建）"
       }
+    },
+    {
+      "id": "react-9-q7",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "同元件、不同位置，state 不共用",
+      "docs": "https://react.dev/learn/preserving-and-resetting-state",
+      "story": "",
+      "prompt": "同一個 <Counter />，一開始只出現在 else 分支（已按到 5）。把 showHint 打開後，Counter 多了個在它前面的 <Hint />。這時 Counter 顯示多少？",
+      "code": "function App({ showHint }) {\n  return (\n    <div>\n      {showHint ? (\n        <>\n          <Hint />\n          <Counter />\n        </>\n      ) : (\n        <Counter />\n      )}\n    </div>\n  );\n}\n// Counter 已按到 5，接著 showHint 從 false 切成 true",
+      "options": [
+        { "id": "a", "text": "0 —— Counter 前面多了個 Hint，它在樹上的位置變了，等於換了個新位置，state 歸零重來" },
+        { "id": "b", "text": "5 —— 反正還是同一個 Counter 元件，state 不受影響" },
+        { "id": "c", "text": "5 —— Hint 是另一個元件，不會干擾 Counter" },
+        { "id": "d", "text": "會報錯，同一層不能突然多一個手足元件" }
+      ],
+      "answer": "a",
+      "explanation": "React 認 state 靠「元件在樹上的位置」，不是只看「這是不是同一種元件」。多插一個 Hint 進來，Counter 從「這個位置的第一個、也是唯一的孩子」變成「第二個孩子」，位置變了，state 就跟著歸零。這比 q1 更細一層：同種元件、位置不同，一樣會重置；位置和種類都要對得上，state 才會被留住。",
+      "verify": {
+        "checks": [],
+        "manual": "需要多輪渲染互動觀察；機制依 react.dev preserving-and-resetting-state（state 綁定的是樹上的位置，多插入手足元件會改變位置）"
+      }
+    },
+    {
+      "id": "react-9-q8",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "元件定義寫在另一個元件內部",
+      "docs": "https://react.dev/learn/preserving-and-resetting-state",
+      "story": "",
+      "prompt": "聊天室的訊息輸入框，每次按下「送出」，草稿打好的字就無故消失。哪裡錯了？",
+      "code": "function ChatRoom() {\n  const [message, setMessage] = useState(\"\");\n\n  function MessageInput() {              // B 行：定義寫在 ChatRoom 內部\n    const [draft, setDraft] = useState(\"\");\n    return <input value={draft} onChange={(e) => setDraft(e.target.value)} />;\n  }\n\n  return (\n    <div>\n      <MessageInput />\n      <button onClick={() => setMessage(\"已送出\")}>送出</button>\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "B 行是元凶：MessageInput 定義在 ChatRoom 函式裡面，ChatRoom 每次重繪都會重新產生一個「全新」的 MessageInput 函式，React 認不出它跟上一輪是同一個元件種類，於是整組拆掉重建，draft 歸零" },
+        { "id": "b", "text": "useState 不能用在事件處理器之外" },
+        { "id": "c", "text": "input 元素不能放在 div 裡" },
+        { "id": "d", "text": "onChange 應該改成 onInput" }
+      ],
+      "answer": "a",
+      "explanation": "元件的「身分」是它的函式本身；MessageInput 寫在 ChatRoom 裡面，代表每次 ChatRoom 重繪，JS 都重新宣告了一次 MessageInput——雖然程式碼長得一樣，但對 React 而言是不同的函式參照，等於「換了種類的元件」，直接觸發 q6 那種整組銷毀重建。這是 react.dev 特別點名的地雷：元件一律要定義在最外層，不要巢狀宣告。",
+      "verify": {
+        "checks": [],
+        "manual": "需要點擊互動觀察 draft 消失；機制依 react.dev preserving-and-resetting-state 的提醒（不要在元件內部定義元件）"
+      }
+    },
+    {
+      "id": "react-9-q9",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "用穩定 id 當 key，重新排序後 state 正確跟著資料走",
+      "docs": "https://react.dev/learn/preserving-and-resetting-state",
+      "story": "",
+      "prompt": "三列 <RowEditor key={row.id} .../>，各自用 useState 存草稿。id 是 \"a\" 的那列打了「hello」。接著把資料陣列重新排序（\"a\" 從第一筆移到最後一筆，id 不變），畫面上 id 是 \"a\" 的那列草稿還在嗎？",
+      "code": "{rows.map((row) => (\n  <RowEditor key={row.id} row={row} />\n))}\n// rows 原本是 [a, b, c]，重新排序成 [b, c, a]",
+      "options": [
+        { "id": "a", "text": "還在，草稿仍是「hello」——key 跟著資料一起移動，React 認得「這還是同一個 a」，state 也跟著搬過去" },
+        { "id": "b", "text": "消失了，排序一變 state 就重置" },
+        { "id": "c", "text": "草稿會跑到現在排第一的那列（跟 q3 一樣錯位）" },
+        { "id": "d", "text": "會報錯，key 不能跟著資料重新排序" }
+      ],
+      "answer": "a",
+      "explanation": "這題是 q3 錯誤示範的正解版：用 index 當 key，排序一變位置對應就亂了；用資料自帶的穩定 id 當 key，不管怎麼搬移、排序，React 都能靠 key 精準認出「這還是原來那個 a」，state（這裡是草稿文字）自然跟著資料一起走，不會弄丟也不會錯位。這正是官方建議「列表一律用穩定 id 當 key」的核心理由。",
+      "verify": {
+        "checks": [],
+        "manual": "需要輸入與重新排序的互動；機制依 react.dev preserving-and-resetting-state（穩定 key 讓 state 跟著對應項目移動）"
+      }
+    },
+    {
+      "id": "react-9-q10",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "重置 state 的兩種官方手法：換位置 vs 換 key",
+      "docs": "https://react.dev/learn/preserving-and-resetting-state",
+      "story": "",
+      "prompt": "目標一樣：切換分頁時 Form 要整個歸零重來。這兩種寫法，效果一樣嗎？",
+      "code": "// 做法一：兩個分頁分別在三元運算子的不同分支各放一個 Form\n{tab === \"a\" ? <Form /> : <Form />}\n\n// 做法二：同一個位置，但用 key 讓它跟著 tab 變\n<Form key={tab} />",
+      "options": [
+        { "id": "a", "text": "效果一樣：兩種都是官方認可的做法——做法一是利用「不同分支＝不同位置」讓每次切換都是全新實例，做法二是直接靠 key 觸發重建，殊途同歸" },
+        { "id": "b", "text": "不一樣，只有做法一會重置" },
+        { "id": "c", "text": "不一樣，只有做法二會重置" },
+        { "id": "d", "text": "都不會重置，兩種都要另外呼叫 useEffect 清空表單" }
+      ],
+      "answer": "a",
+      "explanation": "react.dev 明講重置 state 有兩條路：把元件放到「不同位置」（像做法一，三元運算子兩個分支各自一份，切換時位置本來就不同），或者「同一個位置但換 key」（做法二，也就是 q2、q5 用過的招）。兩者殊途同歸，選哪個看情境：位置天然就會變（例如 if/else 分頁）用做法一很自然；同一個位置想手動觸發重建，用做法二的 key 更直接。",
+      "verify": {
+        "checks": [],
+        "manual": "需要切換分頁互動比較兩種寫法；機制依 react.dev preserving-and-resetting-state 的「Option 1: Rendering a component in different positions」與「Option 2: Resetting state with a key」"
+      }
+    },
+    {
+      "id": "react-9-q11",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "多包一層 DOM 標籤也會讓 state 意外重置",
+      "docs": "https://react.dev/learn/preserving-and-resetting-state",
+      "story": "",
+      "prompt": "想幫花俏模式的 Counter 加個外框，結果切換 isFancy 之後，Counter 的計數莫名其妙被重置了。哪裡出了問題？",
+      "code": "{isFancy ? (\n  <div className=\"fancy\">      // B 行：多包了一層 div\n    <Counter />\n  </div>\n) : (\n  <Counter />\n)}",
+      "options": [
+        { "id": "a", "text": "B 行讓兩個分支的樹狀結構不一致：一個分支 Counter 是最外層，另一個分支 Counter 包在 div 底下，位置其實不同，state 因此被重置；要讓兩個分支的外層結構保持一致（都包 div，或都不包）" },
+        { "id": "b", "text": "className 打錯字，應該用 class" },
+        { "id": "c", "text": "三元運算子的兩個分支不能長度不同" },
+        { "id": "d", "text": "Counter 需要額外傳一個 key 才能加外框" }
+      ],
+      "answer": "a",
+      "explanation": "跟 q7 是同一條規則的另一種呈現：不是 Counter 本身變了，是它「外面包的東西」變了，導致 Counter 在整棵樹上的路徑不同——一個是「div 底下的第一個孩子」、一個是「這個位置本身」，React 視為兩個不同位置，state 照樣歸零。修法很簡單：讓花俏／不花俏兩種情況共用相同的外層結構，只在裡面切換要不要加 class。",
+      "verify": {
+        "checks": [],
+        "manual": "需要切換互動觀察 state 被重置；機制依 react.dev preserving-and-resetting-state（改變周圍樹狀結構等同改變位置）"
+      }
+    },
+    {
+      "id": "react-9-q12",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用遞增計數器當 key，做一個「重置」按鈕",
+      "docs": "https://react.dev/learn/preserving-and-resetting-state",
+      "story": "",
+      "prompt": "要做一顆「重新開局」按鈕：不換使用者、不換任何 props，純粹按一下就讓 <Game /> 整組歸零重來。把空格填起來",
+      "code": "function Board() {\n  const [resetCount, setResetCount] = useState(0);\n\n  return (\n    <div>\n      <Game key={____} />\n      <button onClick={() => setResetCount((c) => c + 1)}>重新開局</button>\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "resetCount" },
+        { "id": "b", "text": "\"game\"" },
+        { "id": "c", "text": "Math.random()" },
+        { "id": "d", "text": "0" }
+      ],
+      "answer": "a",
+      "explanation": "跟 q5 用 userId 當 key 是同一招的變形，差別在這裡的 key 不是來自外部 props，而是元件自己養的一個「純粹用來觸發重建」的計數器：每按一次重置鈕，resetCount+1，key 換了，Game 連同它內部所有 state 整組拆掉重建。選項 b、d 是固定值，按幾次都不會變，等於沒接上重置邏輯；選項 c 的老問題在 q5 就講過——每次渲染都不同，會變成打地鼠式的無限重置。",
+      "verify": {
+        "checks": [],
+        "manual": "需要點擊互動觀察重建；機制依 react.dev preserving-and-resetting-state（key 變更即強制重建）"
+      }
     }
   ]
 }

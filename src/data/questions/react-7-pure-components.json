@@ -138,6 +138,141 @@
         "checks": [],
         "manual": "StrictMode 雙重渲染是開發模式的客戶端行為，SSR 驗不了；答案依 react.dev keeping-components-pure 的 StrictMode 說明"
       }
+    },
+    {
+      "id": "react-7-q7",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "console.log 是安全的除錯手段，不算破壞純粹性",
+      "docs": "https://react.dev/learn/keeping-components-pure",
+      "story": "",
+      "prompt": "為了除錯，在渲染函式裡加了一行 console.log。這樣渲染兩次，會印出什麼？",
+      "code": "function Score({ points }) {\n  console.log(\"渲染，points =\", points);\n  return <p>分數：{points}</p>;\n}\n\n// 連續渲染兩次 <Score points={10} />",
+      "options": [
+        { "id": "a", "text": "「渲染，points = 10」「<p>分數：10</p>」各印兩次——console.log 只是輸出訊息，沒有改任何外部變數、props 或 state，元件依然是同樣輸入、同樣結果" },
+        { "id": "b", "text": "第二次渲染會因為 console.log 而報錯" },
+        { "id": "c", "text": "第二次渲染畫面會變成 <p>分數：11</p>，因為 log 讓 points 累加了" },
+        { "id": "d", "text": "只有第一次會印，第二次 console.log 被 React 靜音" }
+      ],
+      "answer": "a",
+      "explanation": "純不純的判準是「有沒有動到函式外面的東西」：console.log 只是把訊息送到主控台，不讀不寫任何外部變數、不碰 props，兩次渲染算出的畫面完全一樣。開發模式的 StrictMode 會讓元件多渲染一次來抓不純的 bug，你會看到這行 log 印兩次——那是體檢在跑，不是程式壞了（呼應 q6）。真正該小心的是像 q1 那樣「靠 log 順帶做了計算或改了外部狀態」，那才是不純。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Score({ points }) {\n  console.log(\"渲染，points =\", points);\n  return <p>分數：{points}</p>;\n}\nconsole.log(renderToStaticMarkup(<Score points={10} />));\nconsole.log(renderToStaticMarkup(<Score points={10} />));", "expected": "渲染，points = 10\n<p>分數：10</p>\n渲染，points = 10\n<p>分數：10</p>" }
+        ]
+      }
+    },
+    {
+      "id": "react-7-q8",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "操作 DOM 是副作用，該搬進 Effect",
+      "docs": "https://react.dev/learn/synchronizing-with-effects",
+      "story": "",
+      "prompt": "這個元件在渲染時直接改瀏覽器分頁標題。哪裡不妥？",
+      "code": "function PageTitle({ title }) {\n  document.title = title;   // 渲染時直接動 DOM\n  return <h1>{title}</h1>;\n}",
+      "options": [
+        { "id": "a", "text": "document.title = title 是在動「渲染函式之外的世界」，這種跟外部系統同步的動作屬於副作用，不該混在算畫面的過程裡；要搬進 useEffect，讓 React 畫完面之後才執行" },
+        { "id": "b", "text": "document.title 只能在 App 最外層設定一次" },
+        { "id": "c", "text": "h1 標籤裡不能同時顯示 title" },
+        { "id": "d", "text": "title 應該用 state 存，不能用 props" }
+      ],
+      "answer": "a",
+      "explanation": "渲染函式的工作是「算出這次要顯示的畫面」，回傳 JSX 就該結束了；直接動全域的 document 物件是在跟瀏覽器這個外部系統打交道，React 沒辦法保證這行程式碼跑幾次、什麼時候跑（StrictMode 開發模式會跑兩次），標題就可能被設定成奇怪的中間狀態。正確做法是用 useEffect 把這個副作用包起來，讓它在渲染完成、畫面真的貼到畫面上之後才執行一次——這正是 react-4 教過的 Effect 機制要解決的問題：副作用要跟渲染分開。",
+      "verify": {
+        "checks": [],
+        "manual": "document 在 Node 環境不存在，需要瀏覽器 DOM 才能觀察；原則依 react.dev synchronizing-with-effects（渲染以外的世界互動屬於副作用，該放進 Effect）"
+      }
+    },
+    {
+      "id": "react-7-q9",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "時間戳記寫死在渲染裡 vs 由外面傳入",
+      "docs": "https://react.dev/learn/keeping-components-pure",
+      "story": "",
+      "prompt": "都是顯示一筆時間戳記。對「純不純」來說，這兩種寫法一樣嗎？",
+      "code": "// 版本一：渲染時當場取得時間\nfunction Log1() {\n  return <p>記錄時間：{Date.now()}</p>;\n}\n\n// 版本二：時間由外面傳入\nfunction Log2({ time }) {\n  return <p>記錄時間：{time}</p>;\n}",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一同樣沒有輸入變化，每次渲染仍可能給出不同的時間值，是不穩定輸出（不純）；版本二同樣的 time 永遠印出同樣結果（純）——時間該在事件發生的當下算好，再往下傳" },
+        { "id": "b", "text": "一樣，都是純的" },
+        { "id": "c", "text": "一樣，都不純，因為都顯示了時間" },
+        { "id": "d", "text": "版本二會報錯，props 不能是數字" }
+      ],
+      "answer": "a",
+      "explanation": "跟 q4 的 Math.random() 是同一種毛病：Date.now()、Math.random() 這類「讀取渲染當下的外部狀態」的呼叫，只要放進渲染函式，就會讓同一個元件、同樣的 props，在不同時間點渲染出不同結果——這正是不純的定義。修法也一樣：把不穩定的來源移到渲染之外，在事件處理器或 Effect 裡讀取一次，算好了再用 props 或 state 交給元件，元件本身只負責「顯示」。",
+      "verify": {
+        "checks": [],
+        "manual": "Date.now() 的輸出隨執行時間變動，無法用單次比對驗證；判定依 react.dev keeping-components-pure（渲染期間不可依賴會變動的外部資料）"
+      }
+    },
+    {
+      "id": "react-7-q10",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "呼叫其他純函式，組合起來還是純的",
+      "docs": "https://react.dev/learn/keeping-components-pure",
+      "story": "",
+      "prompt": "XpBadge 呼叫了另一個函式 formatXp 來算文字。這樣算不純嗎？渲染出什麼？",
+      "code": "function formatXp(xp) {\n  return `${xp} 點經驗值`;\n}\n\nfunction XpBadge({ xp }) {\n  return <span>{formatXp(xp)}</span>;\n}\n\n// <XpBadge xp={10} />",
+      "options": [
+        { "id": "a", "text": "純的——只要被呼叫的函式本身也不碰外部變數、不改 props，組合起來還是純函式；渲染出 <span>10 點經驗值</span>" },
+        { "id": "b", "text": "不純，元件裡不能呼叫別的函式" },
+        { "id": "c", "text": "不純，因為用了樣板字串" },
+        { "id": "d", "text": "會報錯，函式要定義在元件裡面才能呼叫" }
+      ],
+      "answer": "a",
+      "explanation": "純函式可以放心呼叫別的純函式：formatXp 只根據傳進來的 xp 算字串、不碰任何外部東西，XpBadge 呼叫它、把結果塞進 JSX，整條鏈路依然「同樣輸入、同樣輸出」。q3 已經證明「自己建的區域變數」怎麼改都合法，這題再往前一步：把計算拆成獨立的純函式來組合，是完全鼓勵的寫法，也是拆分邏輯、方便測試的常見做法。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction formatXp(xp) {\n  return `${xp} 點經驗值`;\n}\nfunction XpBadge({ xp }) {\n  return <span>{formatXp(xp)}</span>;\n}\nconsole.log(renderToStaticMarkup(<XpBadge xp={10} />));", "expected": "<span>10 點經驗值</span>" }
+        ]
+      }
+    },
+    {
+      "id": "react-7-q11",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "渲染中自己建的 Set，怎麼改都合法",
+      "docs": "https://react.dev/learn/keeping-components-pure",
+      "story": "",
+      "prompt": "這個元件想在渲染中用 Set 去除重複標籤（Set 是自己建的，改它沒問題）。把空格填起來",
+      "code": "function TagList({ tags }) {\n  const seen = new Set();\n  const unique = tags.filter((t) => {\n    if (seen.has(t)) return false;\n    ____;\n    return true;\n  });\n  return <p>{unique.join(\"、\")}</p>;\n}\n\n// <TagList tags={[\"紅\", \"綠\", \"紅\"]} />",
+      "options": [
+        { "id": "a", "text": "seen.add(t)" },
+        { "id": "b", "text": "seen = seen.add(t)" },
+        { "id": "c", "text": "seen.push(t)" },
+        { "id": "d", "text": "tags.delete(t)" }
+      ],
+      "answer": "a",
+      "explanation": "seen 是這次渲染自己生出來的區域 Set，渲染中呼叫 seen.add(t) 純粹是操作「自己的」資料，不碰任何外部變數或 props——跟 q3 的 rows.push 是同一件事的 Set 版本，重渲染一次結果照樣相同，畫面顯示「紅、綠」。選項 c 的 push 是陣列方法，Set 沒有這個方法；選項 d 對 tags（props）呼叫 delete 更是直接踩到 q2 的紅線——改到了不該碰的 props。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction TagList({ tags }) {\n  const seen = new Set();\n  const unique = tags.filter((t) => {\n    if (seen.has(t)) return false;\n    seen.add(t);\n    return true;\n  });\n  return <p>{unique.join(\"、\")}</p>;\n}\nconsole.log(renderToStaticMarkup(<TagList tags={[\"紅\", \"綠\", \"紅\"]} />));", "expected": "<p>紅、綠</p>" }
+        ]
+      }
+    },
+    {
+      "id": "react-7-q12",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "網路請求是副作用，該放進 Effect",
+      "docs": "https://react.dev/learn/synchronizing-with-effects",
+      "story": "",
+      "prompt": "兩個版本都會打 API。對「渲染」這件事的影響一樣嗎？",
+      "code": "// 版本一：在渲染時發送請求\nfunction Profile({ id }) {\n  fetch(`/api/user/${id}`);   // 每算一次畫面就打一次\n  return <p>使用者 {id}</p>;\n}\n\n// 版本二：把請求放進 Effect\nfunction Profile2({ id }) {\n  useEffect(() => {\n    fetch(`/api/user/${id}`);\n  }, [id]);\n  return <p>使用者 {id}</p>;\n}",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一渲染本身就帶有副作用，React 每算一次畫面就多打一次 API（StrictMode 下更明顯）；版本二渲染只負責回傳 JSX，副作用被 Effect 延後到渲染「之後」才發生，而且能靠依賴陣列 [id] 控制何時該重打" },
+        { "id": "b", "text": "一樣，兩者都是渲染完才發送請求" },
+        { "id": "c", "text": "一樣，兩者都會造成無限迴圈" },
+        { "id": "d", "text": "版本二會報錯，useEffect 裡不能呼叫 fetch" }
+      ],
+      "answer": "a",
+      "explanation": "跟 q8 的 document.title 是同一類問題：發網路請求是跟外部世界（伺服器）打交道，屬於副作用，不該混進「算畫面」的過程。版本一每次渲染都順手發一次請求，元件被重繪多少次就打多少次 API，完全失控；版本二用 useEffect 把它包起來，React 畫完面才執行，還能用依賴陣列 [id] 決定「id 沒變就不用重打」。呼應這兩章的主題：keeping-components-pure 講渲染要純，Effect 就是官方指定「副作用該去的地方」。",
+      "verify": {
+        "checks": [],
+        "manual": "需要瀏覽器/Node fetch 環境與多輪渲染觀察請求次數；機制依 react.dev keeping-components-pure 與 synchronizing-with-effects"
+      }
     }
   ]
 }

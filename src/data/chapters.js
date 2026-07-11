@@ -58,6 +58,20 @@ export function getLevel(levelId) {
   return null
 }
 
+// 題目 id → 所屬章節 id（分科成效統計用）
+const questionChapterMap = new Map()
+for (const ch of chapters) {
+  for (const level of ch.levels) {
+    for (const q of level.questions) {
+      questionChapterMap.set(q.id, ch.id)
+    }
+  }
+}
+
+export function getChapterIdForQuestion(questionId) {
+  return questionChapterMap.get(questionId)
+}
+
 // 從錯題本 id 集合撈出題目本體（照章節順序）
 export function getWrongQuestions(wrongIds) {
   const out = []
@@ -65,6 +79,33 @@ export function getWrongQuestions(wrongIds) {
     for (const level of ch.levels) {
       for (const q of level.questions) {
         if (wrongIds[q.id]) out.push(q)
+      }
+    }
+  }
+  return out
+}
+
+// 錯題本瀏覽用：題目本體＋熟練度資訊，最需要複習的（盒子小、越久沒複習）排前面
+export function getWrongEntries(wrongIds) {
+  const out = []
+  for (const ch of chapters) {
+    for (const level of ch.levels) {
+      for (const q of level.questions) {
+        const entry = wrongIds[q.id]
+        if (entry) out.push({ question: q, ...entry })
+      }
+    }
+  }
+  return out.sort((a, b) => a.box - b.box || (a.lastWrong ?? '').localeCompare(b.lastWrong ?? ''))
+}
+
+// 從收藏 id 集合撈出題目本體（照章節順序）
+export function getSavedQuestions(savedIds) {
+  const out = []
+  for (const ch of chapters) {
+    for (const level of ch.levels) {
+      for (const q of level.questions) {
+        if (savedIds[q.id]) out.push(q)
       }
     }
   }

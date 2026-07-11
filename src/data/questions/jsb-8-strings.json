@@ -140,6 +140,147 @@
           { "code": "const n = 7;\nconsole.log(String(n).padStart(3, \"0\"));\nconsole.log(\"128\".padStart(3, \"0\"));", "expected": "007\n128" }
         ]
       }
+    },
+    {
+      "id": "jsb-8-q7",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "repeat 重複字串",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/repeat",
+      "story": "",
+      "prompt": "想印出分隔線和重複字元。這段程式印出什麼？",
+      "code": "console.log(\"哈\".repeat(3));\nconsole.log(\"=\".repeat(10));",
+      "options": [
+        { "id": "a", "text": "哈哈哈 然後 ==========" },
+        { "id": "b", "text": "哈3 然後 =10" },
+        { "id": "c", "text": "哈哈哈哈哈哈哈哈哈哈 然後 ===" },
+        { "id": "d", "text": "會報錯，字串不能重複" }
+      ],
+      "answer": "a",
+      "explanation": "repeat(n) 把字串整個複製貼上 n 次接在一起。\"哈\".repeat(3) 就是「哈」連續出現 3 次；同理 \"=\".repeat(10) 是 10 個等號。做分隔線、進度條、簡單的縮排都很好用，比自己寫迴圈拼接字串省事很多。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(\"哈\".repeat(3));\nconsole.log(\"=\".repeat(10));", "expected": "哈哈哈\n==========" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-8-q8",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "startsWith / endsWith 檢查開頭結尾",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/endsWith",
+      "story": "",
+      "prompt": "檢查檔名的開頭和副檔名。這段程式印出什麼？",
+      "code": "const file = \"report-2026.pdf\";\nconsole.log(file.startsWith(\"report\"));\nconsole.log(file.endsWith(\".pdf\"));\nconsole.log(file.endsWith(\".PDF\"));",
+      "options": [
+        { "id": "a", "text": "true true false" },
+        { "id": "b", "text": "true true true" },
+        { "id": "c", "text": "false true false" },
+        { "id": "d", "text": "true false false" }
+      ],
+      "answer": "a",
+      "explanation": "startsWith / endsWith 就是字面上的意思：檢查字串是不是「這樣開頭」或「這樣結尾」，回傳布林值。跟大部分字串比對一樣，它們區分大小寫：\".pdf\" 對得上，\".PDF\" 因為大小寫不同就對不上，回傳 false。篩選檔案類型、驗證網址開頭（https://）都常靠這兩個方法，比自己切字串再比對輕鬆很多。",
+      "verify": {
+        "checks": [
+          { "code": "const file = \"report-2026.pdf\";\nconsole.log(file.startsWith(\"report\"));\nconsole.log(file.endsWith(\".pdf\"));\nconsole.log(file.endsWith(\".PDF\"));", "expected": "true\ntrue\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-8-q9",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "不分大小寫比對字串，忘記先轉換",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/toLowerCase",
+      "story": "",
+      "prompt": "想確認使用者輸入的信箱跟資料庫存的是不是同一個，明明是同一個信箱卻判斷失敗。哪裡錯了？",
+      "code": "const input = \"Amy@Example.com\";\nconst saved = \"amy@example.com\";\nconsole.log(input === saved);   // A 行，想確認是同一個信箱",
+      "options": [
+        { "id": "a", "text": "A 行沒有先統一大小寫：字串比較區分大小寫，要用 input.toLowerCase() === saved.toLowerCase()" },
+        { "id": "b", "text": "=== 不能拿來比較字串，要用 .equals()（JS 沒有這個方法）" },
+        { "id": "c", "text": "信箱裡的 @ 符號要跳脫處理" },
+        { "id": "d", "text": "要先用 trim() 才能比較" }
+      ],
+      "answer": "a",
+      "explanation": "=== 是逐字元精確比對，連大小寫都算數：\"Amy\" 和 \"amy\" 對它來說是完全不同的字元序列。信箱、帳號這種「使用者體感上不分大小寫」的資料，比對前要先用 toUpperCase() 或 toLowerCase() 統一格式，再用 === 比。這跟前面教過的 toUpperCase 不會改變原字串是同一組方法，只是這裡的重點在「拿它的回傳值來比較」，而不是拿去顯示。",
+      "verify": {
+        "checks": [
+          { "code": "const input = \"Amy@Example.com\";\nconst saved = \"amy@example.com\";\nconsole.log(input === saved);", "expected": "false" },
+          { "code": "const input = \"Amy@Example.com\";\nconst saved = \"amy@example.com\";\nconsole.log(input.toLowerCase() === saved.toLowerCase());", "expected": "true" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-8-q10",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "charAt 與中括號索引：查不到的差別",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/charAt",
+      "story": "",
+      "prompt": "\"cat\" 只有 3 個字，卻去查第 10 個位置。這段程式印出什麼？",
+      "code": "const s = \"cat\";\nconsole.log(s[10]);\nconsole.log(`[${s.charAt(10)}]`);",
+      "options": [
+        { "id": "a", "text": "undefined 然後 []（空字串）" },
+        { "id": "b", "text": "undefined 然後 [undefined]" },
+        { "id": "c", "text": "會報錯，索引超出範圍" },
+        { "id": "d", "text": "[] 然後 undefined" }
+      ],
+      "answer": "a",
+      "explanation": "兩種取字元的方式，查不到時的回應不一樣：中括號 s[10] 跟陣列取值同一套規則，查無此位置就給 undefined；charAt(10) 是比較古早的方法，查無此位置給的是空字串 \"\"（不是 undefined），所以印出來是空的 [ ]。多數情況兩者結果相同，但邊界之外的行為不同——要嚴謹判斷「有沒有取到值」該用 s[i] !== undefined，用 charAt 判斷容易漏掉這個角落。",
+      "verify": {
+        "checks": [
+          { "code": "const s = \"cat\";\nconsole.log(s[10]);\nconsole.log(`[${s.charAt(10)}]`);", "expected": "undefined\n[]" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-8-q11",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "展開運算子把字串拆成字元陣列",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Spread_syntax",
+      "story": "",
+      "prompt": "把字串拆成一個個字元組成的陣列。把空格填起來，印出 a-b-c",
+      "code": "const word = \"abc\";\nconst chars = ____;\nconsole.log(chars.join(\"-\"));",
+      "options": [
+        { "id": "a", "text": "[...word]" },
+        { "id": "b", "text": "word.length" },
+        { "id": "c", "text": "Array(word)" },
+        { "id": "d", "text": "word.split(\",\")" }
+      ],
+      "answer": "a",
+      "explanation": "字串是可以被迭代的（跟陣列一樣有「一格一格拿」的能力），展開運算子 ... 就能把它攤開成一個個字元，裝進新陣列 [...word] 變成 [\"a\",\"b\",\"c\"]。選項 b 拿到的是數字 3，不是陣列，join 會直接報錯；選項 c 的 Array(word) 是把整個字串當成「唯一一個元素」塞進陣列，變成 [\"abc\"]（長度 1），join 印出來還是完整的 abc；選項 d 用逗號分割，但 \"abc\" 裡根本沒有逗號，split 找不到分隔點，一樣只回傳 [\"abc\"]。跟 split(\"\") 相比，展開運算子在處理 emoji 等特殊字元時更安全，是現在比較推薦的寫法。",
+      "verify": {
+        "checks": [
+          { "code": "const word = \"abc\";\nconst chars = [...word];\nconsole.log(chars.join(\"-\"));", "expected": "a-b-c" },
+          { "code": "const word = \"abc\";\nconst chars = Array(word);\nconsole.log(chars.join(\"-\"));", "expected": "abc" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-8-q12",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "includes 判斷是否包含子字串",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/includes",
+      "story": "",
+      "prompt": "版本一用 includes，版本二用 indexOf 判斷有沒有找到。這兩段印出來一樣嗎？",
+      "code": "const text = \"hello world\";\n\n// 版本一\nconsole.log(text.includes(\"world\"));\n\n// 版本二\nconsole.log(text.indexOf(\"world\") !== -1);",
+      "options": [
+        { "id": "a", "text": "一樣，都印 true" },
+        { "id": "b", "text": "不一樣：版本一印 true，版本二印 6" },
+        { "id": "c", "text": "不一樣：版本一報錯" },
+        { "id": "d", "text": "一樣，都印 6" }
+      ],
+      "answer": "a",
+      "explanation": "indexOf 回傳「找到的位置」，找不到給 -1；所以「有沒有包含」的判斷式其實就是 indexOf(...) !== -1，只是每次都要多寫一段比較。includes 是後來新增的語法糖，直接把這個判斷包好、回傳布林值，語意更直白——想知道「有沒有」用 includes，想知道「在哪裡」才需要 indexOf。兩者在判斷有沒有找到這件事上結果完全等價。",
+      "verify": {
+        "checks": [
+          { "code": "const text = \"hello world\";\nconsole.log(text.includes(\"world\"));", "expected": "true" },
+          { "code": "const text = \"hello world\";\nconsole.log(text.indexOf(\"world\") !== -1);", "expected": "true" }
+        ]
+      }
     }
   ]
 }

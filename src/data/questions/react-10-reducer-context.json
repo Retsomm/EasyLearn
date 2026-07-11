@@ -140,6 +140,144 @@
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nimport { createContext, useContext } from 'react'\nconst ThemeContext = createContext(\"light\");\nfunction Button() {\n  const theme = useContext(ThemeContext);\n  return <button>{theme} 模式</button>;\n}\nfunction App() {\n  return (\n    <ThemeContext.Provider value=\"dark\">\n      <ThemeContext.Provider value=\"pink\">\n        <Button />\n      </ThemeContext.Provider>\n    </ThemeContext.Provider>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<button>pink 模式</button>" }
         ]
       }
+    },
+    {
+      "id": "react-10-q7",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "多個 action type 的 switch",
+      "docs": "https://react.dev/learn/extracting-state-logic-into-a-reducer",
+      "story": "",
+      "prompt": "reducer 認得 increment / decrement / reset 三種 action。依序餵完這串 action，最後 count 是多少？",
+      "code": "function reducer(state, action) {\n  switch (action.type) {\n    case \"increment\":\n      return { count: state.count + 1 };\n    case \"decrement\":\n      return { count: state.count - 1 };\n    case \"reset\":\n      return { count: 0 };\n    default:\n      return state;\n  }\n}\n\nlet s = { count: 0 };\ns = reducer(s, { type: \"increment\" });\ns = reducer(s, { type: \"increment\" });\ns = reducer(s, { type: \"decrement\" });\ns = reducer(s, { type: \"reset\" });\ns = reducer(s, { type: \"increment\" });\nconsole.log(s.count);",
+      "options": [
+        { "id": "a", "text": "1" },
+        { "id": "b", "text": "2" },
+        { "id": "c", "text": "0" },
+        { "id": "d", "text": "5" }
+      ],
+      "answer": "a",
+      "explanation": "跟著 action 一步步算：0 →(increment) 1 →(increment) 2 →(decrement) 1 →(reset) 0 →(increment) 1。真實專案的 reducer 通常不只一種 action，用 switch 把每種「事件種類」對應到各自的狀態轉換邏輯，是 useReducer 最常見的樣子——讀 case 就等於讀懂這個元件所有可能發生的狀態變化。",
+      "verify": {
+        "checks": [
+          { "code": "function reducer(state, action) {\n  switch (action.type) {\n    case \"increment\":\n      return { count: state.count + 1 };\n    case \"decrement\":\n      return { count: state.count - 1 };\n    case \"reset\":\n      return { count: 0 };\n    default:\n      return state;\n  }\n}\nlet s = { count: 0 };\ns = reducer(s, { type: \"increment\" });\ns = reducer(s, { type: \"increment\" });\ns = reducer(s, { type: \"decrement\" });\ns = reducer(s, { type: \"reset\" });\ns = reducer(s, { type: \"increment\" });\nconsole.log(s.count);", "expected": "1" }
+        ]
+      }
+    },
+    {
+      "id": "react-10-q8",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "沒有 default case，未知 action 把 state 弄丟",
+      "docs": "https://react.dev/learn/extracting-state-logic-into-a-reducer",
+      "story": "",
+      "prompt": "打了一個以為安全的 action.type，結果整個 state 直接消失變成 undefined。哪裡錯了？",
+      "code": "function reducer(state, action) {\n  switch (action.type) {\n    case \"add\":\n      return { count: state.count + action.n };\n  }                          // B 行：沒有 default\n}\n\nlet s = { count: 0 };\ns = reducer(s, { type: \"unknown\" });\nconsole.log(s);",
+      "options": [
+        { "id": "a", "text": "B 行缺了 default: return state：遇到不認得的 action.type，switch 沒有任何 case 命中，函式落到底也沒有 return，靜靜地回傳 undefined，state 就這樣不見了" },
+        { "id": "b", "text": "case \"add\" 的邏輯寫錯了" },
+        { "id": "c", "text": "action 物件少了 n 欄位" },
+        { "id": "d", "text": "console.log 不能印物件" }
+      ],
+      "answer": "a",
+      "explanation": "switch 沒有 default，代表「萬一沒人接得住這個 action」根本沒有安全網——函式執行到底、沒有明確 return，JS 自動補上 undefined。reducer 的鐵律：不認識的 action.type 一律 return state（原封不動传回去），而不是什麼都不回傳。這個 bug 特別陰險，因為打錯字（例如 \"ad\" 打成 \"add\"）也會觸發同樣的症狀——整個 state 憑空消失。",
+      "verify": {
+        "checks": [
+          { "code": "function reducer(state, action) {\n  switch (action.type) {\n    case \"add\":\n      return { count: state.count + action.n };\n  }\n}\nlet s = { count: 0 };\ns = reducer(s, { type: \"unknown\" });\nconsole.log(s);", "expected": "undefined" },
+          { "code": "function reducer(state, action) {\n  switch (action.type) {\n    case \"add\":\n      return { count: state.count + action.n };\n    default:\n      return state;\n  }\n}\nlet s = { count: 0 };\ns = reducer(s, { type: \"unknown\" });\nconsole.log(s);", "expected": "{ count: 0 }" }
+        ]
+      }
+    },
+    {
+      "id": "react-10-q9",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "Context 適合放哪種資料，不適合放哪種",
+      "docs": "https://react.dev/learn/passing-data-deeply-with-context",
+      "story": "",
+      "prompt": "把每個按鍵輸入都即時廣播進全域 Context，跟只放在 Editor 自己的 state 裡，對完全不相干的 Sidebar 元件有差嗎？",
+      "code": "// 版本一：文字內容放進全域 Context\nconst FormContext = createContext();\nfunction App() {\n  const [text, setText] = useState(\"\");\n  return (\n    <FormContext.Provider value={text}>\n      <Sidebar />                     {/* 跟輸入框無關，但也訂閱了同一個 Context */}\n      <Editor onChange={setText} />\n    </FormContext.Provider>\n  );\n}\n\n// 版本二：text 只留在 Editor 自己的 state，不經過 Context",
+      "options": [
+        { "id": "a", "text": "有差：版本一每打一個字，Sidebar 也會跟著重繪，因為它訂閱了同一個 Context；版本二把高頻變動的資料留在區域 state，Sidebar 完全不受影響。Context 適合主題、登入使用者這種低頻資料，不適合塞進每個按鍵都在變的表單值" },
+        { "id": "b", "text": "沒差，Context 不會導致額外重繪" },
+        { "id": "c", "text": "沒差，React 會自動幫沒用到 text 的元件跳過重繪" },
+        { "id": "d", "text": "有差，但方向相反：版本二才會拖累 Sidebar" }
+      ],
+      "answer": "a",
+      "explanation": "Context 的訂閱是「整包 value 換了，所有用 useContext 讀它的元件都重繪」，沒有像 props 那樣的細粒度比對。react.dev 明白建議：Context 適合「不常變、但很多地方要用」的資料（主題、語系、登入使用者），高頻變動的資料（打字中的表單、滑鼠座標）留在區域 state 或用其他方案，否則就會出現這題 Sidebar 這種「明明無關卻被拖著重繪」的效能問題。",
+      "verify": {
+        "checks": [],
+        "manual": "重繪次數需要瀏覽器渲染計數才能實測；判準依 react.dev passing-data-deeply-with-context 的「何時使用 context」與效能提醒"
+      }
+    },
+    {
+      "id": "react-10-q10",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "action 可以帶多個資料欄位（payload 模式）",
+      "docs": "https://react.dev/learn/extracting-state-logic-into-a-reducer",
+      "story": "",
+      "prompt": "reducer 認得 { type: \"add_todo\", text: 字串 }，會把 text 包成一筆新待辦加進陣列。把空格填起來，新增一筆「買牛奶」",
+      "code": "function reducer(state, action) {\n  switch (action.type) {\n    case \"add_todo\":\n      return { todos: [...state.todos, { text: action.text, done: false }] };\n    default:\n      return state;\n  }\n}\n\nconst next = reducer({ todos: [] }, ____);\nconsole.log(next.todos[0].text);",
+      "options": [
+        { "id": "a", "text": "{ type: \"add_todo\", text: \"買牛奶\" }" },
+        { "id": "b", "text": "\"add_todo\"" },
+        { "id": "c", "text": "{ type: \"add_todo\" }" },
+        { "id": "d", "text": "\"買牛奶\"" }
+      ],
+      "answer": "a",
+      "explanation": "action 不是只能帶一個 type，type 只是「事件名」，其他欄位隨需求自訂——這裡用 text 帶要新增的內容，reducer 裡用 action.text 取出來。選項 c 少了 text 欄位，reducer 會塞進一筆內容是 undefined 的待辦；選項 b、d 連 type 都不完整或格式不對，reducer 的 switch 完全對不上。dispatch 丟的物件要跟 reducer 讀的欄位一一對應，這是 q5 學過的規則的延伸。",
+      "verify": {
+        "checks": [
+          { "code": "function reducer(state, action) {\n  switch (action.type) {\n    case \"add_todo\":\n      return { todos: [...state.todos, { text: action.text, done: false }] };\n    default:\n      return state;\n  }\n}\nconst next = reducer({ todos: [] }, { type: \"add_todo\", text: \"買牛奶\" });\nconsole.log(next.todos[0].text);", "expected": "買牛奶" }
+        ]
+      }
+    },
+    {
+      "id": "react-10-q11",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "忘記包 Provider，且沒設有意義的預設值",
+      "docs": "https://react.dev/learn/passing-data-deeply-with-context",
+      "story": "",
+      "prompt": "createContext() 沒給任何預設值，Greeting 又忘記包在 Provider 裡就直接解構 user.name。執行會發生什麼事？",
+      "code": "const UserContext = createContext();   // 沒有給預設值\n\nfunction Greeting() {\n  const user = useContext(UserContext);\n  return <p>哈囉，{user.name}</p>;      // 直接解構 user.name\n}\n\nfunction App() {\n  return <Greeting />;   // 忘記包 <UserContext.Provider>\n}",
+      "options": [
+        { "id": "a", "text": "會噴錯：Cannot read properties of undefined (reading 'name')——沒包 Provider 時 useContext 拿到的是 createContext() 的預設值，這裡沒給、就是 undefined，直接讀 .name 當場炸掉" },
+        { "id": "b", "text": "顯示「哈囉，undefined」，畫面正常但字有點怪" },
+        { "id": "c", "text": "顯示「哈囉，」，name 被當成空字串" },
+        { "id": "d", "text": "React 會主動報錯提醒「忘記包 Provider」" }
+      ],
+      "answer": "a",
+      "explanation": "q4 學過「沒包 Provider 就退回預設值」，這題是它的陰暗面：如果 createContext() 根本沒給預設值（或給了 null），退回去的就是 undefined／null，接下來只要程式碼對它做了 .name 這種解構或屬性存取，就會直接丟出 TypeError。教訓：要嘛在 createContext 給一個「安全」的預設物件，要嘛在使用端做防呆判斷，不要假設 Provider 一定有包好。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nimport { createContext, useContext } from 'react'\nconst UserContext = createContext();\nfunction Greeting() {\n  const user = useContext(UserContext);\n  return <p>哈囉，{user.name}</p>;\n}\nfunction App() {\n  return <Greeting />;\n}\nconsole.log(renderToStaticMarkup(<App />));", "expectError": "Cannot read properties of undefined" }
+        ]
+      }
+    },
+    {
+      "id": "react-10-q12",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "reducer 搭配 Context：資料與 dispatch 分開傳",
+      "docs": "https://react.dev/learn/scaling-up-with-reducer-and-context",
+      "story": "",
+      "prompt": "TaskList 只透過 TasksContext 讀取待辦清單，完全不需要碰 dispatch，dispatch 是另一個獨立的 Context。這樣渲染出什麼？",
+      "code": "const TasksContext = createContext(null);\nconst TasksDispatchContext = createContext(null);\n\nfunction reducer(tasks, action) {\n  switch (action.type) {\n    case \"added\":\n      return [...tasks, { id: action.id, text: action.text }];\n    default:\n      return tasks;\n  }\n}\n\nfunction TaskList() {\n  const tasks = useContext(TasksContext);\n  return <ul>{tasks.map((t) => <li key={t.id}>{t.text}</li>)}</ul>;\n}\n\nfunction TaskApp() {\n  const [tasks, dispatch] = useReducer(reducer, [{ id: 1, text: \"買菜\" }]);\n  return (\n    <TasksContext.Provider value={tasks}>\n      <TasksDispatchContext.Provider value={dispatch}>\n        <TaskList />\n      </TasksDispatchContext.Provider>\n    </TasksContext.Provider>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "<ul><li>買菜</li></ul> —— TaskList 只讀 TasksContext，dispatch 完全不用經過它，也不用一路當 props 往下傳" },
+        { "id": "b", "text": "會報錯，TaskList 沒有拿到 dispatch" },
+        { "id": "c", "text": "<ul></ul>，因為 dispatch 沒有傳給 TaskList 所以清單是空的" },
+        { "id": "d", "text": "<li>買菜</li>，缺少外層 ul" }
+      ],
+      "answer": "a",
+      "explanation": "這是 reducer 加 Context 的經典組合技：把「資料」（tasks）和「改變資料的方法」（dispatch）拆成兩個獨立的 Context，各自需要的元件各自訂閱——讀資料的元件（TaskList）不用理會 dispatch，要觸發變更的元件（例如新增按鈕）才去訂閱 TasksDispatchContext。這樣不管元件樹多深，都不用把 dispatch 當成 props 一層層往下傳，這正是 react.dev「scaling up with reducer and context」教的架構。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nimport { createContext, useContext, useReducer } from 'react'\nconst TasksContext = createContext(null);\nconst TasksDispatchContext = createContext(null);\nfunction reducer(tasks, action) {\n  switch (action.type) {\n    case \"added\":\n      return [...tasks, { id: action.id, text: action.text }];\n    default:\n      return tasks;\n  }\n}\nfunction TaskList() {\n  const tasks = useContext(TasksContext);\n  return <ul>{tasks.map((t) => <li key={t.id}>{t.text}</li>)}</ul>;\n}\nfunction TaskApp() {\n  const [tasks, dispatch] = useReducer(reducer, [{ id: 1, text: \"買菜\" }]);\n  return (\n    <TasksContext.Provider value={tasks}>\n      <TasksDispatchContext.Provider value={dispatch}>\n        <TaskList />\n      </TasksDispatchContext.Provider>\n    </TasksContext.Provider>\n  );\n}\nconsole.log(renderToStaticMarkup(<TaskApp />));", "expected": "<ul><li>買菜</li></ul>" }
+        ]
+      }
     }
   ]
 }

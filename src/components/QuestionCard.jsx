@@ -1,14 +1,16 @@
 import CodeBlock from './CodeBlock'
 import Icon from './Icons'
+import { TYPE_META } from '../data/typeMeta'
 
-const TYPE_META = {
-  'predict-output': { icon: 'eye', label: '預測輸出' },
-  'find-bug': { icon: 'bug', label: '抓蟲' },
-  'same-or-not': { icon: 'search', label: '改壞了嗎' },
-  'fill-in': { icon: 'pencil', label: '動手填空' },
-}
-
-export default function QuestionCard({ question, selected, onSelect, onNext, isLast }) {
+export default function QuestionCard({
+  question,
+  selected,
+  onSelect,
+  onNext,
+  isLast,
+  saved,
+  onToggleSave,
+}) {
   const answered = selected !== null
   const correct = answered && selected === question.answer
   const typeMeta = TYPE_META[question.type]
@@ -21,6 +23,13 @@ export default function QuestionCard({ question, selected, onSelect, onNext, isL
           {typeMeta.label}
         </span>
         <span className="topic-label">{question.topic}</span>
+        <button
+          className={`save-btn ${saved ? 'is-saved' : ''}`}
+          onClick={() => onToggleSave(question.id)}
+          aria-label={saved ? '取消收藏這題' : '收藏這題'}
+        >
+          <Icon name="star" size={18} className={saved ? 'icon-filled' : ''} />
+        </button>
       </div>
 
       <p className="question-prompt">{question.prompt}</p>

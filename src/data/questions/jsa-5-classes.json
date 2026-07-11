@@ -140,6 +140,145 @@
           { "code": "class MathKit {\n  static double(n) {\n    return n * 2;\n  }\n}\nconst kit = new MathKit();\nconsole.log(MathKit.double(5));\nconsole.log(typeof kit.double);", "expected": "10\nundefined" }
         ]
       }
+    },
+    {
+      "id": "jsa-5-q7",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "getter/setter 讓存取像屬性一樣",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/get",
+      "story": "",
+      "prompt": "c.area 看起來像個普通屬性，其實背後在跑一段計算。這段印出什麼？",
+      "code": "class Circle {\n  constructor(radius) {\n    this.radius = radius;\n  }\n  get area() {\n    return Math.PI * this.radius ** 2;\n  }\n  set radius(r) {\n    this._radius = r < 0 ? 0 : r;\n  }\n  get radius() {\n    return this._radius;\n  }\n}\nconst c = new Circle(2);\nconsole.log(c.area.toFixed(2));\nc.radius = -5;\nconsole.log(c.radius);",
+      "options": [
+        { "id": "a", "text": "12.57 然後 0" },
+        { "id": "b", "text": "12.57 然後 -5" },
+        { "id": "c", "text": "會報錯，radius 不能同時有 get 和 set" },
+        { "id": "d", "text": "undefined 然後 0" }
+      ],
+      "answer": "a",
+      "explanation": "get 和 set 讓「呼叫方法」偽裝成「存取屬性」：c.area 讀起來像欄位，實際上是呼叫 get area() 現算一次（2 的平方乘上 π ≈ 12.57）。c.radius = -5 這行也不是直接改欄位，而是觸發 set radius(r)，裡面做了防呆把負數擋成 0，所以真正存進 this._radius 的是 0。這種「表面是屬性、背後是函式」的寫法很常拿來做資料驗證或格式轉換，且不用改呼叫端的語法。",
+      "verify": {
+        "checks": [
+          { "code": "class Circle {\n  constructor(radius) {\n    this.radius = radius;\n  }\n  get area() {\n    return Math.PI * this.radius ** 2;\n  }\n  set radius(r) {\n    this._radius = r < 0 ? 0 : r;\n  }\n  get radius() {\n    return this._radius;\n  }\n}\nconst c = new Circle(2);\nconsole.log(c.area.toFixed(2));\nc.radius = -5;\nconsole.log(c.radius);", "expected": "12.57\n0" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-5-q8",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "private 欄位 #field 外部真的碰不到",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes/Private_properties",
+      "story": "",
+      "prompt": "AI 寫的程式想從外部直接讀 #balance，結果整支程式跑不起來。為什麼？",
+      "code": "class Wallet {\n  #balance = 100;\n  show() {\n    return this.#balance;\n  }\n}\nconst w = new Wallet();\nconsole.log(w.show());\nconsole.log(w.#balance);   // 💥",
+      "options": [
+        { "id": "a", "text": "#balance 是 private 欄位，只有 class 內部的程式碼能存取，外部連寫都寫不出來（直接 SyntaxError）" },
+        { "id": "b", "text": "#balance 忘了在 constructor 裡初始化" },
+        { "id": "c", "text": "private 欄位只能用 get/set 宣告，不能直接寫 #balance = 100" },
+        { "id": "d", "text": "w.show() 也會失敗，因為 private 欄位連 class 內部都不能用" }
+      ],
+      "answer": "a",
+      "explanation": "開頭加 # 的欄位是真正的 private：只有這個 class 的方法內部（像 show()）能碰它，class 外部就算是同一個檔案也完全存取不到。這不只是「約定俗成不要動」，而是語言層級硬性擋住——在 class 外面寫 w.#balance，連程式都解析不過去，直接是 SyntaxError（Private field '#balance' must be declared in an enclosing class）。這跟第五章其他關卡教的「用 closure 做私有狀態」是同一個目的，但 class 語法把它變成內建功能。",
+      "verify": {
+        "checks": [
+          { "code": "class Wallet {\n  #balance = 100;\n  show() {\n    return this.#balance;\n  }\n}\nconst w = new Wallet();\nconsole.log(w.show());", "expected": "100" },
+          { "code": "class Wallet {\n  #balance = 100;\n  show() {\n    return this.#balance;\n  }\n}\nconst w = new Wallet();\nconsole.log(w.#balance);", "expectError": "Private field" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-5-q9",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "instanceof 判斷物件的血統",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/instanceof",
+      "story": "",
+      "prompt": "想知道一個物件到底是不是某個 class（或它的子類別）做出來的。這段印出什麼？",
+      "code": "class Animal {}\nclass Dog extends Animal {}\nconst d = new Dog();\nconsole.log(d instanceof Dog);\nconsole.log(d instanceof Animal);\nconsole.log(d instanceof Array);",
+      "options": [
+        { "id": "a", "text": "true 然後 true 然後 false" },
+        { "id": "b", "text": "true 然後 false 然後 false" },
+        { "id": "c", "text": "true 然後 true 然後 true" },
+        { "id": "d", "text": "false 然後 true 然後 false" }
+      ],
+      "answer": "a",
+      "explanation": "instanceof 查的是「這個物件的原型鏈上，找不找得到某個 class 的 prototype」。d 是 new Dog() 做出來的，自然 instanceof Dog 是 true；因為 Dog extends Animal，Dog 的原型鏈會往上接到 Animal，所以 d instanceof Animal 也是 true。但 Dog 跟 Array 完全沒關係，原型鏈上找不到 Array.prototype，所以是 false。判斷「這個東西到底是什麼類型做出來的」，instanceof 是最直接的工具。",
+      "verify": {
+        "checks": [
+          { "code": "class Animal {}\nclass Dog extends Animal {}\nconst d = new Dog();\nconsole.log(d instanceof Dog);\nconsole.log(d instanceof Animal);\nconsole.log(d instanceof Array);", "expected": "true\ntrue\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-5-q10",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "方法定義在 prototype 上，所有實例共用同一份",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes",
+      "story": "",
+      "prompt": "a 和 b 是兩隻不同的寵物，但它們的 speak 方法是不是各自複製了一份？這段印出什麼？",
+      "code": "class Pet {\n  speak() {\n    return \"...\";\n  }\n}\nconst a = new Pet();\nconst b = new Pet();\nconsole.log(a.speak === b.speak);\nconsole.log(Object.getPrototypeOf(a) === Pet.prototype);",
+      "options": [
+        { "id": "a", "text": "true 然後 true" },
+        { "id": "b", "text": "false 然後 true" },
+        { "id": "c", "text": "false 然後 false" },
+        { "id": "d", "text": "true 然後 false" }
+      ],
+      "answer": "a",
+      "explanation": "class 裡寫的方法（像 speak）不會在每個 new 出來的實例上各複製一份，而是只存一份在 Pet.prototype 上，所有實例透過原型鏈共用同一個函式——所以 a.speak === b.speak 是 true，Object.getPrototypeOf(a) 也的確指向同一個 Pet.prototype。這跟 q4 那個 class 欄位 count = 0（每個實例各自一份）不一樣：欄位是「掛在每個實例自己身上」，方法是「大家共用同一份，省記憶體」。",
+      "verify": {
+        "checks": [
+          { "code": "class Pet {\n  speak() {\n    return \"...\";\n  }\n}\nconst a = new Pet();\nconst b = new Pet();\nconsole.log(a.speak === b.speak);\nconsole.log(Object.getPrototypeOf(a) === Pet.prototype);", "expected": "true\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-5-q11",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "多層繼承時 super 呼叫鏈一路往上串",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/super",
+      "story": "",
+      "prompt": "C 繼承 B，B 又繼承 A，三層都覆寫了 intro 並呼叫 super.intro()。這段印出什麼？",
+      "code": "class A {\n  intro() { return \"A\"; }\n}\nclass B extends A {\n  intro() { return super.intro() + \"B\"; }\n}\nclass C extends B {\n  intro() { return super.intro() + \"C\"; }\n}\nconsole.log(new C().intro());",
+      "options": [
+        { "id": "a", "text": "ABC" },
+        { "id": "b", "text": "CBA" },
+        { "id": "c", "text": "C" },
+        { "id": "d", "text": "會報錯，super 只能往上一層，不能連續往上兩層" }
+      ],
+      "answer": "a",
+      "explanation": "super 不是只能用一次，繼承鏈有幾層，super.xxx() 就能一路往上接力：C.intro() 先呼叫 super.intro()（也就是 B 的版本），B.intro() 又呼叫自己的 super.intro()（也就是 A 的版本），A 是最上層直接回傳 \"A\"。結果從最底層開始往回疊字串：A → A+\"B\" → AB+\"C\"，最後印出 ABC。「覆寫再借用上一層」這招（q3 學過）在多層繼承照樣管用，一層接一層往上找。",
+      "verify": {
+        "checks": [
+          { "code": "class A {\n  intro() { return \"A\"; }\n}\nclass B extends A {\n  intro() { return super.intro() + \"B\"; }\n}\nclass C extends B {\n  intro() { return super.intro() + \"C\"; }\n}\nconsole.log(new C().intro());", "expected": "ABC" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-5-q12",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "沒寫 constructor 也沒關係，子類別自動幫你 super(...args)",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes/constructor",
+      "story": "",
+      "prompt": "Cat 繼承 Animal，卻完全沒寫自己的 constructor。這段印出什麼？",
+      "code": "class Animal {\n  constructor(name) {\n    this.name = name;\n  }\n}\nclass Cat extends Animal {\n  meow() {\n    return `${this.name} 喵`;\n  }\n}\nconsole.log(new Cat(\"小黑\").meow());",
+      "options": [
+        { "id": "a", "text": "小黑 喵" },
+        { "id": "b", "text": "undefined 喵" },
+        { "id": "c", "text": "會報錯，Cat 沒有 constructor 就不能 new" },
+        { "id": "d", "text": "會報錯，子類別一定要自己寫 constructor 並呼叫 super" }
+      ],
+      "answer": "a",
+      "explanation": "q5 教過子類別自己寫 constructor 時，第一行一定要是 super(...)；但如果子類別根本沒寫 constructor，JS 會自動幫你補一個預設版本，等同於 constructor(...args) { super(...args) }——把收到的參數原封不動轉交給父類別。所以 new Cat(\"小黑\") 雖然 Cat 沒有自己的 constructor，\"小黑\" 還是順利被父類別 Animal 的 constructor 接住存成 this.name。只有當你自己動手寫了 constructor，才必須自己記得呼叫 super()。",
+      "verify": {
+        "checks": [
+          { "code": "class Animal {\n  constructor(name) {\n    this.name = name;\n  }\n}\nclass Cat extends Animal {\n  meow() {\n    return `${this.name} 喵`;\n  }\n}\nconsole.log(new Cat(\"小黑\").meow());", "expected": "小黑 喵" }
+        ]
+      }
     }
   ]
 }

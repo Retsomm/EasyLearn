@@ -141,6 +141,145 @@
           { "code": "const pet = { name: \"皮皮\", stage: 2 };\nconst keys = Object.keys(pet);\nconsole.log(keys.length, keys[0]);", "expected": "2 name" }
         ]
       }
+    },
+    {
+      "id": "jsb-4-q7",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "巢狀解構",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment",
+      "story": "",
+      "prompt": "使用者資料裡地址是巢狀物件。這段印出什麼？",
+      "code": "const user = { name: \"小美\", address: { city: \"台北\", zip: \"100\" } };\nconst { name, address: { city } } = user;\nconsole.log(name, city);",
+      "options": [
+        { "id": "a", "text": "小美 台北" },
+        { "id": "b", "text": "小美 undefined" },
+        { "id": "c", "text": "小美 { city: '台北', zip: '100' }" },
+        { "id": "d", "text": "會報錯" }
+      ],
+      "answer": "a",
+      "explanation": "解構可以照著物件的形狀一路往裡拆：{ address: { city } } 直接跳過 address 這層，拿到裡面的 city。注意這裡的 address 只是「路徑」寫法，不會額外產生一個叫 address 的變數——想同時保留 address 整包，要另外寫 const { address } = user。巢狀解構是拆 API 回傳的巢狀資料時很常見的簡寫。",
+      "verify": {
+        "checks": [
+          { "code": "const user = { name: \"小美\", address: { city: \"台北\", zip: \"100\" } };\nconst { name, address: { city } } = user;\nconsole.log(name, city);", "expected": "小美 台北" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-4-q8",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "展開語法只是淺拷貝",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Spread_syntax",
+      "story": "",
+      "prompt": "用展開語法複製設定，以為安全了，結果巢狀的 theme 還是被改到共用的那份。哪裡出了問題？",
+      "code": "const base = { theme: { color: \"dark\" }, version: 1 };\nconst copy = { ...base };\ncopy.theme.color = \"light\";\nconsole.log(base.theme.color);   // light ?? 預期 dark",
+      "options": [
+        { "id": "a", "text": "{ ...base } 只複製第一層，巢狀的 theme 物件本身還是同一個參照，要巢狀複製得再展開一層" },
+        { "id": "b", "text": "copy.theme.color 這樣寫語法有誤" },
+        { "id": "c", "text": "展開語法遇到巢狀物件會直接報錯" },
+        { "id": "d", "text": "沒有 bug，這是預期行為" }
+      ],
+      "answer": "a",
+      "explanation": "展開語法只複製「第一層」的欄位——version 是數字，複製後兩邊互不影響；但 theme 是個物件，複製的其實是「指向同一個物件的參照」，所以 copy.theme 和 base.theme 骨子裡是同一個東西，改一邊兩邊都變。要真正的深拷貝，巢狀的部分也得展開：{ ...base, theme: { ...base.theme } }，或用 structuredClone。這是 q2 物件參照坑的進階版，巢狀資料格外容易踩到，React state 裡藏著巢狀物件時要特別小心。",
+      "verify": {
+        "checks": [
+          { "code": "const base = { theme: { color: \"dark\" }, version: 1 };\nconst copy = { ...base };\ncopy.theme.color = \"light\";\nconsole.log(base.theme.color);", "expected": "light" },
+          { "code": "const base = { theme: { color: \"dark\" }, version: 1 };\nconst copy = { ...base, theme: { ...base.theme } };\ncopy.theme.color = \"light\";\nconsole.log(base.theme.color, copy.theme.color);", "expected": "dark light" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-4-q9",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "in 運算子檢查屬性是否存在",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/in",
+      "story": "",
+      "prompt": "用 in 檢查物件有沒有某個欄位，就算值是 undefined 也一樣算有。這段印出什麼？",
+      "code": "const config = { timeout: undefined, retries: 3 };\nconsole.log(\"timeout\" in config);\nconsole.log(config.timeout !== undefined);\nconsole.log(\"cache\" in config);",
+      "options": [
+        { "id": "a", "text": "true false false" },
+        { "id": "b", "text": "false false false" },
+        { "id": "c", "text": "true true false" },
+        { "id": "d", "text": "true false true" }
+      ],
+      "answer": "a",
+      "explanation": "in 檢查的是「這把鑰匙存不存在」，跟值是什麼無關——timeout 這個欄位確實存在（只是值剛好是 undefined），所以是 true。但如果改用「值是否不等於 undefined」來判斷有沒有這個欄位，會被騙：timeout 明明存在卻回傳 false。cache 這個鍵完全沒出現過，兩種寫法都判 false。這正是 in 和「檢查值」最大的差異，跟 q3 的 ?. 是互補的兩件事：?. 在乎值，in 在乎鑰匙存不存在。",
+      "verify": {
+        "checks": [
+          { "code": "const config = { timeout: undefined, retries: 3 };\nconsole.log(\"timeout\" in config);\nconsole.log(config.timeout !== undefined);\nconsole.log(\"cache\" in config);", "expected": "true\nfalse\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-4-q10",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "動態鍵名 [key]",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Object_initializer",
+      "story": "",
+      "prompt": "想用變數的值當作物件的鍵名，而不是變數名稱本身。把空格填起來，印出 { role: 'admin' }",
+      "code": "const field = \"role\";\nconst obj = { ____: \"admin\" };\nconsole.log(obj);",
+      "options": [
+        { "id": "a", "text": "[field]" },
+        { "id": "b", "text": "field" },
+        { "id": "c", "text": "${field}" },
+        { "id": "d", "text": "(field)" }
+      ],
+      "answer": "a",
+      "explanation": "直接寫 { field: \"admin\" } 會建立一個字面上就叫 field 的鍵，而不是用變數 field 的值當鍵名。要讓 JS 先「計算」中括號裡的表達式再拿來當鍵，得用 [field] 這種計算屬性名寫法，才會變成 { role: 'admin' }。動態組出物件鍵名（例如依表單欄位名稱存值）幾乎都靠這一招。",
+      "verify": {
+        "checks": [
+          { "code": "const field = \"role\";\nconst obj = { [field]: \"admin\" };\nconsole.log(obj);", "expected": "{ role: 'admin' }" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-4-q11",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Object.entries 走訪鍵值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/entries",
+      "story": "",
+      "prompt": "想同時印出每個欄位的名稱和值。這段印出什麼？",
+      "code": "const pet = { name: \"皮皮\", stage: 2 };\nfor (const [key, value] of Object.entries(pet)) {\n  console.log(key, value);\n}",
+      "options": [
+        { "id": "a", "text": "name 皮皮 然後 stage 2（兩行）" },
+        { "id": "b", "text": "[ 'name', '皮皮' ] 然後 [ 'stage', 2 ]（兩行）" },
+        { "id": "c", "text": "name stage（一行）" },
+        { "id": "d", "text": "會報錯，for...of 不能用在物件上" }
+      ],
+      "answer": "a",
+      "explanation": "Object.entries 把物件拆成一堆 [鍵, 值] 小陣列組成的陣列，例如 [['name','皮皮'],['stage',2]]。搭配 for...of 解構 [key, value]，一次就能拿到名稱跟值。想只看名稱用 Object.keys（q6 考過），只看值用 Object.values，兩個都要就是 entries——三兄弟依需求選用。",
+      "verify": {
+        "checks": [
+          { "code": "const pet = { name: \"皮皮\", stage: 2 };\nfor (const [key, value] of Object.entries(pet)) {\n  console.log(key, value);\n}", "expected": "name 皮皮\nstage 2" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-4-q12",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "hasOwnProperty 只認自己身上的",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/hasOwnProperty",
+      "story": "",
+      "prompt": "toString 沒有寫在物件字面值裡，但它其實「繼承」自 Object。in 和 hasOwnProperty 對它的判斷一樣嗎？",
+      "code": "const obj = { name: \"小美\" };\nconsole.log(\"toString\" in obj);\nconsole.log(obj.hasOwnProperty(\"toString\"));",
+      "options": [
+        { "id": "a", "text": "不一樣：in 是 true，hasOwnProperty 是 false" },
+        { "id": "b", "text": "一樣：兩個都是 true" },
+        { "id": "c", "text": "一樣：兩個都是 false" },
+        { "id": "d", "text": "不一樣：in 是 false，hasOwnProperty 是 true" }
+      ],
+      "answer": "a",
+      "explanation": "in 很大方，只要「找得到」這個鍵就算數，不管是物件自己的還是從原型鏈繼承來的（每個物件都天生繼承 toString 這類方法），所以是 true。hasOwnProperty 比較龜毛，只認「物件自己身上真的有」的欄位，繼承來的不算，所以是 false。想確認一個欄位是不是「自己寫」上去的（常用在 for...in 迴圈裡過濾掉繼承的東西），要用 hasOwnProperty，不能只靠 in。",
+      "verify": {
+        "checks": [
+          { "code": "const obj = { name: \"小美\" };\nconsole.log(\"toString\" in obj);\nconsole.log(obj.hasOwnProperty(\"toString\"));", "expected": "true\nfalse" }
+        ]
+      }
     }
   ]
 }

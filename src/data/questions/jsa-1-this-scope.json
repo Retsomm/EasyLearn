@@ -142,6 +142,145 @@
           { "code": "console.log(b);\nlet b = 2;", "expectError": "Cannot access 'b' before initialization" }
         ]
       }
+    },
+    {
+      "id": "jsa-1-q7",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "bind 把 this 焊死，之後怎麼呼叫都不變",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Function/bind",
+      "story": "",
+      "prompt": "方法被 bind 過後，就算用 call 想換一個 this，還會成功嗎？這段印出什麼？",
+      "code": "const user = {\n  name: \"小明\",\n  hello() { return \"嗨，\" + this.name; },\n};\nconst fn = user.hello.bind(user);\nconst other = { name: \"小華\" };\nconsole.log(fn());\nconsole.log(fn.call(other));",
+      "options": [
+        { "id": "a", "text": "嗨，小明 然後 嗨，小明" },
+        { "id": "b", "text": "嗨，小明 然後 嗨，小華" },
+        { "id": "c", "text": "嗨，undefined 然後 嗨，小華" },
+        { "id": "d", "text": "會報錯，bind 過的函式不能再用 call" }
+      ],
+      "answer": "a",
+      "explanation": "bind(user) 回傳一個「this 永遠是 user」的新函式，這個綁定是永久性的——即使之後想用 fn.call(other) 硬塞別的 this 進去，也會被無視，因為 this 早就焊死了。這正是解決 jsa-1-q2「方法拆下來 this 就丟了」的標準工具：把方法傳給 React 的 onClick、事件監聽器之前，先 bind(this) 或 bind(這個物件)，就不怕呼叫方式把 this 弄丟。",
+      "verify": {
+        "checks": [
+          { "code": "const user = {\n  name: \"小明\",\n  hello() { return \"嗨，\" + this.name; },\n};\nconst fn = user.hello.bind(user);\nconst other = { name: \"小華\" };\nconsole.log(fn());\nconsole.log(fn.call(other));", "expected": "嗨，小明\n嗨，小明" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-1-q8",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "call 與 apply：手動指定 this，參數給法不同",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Function/call",
+      "story": "",
+      "prompt": "同一個獨立函式，用 call 和 apply 各自指定 this 並傳參數。這段印出什麼？",
+      "code": "function intro(greeting) { return greeting + \"，我是\" + this.name; }\nconst a = { name: \"皮皮\" };\nconsole.log(intro.call(a, \"哈囉\"));\nconsole.log(intro.apply(a, [\"嗨\"]));",
+      "options": [
+        { "id": "a", "text": "哈囉，我是皮皮 然後 嗨，我是皮皮" },
+        { "id": "b", "text": "哈囉，我是undefined 然後 嗨，我是undefined" },
+        { "id": "c", "text": "會報錯，intro 不是 a 的方法" },
+        { "id": "d", "text": "哈囉，我是皮皮 然後 會報錯，apply 參數要用逗號分開" }
+      ],
+      "answer": "a",
+      "explanation": "call 和 apply 都是「呼叫函式的同時，手動指定 this 是誰」，跟 bind 不同的是它們立刻執行、不會回傳新函式。差別只在傳參數的方式：call 逐一列出（call(a, \"哈囉\")），apply 包成陣列（apply(a, [\"嗨\"])）。口訣：call 的 C 對應 Comma（逗號列參數），apply 的 A 對應 Array（陣列傳參數）。call / apply / bind 三兄弟都在解決同一件事：this 不是你想要的那個物件。",
+      "verify": {
+        "checks": [
+          { "code": "function intro(greeting) { return greeting + \"，我是\" + this.name; }\nconst a = { name: \"皮皮\" };\nconsole.log(intro.call(a, \"哈囉\"));\nconsole.log(intro.apply(a, [\"嗨\"]));", "expected": "哈囉，我是皮皮\n嗨，我是皮皮" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-1-q9",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "class 方法一樣會斷線：this 不是物件的護身符",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes",
+      "story": "",
+      "prompt": "把 class 的方法拆出來單獨呼叫，直接爆炸。為什麼？",
+      "code": "class Counter {\n  count = 0;\n  inc() { this.count++; return this.count; }\n}\nconst c = new Counter();\nconst inc = c.inc;   // B 行\nconsole.log(c.inc());\nconsole.log(inc());  // 這裡整個炸掉",
+      "options": [
+        { "id": "a", "text": "B 行把方法拆離了實例，跟 jsa-1-q2 同一個坑；class 內部強制是嚴格模式，斷線後 this 直接是 undefined 而不是悄悄變成別的物件" },
+        { "id": "b", "text": "class 語法本身有 bug，count 這個欄位不能用" },
+        { "id": "c", "text": "inc 方法名稱跟關鍵字衝突" },
+        { "id": "d", "text": "class 建立的方法不能被賦值給變數" }
+      ],
+      "answer": "a",
+      "explanation": "class 只是「物件方法 + this 陷阱」的新包裝，底層規則沒變：c.inc() 呼叫時點前面是 c，this 是 c；inc() 單獨呼叫時 this 就跟 c 脫鉤了。差別在於 class 內部永遠是嚴格模式，斷線後 this 是真正的 undefined（不像一般函式在非嚴格模式下 this 會變成全域物件），所以 this.count++ 直接對 undefined 取屬性，丟出 TypeError 而不是默默印出 undefined。修法一樣：inc = c.inc.bind(c)，或在 class 裡把方法定義成箭頭函式屬性。",
+      "verify": {
+        "checks": [
+          { "code": "class Counter {\n  count = 0;\n  inc() { this.count++; return this.count; }\n}\nconst c = new Counter();\nconsole.log(c.inc());", "expected": "1" },
+          { "code": "class Counter {\n  count = 0;\n  inc() { this.count++; return this.count; }\n}\nconst c = new Counter();\nconst inc = c.inc;\ninc();", "expectError": "Cannot read properties of undefined" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-1-q10",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "setTimeout 傳一般函式，callback 裡的 this 不是你以為的物件",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/API/setTimeout",
+      "story": "",
+      "prompt": "計時器到時間後想印物件的名字，卻印出 undefined。這段印出什麼？",
+      "code": "const timer = {\n  label: \"計時器A\",\n  start() {\n    setTimeout(function () {\n      console.log(\"時間到：\" + this.label);\n    }, 10);\n  },\n};\ntimer.start();",
+      "options": [
+        { "id": "a", "text": "時間到：undefined" },
+        { "id": "b", "text": "時間到：計時器A" },
+        { "id": "c", "text": "會報錯，this 是 undefined 不能取 .label" },
+        { "id": "d", "text": "時間到：null" }
+      ],
+      "answer": "a",
+      "explanation": "setTimeout 呼叫 callback 時，是由計時器系統來呼叫這個函式，前面沒有「誰的方法」這件事，this 不再指向 timer，而是由執行環境決定：在 Node.js 裡，計時器系統會把 this 綁成內部的 Timeout 物件；在瀏覽器裡則通常是 window／globalThis。不管哪一種，這個 this 都跟 timer 物件無關，所以 this.label 一律是 undefined。想保留 timer，要嘛把 callback 換成箭頭函式（沿用 start 的 this，jsa-1-q5 教過的救星），要嘛先把 this 存進變數（常見寫法 const self = this）。",
+      "verify": {
+        "checks": [
+          { "code": "const timer = {\n  label: \"計時器A\",\n  start() {\n    setTimeout(function () {\n      console.log(\"時間到：\" + this.label);\n    }, 10);\n  },\n};\ntimer.start();", "expected": "時間到：undefined" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-1-q11",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "方法內部的巢狀函式，this 又不見了",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/Arrow_functions",
+      "story": "",
+      "prompt": "把空格填起來，讓 report 正確印出「小舖的報表」",
+      "code": "const shop = {\n  name: \"小舖\",\n  report() {\n    const helper = ____;\n    return helper();\n  },\n};\nconsole.log(shop.report());",
+      "options": [
+        { "id": "a", "text": "() => `${this.name}的報表`" },
+        { "id": "b", "text": "function () { return `${this.name}的報表`; }" },
+        { "id": "c", "text": "() => `${shop.name}的報表`" },
+        { "id": "d", "text": "function () { return `${shop.name}的報表`; }" }
+      ],
+      "answer": "a",
+      "explanation": "helper 是在 report 裡面另外定義、直接呼叫的巢狀函式。如果用一般函式（選項 b），它跟外層方法沒有繼承關係，被裸呼叫時 this 又斷線，回傳 undefined 的報表；箭頭函式（選項 a）沒有自己的 this，直接沿用 report 的 this，也就是 shop，穩穩接住。選項 c、d 硬寫死 shop 這個變數名雖然能跑，但換了物件名稱或把方法搬到別的物件上就整個壞掉——用 this 才是真正可重複使用的寫法。",
+      "verify": {
+        "checks": [
+          { "code": "const shop = {\n  name: \"小舖\",\n  report() {\n    const helper = () => `${this.name}的報表`;\n    return helper();\n  },\n};\nconsole.log(shop.report());", "expected": "小舖的報表" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-1-q12",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "全域 this：嚴格模式下裸呼叫，this 是真正的 undefined",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Strict_mode",
+      "story": "",
+      "prompt": "同一種「裸呼叫」（前面沒有物件），差別只在有沒有加 \"use strict\"。這兩段印出來一樣嗎？",
+      "code": "// 版本一：非嚴格模式\nfunction showThis() { console.log(this === undefined); }\nshowThis();\n\n// 版本二：嚴格模式\nfunction showThisStrict() {\n  \"use strict\";\n  console.log(this === undefined);\n}\nshowThisStrict();",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一印 false，版本二印 true" },
+        { "id": "b", "text": "一樣，都印 true" },
+        { "id": "c", "text": "一樣，都印 false" },
+        { "id": "d", "text": "不一樣：版本一印 true，版本二印 false" }
+      ],
+      "answer": "a",
+      "explanation": "裸呼叫（前面沒有物件）時，this 到底是誰，非嚴格模式和嚴格模式給的答案不一樣：非嚴格模式會很「貼心」地把 this 補成全域物件，所以 this === undefined 是 false（這也是 jsa-1-q10 setTimeout 那題印出 undefined 屬性、而不是直接報錯的原因）；嚴格模式（class 內部、ES module 頂層都自動是嚴格模式）不做這個補救，this 就是老老實實的 undefined。這也是為什麼在嚴格模式或 class 裡犯同樣的 this 錯誤，會直接報錯讓你發現，而不是留下一個難查的 undefined 屬性。",
+      "verify": {
+        "checks": [
+          { "code": "function showThis() { console.log(this === undefined); }\nshowThis();\nfunction showThisStrict() {\n  \"use strict\";\n  console.log(this === undefined);\n}\nshowThisStrict();", "expected": "false\ntrue" }
+        ]
+      }
     }
   ]
 }

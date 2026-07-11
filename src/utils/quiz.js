@@ -1,5 +1,7 @@
-// 題池抽題：每次進關從關卡題池隨機抽 QUIZ_SIZE 題，依難度排序作答
-export const QUIZ_SIZE = 6
+// 進關作答整個題池：洗牌後依難度由易到難排（同難度內順序隨機）
+export const REVIEW_SIZE = 6
+// 首頁「隨機綜合練習」跨章節抽題數
+export const MIXED_SIZE = 10
 
 export function shuffle(arr) {
   const copy = [...arr]
@@ -10,8 +12,7 @@ export function shuffle(arr) {
   return copy
 }
 
-export function sampleQuestions(pool, n = QUIZ_SIZE) {
-  const picked = shuffle(pool).slice(0, n)
-  // 抽完照難度由易到難排，保住關卡內的坡度
-  return picked.sort((a, b) => a.difficulty - b.difficulty)
+export function sampleQuestions(pool) {
+  // sort 是穩定排序，洗牌後再排難度，同難度題目每次順序不同
+  return shuffle(pool).sort((a, b) => a.difficulty - b.difficulty)
 }

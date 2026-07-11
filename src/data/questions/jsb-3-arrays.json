@@ -141,6 +141,145 @@
           { "code": "const nums = [25, 100, 9];\nnums.sort((a, b) => a - b);\nconsole.log(nums);", "expected": "[ 9, 25, 100 ]" }
         ]
       }
+    },
+    {
+      "id": "jsb-3-q7",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "reduce 累加陣列",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "計算購物車總金額。這段印出什麼？",
+      "code": "const prices = [120, 45, 30];\nconst total = prices.reduce((sum, p) => sum + p, 0);\nconsole.log(total);",
+      "options": [
+        { "id": "a", "text": "195" },
+        { "id": "b", "text": "0" },
+        { "id": "c", "text": "[ 120, 45, 30 ]" },
+        { "id": "d", "text": "NaN" }
+      ],
+      "answer": "a",
+      "explanation": "reduce 從初始值 0 開始，把每個元素一個一個累加進 sum，跑完回傳最終的總和 195。第二個參數（這裡的 0）是起始值，忘記寫的話 reduce 會拿陣列第一個元素當起始值，遇到空陣列還會直接報錯——養成寫初始值的習慣比較安全。",
+      "verify": {
+        "checks": [
+          { "code": "const prices = [120, 45, 30];\nconst total = prices.reduce((sum, p) => sum + p, 0);\nconsole.log(total);", "expected": "195" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-3-q8",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "map 與 filter 鏈式呼叫",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/map",
+      "story": "",
+      "prompt": "先把每個價格加 20 元運費，再只留下超過 100 元的。這段印出什麼？",
+      "code": "const prices = [80, 150, 200];\nconst result = prices.map((p) => p + 20).filter((p) => p > 100);\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "[ 170, 220 ]" },
+        { "id": "b", "text": "[ 100, 170, 220 ]" },
+        { "id": "c", "text": "[ 80, 150, 200 ]" },
+        { "id": "d", "text": "會報錯，陣列方法不能連續呼叫" }
+      ],
+      "answer": "a",
+      "explanation": "map 和 filter 都回傳新陣列，所以可以像水管一樣接下去：先整批做完 map（[100, 170, 220]），才把結果交給 filter 再篩一次（>100 留下 170、220，剛好 100 那個不算）。鏈式呼叫是陣列處理最常見的寫法，讀的時候要分階段看，不要想一步到位。",
+      "verify": {
+        "checks": [
+          { "code": "const prices = [80, 150, 200];\nconst result = prices.map((p) => p + 20).filter((p) => p > 100);\nconsole.log(result);", "expected": "[ 170, 220 ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-3-q9",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "some 與 every 的差別",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/some",
+      "story": "",
+      "prompt": "檢查全班有沒有人及格、是不是全部都及格。這段印出什麼？",
+      "code": "const scores = [55, 80, 92];\nconsole.log(scores.some((s) => s >= 60));\nconsole.log(scores.every((s) => s >= 60));",
+      "options": [
+        { "id": "a", "text": "true 然後 false" },
+        { "id": "b", "text": "false 然後 true" },
+        { "id": "c", "text": "true 然後 true" },
+        { "id": "d", "text": "false 然後 false" }
+      ],
+      "answer": "a",
+      "explanation": "some 只要「有一個」符合條件就回傳 true——80 和 92 及格了，55 不合格沒關係，所以是 true。every 要求「全部都要」符合，55 扯了後腿，直接變 false。判斷「至少一個」用 some，判斷「全部都」用 every，兩者常用在表單驗證：至少填一項用 some，全部欄位都填了用 every。",
+      "verify": {
+        "checks": [
+          { "code": "const scores = [55, 80, 92];\nconsole.log(scores.some((s) => s >= 60));\nconsole.log(scores.every((s) => s >= 60));", "expected": "true\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-3-q10",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "reverse 會改原陣列",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reverse",
+      "story": "",
+      "prompt": "只想倒著顯示一份清單，結果原始清單也被打亂了。哪裡出了問題？",
+      "code": "const list = [\"a\", \"b\", \"c\"];\nconst shown = list.reverse();\nconsole.log(list);\nconsole.log(shown);",
+      "options": [
+        { "id": "a", "text": "reverse 會直接改動原陣列，不是回傳新陣列；想保留原陣列該用 [...list].reverse()" },
+        { "id": "b", "text": "reverse 只能用在字串陣列" },
+        { "id": "c", "text": "console.log 印錯變數了" },
+        { "id": "d", "text": "沒有 bug，這樣本來就對" }
+      ],
+      "answer": "a",
+      "explanation": "reverse 跟 sort、splice 是同一國的：都會直接動原陣列（原地反轉），回傳值只是同一個陣列的參照而已，所以 list 和 shown 印出來一模一樣，而且 list 本身也真的被改了。想要「新陣列」的倒序版本，得先展開語法複製一份再反轉：[...list].reverse()。這題延續 jsb-3-q4 slice/splice 的教訓：認出哪些陣列方法會動到原資料，是必修課。",
+      "verify": {
+        "checks": [
+          { "code": "const list = [\"a\", \"b\", \"c\"];\nconst shown = list.reverse();\nconsole.log(list);\nconsole.log(shown);", "expected": "[ 'c', 'b', 'a' ]\n[ 'c', 'b', 'a' ]" },
+          { "code": "const list = [\"a\", \"b\", \"c\"];\nconst shown = [...list].reverse();\nconsole.log(list);\nconsole.log(shown);", "expected": "[ 'a', 'b', 'c' ]\n[ 'c', 'b', 'a' ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-3-q11",
+      "type": "same-or-not",
+      "difficulty": 1,
+      "topic": "concat 與展開語法合併陣列",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/concat",
+      "story": "",
+      "prompt": "合併兩個陣列有兩種寫法。這兩段印出的東西一樣嗎？原陣列會被動到嗎？",
+      "code": "const a = [1, 2];\nconst b = [3, 4];\n\n// 版本一\nconst merged1 = a.concat(b);\n\n// 版本二\nconst merged2 = [...a, ...b];\n\nconsole.log(merged1, merged2, a);",
+      "options": [
+        { "id": "a", "text": "一樣：都是 [1,2,3,4]，a 也都沒被改動 [1,2]" },
+        { "id": "b", "text": "不一樣：concat 會改動 a" },
+        { "id": "c", "text": "不一樣：展開語法會改動 a" },
+        { "id": "d", "text": "不一樣：merged1 是 [1,2,3,4]，merged2 是 [3,4,1,2]" }
+      ],
+      "answer": "a",
+      "explanation": "concat 和展開語法都是「複製再合併」，不會動到原陣列，結果也一樣是 [1,2,3,4]。兩者是同一件事的兩種寫法，展開語法是 ES6 之後更常見的選擇，也更彈性（可以在陣列裡夾雜其他值，不限於整包陣列）。跟 q10 的 reverse 相反，這兩個方法都很安全，不會偷改原資料。",
+      "verify": {
+        "checks": [
+          { "code": "const a = [1, 2];\nconst b = [3, 4];\nconst merged1 = a.concat(b);\nconst merged2 = [...a, ...b];\nconsole.log(merged1, merged2, a);", "expected": "[ 1, 2, 3, 4 ] [ 1, 2, 3, 4 ] [ 1, 2 ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-3-q12",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "flat 打平巢狀陣列",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/flat",
+      "story": "",
+      "prompt": "把巢狀陣列打平成一層，印出 [ 1, 2, 3, 4 ]。把空格填起來",
+      "code": "const nested = [1, [2, 3], [4]];\nconst flat = nested.____();\nconsole.log(flat);",
+      "options": [
+        { "id": "a", "text": "flat" },
+        { "id": "b", "text": "flatten" },
+        { "id": "c", "text": "flatMap" },
+        { "id": "d", "text": "join" }
+      ],
+      "answer": "a",
+      "explanation": "flat() 把巢狀陣列「拆一層」攤平，預設深度是 1；巢狀更深可以寫 flat(2) 或直接 flat(Infinity) 全部打平。flatten 不是真正的方法名（常見的誤記）；flatMap 是先 map 再 flat 一層，用途不同；join 是把陣列接成一整條字串，回傳型別完全不一樣。",
+      "verify": {
+        "checks": [
+          { "code": "const nested = [1, [2, 3], [4]];\nconst flat = nested.flat();\nconsole.log(flat);", "expected": "[ 1, 2, 3, 4 ]" }
+        ]
+      }
     }
   ]
 }

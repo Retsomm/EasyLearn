@@ -2,6 +2,7 @@ import { useState } from 'react'
 import QuestionCard from '../components/QuestionCard'
 import Mascot, { getStage } from '../components/Mascot'
 import Icon from '../components/Icons'
+import { getChapterIdForQuestion } from '../data/chapters'
 
 const XP_CORRECT = 10
 const XP_WRONG = 2
@@ -12,9 +13,11 @@ export default function Quiz({
   mode = 'normal',
   progress,
   answerQuestion,
+  toggleSaved,
   finishLevel,
   finishReview,
   onExit,
+  exitTo = 'levellist',
 }) {
   const [index, setIndex] = useState(0)
   const [selected, setSelected] = useState(null)
@@ -24,14 +27,16 @@ export default function Quiz({
   const [finalXp, setFinalXp] = useState(0)
 
   const isReview = mode === 'review'
+  const isMixed = mode === 'mixed'
+  const skipsLevelProgress = isReview || isMixed
   const questions = level.questions
   const question = questions[index]
-  const firstClear = !isReview && !progress.completedLevels[level.id]
+  const firstClear = !skipsLevelProgress && !progress.completedLevels[level.id]
 
   function handleSelect(optId) {
     setSelected(optId)
     const isCorrect = optId === question.answer
-    answerQuestion(question.id, isCorrect)
+    answerQuestion(question.id, isCorrect, getChapterIdForQuestion(question.id))
     if (isCorrect) setCorrectCount((c) => c + 1)
     setXpEarned((x) => x + (isCorrect ? XP_CORRECT : XP_WRONG))
   }
@@ -43,7 +48,7 @@ export default function Quiz({
     } else {
       const bonus = firstClear ? XP_FIRST_CLEAR_BONUS : 0
       const total = xpEarned + bonus
-      if (isReview) {
+      if (skipsLevelProgress) {
         finishReview(total)
       } else {
         finishLevel(level.id, correctCount, questions.length, total)
@@ -60,7 +65,7 @@ export default function Quiz({
         <Mascot xp={progress.xp} mood="happy" />
         <h2 className="result-title">
           {perfect && <Icon name="trophy" size={24} />}
-          {isReview ? '重練完成！' : perfect ? '全對！太神了' : '關卡完成！'}
+          {isReview ? '重練完成！' : isMixed ? '練習完成！' : perfect ? '全對！太神了' : '關卡完成！'}
         </h2>
         <div className="result-stats">
           <div className="stat-row">
@@ -75,18 +80,18 @@ export default function Quiz({
           </div>
           {isReview && (
             <div className="stat-row">
-              <span>清掉的錯題</span>
-              <strong>{correctCount} 題</strong>
+              <span>畢業的錯題</span>
+              <strong>{questions.filter((q) => !progress.wrongIds[q.id]).length} 題</strong>
             </div>
           )}
         </div>
         <p className="result-hint">
-          {isReview && correctCount < questions.length
-            ? '沒答對的還留在錯題本，改天再戰！'
+          {isReview && questions.some((q) => progress.wrongIds[q.id])
+            ? '還沒畢業的錯題會留著，繼續練會更熟練！'
             : '皮皮吃飽了，明天也要來餵牠喔！'}
         </p>
         <button className="primary-btn" onClick={onExit}>
-          {isReview ? '回首頁' : '返回關卡地圖'}
+          {exitTo === 'home' ? '回首頁' : exitTo === 'notes' ? '返回筆記' : '返回關卡地圖'}
         </button>
       </div>
     )
@@ -123,7 +128,13 @@ export default function Quiz({
       {isReview && (
         <div className="review-banner">
           <Icon name="rotate-ccw" size={15} />
-          錯題重練模式：答對就從錯題本移除
+          錯題重練模式：答對升熟練度，答錯重來，練到最高熟練度才畢業
+        </div>
+      )}
+      {isMixed && (
+        <div className="review-banner">
+          <Icon name="shuffle" size={15} />
+          隨機綜合練習：跨章節抽題，不影響關卡進度
         </div>
       )}
       <QuestionCard
@@ -132,6 +143,8 @@ export default function Quiz({
         onSelect={handleSelect}
         onNext={handleNext}
         isLast={index + 1 === questions.length}
+        saved={!!progress.savedIds[question.id]}
+        onToggleSave={toggleSaved}
       />
     </div>
   )

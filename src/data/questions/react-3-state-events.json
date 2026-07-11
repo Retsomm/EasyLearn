@@ -133,6 +133,138 @@
         "checks": [],
         "manual": "需要點擊互動；答案依 react.dev state-as-a-snapshot（setState 不改變當輪快照）"
       }
+    },
+    {
+      "id": "react-3-q7",
+      "type": "fill-in",
+      "difficulty": 1,
+      "topic": "event.target.value 拿輸入值",
+      "docs": "https://react.dev/reference/react-dom/components/input",
+      "story": "",
+      "prompt": "想把使用者在輸入框打的字存進 state，跟著畫面同步顯示。把空格填起來",
+      "code": "function NameInput() {\n  const [name, setName] = useState(\"\");\n  return (\n    <input\n      value={name}\n      onChange={(e) => setName(____)}\n    />\n  );\n}",
+      "options": [
+        { "id": "a", "text": "e.target.value" },
+        { "id": "b", "text": "e.value" },
+        { "id": "c", "text": "name.value" },
+        { "id": "d", "text": "e.target" }
+      ],
+      "answer": "a",
+      "explanation": "onChange 收到的是瀏覽器的事件物件 e，真正的輸入框（那個 DOM 節點）放在 e.target，使用者打的字則是 e.target.value——這條路徑很固定，記熟它。選項 b 少了 target 這一層，事件物件本身沒有 value；選項 c 的 name 是 state 變數，不是 DOM 節點；選項 d 拿到整個 input 節點，卻沒有取出文字。value={name} 搭配 onChange 讀 e.target.value 寫回 setName，就是「受控輸入框」的標準寫法：state 是唯一真相，畫面永遠照它顯示。",
+      "verify": {
+        "checks": [],
+        "manual": "需要在輸入框裡實際打字才能觸發 onChange、觀察 e.target.value 抓到的內容；renderToStaticMarkup 只做一次性 SSR 渲染，沒有瀏覽器事件可以觸發；答案依 react.dev input 元件參考文件（受控輸入框：value 顯示、onChange 讀 e.target.value 寫回）"
+      }
+    },
+    {
+      "id": "react-3-q8",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "checkbox 要讀 e.target.checked，不是 e.target.value",
+      "docs": "https://react.dev/reference/react-dom/components/input",
+      "story": "",
+      "prompt": "同意條款的打勾框，不管有沒有勾，畫面上的狀態文字都顯示「已同意」。哪裡錯了？",
+      "code": "function Agree() {\n  const [checked, setChecked] = useState(false);\n\n  return (\n    <label>\n      <input\n        type=\"checkbox\"\n        checked={checked}\n        onChange={(e) => setChecked(e.target.value)}   // B 行\n      />\n      {checked ? \"已同意\" : \"未同意\"}\n    </label>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "B 行讀了 e.target.value：checkbox 的 value 是固定字串（沒設就是預設的 \"on\"），不管勾沒勾都是同一個非空字串，永遠是 truthy；要讀 e.target.checked 才是真正的勾選狀態" },
+        { "id": "b", "text": "useState(false) 的初始值不能是布林" },
+        { "id": "c", "text": "checked={checked} 要拿掉" },
+        { "id": "d", "text": "label 不能包住 input" }
+      ],
+      "answer": "a",
+      "explanation": "文字輸入框看 value，checkbox／radio 看 checked——兩種表單元素的「使用者輸入」放在不同屬性上。e.target.value 對 checkbox 來說是那個 input 的 value 屬性，不管勾沒勾都是同一個非空字串，setChecked 收到的永遠是 truthy，畫面自然卡死在「已同意」。改成 e.target.checked 才拿得到真正的勾選狀態（true / false）。",
+      "verify": {
+        "checks": [],
+        "manual": "需要實際點擊 checkbox 才能觀察勾選狀態切換；renderToStaticMarkup 不會觸發瀏覽器的 change 事件；答案依 react.dev input 元件參考文件（checkbox 讀 e.target.checked）"
+      }
+    },
+    {
+      "id": "react-3-q9",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "e.preventDefault 阻止表單送出後重新整理頁面",
+      "docs": "https://react.dev/learn/responding-to-events",
+      "story": "",
+      "prompt": "按下送出後，整個頁面像重新整理一樣閃一下，畫面上剛打的字全部消失。哪裡漏了？",
+      "code": "function SearchForm() {\n  const [keyword, setKeyword] = useState(\"\");\n\n  function handleSubmit(e) {\n    console.log(\"送出關鍵字：\", keyword);   // B 行\n  }\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <input value={keyword} onChange={(e) => setKeyword(e.target.value)} />\n      <button type=\"submit\">搜尋</button>\n    </form>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "handleSubmit 沒呼叫 e.preventDefault()：瀏覽器對 <form> 送出的預設行為是重新整理頁面，React 的 state 會全部歸零；要在 B 行前面加上 e.preventDefault()" },
+        { "id": "b", "text": "onSubmit 要換成 onClick 才對" },
+        { "id": "c", "text": "console.log 不能寫在事件處理器裡" },
+        { "id": "d", "text": "keyword 的 state 忘記給初始值" }
+      ],
+      "answer": "a",
+      "explanation": "<form> 是 HTML 與生俱來的元素，瀏覽器對它有一套「送出就整頁重新載入」的預設劇本，React 完全不會自動取消。handleSubmit(e) 的 e 就是逃生口：呼叫 e.preventDefault() 才能攔下這齣重新整理，改由 JavaScript 接手處理送出。忘了這一行，SPA 瞬間變回傳統整頁刷新的網頁，state 當然被清空重來。",
+      "verify": {
+        "checks": [],
+        "manual": "preventDefault 攔的是瀏覽器原生的整頁重新載入行為，需要真正的 <form> 送出與瀏覽器環境才觀察得到；renderToStaticMarkup 不會觸發也不會處理 DOM 事件；答案依 react.dev responding-to-events 的 Preventing default behavior 段落"
+      }
+    },
+    {
+      "id": "react-3-q10",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "e.stopPropagation 阻止事件冒泡到父層",
+      "docs": "https://react.dev/learn/responding-to-events",
+      "story": "",
+      "prompt": "卡片本身點下去會「打開詳情」，卡片裡還有一個獨立的「刪除」按鈕。結果每次按刪除，詳情也跟著打開了。哪裡沒處理好？",
+      "code": "function Card({ onOpen, onDelete }) {\n  return (\n    <div onClick={onOpen}>\n      卡片內容\n      <button onClick={onDelete}>刪除</button>   {/* B 行 */}\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "B 行的點擊會先觸發按鈕自己的 onDelete，接著一路往外冒泡，外層 <div> 的 onClick（onOpen）也被觸發；要在 onDelete 的處理器裡呼叫 e.stopPropagation() 擋住冒泡" },
+        { "id": "b", "text": "按鈕要搬到 <div> 外面才不會觸發 onOpen" },
+        { "id": "c", "text": "onClick 不能同時掛在父子兩層元素上" },
+        { "id": "d", "text": "onDelete 少寫了 return" }
+      ],
+      "answer": "a",
+      "explanation": "點擊事件預設會像水波一樣，從最裡層一路往外「冒泡」到所有祖先元素，外層 div 的 onClick 自然也會被叫到——這不是 bug，是瀏覽器的預設行為。想讓內層按鈕的點擊「只做自己的事、不驚動外層」，得在它的處理器裡呼叫 e.stopPropagation() 明確攔下冒泡。巢狀可點擊區域（卡片包按鈕、列表項包連結）幾乎都要考慮這件事。",
+      "verify": {
+        "checks": [],
+        "manual": "事件冒泡需要真實的巢狀 DOM 與點擊模擬，renderToStaticMarkup 不會觸發也不會冒泡任何事件；答案依 react.dev responding-to-events 的 Stopping propagation 段落"
+      }
+    },
+    {
+      "id": "react-3-q11",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "函式型更新：迴圈裡呼叫 setState 多次也能疊加",
+      "docs": "https://react.dev/learn/queueing-a-series-of-state-updates",
+      "story": "",
+      "prompt": "「連按三下」的效果想用一次點擊做到，於是在處理器裡跑迴圈呼叫三次。count 從 0 開始，按一下之後變多少？",
+      "code": "function Counter() {\n  const [count, setCount] = useState(0);\n\n  function addThree() {\n    for (let i = 0; i < 3; i++) {\n      setCount((c) => c + 1);\n    }\n  }\n\n  return <button onClick={addThree}>{count}</button>;\n}",
+      "options": [
+        { "id": "a", "text": "3 —— 更新函式會排進佇列依序執行，迴圈跑三次就接力加了三次" },
+        { "id": "b", "text": "1 —— 迴圈裡的 setState 只有最後一次有效" },
+        { "id": "c", "text": "0 —— 迴圈裡不能呼叫 setState" },
+        { "id": "d", "text": "結果不固定，看瀏覽器效能" }
+      ],
+      "answer": "a",
+      "explanation": "傳更新函式 c => c + 1 給 setCount，React 不是「當場算」，而是把這個函式排進佇列；迴圈跑三次就排了三個函式進去，等這輪事件處理完，React 依序執行：0→1、1→2、2→3，最後交回 3。這正是 q4（直接給值兩行只變 1）想避開的坑：只要是「連續多次、根據前一個結果往下疊加」的更新，不管是手寫幾行還是迴圈跑出來的，一律用函式型更新才安全。",
+      "verify": {
+        "checks": [],
+        "manual": "需要點擊互動才能觀察佇列依序執行的結果；renderToStaticMarkup 只做一次性 SSR，模擬不了連續的 state 更新；答案依 react.dev queueing-a-series-of-state-updates（updater function 依序消化佇列）"
+      }
+    },
+    {
+      "id": "react-3-q12",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "相關欄位合併成一個物件，互不相關就分開存",
+      "docs": "https://react.dev/learn/choosing-the-state-structure",
+      "story": "",
+      "prompt": "拖曳一個點，要同時記錄它的 x、y 座標（兩者永遠一起變、一起讀）。這兩種宣告方式，哪一種是 react.dev 建議的做法？",
+      "code": "// 版本一：兩個獨立 state\nconst [x, setX] = useState(0);\nconst [y, setY] = useState(0);\n\n// 版本二：合併成一個物件\nconst [position, setPosition] = useState({ x: 0, y: 0 });",
+      "options": [
+        { "id": "a", "text": "都能動，但官方建議：永遠一起變、一起用的資料（像同一個點的 x/y）合併成一個物件比較好，能避免兩個 state 不小心不同步；彼此無關的資料則該分開宣告" },
+        { "id": "b", "text": "一定要版本一，React 規定一個元件只能有一個物件型 state" },
+        { "id": "c", "text": "一定要版本二，多個 useState 呼叫會拖慢效能" },
+        { "id": "d", "text": "兩者完全等價，官方沒有任何建議" }
+      ],
+      "answer": "a",
+      "explanation": "選 state 結構沒有唯一正確答案，但 react.dev 給了判斷原則：「永遠同時改變的資料」合併存放，可以避免忘記同步更新其中一個（例如只更新 x 忘了更新 y，畫面瞬間對不齊）；「彼此獨立、互不相關」的資料則該分開宣告，硬要合併只會讓每次更新都要多寫一層展開、徒增出錯機會。x/y 座標正是官方範例裡「該合併」的典型案例；react-6 教的『改物件要展開複製』，用在這種合併後的 state 上就是實戰。",
+      "verify": {
+        "checks": [],
+        "manual": "屬於 state 結構的架構設計判斷，兩種寫法初次渲染的畫面完全相同，差異在後續維護與同步風險，沒有單一可執行輸出可比對；依 react.dev choosing-the-state-structure 的 Group related state 原則"
+      }
     }
   ]
 }

@@ -138,6 +138,143 @@
           { "code": "const state = { profile: { name: \"小美\" }, xp: 10 };\nconst next = {\n  ...state,\n  profile: { ...state.profile, name: \"小華\" },\n};\nconsole.log(state.profile.name, next.profile.name, state.xp === next.xp);", "expected": "小美 小華 true" }
         ]
       }
+    },
+    {
+      "id": "react-6-q7",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "陣列插入到中間（用展開）",
+      "docs": "https://react.dev/learn/updating-arrays-in-state",
+      "story": "",
+      "prompt": "想在 \"a\" 和 \"c\" 中間塞一個 \"b\"，不能用 splice 硬插。這段程式印出什麼？",
+      "code": "const list = [\"a\", \"c\"];\nconst next = [...list.slice(0, 1), \"b\", ...list.slice(1)];\n\nconsole.log(list, next);",
+      "options": [
+        { "id": "a", "text": "[ 'a', 'c' ] [ 'a', 'b', 'c' ]" },
+        { "id": "b", "text": "[ 'a', 'b', 'c' ] [ 'a', 'b', 'c' ]" },
+        { "id": "c", "text": "[ 'a', 'c' ] [ 'a', 'c', 'b' ]" },
+        { "id": "d", "text": "會報錯，陣列不能用 slice 兩次" }
+      ],
+      "answer": "a",
+      "explanation": "splice 會就地挖開原陣列硬塞一筆，是 state 的大忌。要「插入到中間」又不動本尊，訣竅是用 slice 切成前後兩段，中間夾上新元素，再用展開把三塊接起來組成新陣列——原本的 list 完全沒被動到，next 才是插入後的版本。這跟 q4 的「刪除用 filter」是同一招的變化型：加、刪、插，通通用「回傳新陣列」的方法做。",
+      "verify": {
+        "checks": [
+          { "code": "const list = [\"a\", \"c\"];\nconst next = [...list.slice(0, 1), \"b\", ...list.slice(1)];\nconsole.log(list, next);", "expected": "[ 'a', 'c' ] [ 'a', 'b', 'c' ]" }
+        ]
+      }
+    },
+    {
+      "id": "react-6-q8",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "更新陣列裡某個物件的屬性（map + 條件展開）",
+      "docs": "https://react.dev/learn/updating-arrays-in-state",
+      "story": "",
+      "prompt": "把 id 是 2 的那筆待辦標記為完成，其餘不動。把空格填起來",
+      "code": "const todos = [\n  { id: 1, text: \"買菜\", done: false },\n  { id: 2, text: \"寫程式\", done: false },\n];\n\nfunction toggleDone(id) {\n  return todos.map((t) => (____));\n}\n\nconsole.log(toggleDone(2));",
+      "options": [
+        { "id": "a", "text": "t.id === id ? { ...t, done: true } : t" },
+        { "id": "b", "text": "t.id === id ? t.done = true : t" },
+        { "id": "c", "text": "t.id === id && { done: true }" },
+        { "id": "d", "text": "todos[id].done = true" }
+      ],
+      "answer": "a",
+      "explanation": "map 走過每一筆：符合條件的那筆用展開做成一個新物件（保留其他欄位、只換 done），其餘原封不動地放回去——回傳的是一個全新的陣列，但只有真正變動的那筆是新物件。選項 b 的 t.done = true 是就地改本尊（q5 的偷改陷阱）；選項 c 沒有處理「不符合」的情況，會讓整包資料形狀跑掉；選項 d 直接拿 id 當索引去挖陣列，恰好對不上還會改錯人。",
+      "verify": {
+        "checks": [
+          { "code": "const todos = [\n  { id: 1, text: \"買菜\", done: false },\n  { id: 2, text: \"寫程式\", done: false },\n];\nfunction toggleDone(id) {\n  return todos.map((t) => (t.id === id ? { ...t, done: true } : t));\n}\nconsole.log(toggleDone(2));", "expected": "[\n  { id: 1, text: '買菜', done: false },\n  { id: 2, text: '寫程式', done: true }\n]" }
+        ]
+      }
+    },
+    {
+      "id": "react-6-q9",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "用 Set 當 state 一樣要建新的",
+      "docs": "https://react.dev/reference/react/useState",
+      "story": "",
+      "prompt": "用 Set 存已選標籤，addTag(\"b\") 之後畫面卻沒多顯示一個標籤。哪裡錯了？",
+      "code": "function TagPicker() {\n  const [selected, setSelected] = useState(new Set([\"a\"]));\n\n  function addTag(tag) {\n    selected.add(tag);       // B 行\n    setSelected(selected);   // C 行\n  }\n\n  return <button onClick={() => addTag(\"b\")}>{[...selected].join(\",\")}</button>;\n}",
+      "options": [
+        { "id": "a", "text": "B 行直接改了原本的 Set，C 行 set 回去還是同一個，React 判斷「沒變」就跳過重繪；要 setSelected(new Set(selected).add(tag))" },
+        { "id": "b", "text": "Set 不能拿來當 state，一定要換成陣列" },
+        { "id": "c", "text": "addTag 要放進 useEffect 裡才會生效" },
+        { "id": "d", "text": "selected.add(tag) 少了 return 關鍵字" }
+      ],
+      "answer": "a",
+      "explanation": "跟物件、陣列一樣的鐵律，Set 和 Map 也適用：selected.add(tag) 是就地突變，回傳值還是同一個 Set 本尊，setSelected(selected) 送回去的跟原本是同一個參照，React 一比對「沒變」就跳過重繪。要讓 React 看見變化，得先複製一份新的 Set 再操作它：new Set(selected).add(tag)（或用展開 new Set([...selected, tag])），把「新的」那個丟給 setSelected。",
+      "verify": {
+        "checks": [],
+        "manual": "需要點擊互動觀察不重繪；機制依 react.dev reference/react/useState（將 state 中的物件、陣列視為唯讀，此原則同樣適用於 Map 和 Set）"
+      }
+    },
+    {
+      "id": "react-6-q10",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "Object.assign 誤用成偷改原物件",
+      "docs": "https://react.dev/learn/updating-objects-in-state",
+      "story": "",
+      "prompt": "都想幫 user 加上 xp: 10。這兩種寫法，對「原本的 user 物件」的影響一樣嗎？",
+      "code": "// 版本一\nconst user = { name: \"小美\", xp: 0 };\nconst n1 = Object.assign(user, { xp: 10 });\nconsole.log(user.xp, n1 === user);\n\n// 版本二\nconst user2 = { name: \"小美\", xp: 0 };\nconst n2 = Object.assign({}, user2, { xp: 10 });\nconsole.log(user2.xp, n2 === user2);",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一直接改掉了 user 本尊（user.xp 也變 10，n1 跟 user 是同一個）；版本二先給一個空物件當底，user2 完好，n2 是新物件" },
+        { "id": "b", "text": "一樣，兩者都不會動到原物件" },
+        { "id": "c", "text": "一樣，兩者都會動到原物件" },
+        { "id": "d", "text": "版本一會報錯，Object.assign 第一個參數不能是變數" }
+      ],
+      "answer": "a",
+      "explanation": "Object.assign 的第一個參數是「目標物件」——會被直接修改，而且回傳的就是同一個參照。把 state 本尊當成第一個參數丟進去，等於就地突變，跟 B 行 user.xp += 10 是同一種錯。要做出「合併出一個新物件」的效果，第一個參數要放一個空物件 {} 當畫布：Object.assign({}, user, { xp: 10 })，或者更常見、更不容易踩錯的寫法是展開：{ ...user, xp: 10 }。",
+      "verify": {
+        "checks": [
+          { "code": "const user = { name: \"小美\", xp: 0 };\nconst n1 = Object.assign(user, { xp: 10 });\nconsole.log(user.xp, n1 === user);\nconst user2 = { name: \"小美\", xp: 0 };\nconst n2 = Object.assign({}, user2, { xp: 10 });\nconsole.log(user2.xp, n2 === user2);", "expected": "10 true\n0 false" }
+        ]
+      }
+    },
+    {
+      "id": "react-6-q11",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "把陣列指派給另一個變數不會複製它",
+      "docs": "https://react.dev/learn/updating-arrays-in-state",
+      "story": "",
+      "prompt": "想把陣列第二筆改成 99。這段程式印出什麼？",
+      "code": "const scores = [10, 20, 30];\nconst next = scores;\nnext[1] = 99;\n\nconsole.log(scores, next, scores === next);",
+      "options": [
+        { "id": "a", "text": "[ 10, 99, 30 ] [ 10, 99, 30 ] true" },
+        { "id": "b", "text": "[ 10, 20, 30 ] [ 10, 99, 30 ] false" },
+        { "id": "c", "text": "[ 10, 99, 30 ] [ 10, 99, 30 ] false" },
+        { "id": "d", "text": "會報錯，陣列不能用 index 賦值" }
+      ],
+      "answer": "a",
+      "explanation": "const next = scores 只是把「同一個陣列的參照」多存一份到 next 這個名字裡，並沒有真的複製出新陣列。next[1] = 99 改的就是本尊，所以 scores 跟 next 印出來一模一樣，=== 也是 true。這題故意示範一個常見誤解：以為「宣告一個新變數」等於「做出新資料」——要拿到真正獨立的新陣列，得用 [...scores] 或 map，光是換個變數名字沒有用。",
+      "verify": {
+        "checks": [
+          { "code": "const scores = [10, 20, 30];\nconst next = scores;\nnext[1] = 99;\nconsole.log(scores, next, scores === next);", "expected": "[ 10, 99, 30 ] [ 10, 99, 30 ] true" }
+        ]
+      }
+    },
+    {
+      "id": "react-6-q12",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用 Map 當 state 一樣要建新的",
+      "docs": "https://react.dev/reference/react/useState",
+      "story": "",
+      "prompt": "用 Map 存每個商品的庫存，把空格填起來，用「不動原 Map」的方式把 id=2 的庫存改成 5",
+      "code": "const stock = new Map([[1, 10], [2, 3]]);\n\nfunction updateStock(id, qty) {\n  return ____;\n}\n\nconsole.log(updateStock(2, 5).get(2), stock.get(2));",
+      "options": [
+        { "id": "a", "text": "new Map(stock).set(id, qty)" },
+        { "id": "b", "text": "stock.set(id, qty)" },
+        { "id": "c", "text": "stock" },
+        { "id": "d", "text": "Object.assign(stock, { [id]: qty })" }
+      ],
+      "answer": "a",
+      "explanation": "new Map(stock) 複製出一份獨立的新 Map，接下來 .set 只動到這份新的，原本的 stock 完好如初（get(2) 還是 3）。選項 b 直接在本尊上 set，回傳值也是同一個 Map，是跟 q9 一樣的就地突變；選項 d 對 Map 用 Object.assign 語意根本不對，Map 的鍵值不會被這樣寫入。物件、陣列、Set、Map，改之前先複製，是同一條鐵律的四種面貌。",
+      "verify": {
+        "checks": [
+          { "code": "const stock = new Map([[1, 10], [2, 3]]);\nfunction updateStock(id, qty) {\n  return new Map(stock).set(id, qty);\n}\nconsole.log(updateStock(2, 5).get(2), stock.get(2));", "expected": "5 3" }
+        ]
+      }
     }
   ]
 }

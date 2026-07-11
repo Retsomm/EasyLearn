@@ -142,6 +142,145 @@
           { "code": "Promise.reject(new Error(\"斷線\"))\n  .catch(() => \"改用快取\")\n  .then((res) => console.log(\"結果：\" + res));", "expected": "結果：改用快取" }
         ]
       }
+    },
+    {
+      "id": "jsa-9-q7",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "Promise.any：第一個成功的就贏",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/any",
+      "story": "",
+      "prompt": "第一個備援 API 很快就失敗，第二個晚一點才成功。用 Promise.any 等它們，中途的失敗會被算數嗎？",
+      "code": "const bad = new Promise((_, reject) =>\n  setTimeout(() => reject(new Error(\"A 掛了\")), 10)\n);\nconst ok = new Promise((r) => setTimeout(() => r(\"B 成功\"), 50));\n\nPromise.any([bad, ok]).then((res) => console.log(res));",
+      "options": [
+        { "id": "a", "text": "B 成功 —— any 只在乎第一個「成功」的，中途的失敗會被安靜跳過" },
+        { "id": "b", "text": "拋出錯誤，因為 A 先失敗" },
+        { "id": "c", "text": "跟 Promise.race 一樣，誰先有結果就聽誰的，所以印出 A 掛了" },
+        { "id": "d", "text": "undefined，因為第一個進去的是失敗的那個" }
+      ],
+      "answer": "a",
+      "explanation": "any 賭的是「誰先成功」：A 在 10ms 失敗只會被記下來，不影響大局，等到 50ms 後 B 成功，any 才定案。跟上一關的 race 不同——race 不管成功失敗，誰先有結果就聽誰的，A 先 reject 的話 race 會直接失敗。any 適合「打好幾個備援來源，只要有一個活的就好」的情境，例如同時打好幾個 CDN 節點。",
+      "verify": {
+        "checks": [
+          { "code": "const bad = new Promise((_, reject) =>\n  setTimeout(() => reject(new Error(\"A 掛了\")), 10)\n);\nconst ok = new Promise((r) => setTimeout(() => r(\"B 成功\"), 50));\nPromise.any([bad, ok]).then((res) => console.log(res));", "expected": "B 成功" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-9-q8",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "then 鏈式回傳新值，改變後面拿到的資料",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/then",
+      "story": "",
+      "prompt": "每一節 then 都把值加工後回傳。最後一個 then 拿到的是原始的 2，還是被前面加工過的值？",
+      "code": "Promise.resolve(2)\n  .then((n) => n * 10)\n  .then((n) => n + 1)\n  .then((n) => console.log(n));",
+      "options": [
+        { "id": "a", "text": "21 —— 每個 then 拿到的都是上一個 then 的回傳值，一路傳下去" },
+        { "id": "b", "text": "2 —— then 只是觀察用，不會真的改變傳遞的值" },
+        { "id": "c", "text": "3 —— 每個 then 各自獨立算，跟最初傳進來的 2 加 1" },
+        { "id": "d", "text": "報錯，then 不能回傳數字" }
+      ],
+      "answer": "a",
+      "explanation": "then 回傳的其實是一個「新的 Promise」，這個新 Promise 會用你 return 的值去 resolve；下一個 then 接手的是這個新值，不是最初的 2。像水管一節接一節，每節都能加工：2 → *10 → 20 → +1 → 21。這正是「資料處理管線」的寫法，一步步把原始資料轉成你要的形狀。",
+      "verify": {
+        "checks": [
+          { "code": "Promise.resolve(2)\n  .then((n) => n * 10)\n  .then((n) => n + 1)\n  .then((n) => console.log(n));", "expected": "21" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-9-q9",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "async function 裡 await Promise.all 搭配陣列解構",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/all",
+      "story": "",
+      "prompt": "把空格填起來，讓 user 和 order 各自拿到 Promise.all 展開後的值，印出「小美 訂單A」",
+      "code": "async function loadPage() {\n  const fetchUser = Promise.resolve(\"小美\");\n  const fetchOrder = Promise.resolve(\"訂單A\");\n\n  ____ = await Promise.all([fetchUser, fetchOrder]);\n  console.log(user, order);\n}\nloadPage();",
+      "options": [
+        { "id": "a", "text": "const [user, order]" },
+        { "id": "b", "text": "const { user, order }" },
+        { "id": "c", "text": "const user, order" },
+        { "id": "d", "text": "let user = order" }
+      ],
+      "answer": "a",
+      "explanation": "await Promise.all([...]) 拿到手的是一個「陣列」，所以要用陣列解構 const [user, order] 依序命名。選項 b 的物件解構找的是 user、order 這兩把鍵，但陣列根本沒有這種鍵名，兩個都會是 undefined。await 搭配陣列解構是同時打多支 API、各自命名結果的標準寫法。",
+      "verify": {
+        "checks": [
+          { "code": "async function loadPage() {\n  const fetchUser = Promise.resolve(\"小美\");\n  const fetchOrder = Promise.resolve(\"訂單A\");\n  const [user, order] = await Promise.all([fetchUser, fetchOrder]);\n  console.log(user, order);\n}\nloadPage();", "expected": "小美 訂單A" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-9-q10",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Promise.all 空陣列，立刻 resolve 成 []",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/all",
+      "story": "",
+      "prompt": "all 裡面什麼都沒放，會一直卡住等待嗎？這兩行印出的順序是？",
+      "code": "Promise.all([]).then((res) => console.log(res));\nconsole.log(\"同步先跑\");",
+      "options": [
+        { "id": "a", "text": "先印 同步先跑，再印 [ ] —— 空陣列沒東西要等，all 立刻進入完成狀態，但 then 仍要排隊到微任務" },
+        { "id": "b", "text": "先印 [ ]，再印 同步先跑" },
+        { "id": "c", "text": "只印 同步先跑，all 會永遠等下去" },
+        { "id": "d", "text": "報錯，Promise.all 不能傳空陣列" }
+      ],
+      "answer": "a",
+      "explanation": "空陣列裡沒有任何成員要等，Promise.all([]) 會立刻進入「已解決」狀態，結果是空陣列 []。不過 then 裡的 callback 仍然是微任務，一定要等目前這輪同步程式碼跑完才輪得到它執行，所以「同步先跑」還是搶先印出來。這也順便複習了微任務排隊的規則：resolve 得再快，then 也得排隊。",
+      "verify": {
+        "checks": [
+          { "code": "Promise.all([]).then((res) => console.log(res));\nconsole.log(\"同步先跑\");", "expected": "同步先跑\n[]" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-9-q11",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "finally：不論成功失敗都會執行，不改變結果",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally",
+      "story": "",
+      "prompt": "AI 想用 finally 關閉 loading 動畫。成功和失敗兩種情況，finally 都會被執行、而且不影響原本的結果嗎？",
+      "code": "Promise.resolve(\"成功資料\")\n  .finally(() => console.log(\"關閉 loading\"))\n  .then((res) => console.log(\"結果：\" + res));\n\nPromise.reject(new Error(\"失敗了\"))\n  .finally(() => console.log(\"關閉 loading\"))\n  .catch((err) => console.log(\"結果：\" + err.message));",
+      "options": [
+        { "id": "a", "text": "一樣：兩種情況 finally 都會印出「關閉 loading」，後面的 then/catch 依然拿到原本的結果" },
+        { "id": "b", "text": "不一樣：失敗的那條鏈，finally 不會執行" },
+        { "id": "c", "text": "不一樣：finally 執行後，結果會被換成 undefined" },
+        { "id": "d", "text": "不一樣：finally 只能接在成功的鏈上，接在 reject 後面會報錯" }
+      ],
+      "answer": "a",
+      "explanation": "finally 不管成功失敗都會跑一次，正常情況下它「不插手」結果——原本該成功的鏈繼續往 then 走、該失敗的鏈繼續往 catch 走，值原封不動地穿過 finally。這正適合關 loading、清 timer 這種「不管結果如何都要做一次」的收尾動作，不用在 then 跟 catch 裡各寫一遍。但這個「不插手」有個例外：如果 finally 的 callback 自己 throw 錯誤、或回傳一個 rejected 的 Promise，就會用這個新的錯誤蓋掉原本的結果，讓整條鏈變成 rejected——所以 finally 裡的收尾動作最好保持單純，避免自己又拋出例外。",
+      "verify": {
+        "checks": [
+          { "code": "Promise.resolve(\"成功資料\")\n  .finally(() => console.log(\"關閉 loading\"))\n  .then((res) => console.log(\"結果：\" + res));", "expected": "關閉 loading\n結果：成功資料" },
+          { "code": "Promise.reject(new Error(\"失敗了\"))\n  .finally(() => console.log(\"關閉 loading\"))\n  .catch((err) => console.log(\"結果：\" + err.message));", "expected": "關閉 loading\n結果：失敗了" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-9-q12",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "Promise.resolve 包一個 Promise 不會巢狀，會自動攤平",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/resolve",
+      "story": "",
+      "prompt": "AI 以為 Promise.resolve(inner) 會做出「一個裝著 Promise 的 Promise」，實測卻不是。哪裡想錯了？",
+      "code": "const inner = Promise.resolve(5);\nconst wrapped = Promise.resolve(inner);\n\nwrapped.then((val) => console.log(val));",
+      "options": [
+        { "id": "a", "text": "Promise.resolve 傳入的東西若本身已經是 Promise，會直接攤平沿用它的結果，不會再包一層；所以 val 拿到的是 5，不是另一個 Promise" },
+        { "id": "b", "text": "要 await 兩次才能拿到 5" },
+        { "id": "c", "text": "val 會是一個裝著 5 的陣列" },
+        { "id": "d", "text": "會報錯，Promise.resolve 不能傳 Promise 進去" }
+      ],
+      "answer": "a",
+      "explanation": "Promise.resolve 有個貼心規則：如果丟進去的東西本身已經是原生 Promise，它不會再包一層，而是直接把那個 Promise 原封不動地回傳——wrapped 跟 inner 其實是同一個物件（wrapped === inner）。如果丟進去的是一般的 thenable（帶 then 方法但不是原生 Promise 的物件），Promise.resolve 則會另外建立一個新的 Promise，只是這個新 Promise 的結果會沿用 thenable 最終決議的值。不管哪一種，.then 拿到的都是攤平後的值而不是巢狀的 Promise，這也是為什麼 JS 世界幾乎看不到「Promise 疊 Promise」的窘境。",
+      "verify": {
+        "checks": [
+          { "code": "const inner = Promise.resolve(5);\nconst wrapped = Promise.resolve(inner);\nwrapped.then((val) => console.log(val));", "expected": "5" }
+        ]
+      }
     }
   ]
 }

@@ -141,6 +141,146 @@
           { "code": "const name = \"小美\";\nconst msg = `哈囉，${name}！`;\nconsole.log(msg);", "expected": "哈囉，小美！" }
         ]
       }
+    },
+    {
+      "id": "jsb-1-q7",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "const 物件的內容可以改",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/const",
+      "story": "",
+      "prompt": "const 宣告的物件，改它的屬性。這段印出什麼？",
+      "code": "const user = { name: \"小美\" };\nuser.name = \"小華\";\nconsole.log(user.name);",
+      "options": [
+        { "id": "a", "text": "小華" },
+        { "id": "b", "text": "小美" },
+        { "id": "c", "text": "會報錯，const 的東西不能改" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "const 鎖的是「user 這個名字不能改指別的物件」，物件裡面的內容隨便改——跟 const 陣列可以 push 是同一條規則。想連內容都鎖住要用 Object.freeze。「const 就是常數、完全不能動」是最常見的誤解之一，現在破除了。",
+      "verify": {
+        "checks": [
+          { "code": "const user = { name: \"小美\" };\nuser.name = \"小華\";\nconsole.log(user.name);", "expected": "小華" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-1-q8",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "undefined 與 null 的異同",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/null",
+      "story": "",
+      "prompt": "一個沒賦值、一個刻意設成 null。這段印出什麼？",
+      "code": "let a;\nconst b = null;\nconsole.log(a, b, a == b, a === b);",
+      "options": [
+        { "id": "a", "text": "undefined null true false" },
+        { "id": "b", "text": "null null true true" },
+        { "id": "c", "text": "undefined null false false" },
+        { "id": "d", "text": "undefined undefined true true" }
+      ],
+      "answer": "a",
+      "explanation": "宣告沒賦值是 undefined（系統的「還沒有」），null 是人為放的「刻意為空」。這對兄弟用 == 比是 true（規格特別放行），用 === 比是 false（型別不同）。實務判斷「是不是空」常寫 value == null，一次涵蓋兩者——這是 == 少數的正當用途。",
+      "verify": {
+        "checks": [
+          { "code": "let a;\nconst b = null;\nconsole.log(a, b, a == b, a === b);", "expected": "undefined null true false" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-1-q9",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "輸入框拿到的都是字串",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Number",
+      "story": "",
+      "prompt": "把兩個輸入框的數字相加，5 加 10 卻得到 510。哪裡錯了？",
+      "code": "const x = \"5\";    // 從輸入框拿到的\nconst y = \"10\";   // 從輸入框拿到的\nconsole.log(x + y);   // 510 ?? 預期 15",
+      "options": [
+        { "id": "a", "text": "輸入框的值永遠是字串，+ 變成黏字串；要先 Number(x) + Number(y)" },
+        { "id": "b", "text": "x 和 y 的順序寫反了" },
+        { "id": "c", "text": "console.log 不支援加法" },
+        { "id": "d", "text": "要改用 x ++ y" }
+      ],
+      "answer": "a",
+      "explanation": "表單欄位、URL 參數、localStorage——這些來源給你的永遠是字串，就算看起來像數字。\"5\" + \"10\" 黏成 \"510\"。進門先轉型（Number 或 parseInt），再開始算數學，是處理外部輸入的固定儀式。這個 bug 在真實世界的出現率高到值得考兩次。",
+      "verify": {
+        "checks": [
+          { "code": "const x = \"5\";\nconst y = \"10\";\nconsole.log(x + y);", "expected": "510" },
+          { "code": "const x = \"5\";\nconst y = \"10\";\nconsole.log(Number(x) + Number(y));", "expected": "15" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-1-q10",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "length > 0 與直接當條件",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Truthy",
+      "story": "",
+      "prompt": "判斷陣列有沒有東西。這兩種寫法行為一樣嗎？",
+      "code": "const list = [\"a\"];\nconst empty = [];\n\n// 版本一\nif (list.length > 0) console.log(\"有料\");\nif (empty.length > 0) console.log(\"有料2\");\n\n// 版本二\nif (list.length) console.log(\"有料\");\nif (empty.length) console.log(\"有料2\");",
+      "options": [
+        { "id": "a", "text": "一樣：length 是 0 就是 falsy，大於 0 就是 truthy" },
+        { "id": "b", "text": "不一樣：版本二空陣列也會印「有料2」" },
+        { "id": "c", "text": "不一樣：版本二會報錯" },
+        { "id": "d", "text": "不一樣：版本一比較快十倍" }
+      ],
+      "answer": "a",
+      "explanation": "length 是數字：0 是 falsy、1 以上是 truthy，所以兩種寫法等價，第二種是常見的簡寫。但注意前提是「拿 length 來判斷」——直接 if (empty) 判斷陣列本身就錯了，空陣列是 truthy（jsb-5 考過）。判斷有沒有資料，永遠問 length。",
+      "verify": {
+        "checks": [
+          { "code": "const list = [\"a\"];\nconst empty = [];\nif (list.length > 0) console.log(\"有料\");\nif (empty.length > 0) console.log(\"有料2\");\nif (list.length) console.log(\"有料\");\nif (empty.length) console.log(\"有料2\");", "expected": "有料\n有料" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-1-q11",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "?? 讓 0 保住預設值機制",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing",
+      "story": "",
+      "prompt": "折扣可以是 0（合法值），沒設定才用 100。把空格填起來，印出 0",
+      "code": "const input = 0;\nconst value = input ____ 100;\nconsole.log(value);",
+      "options": [
+        { "id": "a", "text": "??" },
+        { "id": "b", "text": "||" },
+        { "id": "c", "text": "&&" },
+        { "id": "d", "text": "+" }
+      ],
+      "answer": "a",
+      "explanation": "?? 只在左邊是 null 或 undefined 時才用右邊——0 是合法值，保留。|| 會把 0 當 falsy 換成 100，語意就錯了；&& 遇到 0 直接回 0 看似對，但 input 有值時會回 100，整個顛倒。「值可能是 0 或空字串」的預設值，一律 ??。",
+      "verify": {
+        "checks": [
+          { "code": "const input = 0;\nconst value = input ?? 100;\nconsole.log(value);", "expected": "0" },
+          { "code": "const input = 0;\nconst value = input || 100;\nconsole.log(value);", "expected": "100" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-1-q12",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "NaN 不等於任何人，包括自己",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/NaN",
+      "story": "",
+      "prompt": "轉型失敗得到 NaN。用 === 和 Number.isNaN 檢查它，各印出什麼？",
+      "code": "const n = Number(\"abc\");\nconsole.log(n === NaN);\nconsole.log(Number.isNaN(n));",
+      "options": [
+        { "id": "a", "text": "false 和 true" },
+        { "id": "b", "text": "true 和 true" },
+        { "id": "c", "text": "false 和 false" },
+        { "id": "d", "text": "true 和 false" }
+      ],
+      "answer": "a",
+      "explanation": "NaN 是全 JavaScript 最孤僻的值：它不等於任何東西，連自己都不等於——n === NaN 永遠 false，所以「用等號檢查 NaN」是個永遠不會成立的 bug。正解是 Number.isNaN()。看到 if (x === NaN) 這種程式碼（AI 也會寫出來），你現在能一眼判死刑。",
+      "verify": {
+        "checks": [
+          { "code": "const n = Number(\"abc\");\nconsole.log(n === NaN);\nconsole.log(Number.isNaN(n));", "expected": "false\ntrue" }
+        ]
+      }
     }
   ]
 }
