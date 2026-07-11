@@ -3,12 +3,25 @@ import QuestionCard from '../components/QuestionCard'
 import Mascot, { getStage } from '../components/Mascot'
 import Icon from '../components/Icons'
 import { getChapterIdForQuestion } from '../data/chapters'
+import type { Level, Progress } from '../types'
 
 const XP_CORRECT = 10
 const XP_WRONG = 2
 const XP_FIRST_CLEAR_BONUS = 20
 
-export default function Quiz({
+interface QuizProps {
+  level: Level
+  mode?: 'normal' | 'review' | 'mixed'
+  progress: Progress
+  answerQuestion: (questionId: string, correct: boolean, chapterId?: string) => void
+  toggleSaved: (questionId: string) => void
+  finishLevel: (levelId: string, correct: number, total: number, xpEarned: number) => void
+  finishReview: (xpEarned: number) => void
+  onExit: () => void
+  exitTo?: string
+}
+
+const Quiz = ({
   level,
   mode = 'normal',
   progress,
@@ -18,9 +31,9 @@ export default function Quiz({
   finishReview,
   onExit,
   exitTo = 'levellist',
-}) {
+}: QuizProps) => {
   const [index, setIndex] = useState(0)
-  const [selected, setSelected] = useState(null)
+  const [selected, setSelected] = useState<string | null>(null)
   const [correctCount, setCorrectCount] = useState(0)
   const [xpEarned, setXpEarned] = useState(0)
   const [done, setDone] = useState(false)
@@ -33,7 +46,7 @@ export default function Quiz({
   const question = questions[index]
   const firstClear = !skipsLevelProgress && !progress.completedLevels[level.id]
 
-  function handleSelect(optId) {
+  const handleSelect = (optId: string) => {
     setSelected(optId)
     const isCorrect = optId === question.answer
     answerQuestion(question.id, isCorrect, getChapterIdForQuestion(question.id))
@@ -41,7 +54,7 @@ export default function Quiz({
     setXpEarned((x) => x + (isCorrect ? XP_CORRECT : XP_WRONG))
   }
 
-  function handleNext() {
+  const handleNext = () => {
     if (index + 1 < questions.length) {
       setIndex(index + 1)
       setSelected(null)
@@ -149,3 +162,5 @@ export default function Quiz({
     </div>
   )
 }
+
+export default Quiz

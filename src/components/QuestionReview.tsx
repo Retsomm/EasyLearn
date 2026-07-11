@@ -2,9 +2,17 @@ import CodeBlock from './CodeBlock'
 import Icon from './Icons'
 import { TYPE_META } from '../data/typeMeta'
 import { GRADUATE_BOX } from '../hooks/useProgress'
+import type { Question, WrongEntryMeta } from '../types'
+
+interface QuestionReviewProps {
+  question: Question
+  saved: boolean
+  onToggleSave: (questionId: string) => void
+  meta: WrongEntryMeta | null
+}
 
 // 唯讀題目卡：錯題本／收藏瀏覽頁用，直接看答案與解釋，不用重考
-export default function QuestionReview({ question, saved, onToggleSave, meta }) {
+const QuestionReview = ({ question, saved, onToggleSave, meta }: QuestionReviewProps) => {
   const typeMeta = TYPE_META[question.type]
 
   return (
@@ -62,3 +70,5 @@ export default function QuestionReview({ question, saved, onToggleSave, meta }) 
     </div>
   )
 }
+
+export default QuestionReview

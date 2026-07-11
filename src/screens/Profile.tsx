@@ -1,10 +1,17 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
 import Mascot from '../components/Mascot'
 import Icon from '../components/Icons'
 import { chapters } from '../data/chapters'
+import type { Progress } from '../types'
 
-export default function Profile({ progress, exportProgress, importProgress }) {
-  const fileRef = useRef(null)
+interface ProfileProps {
+  progress: Progress
+  exportProgress: () => void
+  importProgress: (file: File, onDone: (ok: boolean) => void) => void
+}
+
+const Profile = ({ progress, exportProgress, importProgress }: ProfileProps) => {
+  const fileRef = useRef<HTMLInputElement>(null)
   const [importMsg, setImportMsg] = useState('')
 
   const totalLevels = chapters.reduce((n, ch) => n + ch.levels.length, 0)
@@ -12,8 +19,8 @@ export default function Profile({ progress, exportProgress, importProgress }) {
   const streak = progress.streak?.count ?? 0
   const totalAnswered = Object.values(progress.dailyStats ?? {}).reduce((n, d) => n + d.total, 0)
 
-  function handleImportFile(e) {
-    const file = e.target.files[0]
+  const handleImportFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
     if (!file) return
     importProgress(file, (ok) => {
       setImportMsg(ok ? '進度匯入成功！' : '檔案格式不對，匯入失敗')
@@ -56,7 +63,7 @@ export default function Profile({ progress, exportProgress, importProgress }) {
           匯出進度
         </button>
         <span className="io-divider">・</span>
-        <button className="text-btn" onClick={() => fileRef.current.click()}>
+        <button className="text-btn" onClick={() => fileRef.current?.click()}>
           <Icon name="upload" size={15} />
           匯入進度
         </button>
@@ -67,3 +74,5 @@ export default function Profile({ progress, exportProgress, importProgress }) {
     </div>
   )
 }
+
+export default Profile

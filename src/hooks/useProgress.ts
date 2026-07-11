@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
+import type { DailyStat, Progress, Streak, WrongEntryMeta } from '../types'
 
 const STORAGE_KEY = 'easylearn-progress-v1'
 
 // Leitner 盒制：答對升級、答錯重置回 1，box 超過畢業盒才移出錯題本
 export const GRADUATE_BOX = 3
 
-const defaultProgress = {
+const defaultProgress: Progress = {
   xp: 0,
   // { [levelId]: { best: 答對題數, total: 題數 } }
   completedLevels: {},
@@ -24,15 +25,17 @@ const defaultProgress = {
 }
 
 // 舊版 wrongIds 是 { [id]: true }，升級成 Leitner 盒物件
-function migrateWrongIds(wrongIds) {
-  const out = {}
+const migrateWrongIds = (
+  wrongIds: Record<string, true | WrongEntryMeta> | undefined,
+): Record<string, WrongEntryMeta> => {
+  const out: Record<string, WrongEntryMeta> = {}
   for (const [id, entry] of Object.entries(wrongIds ?? {})) {
     out[id] = entry === true ? { count: 1, lastWrong: null, box: 1 } : entry
   }
   return out
 }
 
-function load() {
+const load = (): Progress => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return defaultProgress
@@ -43,22 +46,24 @@ function load() {
   }
 }
 
-export function todayStr() {
-  return new Date().toLocaleDateString('en-CA') // 本地時區的 YYYY-MM-DD
-}
+export const todayStr = (): string => new Date().toLocaleDateString('en-CA') // 本地時區的 YYYY-MM-DD
 
-export function yesterdayStr() {
+export const yesterdayStr = (): string => {
   const d = new Date()
   d.setDate(d.getDate() - 1)
   return d.toLocaleDateString('en-CA')
 }
 
-function bumpXpLog(xpLog, amount) {
+const bumpXpLog = (xpLog: Record<string, number>, amount: number): Record<string, number> => {
   const today = todayStr()
   return { ...xpLog, [today]: (xpLog[today] ?? 0) + amount }
 }
 
-function bumpCounter(map, key, correct) {
+const bumpCounter = (
+  map: Record<string, DailyStat>,
+  key: string,
+  correct: boolean,
+): Record<string, DailyStat> => {
   const entry = map[key] ?? { total: 0, correct: 0 }
   return {
     ...map,
@@ -66,7 +71,7 @@ function bumpCounter(map, key, correct) {
   }
 }
 
-function bumpStreak(streak) {
+const bumpStreak = (streak: Streak): Streak => {
   const today = todayStr()
   if (streak.last === today) return streak
   return {
@@ -75,7 +80,7 @@ function bumpStreak(streak) {
   }
 }
 
-export function useProgress() {
+export const useProgress = () => {
   const [progress, setProgress] = useState(load)
 
   useEffect(() => {
@@ -85,7 +90,7 @@ export function useProgress() {
   // 每答一題就更新錯題本（Leitner 盒制）：
   // 答錯 → 記入／重置回第 1 盒；答對 → 升一盒，超過畢業盒才移出錯題本
   // 同時累計每日／分科作答統計，供學習數據頁使用
-  function answerQuestion(questionId, correct, chapterId) {
+  const answerQuestion = (questionId: string, correct: boolean, chapterId?: string) => {
     setProgress((p) => {
       const wrongIds = { ...p.wrongIds }
       const entry = wrongIds[questionId]
@@ -109,7 +114,7 @@ export function useProgress() {
   }
 
   // 收藏／取消收藏題目
-  function toggleSaved(questionId) {
+  const toggleSaved = (questionId: string) => {
     setProgress((p) => {
       const savedIds = { ...p.savedIds }
       if (savedIds[questionId]) delete savedIds[questionId]
@@ -118,7 +123,7 @@ export function useProgress() {
     })
   }
 
-  function finishLevel(levelId, correct, total, xpEarned) {
+  const finishLevel = (levelId: string, correct: number, total: number, xpEarned: number) => {
     setProgress((p) => {
       const prev = p.completedLevels[levelId]
       return {
@@ -138,7 +143,7 @@ export function useProgress() {
   }
 
   // 錯題重練結束：只加 XP 和 streak，不動關卡紀錄
-  function finishReview(xpEarned) {
+  const finishReview = (xpEarned: number) => {
     setProgress((p) => ({
       ...p,
       xp: p.xp + xpEarned,
@@ -147,7 +152,7 @@ export function useProgress() {
     }))
   }
 
-  function exportProgress() {
+  const exportProgress = () => {
     const blob = new Blob([JSON.stringify(progress, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -157,11 +162,11 @@ export function useProgress() {
     URL.revokeObjectURL(url)
   }
 
-  function importProgress(file, onDone) {
+  const importProgress = (file: File, onDone?: (ok: boolean) => void) => {
     const reader = new FileReader()
     reader.onload = () => {
       try {
-        const data = JSON.parse(reader.result)
+        const data = JSON.parse(reader.result as string)
         if (typeof data.xp !== 'number' || typeof data.completedLevels !== 'object') {
           throw new Error('格式不對')
         }

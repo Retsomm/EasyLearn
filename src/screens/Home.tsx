@@ -1,11 +1,12 @@
 import Icon from '../components/Icons'
 import { chapters } from '../data/chapters'
 import { todayStr, yesterdayStr } from '../hooks/useProgress'
+import type { Progress } from '../types'
 
 const DAILY_GOAL = 20
 const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
 
-function getWeekDates() {
+const getWeekDates = (): string[] => {
   const now = new Date()
   const day = now.getDay() // 0=週日..6=週六
   const mondayOffset = day === 0 ? -6 : 1 - day
@@ -18,7 +19,13 @@ function getWeekDates() {
   })
 }
 
-export default function Home({ progress, onOpenChapter, onMixedPractice }) {
+interface HomeProps {
+  progress: Progress
+  onOpenChapter: (chapterId: string) => void
+  onMixedPractice: () => void
+}
+
+const Home = ({ progress, onOpenChapter, onMixedPractice }: HomeProps) => {
   const today = todayStr()
   const yesterday = yesterdayStr()
   const todayStats = progress.dailyStats[today] ?? { total: 0, correct: 0 }
@@ -106,3 +113,5 @@ export default function Home({ progress, onOpenChapter, onMixedPractice }) {
     </div>
   )
 }
+
+export default Home

@@ -105,13 +105,16 @@ button {
 
 .navbar-tabs {
   display: flex;
+  flex: 1;
   gap: 4px;
-  overflow-x: auto;
+  min-width: 0;
 }
 
 .navbar-tab {
   display: inline-flex;
+  flex: 1;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   background: none;
   border: none;
@@ -132,6 +135,45 @@ button {
 .navbar-tab.is-active {
   background: var(--badge-bg);
   color: var(--primary);
+}
+
+/* ── 導覽列 RWD：窄螢幕改成底部 tab bar ── */
+@media (max-width: 640px) {
+  .navbar {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .navbar-inner {
+    max-width: none;
+    padding: 0 4px;
+    height: 60px;
+  }
+
+  .navbar-brand {
+    display: none;
+  }
+
+  .navbar-tabs {
+    gap: 0;
+  }
+
+  .navbar-tab {
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 4px;
+    font-size: 11px;
+    border-radius: 8px;
+  }
+
+  #page-body {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 24px);
+  }
 }
 
 .page-title {
@@ -1113,4 +1155,22 @@ button {
 .profile-stat-label {
   font-size: 12px;
   color: var(--ink-soft);
+}
+
+@media (max-width: 480px) {
+  .profile-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-stat {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    padding: 14px 16px;
+  }
+
+  .profile-stat-label {
+    order: -1;
+  }
 }

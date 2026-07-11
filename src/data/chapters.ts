@@ -28,29 +28,35 @@ import react8 from './questions/react-8-sharing-state.json'
 import react9 from './questions/react-9-preserving-state.json'
 import react10 from './questions/react-10-reducer-context.json'
 import react11 from './questions/react-11-refs.json'
+import type { Chapter, Level, Question, WrongEntry, WrongEntryMeta } from '../types'
 
-export const chapters = [
+// 題目 JSON 的 type 欄位在匯入時只會被推斷成 string，用 as 收斂回字面量聯合型別
+const asLevel = (level: unknown) => level as Level
+
+export const chapters: Chapter[] = [
   {
     id: 'js-basics',
     title: 'JavaScript 基礎',
     icon: 'sprout',
-    levels: [jsb1, jsb2, jsb3, jsb4, jsb5, jsb6, jsb7, jsb8, jsb9],
+    levels: [jsb1, jsb2, jsb3, jsb4, jsb5, jsb6, jsb7, jsb8, jsb9].map(asLevel),
   },
   {
     id: 'js-advanced',
     title: 'JavaScript 進階',
     icon: 'rocket',
-    levels: [jsa1, jsa2, jsa3, jsa4, jsa5, jsa6, jsa7, jsa8, jsa9],
+    levels: [jsa1, jsa2, jsa3, jsa4, jsa5, jsa6, jsa7, jsa8, jsa9].map(asLevel),
   },
   {
     id: 'react',
     title: 'React',
     icon: 'atom',
-    levels: [react1, react2, react3, react4, react5, react6, react7, react8, react9, react10, react11],
+    levels: [react1, react2, react3, react4, react5, react6, react7, react8, react9, react10, react11].map(
+      asLevel,
+    ),
   },
 ]
 
-export function getLevel(levelId) {
+export const getLevel = (levelId: string): Level | null => {
   for (const ch of chapters) {
     const lv = ch.levels.find((l) => l.id === levelId)
     if (lv) return lv
@@ -59,7 +65,7 @@ export function getLevel(levelId) {
 }
 
 // 題目 id → 所屬章節 id（分科成效統計用）
-const questionChapterMap = new Map()
+const questionChapterMap = new Map<string, string>()
 for (const ch of chapters) {
   for (const level of ch.levels) {
     for (const q of level.questions) {
@@ -68,13 +74,12 @@ for (const ch of chapters) {
   }
 }
 
-export function getChapterIdForQuestion(questionId) {
-  return questionChapterMap.get(questionId)
-}
+export const getChapterIdForQuestion = (questionId: string): string | undefined =>
+  questionChapterMap.get(questionId)
 
 // 從錯題本 id 集合撈出題目本體（照章節順序）
-export function getWrongQuestions(wrongIds) {
-  const out = []
+export const getWrongQuestions = (wrongIds: Record<string, WrongEntryMeta>): Question[] => {
+  const out: Question[] = []
   for (const ch of chapters) {
     for (const level of ch.levels) {
       for (const q of level.questions) {
@@ -86,8 +91,8 @@ export function getWrongQuestions(wrongIds) {
 }
 
 // 錯題本瀏覽用：題目本體＋熟練度資訊，最需要複習的（盒子小、越久沒複習）排前面
-export function getWrongEntries(wrongIds) {
-  const out = []
+export const getWrongEntries = (wrongIds: Record<string, WrongEntryMeta>): WrongEntry[] => {
+  const out: WrongEntry[] = []
   for (const ch of chapters) {
     for (const level of ch.levels) {
       for (const q of level.questions) {
@@ -100,8 +105,8 @@ export function getWrongEntries(wrongIds) {
 }
 
 // 從收藏 id 集合撈出題目本體（照章節順序）
-export function getSavedQuestions(savedIds) {
-  const out = []
+export const getSavedQuestions = (savedIds: Record<string, boolean>): Question[] => {
+  const out: Question[] = []
   for (const ch of chapters) {
     for (const level of ch.levels) {
       for (const q of level.questions) {

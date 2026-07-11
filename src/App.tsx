@@ -10,16 +10,37 @@ import Profile from './screens/Profile'
 import ChapterMap from './screens/ChapterMap'
 import Quiz from './screens/Quiz'
 import QuestionBook from './screens/QuestionBook'
+import type { Question } from './types'
+
+type View =
+  | { name: 'home' }
+  | { name: 'notes' }
+  | { name: 'stats' }
+  | { name: 'profile' }
+  | { name: 'wrongbook' }
+  | { name: 'savedbook' }
+  | { name: 'levellist'; chapterId: string | null }
+  | { name: 'quiz'; levelId: string; questions: Question[] }
+  | { name: 'review'; questions: Question[] }
+  | { name: 'mixed'; questions: Question[] }
+  | { name: 'savedpractice'; questions: Question[] }
 
 // 決定目前畫面該讓 navbar 的哪個分頁保持高亮
-function navGroupOf(viewName) {
+const navGroupOf = (viewName: View['name']): string => {
   if (viewName === 'stats') return 'stats'
   if (viewName === 'profile') return 'profile'
   if (['notes', 'review', 'wrongbook', 'savedbook', 'savedpractice'].includes(viewName)) return 'notes'
   return 'home'
 }
 
-export default function App() {
+const navGroupOfChapter = (levelId: string): string | null => {
+  for (const ch of chapters) {
+    if (ch.levels.some((l) => l.id === levelId)) return ch.id
+  }
+  return null
+}
+
+const App = () => {
   const {
     progress,
     answerQuestion,
@@ -29,40 +50,42 @@ export default function App() {
     exportProgress,
     importProgress,
   } = useProgress()
-  const [view, setView] = useState({ name: 'home' })
+  const [view, setView] = useState<View>({ name: 'home' })
 
-  function startLevel(levelId) {
+  const startLevel = (levelId: string) => {
     // 整個題池隨機排序作答（同難度內順序每次不同）
     const level = getLevel(levelId)
+    if (!level) return
     setView({ name: 'quiz', levelId, questions: sampleQuestions(level.questions) })
   }
 
-  function startReview() {
+  const startReview = () => {
     const picked = shuffle(getWrongQuestions(progress.wrongIds)).slice(0, REVIEW_SIZE)
     if (picked.length === 0) return
     setView({ name: 'review', questions: picked })
   }
 
-  function startMixedPractice() {
+  const startMixedPractice = () => {
     const pool = chapters.flatMap((ch) => ch.levels.flatMap((l) => l.questions))
     const picked = shuffle(pool).slice(0, MIXED_SIZE).sort((a, b) => a.difficulty - b.difficulty)
     setView({ name: 'mixed', questions: picked })
   }
 
-  function startSavedPractice() {
+  const startSavedPractice = () => {
     const picked = sampleQuestions(getSavedQuestions(progress.savedIds))
     if (picked.length === 0) return
     setView({ name: 'savedpractice', questions: picked })
   }
 
-  function handleNavigate(key) {
-    setView({ name: key })
+  const handleNavigate = (key: string) => {
+    setView({ name: key } as View)
   }
 
   let content = null
 
   if (view.name === 'quiz') {
     const level = getLevel(view.levelId)
+    if (!level) return null
     content = (
       <Quiz
         key={view.levelId}
@@ -183,9 +206,4 @@ export default function App() {
   )
 }
 
-function navGroupOfChapter(levelId) {
-  for (const ch of chapters) {
-    if (ch.levels.some((l) => l.id === levelId)) return ch.id
-  }
-  return null
-}
+export default App

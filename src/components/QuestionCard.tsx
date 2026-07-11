@@ -1,8 +1,19 @@
 import CodeBlock from './CodeBlock'
 import Icon from './Icons'
 import { TYPE_META } from '../data/typeMeta'
+import type { Question } from '../types'
 
-export default function QuestionCard({
+interface QuestionCardProps {
+  question: Question
+  selected: string | null
+  onSelect: (optId: string) => void
+  onNext: () => void
+  isLast: boolean
+  saved: boolean
+  onToggleSave: (questionId: string) => void
+}
+
+const QuestionCard = ({
   question,
   selected,
   onSelect,
@@ -10,7 +21,7 @@ export default function QuestionCard({
   isLast,
   saved,
   onToggleSave,
-}) {
+}: QuestionCardProps) => {
   const answered = selected !== null
   const correct = answered && selected === question.answer
   const typeMeta = TYPE_META[question.type]
@@ -76,3 +87,5 @@ export default function QuestionCard({
     </div>
   )
 }
+
+export default QuestionCard
