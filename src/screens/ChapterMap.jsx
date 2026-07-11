@@ -1,54 +1,10 @@
-import { useState } from 'react'
 import { chapters } from '../data/chapters'
 import Icon from '../components/Icons'
 
-function ChapterList({ progress, onOpenChapter, onBack }) {
-  return (
-    <div className="screen map-screen">
-      <div className="screen-header">
-        <button className="back-btn" onClick={onBack} aria-label="回首頁">
-          <Icon name="arrow-left" size={20} />
-        </button>
-        <h2>選擇章節</h2>
-      </div>
-
-      {chapters.map((ch) => {
-        const done = ch.levels.filter((l) => progress.completedLevels[l.id]).length
-        return (
-          <button
-            key={ch.id}
-            className="chapter-card"
-            disabled={ch.comingSoon}
-            onClick={() => onOpenChapter(ch.id)}
-          >
-            <span className="chapter-emoji">
-              <Icon name={ch.icon} size={30} />
-            </span>
-            <span className="chapter-info">
-              <span className="chapter-name">{ch.title}</span>
-              <span className="chapter-progress">
-                {ch.comingSoon ? '敬請期待' : `完成 ${done} / ${ch.levels.length} 關`}
-              </span>
-            </span>
-            {!ch.comingSoon && (
-              <span className="chapter-bar">
-                <span
-                  className="chapter-bar-fill"
-                  style={{ width: `${ch.levels.length ? (done / ch.levels.length) * 100 : 0}%` }}
-                />
-              </span>
-            )}
-            <span className="chapter-arrow">
-              <Icon name="chevron-right" size={22} />
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-function LevelList({ chapter, progress, onStartLevel, onBack }) {
+// 章節清單顯示在 Home 頁；這裡只負責單一章節的關卡清單
+export default function ChapterMap({ chapterId, progress, onStartLevel, onBack }) {
+  const chapter = chapters.find((ch) => ch.id === chapterId)
+  if (!chapter) return null
   return (
     <div className="screen map-screen">
       <div className="screen-header">
@@ -90,22 +46,4 @@ function LevelList({ chapter, progress, onStartLevel, onBack }) {
       })}
     </div>
   )
-}
-
-export default function ChapterMap({ progress, onStartLevel, onBack }) {
-  const [chapterId, setChapterId] = useState(null)
-  const chapter = chapters.find((ch) => ch.id === chapterId)
-
-  if (chapter) {
-    return (
-      <LevelList
-        chapter={chapter}
-        progress={progress}
-        onStartLevel={onStartLevel}
-        onBack={() => setChapterId(null)}
-      />
-    )
-  }
-
-  return <ChapterList progress={progress} onOpenChapter={setChapterId} onBack={onBack} />
 }

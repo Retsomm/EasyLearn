@@ -1,5 +1,7 @@
 // 進關作答整個題池：洗牌後依難度由易到難排（同難度內順序隨機）
 export const REVIEW_SIZE = 6
+// 首頁「隨機綜合練習」跨章節抽題數
+export const MIXED_SIZE = 10
 
 export function shuffle(arr) {
   const copy = [...arr]
