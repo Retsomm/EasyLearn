@@ -133,6 +133,141 @@
         "checks": [],
         "manual": "屬設計選擇題，無單一執行輸出；判準依 react.dev referencing-values-with-refs 的使用時機"
       }
+    },
+    {
+      "id": "react-11-q7",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "useRef 的初始值只在第一次渲染生效",
+      "docs": "https://react.dev/learn/referencing-values-with-refs",
+      "story": "",
+      "prompt": "父層一開始傳 startFrom=0，之後改傳 startFrom=100 讓 Stopwatch 重新渲染。第二次渲染時畫面顯示多少？",
+      "code": "function Stopwatch({ startFrom }) {\n  const initial = useRef(startFrom);\n  return <p>{initial.current}</p>;\n}\n// 第一次：<Stopwatch startFrom={0} />\n// 第二次：<Stopwatch startFrom={100} />（重新渲染，不是新的元件實例）",
+      "options": [
+        { "id": "a", "text": "一直是 0 —— useRef(startFrom) 只有第一次渲染會拿 startFrom 當 current 的初始值，之後重繪即使帶了新的值，React 也不會理會，current 維持第一次的結果" },
+        { "id": "b", "text": "變成 100，因為 useRef 每次渲染都會用新的參數重設 current" },
+        { "id": "c", "text": "0 和 100 交替出現" },
+        { "id": "d", "text": "會報錯，useRef 不能接收 props 當初始值" }
+      ],
+      "answer": "a",
+      "explanation": "useRef 只在「元件第一次渲染」那一刻讀一次傳進去的初始值，之後不管重繪幾次、傳的參數怎麼變，都不會再理會那個參數——這跟 useState(initialValue) 的行為一模一樣（state 的初始值也只在首次渲染生效），只是 ref 改了不會觸發重繪。如果需要讓 current 跟著某個值更新，得自己在 effect 或事件裡手動賦值，React 不會替你做。",
+      "verify": {
+        "checks": [],
+        "manual": "需要真實的多輪渲染才能觀察 current 是否被重設；機制依 react.dev referencing-values-with-refs（useRef 的引數只在初次渲染使用）"
+      }
+    },
+    {
+      "id": "react-11-q8",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "ref 不能在渲染期間讀寫",
+      "docs": "https://react.dev/learn/referencing-values-with-refs",
+      "story": "",
+      "prompt": "這個記錄器偶爾會出現奇怪的重複計數（例如 StrictMode 下數字比預期多）。哪裡犯規了？",
+      "code": "function Logger({ value }) {\n  const historyRef = useRef([]);\n\n  historyRef.current.push(value);   // B 行：在渲染期間直接改 ref\n\n  return <p>目前共記錄 {historyRef.current.length} 筆</p>;\n}",
+      "options": [
+        { "id": "a", "text": "B 行違規：官方明講渲染期間不能讀寫 ref.current（極少數 lazy 初始化例外），因為同一次渲染可能被 React 重複呼叫（例如 StrictMode 或未來的並行特性），每呼叫一次就多 push 一筆，數字自然對不上；要挪到 useEffect 或事件處理器裡" },
+        { "id": "b", "text": "useRef([]) 不能放陣列" },
+        { "id": "c", "text": "p 標籤裡不能放大括號運算" },
+        { "id": "d", "text": "value 這個 prop 命名有誤" }
+      ],
+      "answer": "a",
+      "explanation": "渲染函式本身應該是「可重複執行也不出錯」的純函式（這也是 StrictMode 刻意把它多跑一次來抓錯的原因）。ref 的讀寫如果放在渲染路徑上，多跑一次就多副作用一次，數字對不上只是最容易發現的症狀，更隱蔽的情況甚至不會馬上出錯。安全的地方只有兩個：useEffect（渲染完成之後）、事件處理器（使用者觸發的當下）。",
+      "verify": {
+        "checks": [],
+        "manual": "需要 StrictMode 下的重複渲染才能觀察到重複 push；判準依 react.dev referencing-values-with-refs 的「refs 的最佳實踐」（避免在渲染期間讀寫 ref.current）"
+      }
+    },
+    {
+      "id": "react-11-q9",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "用 ref 記錄上一次的 state 值",
+      "docs": "https://react.dev/learn/referencing-values-with-refs",
+      "story": "",
+      "prompt": "第一次渲染 value=1。父層把 value 改成 2，觸發第二次渲染。第二次渲染畫面上顯示什麼？",
+      "code": "function Tracker({ value }) {\n  const prevRef = useRef(value);\n\n  useEffect(() => {\n    prevRef.current = value;\n  });\n\n  return (\n    <p>目前：{value}，上一次：{prevRef.current}</p>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "「目前：2，上一次：1」—— useEffect 要等這一輪畫面畫出來之後才會執行、把 ref 更新成最新值，所以「這一次渲染」讀到的 prevRef.current 還是上一輪殘留的舊值" },
+        { "id": "b", "text": "「目前：2，上一次：2」，effect 在渲染前就先更新完了" },
+        { "id": "c", "text": "「目前：1，上一次：2」，數值顯示相反" },
+        { "id": "d", "text": "會報錯，useRef 不能搭配 useEffect 使用" }
+      ],
+      "answer": "a",
+      "explanation": "這是「記住上一輪值」的經典寫法：render 階段讀到的 prevRef.current 永遠是「effect 尚未來得及更新前」的舊值，effect 本身要等瀏覽器畫完畫面才跑（react-4 學過的時序），跑完才把 ref 更新成這一輪的 value，留給下一次渲染去讀。所以每次渲染畫面上看到的「上一次」，其實就是名副其實的上一輪的值，不會提前更新成當下這輪。",
+      "verify": {
+        "checks": [],
+        "manual": "需要多輪渲染與 effect 時序才能觀察；機制依 react.dev referencing-values-with-refs（ref 跨渲染存活＋effect 在畫面呈現之後才執行）"
+      }
+    },
+    {
+      "id": "react-11-q10",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "callback ref：ref 也可以是一個函式",
+      "docs": "https://react.dev/learn/manipulating-the-dom-with-refs",
+      "story": "",
+      "prompt": "不想額外宣告 useRef，直接用「函式形式」的 ref：DOM 節點掛載時 React 會呼叫它、把節點當參數傳進來，掛載當下就聚焦。把空格填起來",
+      "code": "function AutoFocusInput() {\n  return (\n    <input\n      ref={____}\n      placeholder=\"自動聚焦\"\n    />\n  );\n}",
+      "options": [
+        { "id": "a", "text": "(node) => node?.focus()" },
+        { "id": "b", "text": "useRef(null)" },
+        { "id": "c", "text": "\"input\"" },
+        { "id": "d", "text": "() => {}" }
+      ],
+      "answer": "a",
+      "explanation": "ref 屬性除了掛 useRef() 回傳的物件，也能直接放一個函式——這叫 callback ref。React 掛載 DOM 節點時會呼叫它、把節點當參數傳進來；卸載時再呼叫一次、這次傳 null。這裡示範最常見的用途：節點一掛好就立刻聚焦，不必等 useEffect 跑一輪。選項 b 是物件形式的 ref，語法上也合法但不會「主動」做任何事，需要另外在 effect 裡呼叫 .focus()；選項 c、d 都接不到真正的 DOM 節點。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction AutoFocusInput() {\n  return (\n    <input\n      ref={(node) => node?.focus()}\n      placeholder=\"自動聚焦\"\n    />\n  );\n}\nconsole.log(renderToStaticMarkup(<AutoFocusInput />));", "expected": "<input placeholder=\"自動聚焦\"/>" }
+        ]
+      }
+    },
+    {
+      "id": "react-11-q11",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "React 19：ref 直接當成一般 prop 接收",
+      "docs": "https://react.dev/blog/2024/12/05/react-19",
+      "story": "",
+      "prompt": "React 19 起，函式元件不需要 forwardRef 包裹，可以直接把 ref 當成一般 prop 接收。把空格填起來",
+      "code": "function MyInput({ placeholder, ____ }) {\n  return <input ref={ref} placeholder={placeholder} />;\n}\n\n// 使用：<MyInput placeholder=\"hi\" ref={someRef} />",
+      "options": [
+        { "id": "a", "text": "ref" },
+        { "id": "b", "text": "forwardRef" },
+        { "id": "c", "text": "this.ref" },
+        { "id": "d", "text": "props.ref" }
+      ],
+      "answer": "a",
+      "explanation": "React 19 之前，函式元件想接收父層傳來的 ref，一定要用 forwardRef((props, ref) => ...) 包一層，ref 才不會被當成「未知 prop」擋掉。React 19 起這層包裝變成非必要：直接在解構的 props 裡寫出 ref，它就跟其他 prop 一樣被傳進來、可以直接掛到內部的 DOM 節點上。forwardRef 沒有被移除，只是不再是唯一寫法（下一題會比較兩者）。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nimport { useRef } from 'react'\nfunction MyInput({ placeholder, ref }) {\n  return <input ref={ref} placeholder={placeholder} />;\n}\nfunction App() {\n  const someRef = useRef(null);\n  return <MyInput placeholder=\"hi\" ref={someRef} />;\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<input placeholder=\"hi\"/>" }
+        ]
+      }
+    },
+    {
+      "id": "react-11-q12",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "forwardRef 舊寫法 vs React 19 的 ref-as-prop",
+      "docs": "https://react.dev/blog/2024/12/05/react-19",
+      "story": "",
+      "prompt": "一個用舊寫法的 forwardRef，一個用 React 19 新寫法直接收 ref。外部用起來效果一樣嗎？",
+      "code": "// 舊寫法\nconst MyInputOld = forwardRef(function MyInputOld(props, ref) {\n  return <input ref={ref} placeholder={props.placeholder} />;\n});\n\n// React 19 新寫法\nfunction MyInputNew({ placeholder, ref }) {\n  return <input ref={ref} placeholder={placeholder} />;\n}",
+      "options": [
+        { "id": "a", "text": "效果一樣：兩者外部用起來都能把 ref 轉交給內部的 input 節點；forwardRef 是 React 19 之前的必要包裝，現在保留下來是為了相容舊程式碼，新專案直接把 ref 當一般 prop 接收即可，不用再包一層" },
+        { "id": "b", "text": "不一樣，只有新寫法能用" },
+        { "id": "c", "text": "不一樣，forwardRef 在 React 19 已經被移除" },
+        { "id": "d", "text": "兩者都會報錯，同一個 ref 不能給兩個元件共用" }
+      ],
+      "answer": "a",
+      "explanation": "forwardRef 沒有被移除、也還能正常運作，只是 React 19 之後它不再是「唯一」能接住 ref 的辦法。挑哪種寫法看情境：維護舊程式碼或相容較舊的 React 版本就留著 forwardRef；新寫的元件可以直接把 ref 寫進解構的 props 裡，少一層包裝，程式碼更直覺。要留意的是本題範例只驗證兩者在伺服器端渲染出的 HTML 結構相同——ref.current 真的指到 DOM 節點，需要在瀏覽器環境掛載後才觀察得到。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nimport { forwardRef, useRef } from 'react'\nconst MyInputOld = forwardRef(function MyInputOld(props, ref) {\n  return <input ref={ref} placeholder={props.placeholder} />;\n});\nfunction MyInputNew({ placeholder, ref }) {\n  return <input ref={ref} placeholder={placeholder} />;\n}\nfunction App() {\n  const r1 = useRef(null);\n  const r2 = useRef(null);\n  return (\n    <div>\n      <MyInputOld placeholder=\"舊寫法\" ref={r1} />\n      <MyInputNew placeholder=\"新寫法\" ref={r2} />\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<div><input placeholder=\"舊寫法\"/><input placeholder=\"新寫法\"/></div>" }
+        ]
+      }
     }
   ]
 }

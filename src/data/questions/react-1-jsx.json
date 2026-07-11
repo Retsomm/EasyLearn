@@ -141,6 +141,145 @@
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Item({ children }) {\n  return <li>{children}</li>;\n}\nfunction App() {\n  return (\n    <ul>\n      <Item>蘋果</Item>\n      <Item>香蕉</Item>\n    </ul>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<ul><li>蘋果</li><li>香蕉</li></ul>" }
         ]
       }
+    },
+    {
+      "id": "react-1-q7",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Fragment（<>...</>）不會多一層 DOM",
+      "docs": "https://react.dev/reference/react/Fragment",
+      "story": "",
+      "prompt": "想把兩段文字包在一起回傳，又不想多包一層 div 弄亂版面的 CSS。用 <>...</> 包起來，渲染出的 HTML 長什麼樣？",
+      "code": "function Bio() {\n  return (\n    <>\n      <h1>小美</h1>\n      <p>前端工程師</p>\n    </>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "<h1>小美</h1><p>前端工程師</p> —— Fragment 本身不會出現在 HTML 裡" },
+        { "id": "b", "text": "<div><h1>小美</h1><p>前端工程師</p></div>" },
+        { "id": "c", "text": "<><h1>小美</h1><p>前端工程師</p></>" },
+        { "id": "d", "text": "會報錯，兩個標籤中間要用逗號分開" }
+      ],
+      "answer": "a",
+      "explanation": "<>...</> 是 Fragment 的簡寫，它只在 JSX 世界裡幫你把多個元素「捆成一份」，滿足 return 只能有一個根節點的規則；渲染到瀏覽器時它自己完全不會留下任何標籤——不像 <div> 會多一層，可能打亂原本的 CSS 版面（flex、grid 的直接子元素選取器最怕這種多餘的殼）。需要幫每個項目加 key（例如列表）時，才要寫回完整的 <Fragment key={...}>。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Bio() {\n  return (\n    <>\n      <h1>小美</h1>\n      <p>前端工程師</p>\n    </>\n  );\n}\nconsole.log(renderToStaticMarkup(<Bio />));", "expected": "<h1>小美</h1><p>前端工程師</p>" }
+        ]
+      }
+    },
+    {
+      "id": "react-1-q8",
+      "type": "find-bug",
+      "difficulty": 1,
+      "topic": "沒有 children 的標籤要自我閉合",
+      "docs": "https://react.dev/learn/writing-markup-with-jsx",
+      "story": "",
+      "prompt": "AI 抄了一段 HTML 貼進 JSX，建置直接失敗，錯誤說 unexpected token。哪裡漏了？",
+      "code": "function Avatar() {\n  return <img src=\"/me.png\">;   // 建置失敗\n}",
+      "options": [
+        { "id": "a", "text": "<img> 沒有內容（no children），JSX 要求自己收尾，得寫成 <img src=\"/me.png\" />，不能像 HTML 一樣開了就不管" },
+        { "id": "b", "text": "src 的路徑不能用引號包起來" },
+        { "id": "c", "text": "img 標籤在 JSX 裡完全不能用" },
+        { "id": "d", "text": "圖片路徑要寫成絕對網址才行" }
+      ],
+      "answer": "a",
+      "explanation": "HTML 允許 <img>、<br>、<input> 這類「沒有內容」的標籤開了就不用收尾，但 JSX 比較嚴格：標籤中間沒有 children，就一定要自己閉合，寫成 <img ... />。這條規則對所有標籤都成立，不只 img——自訂元件沒有 children 時（例如 <Spinner />）也是同樣寫法。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Avatar() {\n  return <img src=\"/me.png\" />;\n}\nconsole.log(renderToStaticMarkup(<Avatar />));", "expected": "<link rel=\"preload\" as=\"image\" href=\"/me.png\"/><img src=\"/me.png\"/>" }
+        ]
+      }
+    },
+    {
+      "id": "react-1-q9",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "註解要包在大括號裡：{/* */}",
+      "docs": "https://react.dev/learn/javascript-in-jsx-with-curly-braces",
+      "story": "",
+      "prompt": "AI 想在 JSX 裡加個提醒，直接抄 JS 的 // 註解寫法。畫面會發生什麼事？",
+      "code": "function Note() {\n  return (\n    <div>\n      // 這是待辦事項\n      <p>買牛奶</p>\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "畫面上真的印出一行「// 這是待辦事項」的文字 —— JSX 裡標籤中間的文字不會被當成註解" },
+        { "id": "b", "text": "// 這是待辦事項 被自動忽略，只顯示「買牛奶」" },
+        { "id": "c", "text": "會報錯，JSX 裡完全不能寫註解" },
+        { "id": "d", "text": "// 這是待辦事項 會被轉成 HTML 的 <!-- 註解 -->" }
+      ],
+      "answer": "a",
+      "explanation": "JSX 標籤之間的文字通通會被當成要顯示的內容，// 開頭在這裡完全不是註解語法，就只是一串照樣被印出來的文字。JSX 裡想寫註解，得先開大括號的窗回到 JS 世界，再用 /* */：{/* 這是待辦事項 */}。單行 // 沒辦法用，因為大括號跟裡面的內容要在同一段表達式裡結束。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Note() {\n  return (\n    <div>\n      // 這是待辦事項\n      <p>買牛奶</p>\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<Note />));", "expected": "<div>// 這是待辦事項<p>買牛奶</p></div>" },
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Note() {\n  return (\n    <div>\n      {/* 這是待辦事項 */}\n      <p>買牛奶</p>\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<Note />));", "expected": "<div><p>買牛奶</p></div>" }
+        ]
+      }
+    },
+    {
+      "id": "react-1-q10",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "JSX 只能回傳單一根節點",
+      "docs": "https://react.dev/learn/writing-markup-with-jsx",
+      "story": "",
+      "prompt": "這個元件想同時回傳兩個並排的段落，建置卻失敗了。錯在哪？",
+      "code": "function Bio() {\n  return (\n    <h1>小美</h1>\n    <p>前端工程師</p>\n  );   // 建置失敗\n}",
+      "options": [
+        { "id": "a", "text": "return 只能有一個根節點；兩個並排的元素要包進一個 <div>，或用不會多一層 DOM 的 <>...</> 包起來" },
+        { "id": "b", "text": "h1 和 p 這兩種標籤不能一起出現" },
+        { "id": "c", "text": "兩個標籤中間少了逗號分隔" },
+        { "id": "d", "text": "小美 要用大括號包起來才合法" }
+      ],
+      "answer": "a",
+      "explanation": "JSX 的 return 骨子裡就是「一個函式呼叫」，函式只能 return 一個值，所以兩個並排的標籤必須先合併成一個節點——包一個 <div>，或用上一題的 Fragment <>...</> 避免多一層 DOM。這是初學者最常撞到的建置錯誤之一，錯誤訊息通常會寫 Adjacent JSX elements must be wrapped。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Bio() {\n  return (\n    <>\n      <h1>小美</h1>\n      <p>前端工程師</p>\n    </>\n  );\n}\nconsole.log(renderToStaticMarkup(<Bio />));", "expected": "<h1>小美</h1><p>前端工程師</p>" }
+        ]
+      }
+    },
+    {
+      "id": "react-1-q11",
+      "type": "same-or-not",
+      "difficulty": 1,
+      "topic": "class 要寫成 className",
+      "docs": "https://react.dev/learn/writing-markup-with-jsx",
+      "story": "",
+      "prompt": "AI 抄了一段純 HTML 貼進 JSX，樣式完全沒套用。這兩種寫法效果一樣嗎？",
+      "code": "// 版本一\n<div class=\"card\">內容</div>\n\n// 版本二\n<div className=\"card\">內容</div>",
+      "options": [
+        { "id": "a", "text": "不一樣：class 是 JS 的保留字，JSX 認得的是 className；用 class 不會報錯，但實際渲染出的屬性不一樣" },
+        { "id": "b", "text": "一樣，React 會自動把 class 換成 className" },
+        { "id": "c", "text": "不一樣：版本一會直接建置失敗" },
+        { "id": "d", "text": "一樣，兩者都不會被渲染出來" }
+      ],
+      "answer": "a",
+      "explanation": "class 在 JavaScript 裡是保留給 class 語法用的關鍵字，JSX 沿用 JS 的規則，所以 DOM 的 class 屬性在 JSX 裡改名叫 className，這樣才不會撞名。忘記改名，React 不會報錯、但也不會把它當成標準的 class 處理——渲染出來的 HTML 屬性名稱就是不一樣，樣式套用邏輯因此「壞掉但不出聲」，是很容易被忽略的一種 bug。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nconsole.log(renderToStaticMarkup(<div class=\"card\">內容</div>));\nconsole.log(renderToStaticMarkup(<div className=\"card\">內容</div>));", "expected": "<div class=\"card\">內容</div>\n<div class=\"card\">內容</div>" }
+        ]
+      }
+    },
+    {
+      "id": "react-1-q12",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "label 的 for 要寫成 htmlFor",
+      "docs": "https://react.dev/learn/writing-markup-with-jsx",
+      "story": "",
+      "prompt": "把空格填起來，讓 label 正確關聯到 id 是 email 的輸入框（HTML 原本寫 for，JSX 裡要換個名字）",
+      "code": "function EmailField() {\n  return (\n    <div>\n      <label ____=\"email\">電子郵件</label>\n      <input id=\"email\" />\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "htmlFor" },
+        { "id": "b", "text": "for" },
+        { "id": "c", "text": "labelFor" },
+        { "id": "d", "text": "target" }
+      ],
+      "answer": "a",
+      "explanation": "for 跟 class 一樣，在 JS 裡是保留字（for 迴圈用的那個 for），JSX 於是把 label 關聯輸入框的屬性改名成 htmlFor。這類「HTML 屬性到 JSX 要改名」的規則不只 class、for，還有像 tabindex→tabIndex 這種駝峰化，但 class 跟 for 是最常被 AI 抄漏的兩個地雷。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction EmailField() {\n  return (\n    <div>\n      <label htmlFor=\"email\">電子郵件</label>\n      <input id=\"email\" />\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<EmailField />));", "expected": "<div><label for=\"email\">電子郵件</label><input id=\"email\"/></div>" }
+        ]
+      }
     }
   ]
 }

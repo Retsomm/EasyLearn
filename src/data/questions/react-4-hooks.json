@@ -133,6 +133,141 @@
         "checks": [],
         "manual": "無限重繪保護只在瀏覽器端 React 觸發；答案依 react.dev（rendering 期間呼叫 setState 的錯誤行為）"
       }
+    },
+    {
+      "id": "react-4-q7",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "useState 初始值傳函式，重算只在首次渲染發生（惰性初始化）",
+      "docs": "https://react.dev/reference/react/useState",
+      "story": "",
+      "prompt": "createInitialTodos() 要跑一段迴圈整理資料，很耗時。這段程式每次重新渲染都會被拖慢一次，為什麼？",
+      "code": "function TodoList() {\n  const [todos, setTodos] = useState(createInitialTodos());   // B 行\n  // ...\n}",
+      "options": [
+        { "id": "a", "text": "B 行直接呼叫 createInitialTodos()：這是一般的函式呼叫，每次渲染都會執行一次，即使 useState 只有第一次渲染會採用它的結果；要改成 useState(createInitialTodos)，傳函式本身，讓 React 只在首次渲染呼叫它" },
+        { "id": "b", "text": "createInitialTodos 應該寫成 async function" },
+        { "id": "c", "text": "useState 不能吃函式呼叫的結果當初始值" },
+        { "id": "d", "text": "todos 要移到 useEffect 裡才會執行" }
+      ],
+      "answer": "a",
+      "explanation": "useState(initialValue) 裡的 initialValue 只有第一次渲染會被拿去用，但它終究是傳給函式呼叫的一個參數——JS 的規則是「呼叫函式前，所有參數都要先算出來」，所以 createInitialTodos() 這行程式碼本身，每次渲染都會乖乖執行一次，算出來的結果卻只有第一次會被留用，之後每次都是做白工再丟掉。改成 useState(createInitialTodos)（不加括號，傳函式本身），React 才會認得「這是初始化用的函式」，只在首次渲染呼叫它，之後的渲染直接跳過，這叫「惰性初始化」（lazy initialization）。",
+      "verify": {
+        "checks": [
+          { "code": "let calls = 0;\nfunction expensive() { calls++; return calls; }\n// 模擬三次渲染：直接呼叫的版本，每次渲染都執行\nfor (let render = 0; render < 3; render++) {\n  expensive();\n}\nconsole.log(calls);", "expected": "3" },
+          { "code": "let calls = 0;\nfunction expensive() { calls++; return calls; }\n// 模擬三次渲染：只傳函式本身，只在「首次渲染」才呼叫\nlet initialized = false;\nfor (let render = 0; render < 3; render++) {\n  if (!initialized) {\n    expensive();\n    initialized = true;\n  }\n}\nconsole.log(calls);", "expected": "1" }
+        ]
+      }
+    },
+    {
+      "id": "react-4-q8",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "自訂 hook 是共享邏輯，不是共享 state",
+      "docs": "https://react.dev/learn/reusing-logic-with-custom-hooks",
+      "story": "",
+      "prompt": "兩個元件各自呼叫同一個 useToggle()。點擊 SwitchA 讓它變成「開」，SwitchB 會跟著變成「開」嗎？",
+      "code": "function useToggle(initial = false) {\n  const [on, setOn] = useState(initial);\n  const toggle = () => setOn((o) => !o);\n  return [on, toggle];\n}\n\nfunction SwitchA() {\n  const [on, toggle] = useToggle();\n  return <button onClick={toggle}>{on ? \"開\" : \"關\"}</button>;\n}\n\nfunction SwitchB() {\n  const [on, toggle] = useToggle();\n  return <button onClick={toggle}>{on ? \"開\" : \"關\"}</button>;\n}",
+      "options": [
+        { "id": "a", "text": "不會：自訂 hook 只是把「一段邏輯」包起來重複使用，每個呼叫它的元件都會拿到自己獨立的 useState，SwitchA 和 SwitchB 是兩份互不相干的 on" },
+        { "id": "b", "text": "會，因為它們呼叫的是同一個 useToggle 函式，state 是共用的" },
+        { "id": "c", "text": "會，但只有第一次點擊會同步" },
+        { "id": "d", "text": "會報錯，同一個自訂 hook 不能被兩個元件使用" }
+      ],
+      "answer": "a",
+      "explanation": "自訂 hook 的本質是「把重複的邏輯抽出來」，不是「把 state 抽出來共用」。useToggle() 裡的 useState 依然是跟著呼叫它的那個元件實例走的（react-8 教過：state 是元件私有的記憶）——SwitchA 呼叫一次就在自己身上長出一份 on，SwitchB 呼叫一次又長出另一份，兩份完全獨立、互不相干。想要兩個元件真的同步同一份 state，答案永遠是 react-8 的解法：狀態上移到共同父層，用 props 往下傳，不是靠共用一個自訂 hook。",
+      "verify": {
+        "checks": [],
+        "manual": "需要各自點擊觀察是否連動；renderToStaticMarkup 只能做一次性渲染，也不會觸發 useState 更新；答案依 react.dev reusing-logic-with-custom-hooks（自訂 hook 共享的是邏輯而非 state 本身）"
+      }
+    },
+    {
+      "id": "react-4-q9",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "useEffect 依賴陣列漏寫變數：陳舊閉包（stale closure）",
+      "docs": "https://react.dev/learn/lifecycle-of-reactive-effects",
+      "story": "",
+      "prompt": "計時器想「每秒把 count 加上 step」，後來把 step 從 1 調成 5，count 卻還是每秒只加 1。哪裡出了問題？",
+      "code": "function Counter({ step }) {\n  const [count, setCount] = useState(0);\n\n  useEffect(() => {\n    const id = setInterval(() => {\n      setCount((c) => c + step);   // B 行\n    }, 1000);\n    return () => clearInterval(id);\n  }, []);   // C 行：注意依賴陣列\n\n  return <p>{count}</p>;\n}",
+      "options": [
+        { "id": "a", "text": "C 行的依賴陣列漏寫了 step：effect 只在掛載時執行一次，setInterval 裡的 callback 被鎖死在第一次渲染時的 step，之後 step 再怎麼變，callback 讀到的還是舊的那份（stale closure）；要把 step 加進依賴陣列 [step]" },
+        { "id": "b", "text": "setCount 不能用更新函式 c => c + step" },
+        { "id": "c", "text": "setInterval 只能執行一次，要換成 setTimeout" },
+        { "id": "d", "text": "count 的初始值要設成 step" }
+      ],
+      "answer": "a",
+      "explanation": "effect 裡的函式會把它建立當下能看到的變數「封起來」隨身帶走，這就是 closure。依賴陣列寫 []，effect 只在第一次渲染執行一次，裡面 setInterval 用到的 step 也就永遠是「第一次渲染時的 step」，就算外面的 step 之後真的變了，這個被封住的 callback 完全不知道，用的還是那份舊的、發霉的閉包，這種 bug 叫「stale closure」（陳舊閉包）。修法：把 effect 實際用到的每個外部變數都誠實列進依賴陣列，讓 effect 在 step 真的變動時重新執行、重新建立一個帶著新 step 的 callback。",
+      "verify": {
+        "checks": [],
+        "manual": "stale closure 需要 setInterval 跨越多秒的時間流逝與 props 變更觀察，renderToStaticMarkup 單次渲染看不到；答案依 react.dev lifecycle-of-reactive-effects 對 effect 依賴與陳舊閉包的說明"
+      }
+    },
+    {
+      "id": "react-4-q10",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "依賴陣列放物件字面量，每次渲染都是新參照，effect 一直重跑",
+      "docs": "https://react.dev/learn/removing-effect-dependencies",
+      "story": "",
+      "prompt": "options 的「內容」明明沒變，但 effect 卻在每次渲染後都重新連線一次。哪裡出了問題？",
+      "code": "function ChatRoom({ roomId }) {\n  const options = { roomId, serverUrl: \"https://chat.example.com\" };   // B 行：每次渲染都重新建立\n\n  useEffect(() => {\n    const connection = createConnection(options);\n    connection.connect();\n    return () => connection.disconnect();\n  }, [options]);   // C 行\n\n  return <p>房間：{roomId}</p>;\n}",
+      "options": [
+        { "id": "a", "text": "B 行每次渲染都用 {} 造一個新物件：即使欄位內容一模一樣，新物件跟舊物件用 === 比一定是 false，C 行的依賴陣列一看「options 變了」就重跑 effect；要嘛把依賴改成 [roomId]（options 裡真正用到的原始值），要嘛把 options 的建立搬進 effect 內部" },
+        { "id": "b", "text": "createConnection 不能放在 useEffect 裡呼叫" },
+        { "id": "c", "text": "C 行的依賴陣列要整個拿掉才會正常" },
+        { "id": "d", "text": "options 應該改用 useState 存起來" }
+      ],
+      "answer": "a",
+      "explanation": "依賴陣列比對「變了沒」，用的是參照比對，不是比對物件裡的內容。{ roomId, serverUrl: ... } 這個字面量寫在元件本體裡，每次渲染都會重新蓋一間新物件，就算 roomId 沒變，新物件跟上一輪的舊物件終究是「兩個不同的東西」，effect 認定依賴變了就重跑。修法兩條路都對：依賴陣列改寫成 effect 真正用到的原始值 [roomId]（原始值用內容比較，同樣的字串永遠相等），或者乾脆把 options 的建立搬進 useEffect 內部，讓它不再是外部依賴。這是「物件/陣列當依賴」最容易讓人抓狂的效能陷阱。",
+      "verify": {
+        "checks": [
+          { "code": "const roomId = \"general\";\nconst a = { roomId, serverUrl: \"https://chat.example.com\" };\nconst b = { roomId, serverUrl: \"https://chat.example.com\" };\nconsole.log(a === b, JSON.stringify(a) === JSON.stringify(b));", "expected": "false true" }
+        ]
+      }
+    },
+    {
+      "id": "react-4-q11",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "不相關的邏輯拆成兩個 useEffect，各自宣告各自的依賴",
+      "docs": "https://react.dev/learn/lifecycle-of-reactive-effects",
+      "story": "",
+      "prompt": "同一個 effect 裡塞了「設定文件標題」和「訂閱視窗大小」兩件不相關的事，只依 page 設了依賴。哪裡不妥？",
+      "code": "useEffect(() => {\n  document.title = `第 ${page} 頁`;\n\n  function handleResize() {\n    setWidth(window.innerWidth);\n  }\n  window.addEventListener(\"resize\", handleResize);\n  return () => window.removeEventListener(\"resize\", handleResize);\n}, [page]);   // B 行：依賴只寫了 page",
+      "options": [
+        { "id": "a", "text": "B 行把「設標題」和「訂閱視窗大小」兩件時機完全不同的事塞進同一個 effect：設標題該跟著 page 變動重跑，訂閱／取消訂閱只需要掛載、卸載各跑一次；混在一起會讓兩段邏輯的『該在什麼時機重來一次』糾纏不清，該拆成兩個各自獨立的 useEffect，各自宣告各自真正需要的依賴" },
+        { "id": "b", "text": "window.addEventListener 不能寫在 useEffect 裡" },
+        { "id": "c", "text": "document.title 一定要寫在 useEffect 外面" },
+        { "id": "d", "text": "resize 事件不需要寫 cleanup" }
+      ],
+      "answer": "a",
+      "explanation": "react.dev 的建議很明確：一個 effect 該對應「一個獨立的同步流程」。設定標題跟著 page 變、訂閱 resize 跟著元件的掛載／卸載走——這是兩件時機完全不同的事，擠在同一個 effect 裡，依賴陣列只能挑一邊照顧，另一邊不是漏跑就是多跑（這裡是每次 page 變動都多重新訂閱一次 resize，白白多做事）。拆成兩個 useEffect，一個依賴 [page] 管標題，一個依賴 [] 管訂閱，各自的依賴才寫得乾淨，cleanup 也各自對應各自的副作用，不會混在一起難以除錯。",
+      "verify": {
+        "checks": [],
+        "manual": "需要視窗 resize 與多次 page 變更的瀏覽器互動才能觀察差異；renderToStaticMarkup 不執行 effect；答案依 react.dev lifecycle-of-reactive-effects（每個 Effect 對應一個獨立的同步流程）"
+      }
+    },
+    {
+      "id": "react-4-q12",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "依賴變動時，cleanup 會先跑一次，不是只有卸載才跑",
+      "docs": "https://react.dev/learn/synchronizing-with-effects",
+      "story": "",
+      "prompt": "roomId 從 \"general\" 換成 \"random\"，effect 依賴寫了 [roomId]。這中間 disconnect 和 connect 誰先誰後？",
+      "code": "useEffect(() => {\n  const connection = createConnection(roomId);\n  connection.connect();\n  console.log(`已連線：${roomId}`);\n  return () => {\n    connection.disconnect();\n    console.log(`已斷線：${roomId}`);\n  };\n}, [roomId]);\n\n// 掛載時 roomId 是 \"general\"\n// 之後父層把 roomId 改成 \"random\"",
+      "options": [
+        { "id": "a", "text": "「已斷線：general」先印，「已連線：random」後印——依賴變動時，React 會先用上一輪的閉包執行 cleanup，再執行這一輪新的 effect" },
+        { "id": "b", "text": "「已連線：random」先印，「已斷線：general」後印" },
+        { "id": "c", "text": "只印「已連線：random」，舊連線不會被斷開" },
+        { "id": "d", "text": "兩個訊息同時印出，順序不固定" }
+      ],
+      "answer": "a",
+      "explanation": "cleanup 函式不是只有元件卸載才會跑——依賴陣列裡的值一旦改變，React 會先用「上一輪的閉包」執行 cleanup（斷開舊房間 general），確保上一輪開的東西收乾淨，才用新的 roomId 重新執行 effect（連上新房間 random）。這個「先清理、再重來」的順序，保證任何時刻都不會有兩個房間同時連線。q5 教的是卸載時的 cleanup，這題告訴你：只要依賴變動觸發 effect 重跑，同一套 cleanup 機制一樣會先發動。",
+      "verify": {
+        "checks": [],
+        "manual": "需要 roomId 變動的多輪渲染與真正的連線／斷線副作用觀察；renderToStaticMarkup 不執行 effect 也沒有 re-render；答案依 react.dev synchronizing-with-effects 對「cleanup 於重新同步前先執行」的說明"
+      }
     }
   ]
 }

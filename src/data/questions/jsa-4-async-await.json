@@ -141,6 +141,144 @@
           { "code": "async function load() {\n  try {\n    return await Promise.reject(new Error(\"伺服器忙線\"));\n  } catch (err) {\n    return \"改用快取資料\";\n  }\n}\nload().then((r) => console.log(r));", "expected": "改用快取資料" }
         ]
       }
+    },
+    {
+      "id": "jsa-4-q7",
+      "type": "find-bug",
+      "difficulty": 1,
+      "topic": "await 只能用在 async 函式裡",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/await",
+      "story": "",
+      "prompt": "AI 幫忙加了 await，卻忘了這個函式不是 async。執行會怎樣？",
+      "code": "function notAsync() {\n  const x = await Promise.resolve(1);   // 💥\n  console.log(x);\n}\nnotAsync();",
+      "options": [
+        { "id": "a", "text": "根本跑不起來：await 只能出現在 async 函式（或模組最上層），這裡會直接報 SyntaxError" },
+        { "id": "b", "text": "會印出 Promise { 1 }，因為沒等到值" },
+        { "id": "c", "text": "會印出 1，只是比較慢" },
+        { "id": "d", "text": "會印出 undefined" }
+      ],
+      "answer": "a",
+      "explanation": "await 是「只有 async 函式才有的關鍵字」，拿掉 async 的殼子它就不能用——這不是執行期才發現的錯誤，而是連程式碼都解析不過去的 SyntaxError，錯誤訊息會直接說 await is only valid in async functions。修法很簡單：把 function notAsync() 改成 async function notAsync()。這跟 q3「忘了寫 await」是相反的坑：一個是漏寫，一個是寫了但外殼沒對。",
+      "verify": {
+        "checks": [
+          { "code": "function notAsync() {\n  const x = await Promise.resolve(1);\n  console.log(x);\n}\nnotAsync();", "expectError": "await is only valid in async functions" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-4-q8",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "forEach 裡的 async callback 不會等你",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach",
+      "story": "",
+      "prompt": "AI 常常把 for...of 寫成 forEach，結果順序整個亂掉。這段印出什麼？",
+      "code": "const wait = (ms) => new Promise((r) => setTimeout(r, ms));\nasync function run() {\n  const items = [\"A\", \"B\", \"C\"];\n  items.forEach(async (item) => {\n    await wait(10);\n    console.log(item);\n  });\n  console.log(\"跑完 forEach 迴圈\");\n}\nrun();",
+      "options": [
+        { "id": "a", "text": "跑完 forEach 迴圈 → A → B → C" },
+        { "id": "b", "text": "A → B → C → 跑完 forEach 迴圈" },
+        { "id": "c", "text": "跑完 forEach 迴圈 → C → B → A" },
+        { "id": "d", "text": "會報錯，forEach 裡不能放 async 函式" }
+      ],
+      "answer": "a",
+      "explanation": "forEach 完全不理會你傳進去的 callback 是不是 async——它把三個 callback 一口氣「發射」出去就不等了，立刻往下跑完自己的工作（印出「跑完 forEach 迴圈」），跟 q4 學到的「先全部啟動再等」的道理一樣，只是這裡連 await 的機會都沒給你，因為 forEach 根本不回傳 Promise 讓你等。真的要「逐一等待」，得用 for...of 搭配 await（像 q6 那樣），forEach 天生不是為 async 設計的，這是實務上最容易誤踩的坑之一。",
+      "verify": {
+        "checks": [
+          { "code": "const wait = (ms) => new Promise((r) => setTimeout(r, ms));\nasync function run() {\n  const items = [\"A\", \"B\", \"C\"];\n  items.forEach(async (item) => {\n    await wait(10);\n    console.log(item);\n  });\n  console.log(\"跑完 forEach 迴圈\");\n}\nrun();", "expected": "跑完 forEach 迴圈\nA\nB\nC" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-4-q9",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "async 函式內部 throw 會變成 rejected promise",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/async_function",
+      "story": "",
+      "prompt": "async 函式裡直接用 throw 丟錯誤，而不是 return Promise.reject。這段印出什麼？",
+      "code": "async function risky() {\n  throw new Error(\"寵物離家出走\");\n}\nrisky()\n  .then(() => console.log(\"不會執行\"))\n  .catch((err) => console.log(\"抓到：\", err.message));",
+      "options": [
+        { "id": "a", "text": "抓到： 寵物離家出走" },
+        { "id": "b", "text": "程式直接崩潰，因為 throw 沒有被 try/catch 包住" },
+        { "id": "c", "text": "不會執行" },
+        { "id": "d", "text": "什麼都不印" }
+      ],
+      "answer": "a",
+      "explanation": "在一般同步函式裡 throw 會讓錯誤往外炸；但在 async 函式裡完全不同——整個函式的回傳值本來就會被自動包成 Promise（q2 學過的規則），throw 出來的錯誤也會被這個包裝過程接住，變成一個 rejected 的 Promise，而不是讓程式當場崩潰。所以呼叫端只要掛上 .catch（或用 try/catch 包住 await risky()），就能像接住 Promise.reject 一樣接住它。",
+      "verify": {
+        "checks": [
+          { "code": "async function risky() {\n  throw new Error(\"寵物離家出走\");\n}\nrisky()\n  .then(() => console.log(\"不會執行\"))\n  .catch((err) => console.log(\"抓到：\", err.message));", "expected": "抓到： 寵物離家出走" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-4-q10",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "await 一個不是 Promise 的值也可以",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/await",
+      "story": "",
+      "prompt": "await 後面接的不是 Promise，而是普通的數字和字串。這段印出什麼？",
+      "code": "async function main() {\n  const x = await 42;\n  console.log(x);\n  const y = await \"普通字串\";\n  console.log(y);\n}\nmain();",
+      "options": [
+        { "id": "a", "text": "42 然後 普通字串" },
+        { "id": "b", "text": "會報錯，await 後面一定要接 Promise" },
+        { "id": "c", "text": "Promise { 42 } 然後 Promise { '普通字串' }" },
+        { "id": "d", "text": "undefined 然後 undefined" }
+      ],
+      "answer": "a",
+      "explanation": "await 沒有這麼挑剔：如果後面接的東西不是 Promise，它就直接把那個值當成「已經完成的結果」還給你，不會報錯也不會等待。這代表你不用先檢查一個值是不是 Promise 才敢 await 它——寫成 await maybeAsyncValue() 永遠是安全的，不管那個函式回傳的是不是 Promise，await 都能處理。",
+      "verify": {
+        "checks": [
+          { "code": "async function main() {\n  const x = await 42;\n  console.log(x);\n  const y = await \"普通字串\";\n  console.log(y);\n}\nmain();", "expected": "42\n普通字串" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-4-q11",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "Promise.allSettled 不管成功失敗都給結果",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled",
+      "story": "",
+      "prompt": "其中一個任務會失敗，但你不想讓 Promise.all 整組炸掉，想知道每個任務各自的成敗。把空格填起來，印出 fulfilled, rejected",
+      "code": "const ok = async () => \"成功\";\nconst bad = async () => { throw new Error(\"失敗了\"); };\n\nasync function main() {\n  const results = await ____([ok(), bad()]);\n  console.log(results.map((r) => r.status).join(\", \"));\n}\nmain();",
+      "options": [
+        { "id": "a", "text": "Promise.allSettled" },
+        { "id": "b", "text": "Promise.all" },
+        { "id": "c", "text": "Promise.race" },
+        { "id": "d", "text": "Promise.any" }
+      ],
+      "answer": "a",
+      "explanation": "Promise.all 是「一個失敗，全部陣亡」——只要有一個 reject，整個 await 就會拋出錯誤，你完全看不到其他任務的結果。Promise.allSettled 不會這樣：不管每個 Promise 成功還是失敗，都會乖乖等到全部「有結果」（settled）才 resolve，回傳的陣列裡每一項都有 status 是 fulfilled 或 rejected，讓你能個別檢查、個別處理，很適合「批次任務，允許部分失敗」的情境。",
+      "verify": {
+        "checks": [
+          { "code": "const ok = async () => \"成功\";\nconst bad = async () => { throw new Error(\"失敗了\"); };\n\nasync function main() {\n  const results = await Promise.allSettled([ok(), bad()]);\n  console.log(results.map((r) => r.status).join(\", \"));\n}\nmain();", "expected": "fulfilled, rejected" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-4-q12",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Promise.race 誰先完成就算誰的",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/race",
+      "story": "",
+      "prompt": "同時發出兩個請求，只想要最快回來的那個結果。這段印出什麼？",
+      "code": "const wait = (ms, tag) => new Promise((r) => setTimeout(() => r(tag), ms));\nasync function main() {\n  const winner = await Promise.race([wait(50, \"慢\"), wait(10, \"快\")]);\n  console.log(winner);\n}\nmain();",
+      "options": [
+        { "id": "a", "text": "快" },
+        { "id": "b", "text": "慢" },
+        { "id": "c", "text": "快 然後 慢" },
+        { "id": "d", "text": "undefined，因為兩個同時開始無法判斷誰先" }
+      ],
+      "answer": "a",
+      "explanation": "Promise.race 顧名思義是賽跑：丟進去的 Promise 同時起跑，誰第一個決議（不管成功或失敗）就用誰的結果，其他還沒跑完的就被晾在一邊、不再理會。這裡「快」只花 10 毫秒，比「慢」的 50 毫秒早到終點，所以 winner 拿到的是「快」。常見用途是幫請求加逾時：Promise.race([fetchData(), timeout(3000)])，看誰先到就用誰的結果。",
+      "verify": {
+        "checks": [
+          { "code": "const wait = (ms, tag) => new Promise((r) => setTimeout(() => r(tag), ms));\nasync function main() {\n  const winner = await Promise.race([wait(50, \"慢\"), wait(10, \"快\")]);\n  console.log(winner);\n}\nmain();", "expected": "快" }
+        ]
+      }
     }
   ]
 }

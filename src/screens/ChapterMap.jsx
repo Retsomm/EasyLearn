@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { chapters } from '../data/chapters'
-import { QUIZ_SIZE } from '../utils/quiz'
 import Icon from '../components/Icons'
 
 function ChapterList({ progress, onOpenChapter, onBack }) {
@@ -84,7 +83,7 @@ function LevelList({ chapter, progress, onStartLevel, onBack }) {
                 ? `最佳 ${record.best}/${record.total}`
                 : locked
                   ? '完成上一關解鎖'
-                  : `一次 ${Math.min(QUIZ_SIZE, level.questions.length)} 題・題池 ${level.questions.length}`}
+                  : `共 ${level.questions.length} 題`}
             </span>
           </button>
         )

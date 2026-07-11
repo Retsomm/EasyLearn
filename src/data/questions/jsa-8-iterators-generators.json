@@ -141,6 +141,144 @@
           { "code": "function* lazy() {\n  console.log(\"算 1\");\n  yield 1;\n  console.log(\"算 2\");\n  yield 2;\n}\nconst g = lazy();\nconsole.log(\"開始\");\ng.next();", "expected": "開始\n算 1" }
         ]
       }
+    },
+    {
+      "id": "jsa-8-q7",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "next() 回傳 { value, done } 物件",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Generator/next",
+      "story": "",
+      "prompt": "前面幾題我們都只看 .value，這次把 next() 的回傳值整個印出來，長什麼樣子？",
+      "code": "function* count() {\n  yield 1;\n  yield 2;\n}\nconst g = count();\nconsole.log(g.next());\nconsole.log(g.next());\nconsole.log(g.next());",
+      "options": [
+        { "id": "a", "text": "{ value: 1, done: false } / { value: 2, done: false } / { value: undefined, done: true }" },
+        { "id": "b", "text": "1 / 2 / undefined" },
+        { "id": "c", "text": "{ done: false, value: 1 } 但第三次會報錯" },
+        { "id": "d", "text": "[1, 2, undefined]" }
+      ],
+      "answer": "a",
+      "explanation": "next() 其實不是只回傳一個值，而是回傳一個 { value, done } 物件：value 是這次交出來的東西，done 告訴你「後面還有沒有下一個」。前兩次都還有 yield 在等，done 是 false；第三次已經沒有 yield 可以執行了，value 變成 undefined、done 才變 true。多次呼叫已經 done 的 generator 不會報錯，只會一直拿到同樣的 { value: undefined, done: true }。",
+      "verify": {
+        "checks": [
+          { "code": "function* count() {\n  yield 1;\n  yield 2;\n}\nconst g = count();\nconsole.log(g.next());\nconsole.log(g.next());\nconsole.log(g.next());", "expected": "{ value: 1, done: false }\n{ value: 2, done: false }\n{ value: undefined, done: true }" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-8-q8",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "generator 傳值進去（next 的參數）",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Generator/next",
+      "story": "",
+      "prompt": "next() 也可以帶參數，把值「送回去給」正在暫停的 yield。這段印出什麼？",
+      "code": "function* echo() {\n  const x = yield \"準備好了嗎？\";\n  console.log(\"收到：\", x);\n}\nconst g = echo();\nconsole.log(g.next().value);\ng.next(\"好了\");",
+      "options": [
+        { "id": "a", "text": "準備好了嗎？ 然後 收到： 好了" },
+        { "id": "b", "text": "準備好了嗎？ 然後 收到： undefined" },
+        { "id": "c", "text": "收到： 好了 然後 準備好了嗎？" },
+        { "id": "d", "text": "會報錯，next 不能傳參數" }
+      ],
+      "answer": "a",
+      "explanation": "yield 不只是「吐出」值，它本身也是一個表達式，可以「收」下一次 next() 傳進來的參數當作自己的回傳值，賦值給 x。第一次呼叫 g.next() 讓 generator 跑到第一個 yield 就停住並交出 \"準備好了嗎？\"，這時候還沒有人回應，所以那次呼叫傳的參數沒有意義；第二次 g.next(\"好了\") 才真正把 \"好了\" 交還給那個暫停中的 yield 表達式。這是 generator 拿來做「雙向溝通」的關鍵機制，比單純的迭代器多了一層互動能力。",
+      "verify": {
+        "checks": [
+          { "code": "function* echo() {\n  const x = yield \"準備好了嗎？\";\n  console.log(\"收到：\", x);\n}\nconst g = echo();\nconsole.log(g.next().value);\ng.next(\"好了\");", "expected": "準備好了嗎？\n收到： 好了" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-8-q9",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "Symbol.iterator 自訂可迭代物件",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Iteration_protocols",
+      "story": "",
+      "prompt": "不用 generator，手刻一個可以被 for...of／展開語法吃下去的物件。把空格填起來",
+      "code": "const range = {\n  from: 1,\n  to: 3,\n  [____]() {\n    let current = this.from;\n    const last = this.to;\n    return {\n      next() {\n        return current <= last\n          ? { value: current++, done: false }\n          : { value: undefined, done: true };\n      },\n    };\n  },\n};\nconsole.log([...range]);",
+      "options": [
+        { "id": "a", "text": "Symbol.iterator" },
+        { "id": "b", "text": "\"iterator\"" },
+        { "id": "c", "text": "Symbol.for(\"next\")" },
+        { "id": "d", "text": "\"Symbol.iterator\"" }
+      ],
+      "answer": "a",
+      "explanation": "一個物件只要擁有 [Symbol.iterator]() 這個方法、而且這個方法回傳一個帶 next() 的迭代器，它就正式變成「可迭代物」——可以被 for...of、展開語法吃下去。這是 JS 底層真正判斷「這東西能不能被走訪」的依據，陣列、字串、Set、Map、generator 全都是靠實作這個介面才通用的。generator 好用的地方就是它自動幫你把這整套協議寫好了；手刻的話就得像這題一樣自己管理 current 遊標、自己組出 { value, done }。",
+      "verify": {
+        "checks": [
+          { "code": "const range = {\n  from: 1,\n  to: 3,\n  [Symbol.iterator]() {\n    let current = this.from;\n    const last = this.to;\n    return {\n      next() {\n        return current <= last\n          ? { value: current++, done: false }\n          : { value: undefined, done: true };\n      },\n    };\n  },\n};\nconsole.log([...range]);", "expected": "[ 1, 2, 3 ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-8-q10",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "無限 generator 搭配 break",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Iterators_and_generators",
+      "story": "",
+      "prompt": "naturals() 裡面是 while (true)，理論上會一直 yield 下去。這段程式印出什麼？",
+      "code": "function* naturals() {\n  let n = 1;\n  while (true) {\n    yield n++;\n  }\n}\nconst result = [];\nfor (const n of naturals()) {\n  if (n > 3) break;\n  result.push(n);\n}\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3 ]" },
+        { "id": "b", "text": "無窮迴圈，程式會卡死" },
+        { "id": "c", "text": "[ 1, 2, 3, 4 ]" },
+        { "id": "d", "text": "會報錯，generator 不能是無限的" }
+      ],
+      "answer": "a",
+      "explanation": "while (true) 讓這個 generator 理論上可以永遠 yield 下去，但因為 generator 是「懶惰執行」——for...of 每跑一輪才跟它要一個值，要多少算多少——只要迴圈裡有 break，就會在被要求交出第 4 個值「之前」提早喊停，剩下的 while 迴圈永遠不會被執行到。這正是無限 generator 的典型用法：拿來表示一個沒有終點的序列（像自動遞增的 ID），實際要用多少完全由外面的迴圈決定，不會真的卡死。",
+      "verify": {
+        "checks": [
+          { "code": "function* naturals() {\n  let n = 1;\n  while (true) {\n    yield n++;\n  }\n}\nconst result = [];\nfor (const n of naturals()) {\n  if (n > 3) break;\n  result.push(n);\n}\nconsole.log(result);", "expected": "[ 1, 2, 3 ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-8-q11",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "yield* 委派給另一個 generator",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/yield*",
+      "story": "",
+      "prompt": "outer 裡面用 yield* 呼叫了 inner()。這段印出什麼？",
+      "code": "function* inner() {\n  yield \"a\";\n  yield \"b\";\n}\nfunction* outer() {\n  yield 1;\n  yield* inner();\n  yield 2;\n}\nconsole.log([...outer()]);",
+      "options": [
+        { "id": "a", "text": "[ 1, 'a', 'b', 2 ]" },
+        { "id": "b", "text": "[ 1, [Object], 2 ]" },
+        { "id": "c", "text": "[ 1, 2 ]" },
+        { "id": "d", "text": "會報錯，generator 裡不能呼叫另一個 generator" }
+      ],
+      "answer": "a",
+      "explanation": "yield* 是「委派」：把控制權整個交給另一個可迭代物（這裡是 inner() 產生器），把它吐出來的每一個值原封不動地一個接一個 yield 出去，而不是把 inner() 整個物件當成單一一個值 yield 出去（那才是選項 b 會發生的事，如果漏寫了那顆星號、只寫成普通的 yield inner()）。yield* 常用來把幾個小的 generator 拼裝成一個大的 generator，概念上很像函式呼叫函式，只是換成「產生器呼叫產生器」。",
+      "verify": {
+        "checks": [
+          { "code": "function* inner() {\n  yield \"a\";\n  yield \"b\";\n}\nfunction* outer() {\n  yield 1;\n  yield* inner();\n  yield 2;\n}\nconsole.log([...outer()]);", "expected": "[ 1, 'a', 'b', 2 ]" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-8-q12",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "迭代耗盡後再呼叫 next()",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Generator/next",
+      "story": "",
+      "prompt": "同一個 generator 物件已經被展開語法吃到底了。這時候再手動呼叫一次 next()，跟拿一個全新的 generator 呼叫第一次，兩者一樣嗎？",
+      "code": "function* g() {\n  yield 1;\n}\nconst it = g();\nconsole.log([...it]);        // 版本一：先展開耗盡\nconsole.log(it.next());\n\nconst it2 = g();\nconsole.log(it2.next());     // 版本二：全新的 generator 呼叫第一次",
+      "options": [
+        { "id": "a", "text": "不一樣：耗盡後的 next() 回傳 { value: undefined, done: true }，跟全新的 { value: 1, done: false } 完全不同" },
+        { "id": "b", "text": "一樣，都回傳 { value: 1, done: false }" },
+        { "id": "c", "text": "耗盡後再呼叫 next() 會報錯" },
+        { "id": "d", "text": "一樣，兩個都是 undefined" }
+      ],
+      "answer": "a",
+      "explanation": "generator 是「用過即丟」的一次性迭代器：一旦被展開語法（或任何方式）真正走到底，它就會永遠停在 done: true 的狀態，之後不管再呼叫幾次 next() 都只會拿到 { value: undefined, done: true }，不會自動重頭來過。想要再跑一輪，必須重新呼叫產生器函式 g() 拿一個全新的迭代器——這也是為什麼同一個 generator 物件不能被兩個 for...of 迴圈各自從頭吃一遍：先跑的那個會把它吃光，第二個只會拿到空的。",
+      "verify": {
+        "checks": [
+          { "code": "function* g() {\n  yield 1;\n}\nconst it = g();\nconsole.log([...it]);\nconsole.log(it.next());\nconst it2 = g();\nconsole.log(it2.next());", "expected": "[ 1 ]\n{ value: undefined, done: true }\n{ value: 1, done: false }" }
+        ]
+      }
     }
   ]
 }

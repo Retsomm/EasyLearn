@@ -141,6 +141,148 @@
           { "code": "const stock = { 蘋果: 3, 香蕉: 0 };\nfor (const [name, qty] of Object.entries(stock)) {\n  if (qty === 0) continue;\n  console.log(`${name} x${qty}`);\n}", "expected": "蘋果 x3" }
         ]
       }
+    },
+    {
+      "id": "jsb-6-q7",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "do...while：先做再檢查",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/do...while",
+      "story": "",
+      "prompt": "n 一開始就不小於 5，迴圈還會跑嗎？這段程式印出什麼？",
+      "code": "let n = 10;\nlet count = 0;\ndo {\n  count++;\n} while (n < 5);\nconsole.log(count);",
+      "options": [
+        { "id": "a", "text": "1" },
+        { "id": "b", "text": "0" },
+        { "id": "c", "text": "無窮迴圈，不會印出東西" },
+        { "id": "d", "text": "會報錯" }
+      ],
+      "answer": "a",
+      "explanation": "do...while 跟 while 的差別只有一件事：do 版本「先做再檢查」，第一圈一定會執行，檢查條件是之後每一圈的事。這裡 n < 5 從頭到尾都是 false，但 body 已經跑過一次了，所以 count 是 1。想確保「至少執行一次」（例如至少問使用者一次密碼）就是 do...while 的主場。",
+      "verify": {
+        "checks": [
+          { "code": "let n = 10;\nlet count = 0;\ndo {\n  count++;\n} while (n < 5);\nconsole.log(count);", "expected": "1" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-6-q8",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "for 迴圈裡用 var 造成的閉包陷阱",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/var",
+      "story": "",
+      "prompt": "想收集三個函式，各自印出 0、1、2，結果三個都印出 3。哪裡錯了？",
+      "code": "const fns = [];\nfor (var i = 0; i < 3; i++) {    // A 行\n  fns.push(() => console.log(i));\n}\nfns[0](); fns[1](); fns[2]();",
+      "options": [
+        { "id": "a", "text": "A 行的 var 該改成 let：var 沒有區塊作用域，三個函式共用同一個 i，迴圈跑完 i 已經是 3" },
+        { "id": "b", "text": "fns.push 裡要多傳一個參數" },
+        { "id": "c", "text": "fns[0]()、fns[1]()、fns[2]() 呼叫順序錯了" },
+        { "id": "d", "text": "console.log(i) 應該寫成 console.log(i())" }
+      ],
+      "answer": "a",
+      "explanation": "var 是整個函式共用一份，不會因為進了迴圈的 { } 就分身——三個箭頭函式的 closure 抓的都是同一個 i，等迴圈跑完，i 已經變成 3，三個函式印出的自然都是 3。改成 let 之後，每一圈的 i 都是全新、獨立的一份，closure 各抓各的，才會印出 0、1、2。這是「closure 抓的是變數不是值」（上一章教過）遇上 var 沒有區塊作用域的組合技，AI 產的迴圈程式碼常常因為用了 var 而中招。",
+      "verify": {
+        "checks": [
+          { "code": "const fns = [];\nfor (var i = 0; i < 3; i++) {\n  fns.push(() => console.log(i));\n}\nfns[0](); fns[1](); fns[2]();", "expected": "3\n3\n3" },
+          { "code": "const fns = [];\nfor (let i = 0; i < 3; i++) {\n  fns.push(() => console.log(i));\n}\nfns[0](); fns[1](); fns[2]();", "expected": "0\n1\n2" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-6-q9",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "巢狀迴圈",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/for",
+      "story": "",
+      "prompt": "迴圈裡面還有一個迴圈。這段程式印出什麼？",
+      "code": "for (let i = 1; i <= 2; i++) {\n  for (let j = 1; j <= 2; j++) {\n    console.log(`${i}-${j}`);\n  }\n}",
+      "options": [
+        { "id": "a", "text": "1-1、1-2、2-1、2-2" },
+        { "id": "b", "text": "1-1、2-2" },
+        { "id": "c", "text": "1-1、1-2" },
+        { "id": "d", "text": "1-2、2-1" }
+      ],
+      "answer": "a",
+      "explanation": "外層 i 每走一步，內層 j 就要完整跑完一輪：i=1 時 j 從 1 跑到 2（1-1、1-2），i 才變成 2，j 再重新從 1 跑到 2（2-1、2-2）。巢狀迴圈常見於處理表格、座標、九九乘法表——外層決定「第幾行」、內層決定「這一行的每一格」。",
+      "verify": {
+        "checks": [
+          { "code": "for (let i = 1; i <= 2; i++) {\n  for (let j = 1; j <= 2; j++) {\n    console.log(`${i}-${j}`);\n  }\n}", "expected": "1-1\n1-2\n2-1\n2-2" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-6-q10",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "for 迴圈裡用 let 宣告的變數，出了迴圈就消失",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/for",
+      "story": "",
+      "prompt": "迴圈跑完後想看看最後的 i 是多少，結果直接報錯。哪裡出了問題？",
+      "code": "for (let i = 0; i < 3; i++) {\n  // ...\n}\nconsole.log(i);   // B 行，想看最後的 i 是多少",
+      "options": [
+        { "id": "a", "text": "B 行：let i 只活在 for 的 { } 裡（區塊作用域），出了迴圈就不存在了；要看最終值得在迴圈外先宣告一個變數自己記" },
+        { "id": "b", "text": "for 迴圈少寫了 return i" },
+        { "id": "c", "text": "console.log 不能印變數 i" },
+        { "id": "d", "text": "i < 3 應該寫成 i <= 3" }
+      ],
+      "answer": "a",
+      "explanation": "let（包括 for 括號裡那個）是區塊作用域，for (let i ...) 的 i 只活在這個迴圈的大括號範圍內，出了迴圈就被回收，外面完全看不到——這跟 jsb-1 教過的「if 裡的 let 出了大括號就消失」是同一條規則。如果真的需要迴圈跑完後的值，得在迴圈外先宣告一個變數（例如 let lastI），迴圈裡面同步更新它。用 var 則不會有這個限制，因為 var 沒有區塊作用域，但這也是 var 常常惹麻煩的原因（上一題剛示範過）。",
+      "verify": {
+        "checks": [
+          { "code": "for (let i = 0; i < 3; i++) {\n}\nconsole.log(i);", "expectError": "i is not defined" },
+          { "code": "for (var i = 0; i < 3; i++) {}\nconsole.log(i);", "expected": "3" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-6-q11",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "Array.from({ length }) 造出固定長度陣列",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/from",
+      "story": "",
+      "prompt": "沒有現成陣列，只想要「5 個元素、依序是 0,2,4,6,8」。把空格填起來",
+      "code": "const arr = ____;\nconsole.log(arr.join(\",\"));",
+      "options": [
+        { "id": "a", "text": "Array.from({ length: 5 }, (_, i) => i * 2)" },
+        { "id": "b", "text": "Array(5).map((_, i) => i * 2)" },
+        { "id": "c", "text": "Array.from(5, (_, i) => i * 2)" },
+        { "id": "d", "text": "Array.from({ length: 5 }, i => i * 2)" }
+      ],
+      "answer": "a",
+      "explanation": "Array.from({ length: 5 }, callback) 是「憑空造出固定長度陣列」的標準寫法：第二個參數的 callback 收到 (元素值, 索引)，用 (_, i) 拿到索引來運算。選項 b 的 Array(5) 只是建立 5 個「空洞」（empty slot），.map 會直接跳過空洞不執行，結果還是空的；選項 c 傳純數字 5 給 Array.from 的第一個參數，它不是陣列也不是有 length 的物件，會被當空的來源，結果是 []；選項 d 忘了 callback 的第一個參數是元素值（在這裡永遠是 undefined）而不是索引，i * 2 全部變成 NaN。",
+      "verify": {
+        "checks": [
+          { "code": "const arr = Array.from({ length: 5 }, (_, i) => i * 2);\nconsole.log(arr.join(\",\"));", "expected": "0,2,4,6,8" },
+          { "code": "const arr = Array(5).map((_, i) => i * 2);\nconsole.log(arr.join(\",\"));", "expected": ",,,," }
+        ]
+      }
+    },
+    {
+      "id": "jsb-6-q12",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "迴圈裡用 return 提早結束整個函式 vs break 只跳出迴圈",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/return",
+      "story": "",
+      "prompt": "版本一用 return、版本二用 break，都是想找到第一個偶數。這兩段印出來一樣嗎？",
+      "code": "// 版本一\nfunction findEven(nums) {\n  for (const n of nums) {\n    if (n % 2 === 0) return n;\n  }\n  console.log(\"迴圈跑完了\");\n  return null;\n}\nconsole.log(findEven([1, 3, 4, 5]));\n\n// 版本二\nfunction findEven2(nums) {\n  let found = null;\n  for (const n of nums) {\n    if (n % 2 === 0) { found = n; break; }\n  }\n  console.log(\"迴圈跑完了\");\n  return found;\n}\nconsole.log(findEven2([1, 3, 4, 5]));",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一只印 4；版本二印 迴圈跑完了 然後 4" },
+        { "id": "b", "text": "一樣，都只印 4" },
+        { "id": "c", "text": "一樣，都印 迴圈跑完了 然後 4" },
+        { "id": "d", "text": "不一樣：版本一印 迴圈跑完了 然後 4；版本二只印 4" }
+      ],
+      "answer": "a",
+      "explanation": "return 是「整個函式立刻結束、交出結果」，找到 4 就直接跳出 findEven，後面那行 console.log(\"迴圈跑完了\") 根本沒機會執行。break 只負責「跳出迴圈」，函式本身還沒結束，迴圈後面的程式碼（包含那行 console.log）照樣會跑。兩種寫法最後回傳的值一樣，但函式裡剩下的程式碼是否執行，天差地遠——這是很多人以為 break 和 return 在迴圈裡「差不多」而踩到的坑。",
+      "verify": {
+        "checks": [
+          { "code": "function findEven(nums) {\n  for (const n of nums) {\n    if (n % 2 === 0) return n;\n  }\n  console.log(\"迴圈跑完了\");\n  return null;\n}\nconsole.log(findEven([1, 3, 4, 5]));", "expected": "4" },
+          { "code": "function findEven2(nums) {\n  let found = null;\n  for (const n of nums) {\n    if (n % 2 === 0) { found = n; break; }\n  }\n  console.log(\"迴圈跑完了\");\n  return found;\n}\nconsole.log(findEven2([1, 3, 4, 5]));", "expected": "迴圈跑完了\n4" }
+        ]
+      }
     }
   ]
 }

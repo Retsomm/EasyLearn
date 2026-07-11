@@ -140,6 +140,145 @@
           { "code": "const m = \"2026-07-10\".match(/(\\d{4})-(\\d{2})/);\nconsole.log(m[1], m[2]);", "expected": "2026 07" }
         ]
       }
+    },
+    {
+      "id": "jsb-9-q7",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "replace 搭配捕獲組，用 $1 代回抓到的內容",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/replace",
+      "story": "",
+      "prompt": "把日期格式從斜線改成連字號，順便重新排列。這段印出什麼？",
+      "code": "const s = \"2026/07/10\";\nconst formatted = s.replace(/(\\d{4})\\/(\\d{2})\\/(\\d{2})/, \"$1-$2-$3\");\nconsole.log(formatted);",
+      "options": [
+        { "id": "a", "text": "2026-07-10" },
+        { "id": "b", "text": "$1-$2-$3" },
+        { "id": "c", "text": "2026/07/10" },
+        { "id": "d", "text": "會報錯，$1 不是合法語法" }
+      ],
+      "answer": "a",
+      "explanation": "替換字串裡的 $1、$2、$3 分別代表第 1、2、3 個捕獲組抓到的內容，跟 match 拿到的 m[1]、m[2] 是同一批東西，只是這次直接拼進替換文字裡。這招常用來重新排版日期、電話、姓名格式，不用自己再拆字串組回去。",
+      "verify": {
+        "checks": [
+          { "code": "const s = \"2026/07/10\";\nconst formatted = s.replace(/(\\d{4})\\/(\\d{2})\\/(\\d{2})/, \"$1-$2-$3\");\nconsole.log(formatted);", "expected": "2026-07-10" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-9-q8",
+      "type": "same-or-not",
+      "difficulty": 1,
+      "topic": "i 旗標忽略大小寫",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Regular_expressions",
+      "story": "",
+      "prompt": "同一條規則，一個沒加 i、一個加了 i。比對 \"ABC\" 的結果一樣嗎？",
+      "code": "console.log(/abc/.test(\"ABC\"));\nconsole.log(/abc/i.test(\"ABC\"));",
+      "options": [
+        { "id": "a", "text": "不一樣：沒加 i 是 false，加了 i 是 true" },
+        { "id": "b", "text": "一樣，都是 true" },
+        { "id": "c", "text": "一樣，都是 false" },
+        { "id": "d", "text": "不一樣：沒加 i 是 true，加了 i 是 false" }
+      ],
+      "answer": "a",
+      "explanation": "正規表達式預設是「大小寫敏感」，abc 跟 ABC 是不同的字。i（ignore case）旗標關掉這個敏感度，讓大小寫視為相同。跟 g（全部找）一樣，i 也是寫在收尾斜線後面，兩個旗標甚至可以一起用：/abc/gi。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(/abc/.test(\"ABC\"));\nconsole.log(/abc/i.test(\"ABC\"));", "expected": "false\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-9-q9",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "\\w \\d \\s 字元類別代表誰",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Regular_expressions",
+      "story": "",
+      "prompt": "驗證帳號格式只准英數字和底線，不准空白。這段印出什麼？",
+      "code": "console.log(/^\\w+$/.test(\"user_01\"));\nconsole.log(/^\\w+$/.test(\"user 01\"));",
+      "options": [
+        { "id": "a", "text": "true 和 false" },
+        { "id": "b", "text": "true 和 true" },
+        { "id": "c", "text": "false 和 false" },
+        { "id": "d", "text": "false 和 true" }
+      ],
+      "answer": "a",
+      "explanation": "\\w 是「文字字元」的縮寫，等於 [A-Za-z0-9_]（英文字母、數字、底線），但不含空白。\"user_01\" 全是這些合法字元，過關；\"user 01\" 中間有空格，落榜。常見的字元類別還有 \\d（數字，等於 [0-9]）和 \\s（空白，含空格、tab、換行）。這三個是寫驗證規則時最常組合使用的積木。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(/^\\w+$/.test(\"user_01\"));\nconsole.log(/^\\w+$/.test(\"user 01\"));", "expected": "true\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-9-q10",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "量詞 + 和 * 的差別：至少一個 vs 零個也行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Regular_expressions",
+      "story": "",
+      "prompt": "兩條規則只差一個符號，比對沒有 b 的 \"ac\"。這段印出什麼？",
+      "code": "console.log(/ab*c/.test(\"ac\"), /ab+c/.test(\"ac\"));",
+      "options": [
+        { "id": "a", "text": "true false" },
+        { "id": "b", "text": "false true" },
+        { "id": "c", "text": "true true" },
+        { "id": "d", "text": "false false" }
+      ],
+      "answer": "a",
+      "explanation": "量詞接在字元後面，規定「這個字元可以出現幾次」：* 是零個以上（可以完全不出現），+ 是一個以上（至少要有一個）。ab*c 允許 b 不出現，所以 \"ac\" 也算符合；ab+c 硬性要求至少一個 b，\"ac\" 沒有 b 就不符合。另外還有 ? 代表零個或一個（可有可無），三者常搞混，記住「* 可以沒有、+ 至少一個、? 最多一個」。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(/ab*c/.test(\"ac\"), /ab+c/.test(\"ac\"));", "expected": "true false" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-9-q11",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "regex.exec 搭配 g 旗標：每呼叫一次只挖一個",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/RegExp/exec",
+      "story": "",
+      "prompt": "同一個帶 g 旗標的正規表達式呼叫兩次 exec。這段印出什麼？",
+      "code": "const re = /\\d+/g;\nconst str = \"a1b22c333\";\nconsole.log(re.exec(str)[0]);\nconsole.log(re.exec(str)[0]);",
+      "options": [
+        { "id": "a", "text": "1 然後 22" },
+        { "id": "b", "text": "1 然後 1" },
+        { "id": "c", "text": "1 然後 333" },
+        { "id": "d", "text": "1 22 333 一次全部印出" }
+      ],
+      "answer": "a",
+      "explanation": "match(/…/g) 一次把全部符合的都撈出來，但 exec 不是——帶 g 旗標的正規表達式物件會記住自己上次找到哪（存在 lastIndex 屬性），每呼叫一次 exec 只往後找下一個。第一次從頭找到 \"1\"，lastIndex 移到它後面；第二次接著找到 \"22\"。想一次拿到全部，通常用 while 迴圈重複呼叫 exec，或乾脆改用 match/matchAll。忘記這個「有狀態」的特性，是 exec 最容易踩的坑。",
+      "verify": {
+        "checks": [
+          { "code": "const re = /\\d+/g;\nconst str = \"a1b22c333\";\nconsole.log(re.exec(str)[0]);\nconsole.log(re.exec(str)[0]);", "expected": "1\n22" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-9-q12",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "replaceAll 遇到正規表達式，一定要加 g 旗標",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/replaceAll",
+      "story": "",
+      "prompt": "想把每個連字號都換成底線，程式卻直接爆炸。哪裡錯了？",
+      "code": "const s = \"a-b-c\";\nconsole.log(s.replaceAll(/-/, \"_\"));  // 想要 a_b_c，卻報錯",
+      "options": [
+        { "id": "a", "text": "replaceAll 傳正規表達式時強制要求帶 g 旗標，否則直接丟出 TypeError；要寫 /-/g" },
+        { "id": "b", "text": "replaceAll 不支援正規表達式，只能傳字串" },
+        { "id": "c", "text": "連字號要逃脫成 \\-，否則不合法" },
+        { "id": "d", "text": "應該用 replace 兩次才對" }
+      ],
+      "answer": "a",
+      "explanation": "replace(/-/, \"_\") 不加 g 只換第一個，是「靜靜地換錯」；replaceAll 則是「直接不讓你錯」——如果傳的是正規表達式卻沒帶 g 旗標，JS 會主動丟出 TypeError，逼你正視「你是不是忘了要全部換」這件事。修法很簡單：/-/g。這是語言設計上刻意做的安全網，比 replace 忘記 g 那種默默出錯的行為更好抓。",
+      "verify": {
+        "checks": [
+          { "code": "const s = \"a-b-c\";\nconsole.log(s.replaceAll(/-/, \"_\"));", "expectError": "String.prototype.replaceAll called with a non-global RegExp argument" },
+          { "code": "const s = \"a-b-c\";\nconsole.log(s.replaceAll(/-/g, \"_\"));", "expected": "a_b_c" }
+        ]
+      }
     }
   ]
 }

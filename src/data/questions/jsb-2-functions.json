@@ -141,6 +141,146 @@
           { "code": "function total(items) {\n  let sum = 0;\n  for (const item of items) {\n    sum += item.price;\n  }\n  return sum;\n}\nconsole.log(total([{ price: 10 }, { price: 20 }]));", "expected": "30" }
         ]
       }
+    },
+    {
+      "id": "jsb-2-q7",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "少給的參數是 undefined",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Functions",
+      "story": "",
+      "prompt": "函式要兩個參數，只給了一個。這段印出什麼？",
+      "code": "function greet(a, b) {\n  console.log(a, b);\n}\ngreet(\"嗨\");",
+      "options": [
+        { "id": "a", "text": "嗨 undefined" },
+        { "id": "b", "text": "會報錯，參數數量不符" },
+        { "id": "c", "text": "嗨 嗨" },
+        { "id": "d", "text": "嗨 null" }
+      ],
+      "answer": "a",
+      "explanation": "JavaScript 對參數數量超級寬容：少給的補 undefined、多給的默默忽略，一律不報錯。這是自由也是隱患——參數少傳了不會當場爆炸，而是讓 undefined 流進程式深處才發作。看到函式輸出有 undefined，回頭數一下呼叫時給了幾個參數。",
+      "verify": {
+        "checks": [
+          { "code": "function greet(a, b) {\n  console.log(a, b);\n}\ngreet(\"嗨\");", "expected": "嗨 undefined" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-2-q8",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "函式宣告會提升，函式表達式不會",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Functions",
+      "story": "",
+      "prompt": "兩個函式都在「定義之前」被呼叫。各自的下場是？",
+      "code": "sayHi();\nfunction sayHi() {\n  console.log(\"嗨\");\n}\n\nsayBye();   // 💥 ?\nconst sayBye = () => console.log(\"掰\");",
+      "options": [
+        { "id": "a", "text": "sayHi 正常印出嗨；sayBye 報錯（宣告前不能使用）" },
+        { "id": "b", "text": "兩個都正常執行" },
+        { "id": "c", "text": "兩個都報錯" },
+        { "id": "d", "text": "sayHi 報錯；sayBye 正常" }
+      ],
+      "answer": "a",
+      "explanation": "function 宣告會被「整個提升」到頂端，所以先呼叫後定義沒問題。但 const sayBye = 箭頭函式是「變數賦值」，走 let/const 的暫時死區規則（jsb-1 的 hoisting 題），提前用直接報錯。讀舊專案會看到兩種寫法混用，知道這個差異就不會誤判「為什麼這個能提前呼叫那個不能」。",
+      "verify": {
+        "checks": [
+          { "code": "sayHi();\nfunction sayHi() {\n  console.log(\"嗨\");\n}", "expected": "嗨" },
+          { "code": "sayBye();\nconst sayBye = () => console.log(\"掰\");", "expectError": "Cannot access 'sayBye' before initialization" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-2-q9",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "少了括號＝拿到函式本人",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Functions",
+      "story": "",
+      "prompt": "想拿價格，畫面卻印出一坨函式原始碼。哪裡錯了？",
+      "code": "function getPrice() {\n  return 100;\n}\n\nconst price = getPrice;   // B 行\nconsole.log(typeof price);   // function ??",
+      "options": [
+        { "id": "a", "text": "B 行少了 ()：getPrice 是函式本人，getPrice() 才是執行後的結果 100" },
+        { "id": "b", "text": "return 100 要寫成 return \"100\"" },
+        { "id": "c", "text": "const 不能存函式的回傳值" },
+        { "id": "d", "text": "typeof 寫錯位置" }
+      ],
+      "answer": "a",
+      "explanation": "函式名字不加括號＝「這個函式本身」（一個可以傳來傳去的值），加了括號才是「執行它、拿結果」。畫面上出現函式原始碼或 [Function]，就是少了括號。反過來，React 那關學過 onClick={handleClick} 刻意不加括號——因為那裡要傳的就是函式本人。一體兩面，看場合。",
+      "verify": {
+        "checks": [
+          { "code": "function getPrice() {\n  return 100;\n}\nconst price = getPrice;\nconsole.log(typeof price);", "expected": "function" },
+          { "code": "function getPrice() {\n  return 100;\n}\nconst price = getPrice();\nconsole.log(typeof price, price);", "expected": "number 100" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-2-q10",
+      "type": "same-or-not",
+      "difficulty": 3,
+      "topic": "傳數字是複本、傳物件是本尊",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Functions",
+      "story": "",
+      "prompt": "兩個函式都在裡面改參數。外面的資料一樣安全嗎？",
+      "code": "// 版本一：改數字參數\nfunction addTen(n) {\n  n += 10;\n}\nlet score = 5;\naddTen(score);\nconsole.log(score);\n\n// 版本二：改物件參數\nfunction levelUp(p) {\n  p.level += 1;\n}\nconst pet = { level: 1 };\nlevelUp(pet);\nconsole.log(pet.level);",
+      "options": [
+        { "id": "a", "text": "不一樣：score 還是 5（傳進去的是複本），pet.level 變 2（傳進去的是同一個物件）" },
+        { "id": "b", "text": "一樣，兩個都被改了" },
+        { "id": "c", "text": "一樣，兩個都沒被改" },
+        { "id": "d", "text": "版本二會報錯，函式不能改物件" }
+      ],
+      "answer": "a",
+      "explanation": "數字、字串、布林傳進函式時複印一份，裡面怎麼改都不干外面的事；物件和陣列傳的是「同一個東西的門牌」，函式裡一改，外面就變了——jsb-4 的參照觀念在函式參數上重演。「函式呼叫完，我的資料被改了」的悲劇，兇手永遠是物件參數。",
+      "verify": {
+        "checks": [
+          { "code": "function addTen(n) {\n  n += 10;\n}\nlet score = 5;\naddTen(score);\nconsole.log(score);\nfunction levelUp(p) {\n  p.level += 1;\n}\nconst pet = { level: 1 };\nlevelUp(pet);\nconsole.log(pet.level);", "expected": "5\n2" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-2-q11",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "其餘參數：收下不定數量的參數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/rest_parameters",
+      "story": "",
+      "prompt": "sum 要能吃任意數量的數字。把空格填起來，印出 6",
+      "code": "function sum(____) {\n  return nums.reduce((s, n) => s + n, 0);\n}\nconsole.log(sum(1, 2, 3));",
+      "options": [
+        { "id": "a", "text": "...nums" },
+        { "id": "b", "text": "nums" },
+        { "id": "c", "text": "[nums]" },
+        { "id": "d", "text": "nums[]" }
+      ],
+      "answer": "a",
+      "explanation": "參數前加三個點是「其餘參數」（rest）：把所有傳進來的引數收進一個真正的陣列，直接用 reduce 等陣列方法。選項 b 只接得到第一個引數 1（數字沒有 reduce，報錯）；選項 d 是語法錯誤。注意方向：在參數定義處 ... 是「收攏」，在呼叫處 Math.max(...arr) 是「攤開」——同一符號、相反方向。",
+      "verify": {
+        "checks": [
+          { "code": "function sum(...nums) {\n  return nums.reduce((s, n) => s + n, 0);\n}\nconsole.log(sum(1, 2, 3));", "expected": "6" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-2-q12",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "預設參數每次呼叫都是新的",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/Default_parameters",
+      "story": "",
+      "prompt": "預設參數是空陣列，函式往裡面 push。連呼叫兩次，各印出多少？",
+      "code": "function addItem(list = []) {\n  list.push(\"x\");\n  return list.length;\n}\n\nconsole.log(addItem());\nconsole.log(addItem());",
+      "options": [
+        { "id": "a", "text": "1 和 1 —— 每次呼叫都拿到全新的空陣列" },
+        { "id": "b", "text": "1 和 2 —— 預設陣列被兩次呼叫共用" },
+        { "id": "c", "text": "會報錯，預設值不能是陣列" },
+        { "id": "d", "text": "0 和 0" }
+      ],
+      "answer": "a",
+      "explanation": "JavaScript 的預設參數在「每次呼叫時」重新求值——每次都生一個新的空陣列，互不沾染。特別點名這題是因為 Python 的行為相反（預設可變參數會共用，是 Python 名坑）——從別的語言轉來或讓 AI 跨語言翻譯程式時，這種「長得一樣、行為不同」的地方最值得警惕。",
+      "verify": {
+        "checks": [
+          { "code": "function addItem(list = []) {\n  list.push(\"x\");\n  return list.length;\n}\nconsole.log(addItem());\nconsole.log(addItem());", "expected": "1\n1" }
+        ]
+      }
     }
   ]
 }

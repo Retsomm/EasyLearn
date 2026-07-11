@@ -140,6 +140,146 @@
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nconst products = [\n  { id: 1, name: \"鍵盤\", stock: 3 },\n  { id: 2, name: \"滑鼠\", stock: 0 },\n  { id: 3, name: \"螢幕\", stock: 5 },\n];\nfunction Shelf() {\n  return (\n    <ul>\n      {products\n        .filter((p) => p.stock > 0)\n        .map((p) => <li key={p.id}>{p.name}</li>)}\n    </ul>\n  );\n}\nconsole.log(renderToStaticMarkup(<Shelf />));", "expected": "<ul><li>鍵盤</li><li>螢幕</li></ul>" }
         ]
       }
+    },
+    {
+      "id": "react-5-q7",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "key 是給 React 認人用的，不會出現在 HTML 裡",
+      "docs": "https://react.dev/learn/rendering-lists",
+      "story": "",
+      "prompt": "list 裡每個 <li> 都給了 key。渲染出的 HTML 裡看得到 key 這個屬性嗎？",
+      "code": "function Fruits({ items }) {\n  return (\n    <ul>\n      {items.map((it) => (\n        <li key={it.id}>{it.name}</li>\n      ))}\n    </ul>\n  );\n}\n\n// <Fruits items={[{ id: 1, name: \"蘋果\" }, { id: 2, name: \"香蕉\" }]} />",
+      "options": [
+        { "id": "a", "text": "<ul><li>蘋果</li><li>香蕉</li></ul> —— key 不會出現在 HTML 屬性裡" },
+        { "id": "b", "text": "<ul><li key=\"1\">蘋果</li><li key=\"2\">香蕉</li></ul>" },
+        { "id": "c", "text": "會報錯，key 一定要顯示在畫面上才合法" },
+        { "id": "d", "text": "<ul><li id=\"1\">蘋果</li><li id=\"2\">香蕉</li></ul>" }
+      ],
+      "answer": "a",
+      "explanation": "key 是寫給 React 自己看的「內部身分證」，讓它在下一次渲染時認出「這是同一項」，跟畫面長什麼樣完全無關——渲染出來的 HTML 裡不會有 key 這個屬性，使用者的瀏覽器根本看不到它。真正影響畫面的 identity 追蹤，是下一次列表增刪、排序時 React 靠 key 決定「哪些節點該保留、哪些該重建」（react-9 會深入這件事在互動時如何影響 state）。這題先建立最基本的認知：key 是給 React 用的，不是給 HTML 或 CSS 用的。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Fruits({ items }) {\n  return (\n    <ul>\n      {items.map((it) => (\n        <li key={it.id}>{it.name}</li>\n      ))}\n    </ul>\n  );\n}\nconsole.log(renderToStaticMarkup(<Fruits items={[{ id: 1, name: \"蘋果\" }, { id: 2, name: \"香蕉\" }]} />));", "expected": "<ul><li>蘋果</li><li>香蕉</li></ul>" }
+        ]
+      }
+    },
+    {
+      "id": "react-5-q8",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "陣列開頭插入資料時，用 index 當 key 的問題初探",
+      "docs": "https://react.dev/learn/rendering-lists",
+      "story": "",
+      "prompt": "目前清單是 [\"買菜\", \"寫程式\"]。用 index 或用內容字串當 key，這次渲染出的 HTML 一樣嗎？",
+      "code": "// 版本一：index 當 key\n{items.map((it, i) => <li key={i}>{it}</li>)}\n\n// 版本二：內容當 key\n{items.map((it) => <li key={it}>{it}</li>)}",
+      "options": [
+        { "id": "a", "text": "一樣：這次渲染出的 HTML 完全相同，key 從來不會出現在畫面上；但如果之後在陣列「開頭」插入新項目，index 當 key 的版本會讓 React 誤判每一項的身分，開始出現內容錯位（react-9 會深入這個炸彈怎麼引爆）" },
+        { "id": "b", "text": "不一樣，index 當 key 的版本畫面會多顯示一串數字" },
+        { "id": "c", "text": "不一樣，內容當 key 的版本會報錯，因為字串不能當 key" },
+        { "id": "d", "text": "一樣，而且往後不管怎麼增刪都不會有問題" }
+      ],
+      "answer": "a",
+      "explanation": "只看「這一次」的渲染結果，兩種 key 完全沒差——key 本來就不會畫出來。差別只會在「陣列開頭或中間插入、刪除項目」時現形：用 index 當 key，插入一筆之後，原本第 0 項的 index 被新項目佔走，第 1 項「被迫」繼承了 index 0 的身分，React 誤以為它們是同一個東西，如果每項還帶著自己的 state（打勾狀態、輸入框內容），就會發生錯位——這正是 react-9 要深入處理的坑。這題先記住結論：清單會增刪或排序，就不要用 index 當 key，用資料自帶的穩定 id。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nconst items = [\"買菜\", \"寫程式\"];\nfunction ListA() {\n  return <ul>{items.map((it, i) => <li key={i}>{it}</li>)}</ul>;\n}\nfunction ListB() {\n  return <ul>{items.map((it) => <li key={it}>{it}</li>)}</ul>;\n}\nconsole.log(renderToStaticMarkup(<ListA />));\nconsole.log(renderToStaticMarkup(<ListB />));", "expected": "<ul><li>買菜</li><li>寫程式</li></ul>\n<ul><li>買菜</li><li>寫程式</li></ul>" }
+        ]
+      }
+    },
+    {
+      "id": "react-5-q9",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "巢狀列表：分類底下還有子清單，map 裡再 map 一次",
+      "docs": "https://react.dev/learn/rendering-lists",
+      "story": "",
+      "prompt": "每個分類底下還有自己的商品清單。渲染出什麼 HTML？",
+      "code": "const categories = [\n  { name: \"水果\", items: [\"蘋果\", \"香蕉\"] },\n  { name: \"蔬菜\", items: [\"紅蘿蔔\"] },\n];\n\nfunction Menu() {\n  return (\n    <ul>\n      {categories.map((cat) => (\n        <li key={cat.name}>\n          {cat.name}\n          <ul>\n            {cat.items.map((it) => (\n              <li key={it}>{it}</li>\n            ))}\n          </ul>\n        </li>\n      ))}\n    </ul>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "<ul><li>水果<ul><li>蘋果</li><li>香蕉</li></ul></li><li>蔬菜<ul><li>紅蘿蔔</li></ul></li></ul>" },
+        { "id": "b", "text": "<ul><li>水果</li><li>蘋果</li><li>香蕉</li><li>蔬菜</li><li>紅蘿蔔</li></ul>" },
+        { "id": "c", "text": "<ul><li>水果，蔬菜</li></ul>" },
+        { "id": "d", "text": "會報錯，<ul> 裡面不能再放 <ul>" }
+      ],
+      "answer": "a",
+      "explanation": "巢狀資料就巢狀 map：外層 map 跑分類，每個分類的 <li> 裡面自己再開一個 <ul>，內層 map 跑該分類的商品。兩層各自有各自的 key（外層用分類名、內層用商品名），互不干擾。<ul> 裡巢狀 <ul> 在 HTML 裡完全合法（常見於巢狀選單、分類清單），JSX 只是照著資料的形狀，一層一層把它畫出來。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nconst categories = [\n  { name: \"水果\", items: [\"蘋果\", \"香蕉\"] },\n  { name: \"蔬菜\", items: [\"紅蘿蔔\"] },\n];\nfunction Menu() {\n  return (\n    <ul>\n      {categories.map((cat) => (\n        <li key={cat.name}>\n          {cat.name}\n          <ul>\n            {cat.items.map((it) => (\n              <li key={it}>{it}</li>\n            ))}\n          </ul>\n        </li>\n      ))}\n    </ul>\n  );\n}\nconsole.log(renderToStaticMarkup(<Menu />));", "expected": "<ul><li>水果<ul><li>蘋果</li><li>香蕉</li></ul></li><li>蔬菜<ul><li>紅蘿蔔</li></ul></li></ul>" }
+        ]
+      }
+    },
+    {
+      "id": "react-5-q10",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "空陣列渲染結果：map 出來是零個元素，不是 bug",
+      "docs": "https://react.dev/learn/rendering-lists",
+      "story": "",
+      "prompt": "items 是空陣列 []。渲染出什麼？",
+      "code": "function TodoList({ items }) {\n  return (\n    <ul>\n      {items.map((it) => (\n        <li key={it}>{it}</li>\n      ))}\n    </ul>\n  );\n}\n\n// <TodoList items={[]} />",
+      "options": [
+        { "id": "a", "text": "<ul></ul> —— map 對空陣列跑零次，中間自然是空的，這不是錯誤" },
+        { "id": "b", "text": "會報錯，items 不能是空陣列" },
+        { "id": "c", "text": "<ul><li></li></ul>" },
+        { "id": "d", "text": "<ul>undefined</ul>" }
+      ],
+      "answer": "a",
+      "explanation": "空陣列呼叫 map，callback 一次都不會執行，回傳的還是一個空陣列，React 把它渲染成「什麼都沒有」——<ul> 標籤本身沒消失，只是裡面空空的，這完全合法，不代表哪裡壞了。如果想在沒資料時顯示「尚無待辦事項」這類提示，得自己加條件：items.length === 0 ? <li>尚無待辦事項</li> : items.map(...)——渲染引擎不會主動幫你補這句話。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction TodoList({ items }) {\n  return (\n    <ul>\n      {items.map((it) => (\n        <li key={it}>{it}</li>\n      ))}\n    </ul>\n  );\n}\nconsole.log(renderToStaticMarkup(<TodoList items={[]} />));", "expected": "<ul></ul>" },
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction TodoList({ items }) {\n  return (\n    <ul>\n      {items.length === 0 ? <li>尚無待辦事項</li> : items.map((it) => <li key={it}>{it}</li>)}\n    </ul>\n  );\n}\nconsole.log(renderToStaticMarkup(<TodoList items={[]} />));", "expected": "<ul><li>尚無待辦事項</li></ul>" }
+        ]
+      }
+    },
+    {
+      "id": "react-5-q11",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "條件複雜時用「提前 return」，不要硬塞進三元或 &&",
+      "docs": "https://react.dev/learn/conditional-rendering",
+      "story": "",
+      "prompt": "Panel 元件依序檢查 loading、error、沒資料三種狀況，最後才畫正常內容。status 是 \"error\" 時渲染出什麼？",
+      "code": "function Panel({ status, data }) {\n  if (status === \"loading\") return <p>載入中...</p>;\n  if (status === \"error\") return <p>發生錯誤</p>;\n  if (data.length === 0) return <p>沒有資料</p>;\n  return (\n    <ul>\n      {data.map((d) => (\n        <li key={d}>{d}</li>\n      ))}\n    </ul>\n  );\n}\n\n// <Panel status=\"error\" data={[]} />",
+      "options": [
+        { "id": "a", "text": "<p>發生錯誤</p>" },
+        { "id": "b", "text": "<p>載入中...</p>" },
+        { "id": "c", "text": "<p>沒有資料</p>" },
+        { "id": "d", "text": "<ul></ul>" }
+      ],
+      "answer": "a",
+      "explanation": "四種狀態、四種畫面，硬要塞進一個三元或串好幾個 &&，只會變成難以閱讀的巢狀迷宮。用一連串「提前 return」把每種狀況攔在最前面，函式主體讀起來就是白話文：先檢查 loading，再檢查 error，再檢查沒資料，最後才是正常畫面——像一連串的守門員，過關才輪到下一關。status 是 \"error\"，第二道關卡就攔下來直接回傳 <p>發生錯誤</p>，後面的程式碼碰都不會碰到（連 data.length 都不會被檢查）。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Panel({ status, data }) {\n  if (status === \"loading\") return <p>載入中...</p>;\n  if (status === \"error\") return <p>發生錯誤</p>;\n  if (data.length === 0) return <p>沒有資料</p>;\n  return (\n    <ul>\n      {data.map((d) => (\n        <li key={d}>{d}</li>\n      ))}\n    </ul>\n  );\n}\nconsole.log(renderToStaticMarkup(<Panel status=\"error\" data={[]} />));", "expected": "<p>發生錯誤</p>" },
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Panel({ status, data }) {\n  if (status === \"loading\") return <p>載入中...</p>;\n  if (status === \"error\") return <p>發生錯誤</p>;\n  if (data.length === 0) return <p>沒有資料</p>;\n  return (\n    <ul>\n      {data.map((d) => (\n        <li key={d}>{d}</li>\n      ))}\n    </ul>\n  );\n}\nconsole.log(renderToStaticMarkup(<Panel status=\"ready\" data={[\"蘋果\"]} />));", "expected": "<ul><li>蘋果</li></ul>" }
+        ]
+      }
+    },
+    {
+      "id": "react-5-q12",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "用 Fragment 搭配 key 群組列表項，不必多包一層 DOM",
+      "docs": "https://react.dev/reference/react/Fragment",
+      "story": "",
+      "prompt": "每個項目要同時渲染一個 <dt> 和 <dd>，但不想在外面多包一層 <div>（那樣 <dl> 的結構就壞了）。把空格填起來",
+      "code": "import { Fragment } from \"react\";\n\nfunction Glossary({ items }) {\n  return (\n    <dl>\n      {items.map((item) => (\n        ____\n          <dt>{item.term}</dt>\n          <dd>{item.desc}</dd>\n        </Fragment>\n      ))}\n    </dl>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "<Fragment key={item.term}>" },
+        { "id": "b", "text": "<div key={item.term}>" },
+        { "id": "c", "text": "<>" },
+        { "id": "d", "text": "<Fragment>" }
+      ],
+      "answer": "a",
+      "explanation": "<>...</> 這個簡寫沒辦法帶 key，列表裡需要 key 的場合就得寫回完整的 <Fragment key={...}>——它跟 <div> 一樣可以掛 key，卻不會在 HTML 裡留下任何多餘的包裝標籤，<dt>、<dd> 直接乾乾淨淨地當 <dl> 的子元素。選項 b 的 div 雖然也能運作，卻破壞了 <dl> 只能裝 <dt>/<dd> 的語意結構；選項 c、d 少了 key，React 對列表裡缺 key 的項目會在主控台丟出警告。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nimport { Fragment } from 'react'\nfunction Glossary({ items }) {\n  return (\n    <dl>\n      {items.map((item) => (\n        <Fragment key={item.term}>\n          <dt>{item.term}</dt>\n          <dd>{item.desc}</dd>\n        </Fragment>\n      ))}\n    </dl>\n  );\n}\nconsole.log(renderToStaticMarkup(<Glossary items={[{ term: \"HTML\", desc: \"標記語言\" }, { term: \"CSS\", desc: \"樣式語言\" }]} />));", "expected": "<dl><dt>HTML</dt><dd>標記語言</dd><dt>CSS</dt><dd>樣式語言</dd></dl>" }
+        ]
+      }
     }
   ]
 }

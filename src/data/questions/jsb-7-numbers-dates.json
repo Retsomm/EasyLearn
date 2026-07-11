@@ -141,6 +141,147 @@
           { "code": "const d = new Date(2026, 6, 10);\nconsole.log(d.getMonth() + 1);", "expected": "7" }
         ]
       }
+    },
+    {
+      "id": "jsb-7-q7",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "Number.isInteger 判斷是不是整數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger",
+      "story": "",
+      "prompt": "5 和 5.0 是不是整數？這段程式印出什麼？",
+      "code": "console.log(Number.isInteger(5));\nconsole.log(Number.isInteger(5.0));\nconsole.log(Number.isInteger(5.5));",
+      "options": [
+        { "id": "a", "text": "true true false" },
+        { "id": "b", "text": "true false false" },
+        { "id": "c", "text": "false true false" },
+        { "id": "d", "text": "true true true" }
+      ],
+      "answer": "a",
+      "explanation": "JavaScript 只有一種數字型別（都是浮點數），5 和 5.0 其實是完全同一個值——寫 .0 不會讓它變成「小數類型」。Number.isInteger 檢查的是「小數部分是不是 0」，5 和 5.0 都通過，5.5 才是真的有小數。這跟第一題 0.1 + 0.2 的教訓同源：JS 的數字世界裡沒有整數和浮點數的分別，只有一種 Number。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(Number.isInteger(5));\nconsole.log(Number.isInteger(5.0));\nconsole.log(Number.isInteger(5.5));", "expected": "true\ntrue\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-7-q8",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "Math.max/min 搭配展開運算子找最大最小值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Math/max",
+      "story": "",
+      "prompt": "五科成績存在陣列裡，想找出最高分。把空格填起來，印出 100",
+      "code": "const scores = [88, 92, 75, 100, 61];\nconsole.log(Math.max(____));",
+      "options": [
+        { "id": "a", "text": "...scores" },
+        { "id": "b", "text": "scores" },
+        { "id": "c", "text": "scores[0]" },
+        { "id": "d", "text": "scores.max()" }
+      ],
+      "answer": "a",
+      "explanation": "Math.max 要吃「一堆數字」當獨立參數，不吃陣列。...scores 把陣列展開成 88, 92, 75, 100, 61 這樣的一串參數，才是它要的格式。直接傳整個陣列（選項 b）會被硬轉成數字，一個陣列轉不出單一數字就是 NaN；只傳第一個元素（選項 c）當然只能拿到 88；陣列身上根本沒有 .max() 這個方法（選項 d），會直接報錯。找最小值同理，換成 Math.min(...scores)。",
+      "verify": {
+        "checks": [
+          { "code": "const scores = [88, 92, 75, 100, 61];\nconsole.log(Math.max(...scores));", "expected": "100" },
+          { "code": "const scores = [88, 92, 75, 100, 61];\nconsole.log(Math.max(scores));", "expected": "NaN" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-7-q9",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "parseFloat 保留小數，parseInt 只留整數部分",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/parseFloat",
+      "story": "",
+      "prompt": "同一個字串 \"2.5\"，分別用 parseInt 和 parseFloat 轉換再加 1。這兩段印出來一樣嗎？",
+      "code": "// 版本一\nconsole.log(parseInt(\"2.5\") + 1);\n\n// 版本二\nconsole.log(parseFloat(\"2.5\") + 1);",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一印 3，版本二印 3.5" },
+        { "id": "b", "text": "一樣，都印 3.5" },
+        { "id": "c", "text": "一樣，都印 3" },
+        { "id": "d", "text": "不一樣：版本一印 3.5，版本二印 3" }
+      ],
+      "answer": "a",
+      "explanation": "parseInt 顧名思義只認「整數」，讀到小數點就停手，\"2.5\" 只拿到 2，加 1 是 3。parseFloat 才認得小數點，會把 2.5 整個讀完，加 1 是 3.5。跟前面 parseInt(\"42px\") 是同一個系列的行為：parseInt 永遠只給你整數部分。要處理金額、身高體重這種有小數的輸入，parseFloat 或 Number 才是對的工具。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(parseInt(\"2.5\") + 1);", "expected": "3" },
+          { "code": "console.log(parseFloat(\"2.5\") + 1);", "expected": "3.5" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-7-q10",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "比較兩個 Date 物件不能用 ===",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Date/getTime",
+      "story": "",
+      "prompt": "想確認兩筆訂單是不是同一天建立的，日期明明一樣，卻永遠印出 false。哪裡錯了？",
+      "code": "const d1 = new Date(2024, 5, 15);\nconst d2 = new Date(2024, 5, 15);\nconsole.log(d1 === d2);   // B 行，永遠 false",
+      "options": [
+        { "id": "a", "text": "B 行：Date 是物件，=== 比的是「是不是同一個實體」，就算時間相同也不會相等；要比時間該用 d1.getTime() === d2.getTime()" },
+        { "id": "b", "text": "new Date 少傳了時分秒，才會判斷失敗" },
+        { "id": "c", "text": "月份寫錯了，5 應該改成 6" },
+        { "id": "d", "text": "要先用 JSON.stringify 轉字串再比較" }
+      ],
+      "answer": "a",
+      "explanation": "物件（包含陣列、Date）用 === 比較時，比的是「記憶體裡是不是同一個東西」，不是內容。d1 和 d2 是兩個分別 new 出來的物件，就算裝的時間完全一樣，也是兩個不同的實體，=== 永遠 false。想比較「時間點是否相同」，要先把 Date 轉成可比較的原始值：.getTime()（回傳一個數字，代表距離 1970 年的毫秒數），數字用 === 比才有意義。這跟比較物件內容要用 JSON.stringify 或逐一比對欄位是同一類問題。",
+      "verify": {
+        "checks": [
+          { "code": "const d1 = new Date(2024, 5, 15);\nconst d2 = new Date(2024, 5, 15);\nconsole.log(d1 === d2);", "expected": "false" },
+          { "code": "const d1 = new Date(2024, 5, 15);\nconst d2 = new Date(2024, 5, 15);\nconsole.log(d1.getTime() === d2.getTime());", "expected": "true" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-7-q11",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "getDay 星期幾，星期日是 0",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Date/getDay",
+      "story": "",
+      "prompt": "想知道 2026 年 7 月 10 日是星期幾。這段程式印出什麼？",
+      "code": "const d = new Date(2026, 6, 10);\nconsole.log(d.getDay());",
+      "options": [
+        { "id": "a", "text": "5 —— getDay 回傳 0（星期日）到 6（星期六），5 代表星期五" },
+        { "id": "b", "text": "6" },
+        { "id": "c", "text": "4" },
+        { "id": "d", "text": "7 —— 星期一到星期日對應 1 到 7" }
+      ],
+      "answer": "a",
+      "explanation": "getDay 回傳的數字代表星期幾，範圍是 0～6，而且是從星期日開始算：0 是日、1 是一……6 是六。2026 年 7 月 10 日剛好是星期五，所以是 5。這跟 getMonth 的「月份從 0 起算」是同一種「JS 的 Date 從 0 開始數」的個性——沒有星期 7 這種東西，選項 d 是最容易直覺猜錯的陷阱。",
+      "verify": {
+        "checks": [
+          { "code": "const d = new Date(2026, 6, 10);\nconsole.log(d.getDay());", "expected": "5" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-7-q12",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "% 取餘數：讓索引繞回陣列開頭",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Remainder",
+      "story": "",
+      "prompt": "索引跑超過陣列長度，用 % 讓它自動繞回開頭。這段程式印出什麼？",
+      "code": "const days = [\"日\", \"一\", \"二\", \"三\", \"四\", \"五\", \"六\"];\nfor (let i = 5; i <= 8; i++) {\n  console.log(days[i % 7]);\n}",
+      "options": [
+        { "id": "a", "text": "五、六、日、一" },
+        { "id": "b", "text": "五、六、undefined、undefined" },
+        { "id": "c", "text": "五、六、六、六" },
+        { "id": "d", "text": "五、六、日、日" }
+      ],
+      "answer": "a",
+      "explanation": "% 是取餘數：i 是 5、6、7、8 時，i % 7 分別是 5、6、0、1——一旦 i 超過陣列長度，餘數就會自動繞回 0 重新數起，剛好對應到 days[0]（日）、days[1]（一）。這招是「循環索引」的標準寫法，輪播圖、循環播放清單、round-robin 排班都靠它，比自己寫 if (i >= days.length) i = 0 簡潔。",
+      "verify": {
+        "checks": [
+          { "code": "const days = [\"日\", \"一\", \"二\", \"三\", \"四\", \"五\", \"六\"];\nfor (let i = 5; i <= 8; i++) {\n  console.log(days[i % 7]);\n}", "expected": "五\n六\n日\n一" }
+        ]
+      }
     }
   ]
 }

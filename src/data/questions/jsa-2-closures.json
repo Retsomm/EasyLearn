@@ -140,6 +140,145 @@
           { "code": "function delayedLog() {\n  let msg = \"第一版\";\n  setTimeout(() => console.log(msg), 10);\n  msg = \"第二版\";\n}\ndelayedLog();", "expected": "第二版" }
         ]
       }
+    },
+    {
+      "id": "jsa-2-q7",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "IIFE 模組模式：立刻執行，包住私有變數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "用「立刻執行的函式」包住 balance，外面完全碰不到它。這段印出什麼？",
+      "code": "const bankAccount = (function () {\n  let balance = 0;\n  return {\n    deposit(amount) { balance += amount; return balance; },\n    getBalance() { return balance; },\n  };\n})();\nconsole.log(bankAccount.deposit(100));\nconsole.log(bankAccount.balance);",
+      "options": [
+        { "id": "a", "text": "100 然後 undefined" },
+        { "id": "b", "text": "100 然後 100" },
+        { "id": "c", "text": "undefined 然後 100" },
+        { "id": "d", "text": "會報錯，balance 沒有定義" }
+      ],
+      "answer": "a",
+      "explanation": "(function () { ... })() 是 IIFE（立即呼叫函式運算式）：函式定義完馬上自己呼叫自己，執行完只留下回傳的東西。這裡回傳的物件帶著 deposit、getBalance 兩個方法，它們都是 closure，背著同一個 balance；但 balance 本身沒有被回傳出去，外面想用 bankAccount.balance 直接存取，只會拿到 undefined——跟 jsa-2-q5 的私有狀態是同一招，只是這裡連「建立的過程」都藏起來了，這正是模組模式的核心：只曝露你想公開的方法，其餘全部關在門後。",
+      "verify": {
+        "checks": [
+          { "code": "const bankAccount = (function () {\n  let balance = 0;\n  return {\n    deposit(amount) { balance += amount; return balance; },\n    getBalance() { return balance; },\n  };\n})();\nconsole.log(bankAccount.deposit(100));\nconsole.log(bankAccount.balance);", "expected": "100\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-2-q8",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "迴圈裡建立函式陣列，用 let 才能各自保留自己的索引",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/let",
+      "story": "",
+      "prompt": "把空格填起來，讓陣列裡的 3 個函式各自記得自己的索引，印出 0 1 2",
+      "code": "const fns = [];\nfor (____ i = 0; i < 3; i++) {\n  fns.push(() => i);\n}\nconsole.log(fns[0](), fns[1](), fns[2]());",
+      "options": [
+        { "id": "a", "text": "let" },
+        { "id": "b", "text": "var" },
+        { "id": "c", "text": "const" },
+        { "id": "d", "text": "static" }
+      ],
+      "answer": "a",
+      "explanation": "let 讓每一輪迴圈都產生一個全新的 i，push 進去的箭頭函式各自 closure 住那一輪的 i，互不干擾，所以印出 0 1 2。換成 var 只有一個共用的 i，迴圈跑完 i 是 3，三個函式印出的都會是 3 3 3（跟 jsa-1-q4 的 setTimeout 版本是同一個道理，只是這裡不用等非同步，直接呼叫就能看到）。選項 c 的 const 會直接報錯，因為 for 迴圈的 i++ 需要重新賦值，const 宣告的變數不能重新賦值。",
+      "verify": {
+        "checks": [
+          { "code": "const fns = [];\nfor (let i = 0; i < 3; i++) {\n  fns.push(() => i);\n}\nconsole.log(fns[0](), fns[1](), fns[2]());", "expected": "0 1 2" },
+          { "code": "const fns = [];\nfor (var i = 0; i < 3; i++) {\n  fns.push(() => i);\n}\nconsole.log(fns[0](), fns[1](), fns[2]());", "expected": "3 3 3" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-2-q9",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "debounce 防抖：closure 記住計時器，取消前一次排程",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
+      "story": "",
+      "prompt": "debounce 讓短時間內連續呼叫，最後只真正執行一次。這段印出什麼？",
+      "code": "function debounce(fn, delay) {\n  let timer;\n  return function (...args) {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn(...args), delay);\n  };\n}\nlet calls = 0;\nconst log = debounce(() => { calls++; }, 20);\nlog();\nlog();\nlog();\nsetTimeout(() => console.log(calls), 60);",
+      "options": [
+        { "id": "a", "text": "1" },
+        { "id": "b", "text": "3" },
+        { "id": "c", "text": "0" },
+        { "id": "d", "text": "會報錯，timer 還沒宣告就使用" }
+      ],
+      "answer": "a",
+      "explanation": "debounce 回傳的函式背著 timer 這個 closure 變數，每次被呼叫都會先 clearTimeout(timer) 把前一次排定的執行取消掉，再重新排一次。連續呼叫三次 log()，前兩次排的都被下一次呼叫取消，只有最後一次真正撐過 20 毫秒被執行，所以 calls 最後是 1。這就是防抖節流最核心的技巧：用 closure 在多次呼叫之間「記住並取消上一次」，常用在輸入框打字後才發送搜尋請求、視窗 resize 事件等場景，避免瘋狂觸發。",
+      "verify": {
+        "checks": [
+          { "code": "function debounce(fn, delay) {\n  let timer;\n  return function (...args) {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn(...args), delay);\n  };\n}\nlet calls = 0;\nconst log = debounce(() => { calls++; }, 20);\nlog();\nlog();\nlog();\nsetTimeout(() => console.log(calls), 60);", "expected": "1" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-2-q10",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "memoize 記憶化：closure 當快取，重複輸入不用重算",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "把同一個函式包一層快取，同樣的輸入第二次不用重算。這段印出什麼？",
+      "code": "function memoize(fn) {\n  const cache = {};\n  return function (n) {\n    if (n in cache) {\n      console.log(\"快取命中\");\n      return cache[n];\n    }\n    console.log(\"重新計算\");\n    return (cache[n] = fn(n));\n  };\n}\nconst square = memoize((n) => n * n);\nconsole.log(square(5));\nconsole.log(square(5));",
+      "options": [
+        { "id": "a", "text": "重新計算 25 快取命中 25" },
+        { "id": "b", "text": "重新計算 25 重新計算 25" },
+        { "id": "c", "text": "快取命中 25 快取命中 25" },
+        { "id": "d", "text": "重新計算 快取命中 25 25" }
+      ],
+      "answer": "a",
+      "explanation": "memoize 回傳的函式背著 cache 這個 closure 物件，第一次呼叫 square(5) 時 cache 裡沒有 5，跑「重新計算」分支，算出 25 順便存進 cache[5]；第二次再呼叫 square(5)，這次 5 in cache 是 true，直接把存好的答案還回去，不用重算。跟 jsa-2-q5 的私有狀態是同一個機制，只是這裡拿 closure 變數當快取，而不是計數器——昂貴的計算（例如遞迴、大量資料處理）很常用這招省時間。",
+      "verify": {
+        "checks": [
+          { "code": "function memoize(fn) {\n  const cache = {};\n  return function (n) {\n    if (n in cache) {\n      console.log(\"快取命中\");\n      return cache[n];\n    }\n    console.log(\"重新計算\");\n    return (cache[n] = fn(n));\n  };\n}\nconst square = memoize((n) => n * n);\nconsole.log(square(5));\nconsole.log(square(5));", "expected": "重新計算\n25\n快取命中\n25" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-2-q11",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "巢狀 closure：內層函式一路往外抓變數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "三層函式疊在一起，最裡面同時用到最外層和中間層的變數。這段印出什麼？",
+      "code": "function outer() {\n  let x = 10;\n  function middle() {\n    let y = 20;\n    function inner() {\n      return x + y;\n    }\n    return inner();\n  }\n  return middle();\n}\nconsole.log(outer());",
+      "options": [
+        { "id": "a", "text": "30" },
+        { "id": "b", "text": "10" },
+        { "id": "c", "text": "20" },
+        { "id": "d", "text": "會報錯，inner 拿不到 outer 的 x" }
+      ],
+      "answer": "a",
+      "explanation": "closure 不是只能抓「直接外層」的變數，而是整條作用域鏈往外一路都能抓：inner 找 x 時，自己沒有、middle 也沒有，繼續往外找到 outer 裡的 x = 10；找 y 則在 middle 就找到了。所以 x + y = 30。不用怕巢狀層數多，JavaScript 引擎會自動沿著函式定義時的作用域鏈往外找，這也是為什麼 closure 常被形容成「函式帶著一串出生地的地址簿」。",
+      "verify": {
+        "checks": [
+          { "code": "function outer() {\n  let x = 10;\n  function middle() {\n    let y = 20;\n    function inner() {\n      return x + y;\n    }\n    return inner();\n  }\n  return middle();\n}\nconsole.log(outer());", "expected": "30" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-2-q12",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "forEach 的 callback 參數自帶獨立綁定，closure 不會抓錯",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach",
+      "story": "",
+      "prompt": "幫每個按鈕建立各自的點擊處理器，不用像 for 迴圈那樣擔心 var 的坑。這段印出什麼？",
+      "code": "const buttons = [\"A\", \"B\", \"C\"];\nconst handlers = [];\nbuttons.forEach(function (label) {\n  handlers.push(() => console.log(\"選了：\" + label));\n});\nhandlers[0]();\nhandlers[2]();",
+      "options": [
+        { "id": "a", "text": "選了：A 然後 選了：C" },
+        { "id": "b", "text": "選了：C 然後 選了：C" },
+        { "id": "c", "text": "選了：undefined 然後 選了：undefined" },
+        { "id": "d", "text": "選了：A 然後 選了：B" }
+      ],
+      "answer": "a",
+      "explanation": "forEach 每跑一輪，都會把當下的元素當成「全新的參數」傳給 callback——label 在每一輪都是獨立的變數，跟 jsa-2-q8 的 let 效果一樣，各自被對應的箭頭函式 closure 住，不會互相污染。所以 handlers[0] 記得的是 \"A\"，handlers[2] 記得的是 \"C\"。這也是為什麼實務上很多人乾脆改用 forEach、map 取代傳統 for(var...) 迴圈：不只寫起來精簡，還順便閃掉了 var 共用變數的經典 bug。",
+      "verify": {
+        "checks": [
+          { "code": "const buttons = [\"A\", \"B\", \"C\"];\nconst handlers = [];\nbuttons.forEach(function (label) {\n  handlers.push(() => console.log(\"選了：\" + label));\n});\nhandlers[0]();\nhandlers[2]();", "expected": "選了：A\n選了：C" }
+        ]
+      }
     }
   ]
 }

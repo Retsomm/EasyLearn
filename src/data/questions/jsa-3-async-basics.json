@@ -141,6 +141,144 @@
           { "code": "setTimeout(() => console.log(\"計時器\"), 0);\nPromise.resolve().then(() => console.log(\"Promise\"));\nconsole.log(\"同步\");", "expected": "同步\nPromise\n計時器" }
         ]
       }
+    },
+    {
+      "id": "jsa-3-q7",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "Promise 建構子本身是同步跑的",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/Promise",
+      "story": "",
+      "prompt": "new Promise(...) 裡面那段程式，是等到有人 .then 才跑，還是馬上跑？這段印出什麼？",
+      "code": "console.log(\"開始\");\nnew Promise((resolve) => {\n  console.log(\"executor 執行\");\n  resolve();\n}).then(() => console.log(\"then 執行\"));\nconsole.log(\"結束\");",
+      "options": [
+        { "id": "a", "text": "開始 → executor 執行 → 結束 → then 執行" },
+        { "id": "b", "text": "開始 → 結束 → executor 執行 → then 執行" },
+        { "id": "c", "text": "開始 → executor 執行 → then 執行 → 結束" },
+        { "id": "d", "text": "開始 → 結束 → then 執行 → executor 執行" }
+      ],
+      "answer": "a",
+      "explanation": "很多人以為整個 new Promise(...) 都是「非同步的」，其實只有 .then 裡的回呼是排隊的——executor（也就是 (resolve) => {...} 這段）在 new Promise 當下就立刻同步執行。所以「executor 執行」緊跟在「開始」後面印出，跟一般函式呼叫沒兩樣；只有呼叫了 resolve() 之後，掛在 .then 上的回呼才會被排進微任務，等同步程式（包含後面的「結束」）跑完才輪到它。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(\"開始\");\nnew Promise((resolve) => {\n  console.log(\"executor 執行\");\n  resolve();\n}).then(() => console.log(\"then 執行\"));\nconsole.log(\"結束\");", "expected": "開始\nexecutor 執行\n結束\nthen 執行" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-3-q8",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "多個 setTimeout 依延遲時間排序",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/Window/setTimeout",
+      "story": "",
+      "prompt": "三個計時器不是照寫的順序登記，是照延遲時間排隊。這段印出的順序是？",
+      "code": "setTimeout(() => console.log(\"C\"), 30);\nsetTimeout(() => console.log(\"A\"), 0);\nsetTimeout(() => console.log(\"B\"), 10);\nconsole.log(\"同步\");",
+      "options": [
+        { "id": "a", "text": "同步 → A → B → C" },
+        { "id": "b", "text": "同步 → C → A → B" },
+        { "id": "c", "text": "同步 → A → C → B" },
+        { "id": "d", "text": "C → A → B → 同步" }
+      ],
+      "answer": "a",
+      "explanation": "setTimeout 排的隊伍不是「誰先寫先排」，而是「延遲時間到了才輪到誰」。C 雖然第一個登記，但要等 30 毫秒；A 幾乎立刻（0 毫秒）就到期，所以先跑；接著是 10 毫秒的 B，最後才是 30 毫秒的 C。同步的「同步」永遠最先印，因為它根本沒排隊。",
+      "verify": {
+        "checks": [
+          { "code": "setTimeout(() => console.log(\"C\"), 30);\nsetTimeout(() => console.log(\"A\"), 0);\nsetTimeout(() => console.log(\"B\"), 10);\nconsole.log(\"同步\");", "expected": "同步\nA\nB\nC" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-3-q9",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Promise 只能決議一次",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/Promise",
+      "story": "",
+      "prompt": "executor 裡連續呼叫了 resolve 兩次又 reject 一次。這段印出什麼？",
+      "code": "const p = new Promise((resolve, reject) => {\n  resolve(\"成功\");\n  resolve(\"又呼叫一次\");\n  reject(new Error(\"太晚了\"));\n});\np.then((v) => console.log(v)).catch((e) => console.log(\"錯誤\", e.message));",
+      "options": [
+        { "id": "a", "text": "成功" },
+        { "id": "b", "text": "又呼叫一次" },
+        { "id": "c", "text": "錯誤 太晚了" },
+        { "id": "d", "text": "成功 然後 錯誤 太晚了" }
+      ],
+      "answer": "a",
+      "explanation": "一個 Promise 一輩子只能決議一次：狀態從 pending 變成 fulfilled 或 rejected 之後就定型了，之後不管再呼叫幾次 resolve 或 reject 都是空氣，直接被忽略。第一個生效的是 resolve(\"成功\")，後面的 resolve 和 reject 都晚了一步，所以只印出「成功」，catch 完全不會被觸發。",
+      "verify": {
+        "checks": [
+          { "code": "const p = new Promise((resolve, reject) => {\n  resolve(\"成功\");\n  resolve(\"又呼叫一次\");\n  reject(new Error(\"太晚了\"));\n});\np.then((v) => console.log(v)).catch((e) => console.log(\"錯誤\", e.message));", "expected": "成功" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-3-q10",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "finally 不管成功失敗都會執行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally",
+      "story": "",
+      "prompt": "不管請求成功還是失敗，loading 動畫都要關掉。這段印出什麼？",
+      "code": "Promise.reject(new Error(\"失敗\"))\n  .catch((e) => console.log(\"補救：\", e.message))\n  .finally(() => console.log(\"清理完成\"));",
+      "options": [
+        { "id": "a", "text": "補救： 失敗 然後 清理完成" },
+        { "id": "b", "text": "只印 清理完成" },
+        { "id": "c", "text": "清理完成 然後 補救： 失敗" },
+        { "id": "d", "text": "只印 補救： 失敗，finally 不會跑" }
+      ],
+      "answer": "a",
+      "explanation": "catch 先把失敗接住、印出補救訊息，並且把鏈子接回「成功」狀態（因為 catch 的回呼正常執行完畢，沒有再拋錯）。接在後面的 finally 不管前面是成功還是失敗都一定會跑，很適合放「不管結果如何都要做」的收尾動作，例如關掉 loading 動畫。finally 拿不到成功或失敗的值，它只負責「做完收尾」這件事。",
+      "verify": {
+        "checks": [
+          { "code": "Promise.reject(new Error(\"失敗\"))\n  .catch((e) => console.log(\"補救：\", e.message))\n  .finally(() => console.log(\"清理完成\"));", "expected": "補救： 失敗\n清理完成" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-3-q11",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "微任務要全部清空才輪到下一個巨任務",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise",
+      "story": "",
+      "prompt": "這次微任務排了兩層（then 接 then），計時器也排了兩個。這段印出的順序是？",
+      "code": "setTimeout(() => console.log(\"計時器1\"), 0);\nPromise.resolve()\n  .then(() => console.log(\"微任務1\"))\n  .then(() => console.log(\"微任務2\"));\nsetTimeout(() => console.log(\"計時器2\"), 0);\nconsole.log(\"同步\");",
+      "options": [
+        { "id": "a", "text": "同步 → 微任務1 → 微任務2 → 計時器1 → 計時器2" },
+        { "id": "b", "text": "同步 → 微任務1 → 計時器1 → 微任務2 → 計時器2" },
+        { "id": "c", "text": "同步 → 計時器1 → 計時器2 → 微任務1 → 微任務2" },
+        { "id": "d", "text": "同步 → 微任務1 → 計時器1 → 計時器2 → 微任務2" }
+      ],
+      "answer": "a",
+      "explanation": "規則要記兩層：先跑完全部同步程式，接著把「微任務隊列」整個清空（就算清空過程中又排進新的微任務，像這裡第二個 .then，也會在同一輪繼續處理），最後才輪到巨任務（setTimeout）一個一個來。所以就算計時器1 比微任務2 早登記，微任務2 還是搶在計時器1 前面——「微任務優先權」永遠贏過「登記順序」。",
+      "verify": {
+        "checks": [
+          { "code": "setTimeout(() => console.log(\"計時器1\"), 0);\nPromise.resolve()\n  .then(() => console.log(\"微任務1\"))\n  .then(() => console.log(\"微任務2\"));\nsetTimeout(() => console.log(\"計時器2\"), 0);\nconsole.log(\"同步\");", "expected": "同步\n微任務1\n微任務2\n計時器1\n計時器2" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-3-q12",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "沒人接住的 rejected Promise 會讓程式當掉",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch",
+      "story": "",
+      "prompt": "AI 寫的程式忘了幫這個 reject 加 catch。實際跑起來會怎樣？",
+      "code": "Promise.reject(new Error(\"斷線了\"));   // 沒有接 .catch\nconsole.log(\"同步先印\");",
+      "options": [
+        { "id": "a", "text": "先印出「同步先印」，接著整個程式因為沒人處理的 rejected Promise 而丟出未處理的錯誤、當掉" },
+        { "id": "b", "text": "什麼都不會印，Promise.reject 這行就直接讓程式停住" },
+        { "id": "c", "text": "印出「同步先印」，錯誤被自動吞掉，程式正常結束不受影響" },
+        { "id": "d", "text": "先印出錯誤訊息，才印「同步先印」" }
+      ],
+      "answer": "a",
+      "explanation": "Promise.reject 建立的失敗 Promise 是同步「排進去」的，不會馬上讓程式停下，所以「同步先印」照樣先印出來。但只要這個 rejected Promise 一直沒有 catch 接住，等到微任務輪到它結算時，就會變成一個「未處理的 Promise 拒絕」（unhandled rejection）——現代 Node.js 預設會把它當成沒接住的例外直接讓程式當掉。教訓：每個可能失敗的 Promise 鏈尾端都該有 catch，就像 q5 教的一樣。",
+      "verify": {
+        "checks": [
+          { "code": "Promise.reject(new Error(\"斷線了\"));\nconsole.log(\"同步先印\");", "expected": "同步先印", "expectError": "斷線了" }
+        ]
+      }
     }
   ]
 }

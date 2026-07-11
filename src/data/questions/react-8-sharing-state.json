@@ -135,6 +135,141 @@
         "checks": [],
         "manual": "屬架構設計判斷，無單一可執行輸出；依 react.dev sharing-state-between-components 的單一資料源原則"
       }
+    },
+    {
+      "id": "react-8-q7",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "lifting state up：state 搬家，子元件變成純接收者",
+      "docs": "https://react.dev/learn/sharing-state-between-components",
+      "story": "",
+      "prompt": "把 Toggle 的開關 state 上移到父層 Panel 管理，子元件不再擁有自己的 state。把空格填起來",
+      "code": "// 重構前：Toggle 自己管理 state\n// function Toggle() {\n//   const [on, setOn] = useState(false);\n//   return <button onClick={() => setOn(!on)}>{on ? \"開\" : \"關\"}</button>;\n// }\n\n// 重構後：state 搬到父層，Toggle 變成純接收者\nfunction Toggle({ on, onToggle }) {\n  return <button onClick={onToggle}>{on ? \"開\" : \"關\"}</button>;\n}\n\nfunction Panel() {\n  const [on, setOn] = useState(false);\n  return <____>;\n}",
+      "options": [
+        { "id": "a", "text": "Toggle on={on} onToggle={() => setOn(!on)}" },
+        { "id": "b", "text": "Toggle on={on}" },
+        { "id": "c", "text": "Toggle onToggle={setOn}" },
+        { "id": "d", "text": "Toggle on={!on} onToggle={setOn(!on)}" }
+      ],
+      "answer": "a",
+      "explanation": "lifting state up 的具體動作是：把子元件裡的 useState 整個拿掉，state 和「修改它的函式」一起留在父層，子元件只透過 props 接「目前的值」和「觸發變更用的函式」。選項 b 少傳了 onToggle，按鈕點了沒反應；選項 c 把 setOn 整包硬塞給 onToggle，點擊事件物件會直接被當成新的 on 值傳進 setOn（一個很容易中招的坑）；選項 d 的 setOn(!on) 在渲染當下就執行了，而不是等點擊才執行。父層包一層箭頭函式，是最直接也最安全的寫法。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { useState } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nfunction Toggle({ on, onToggle }) {\n  return <button onClick={onToggle}>{on ? \"開\" : \"關\"}</button>;\n}\nfunction Panel() {\n  const [on, setOn] = useState(false);\n  return <Toggle on={on} onToggle={() => setOn(!on)} />;\n}\nconsole.log(renderToStaticMarkup(<Panel />));", "expected": "<button>關</button>" }
+        ]
+      }
+    },
+    {
+      "id": "react-8-q8",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "controlled vs uncontrolled 元件初探",
+      "docs": "https://react.dev/reference/react-dom/components/input",
+      "story": "",
+      "prompt": "都能讓使用者打字。這兩種 input 寫法，React 對「目前輸入了什麼」的掌握程度一樣嗎？",
+      "code": "// 版本一：受控，畫面上顯示的值完全由 state 決定\nfunction Field1() {\n  const [text, setText] = useState(\"\");\n  return <input value={text} onChange={(e) => setText(e.target.value)} />;\n}\n\n// 版本二：非受控，值由 DOM 自己記，React 不追蹤每個按鍵\nfunction Field2() {\n  return <input defaultValue=\"\" />;\n}",
+      "options": [
+        { "id": "a", "text": "不一樣：版本一（受控）每個按鍵都會更新 state，React 隨時知道目前的值、也能控制它（例如強制清空、驗證、同步給別的元件）；版本二（非受控）只給了初始值，之後打字由 DOM 自己記，React 不知道使用者現在打了什麼，除非另外用 ref 去讀" },
+        { "id": "b", "text": "一樣，React 都全程掌握輸入值" },
+        { "id": "c", "text": "一樣，React 都不掌握輸入值" },
+        { "id": "d", "text": "版本一會報錯，input 不能同時給 value 跟 onChange" }
+      ],
+      "answer": "a",
+      "explanation": "value + onChange 讓 React 成為輸入框的「唯一真相來源」——這正是本章「單一資料源」精神在表單上的實踐：要跟別的元件共享這個輸入值、要清空、要驗證，隨時能靠 state 做到，這叫受控元件。defaultValue 只給 DOM 一個起始值，打字之後的內容活在 DOM 自己的記憶裡，React 對它視而不見，這叫非受控元件，除非搭配 ref 才能讀到目前的值。多數需要「跟其他 UI 同步」的表單都該選受控。",
+      "verify": {
+        "checks": [],
+        "manual": "需要打字互動觀察 state 是否隨按鍵更新；概念依 react.dev reference/react-dom/components/input 的 controlled vs uncontrolled 說明"
+      }
+    },
+    {
+      "id": "react-8-q9",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "把 setter 函式往下傳當 callback",
+      "docs": "https://react.dev/learn/sharing-state-between-components",
+      "story": "",
+      "prompt": "兩個按鈕元件共用同一個 setCount，各自往下傳當 callback。依序點擊「+1」「+1」「歸零」「+1」後，畫面顯示多少？",
+      "code": "function IncButton({ onChange }) {\n  return <button onClick={() => onChange((c) => c + 1)}>+1</button>;\n}\nfunction ResetButton({ onChange }) {\n  return <button onClick={() => onChange(0)}>歸零</button>;\n}\n\nfunction Counter() {\n  const [count, setCount] = useState(0);\n  return (\n    <div>\n      <IncButton onChange={setCount} />\n      <ResetButton onChange={setCount} />\n      <p>目前：{count}</p>\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "1 —— setCount 本身就是 React 給的更新函式，不管從哪個子元件呼叫，改的都是同一個 count；三次 +1、一次歸零，最後落在 1" },
+        { "id": "b", "text": "4 —— 歸零沒有真的生效" },
+        { "id": "c", "text": "0 —— 歸零永遠是最後才算" },
+        { "id": "d", "text": "會報錯，同一個 setCount 不能傳給兩個元件" }
+      ],
+      "answer": "a",
+      "explanation": "setCount 是 React 保證「身分穩定」的更新函式，不需要包一層額外的箭頭函式也能直接當 props 往下傳、被不同的子元件呼叫——不管從 IncButton 還是 ResetButton 呼叫，動的都是 Counter 這唯一一份 count。依序點擊：+1（0→1）、+1（1→2）、歸零（→0）、+1（0→1），最後畫面停在 1。這是「資料往下、事件往上」的進階版：事件處理器不一定要在父層現包，setter 本身就能直接遞下去給多個消費者共用。",
+      "verify": {
+        "checks": [],
+        "manual": "需要依序多次點擊觀察 state 變化；機制依 react.dev sharing-state-between-components（setter 函式可作為 props 向下傳遞、供多個子元件共用）"
+      }
+    },
+    {
+      "id": "react-8-q10",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "state 該放在哪：找兩者最近的共同父層",
+      "docs": "https://react.dev/learn/sharing-state-between-components",
+      "story": "",
+      "prompt": "Left 和 Right 都需要用到 selected，且要能互相同步。selected 的 state 應該放在哪個元件？把空格填起來",
+      "code": "function Left({ selected, onSelect }) {\n  return <button onClick={() => onSelect(\"L\")}>{selected === \"L\" ? \"✓\" : \"\"}Left</button>;\n}\nfunction Right({ selected, onSelect }) {\n  return <button onClick={() => onSelect(\"R\")}>{selected === \"R\" ? \"✓\" : \"\"}Right</button>;\n}\n\nfunction ____() {\n  const [selected, setSelected] = useState(null);\n  return (\n    <div>\n      <Left selected={selected} onSelect={setSelected} />\n      <Right selected={selected} onSelect={setSelected} />\n    </div>\n  );\n}\n\nfunction App() {\n  return <Section />;\n}",
+      "options": [
+        { "id": "a", "text": "Section（Left 和 Right 最近的共同父層）" },
+        { "id": "b", "text": "App（愈高層愈安全）" },
+        { "id": "c", "text": "Left（其中一個子元件自己存）" },
+        { "id": "d", "text": "Right（另一個子元件自己存）" }
+      ],
+      "answer": "a",
+      "explanation": "react.dev 官方給的三步驟是：①從子元件移除 state、②從共同父層傳固定值下去接好接線、③在共同父層加上 state，把值和修改函式一起往下傳。放的位置原則是「兩者最近的共同父層」：不用往上放到 App 這種更高層（沒有其他人需要用到，放高了只是讓不相干的元件也跟著重繪，呼應 react-7 q8/q12「不必要的重繪」概念）；也不能放進 Left 或 Right 任一個裡，那就變回 q2 的老問題——同名不同 state，各存各的。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { useState } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nfunction Left({ selected, onSelect }) {\n  return <button onClick={() => onSelect(\"L\")}>{selected === \"L\" ? \"✓\" : \"\"}Left</button>;\n}\nfunction Right({ selected, onSelect }) {\n  return <button onClick={() => onSelect(\"R\")}>{selected === \"R\" ? \"✓\" : \"\"}Right</button>;\n}\nfunction Section() {\n  const [selected, setSelected] = useState(null);\n  return (\n    <div>\n      <Left selected={selected} onSelect={setSelected} />\n      <Right selected={selected} onSelect={setSelected} />\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<Section />));", "expected": "<div><button>Left</button><button>Right</button></div>" }
+        ]
+      }
+    },
+    {
+      "id": "react-8-q11",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "兩個 input 綁同一個 state，畫面永遠同步",
+      "docs": "https://react.dev/learn/sharing-state-between-components",
+      "story": "",
+      "prompt": "兩個輸入框都綁同一個 text state。初始渲染畫面上，兩個框顯示的值是什麼？",
+      "code": "function App() {\n  const [text, setText] = useState(\"hi\");\n  return (\n    <div>\n      <input value={text} onChange={(e) => setText(e.target.value)} />\n      <input value={text} onChange={(e) => setText(e.target.value)} />\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "都是 \"hi\" —— 同一份 state 餵給兩個輸入框，永遠同步；不管在哪一個框打字，改的都是同一個 text，另一個框下次渲染立刻跟著變" },
+        { "id": "b", "text": "第一個 \"hi\"，第二個空白" },
+        { "id": "c", "text": "都是空的，因為兩個 input 搶同一個 state 會清空" },
+        { "id": "d", "text": "會報錯，同一個 state 不能綁兩個 input" }
+      ],
+      "answer": "a",
+      "explanation": "跟 q1 的價格範例是同一個原則，只是換成表單：text 只有一份、住在 App，兩個 <input> 都從同一個來源讀 value——初始都顯示 \"hi\"。之後不管在哪個框打字，onChange 都呼叫同一個 setText，觸發重繪後兩個框拿到的還是同一個新值，畫面不可能不同步。這就是單一資料源的威力：要讓多個輸入框互相連動，答案永遠是共用同一份 state，而不是各自 useState 再想辦法對齊（q2 的反例）。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { useState } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nfunction App() {\n  const [text, setText] = useState(\"hi\");\n  return (\n    <div>\n      <input value={text} onChange={(e) => setText(e.target.value)} />\n      <input value={text} onChange={(e) => setText(e.target.value)} />\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<div><input value=\"hi\"/><input value=\"hi\"/></div>" }
+        ]
+      }
+    },
+    {
+      "id": "react-8-q12",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "不是所有 state 都要上提：純粹自己的 UI state 留在原地",
+      "docs": "https://react.dev/learn/sharing-state-between-components",
+      "story": "",
+      "prompt": "menuOpen 只有 Navbar 自己用得到，卻被搬到最上層的 App 管理。這樣做有什麼代價？",
+      "code": "function App() {\n  const [menuOpen, setMenuOpen] = useState(false);   // 只有 Navbar 自己用到\n  return (\n    <div>\n      <Navbar open={menuOpen} onToggle={() => setMenuOpen(!menuOpen)} />\n      <MainContent />\n    </div>\n  );\n}\n\nfunction Navbar({ open, onToggle }) {\n  return <button onClick={onToggle}>{open ? \"收合選單\" : \"展開選單\"}</button>;\n}",
+      "options": [
+        { "id": "a", "text": "沒有共享的必要卻硬上提：多繞一手 props，App 也會因為 menuOpen 改變而重新渲染，連帶影響 MainContent 這些其實不相干的兄弟元件；純粹屬於 Navbar 自己的 UI state（例如選單開關），留在 Navbar 內部用自己的 useState 就好" },
+        { "id": "b", "text": "這樣寫是對的，state 永遠是愈高層愈好" },
+        { "id": "c", "text": "這樣會報錯，App 不能有跟子元件同名的 state" },
+        { "id": "d", "text": "MainContent 會拿到錯誤的 menuOpen 值" }
+      ],
+      "answer": "a",
+      "explanation": "本章前面在教「怎麼把 state 往上搬」，但上提是有代價的手術，不是預設動作：只要沒有第二個元件需要用到，就不需要共享，留在原地最單純。硬把只有一個消費者的 state 上提，除了多一層 props 傳遞的麻煩，父層重繪的範圍也跟著變大——不相干的兄弟元件被迫陪著重新渲染（呼應 react-9 會細講的渲染範圍問題）。判斷準則很簡單：這份資料「有超過一個元件需要看到／改到它」嗎？沒有就別搬家，q7 的 lifting state up 是解法，不是每個 state 都要做的手續。",
+      "verify": {
+        "checks": [],
+        "manual": "重繪範圍變大屬於效能／渲染行為，無法用單次執行輸出驗證；原則依 react.dev sharing-state-between-components 的『何時該共享』精神"
+      }
     }
   ]
 }

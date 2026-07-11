@@ -140,6 +140,145 @@
           { "code": "function withdraw(balance, amount) {\n  if (amount > balance) {\n    throw new Error(\"餘額不足\");\n  }\n  return balance - amount;\n}\n\ntry {\n  console.log(withdraw(100, 50));\n  console.log(withdraw(50, 80));\n  console.log(\"完成\");\n} catch (err) {\n  console.log(\"錯誤：\" + err.message);\n}", "expected": "50\n錯誤：餘額不足" }
         ]
       }
+    },
+    {
+      "id": "jsb-5-q7",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "三元運算子巢狀",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Conditional_operator",
+      "story": "",
+      "prompt": "把 if / else if / else 濃縮成一行三元運算子。分數是 75。這段印出什麼？",
+      "code": "const score = 75;\nconst grade = score >= 90 ? \"優等\" : score >= 60 ? \"及格\" : \"不及格\";\nconsole.log(grade);",
+      "options": [
+        { "id": "a", "text": "及格" },
+        { "id": "b", "text": "優等" },
+        { "id": "c", "text": "不及格" },
+        { "id": "d", "text": "會報錯，三元運算子不能巢狀" }
+      ],
+      "answer": "a",
+      "explanation": "三元運算子可以一路串接，運作邏輯跟 if / else if / else 一模一樣：由左到右先看 score >= 90 成不成立，不成立就換下一段條件繼續問。這題答案跟 q1 的 if/else if 完全一致，只是換了更精簡（但巢狀多了容易看花眼）的寫法——條件超過兩三層，建議還是拆回 if/else if 比較好讀。",
+      "verify": {
+        "checks": [
+          { "code": "const score = 75;\nconst grade = score >= 90 ? \"優等\" : score >= 60 ? \"及格\" : \"不及格\";\nconsole.log(grade);", "expected": "及格" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-5-q8",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "finally 一定會執行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/try...catch",
+      "story": "",
+      "prompt": "try 裡面提早 return 了，finally 還會跑嗎？這段印出什麼？",
+      "code": "function run() {\n  try {\n    console.log(\"try\");\n    return \"結果\";\n  } finally {\n    console.log(\"finally\");\n  }\n}\nconsole.log(run());",
+      "options": [
+        { "id": "a", "text": "try 然後 finally 然後 結果" },
+        { "id": "b", "text": "try 然後 結果（finally 被跳過）" },
+        { "id": "c", "text": "finally 然後 try 然後 結果" },
+        { "id": "d", "text": "try 然後 結果 然後 finally" }
+      ],
+      "answer": "a",
+      "explanation": "finally 是「不管發生什麼事都一定會執行」的收尾區——就算 try 裡已經 return 了，也會先繞去 finally 跑完，才真的把值交出去。所以順序是 try → finally → 結果，而不是 return 之後直接跳過 finally。finally 常拿來做「不管成功失敗都要做」的收尾工作，例如關閉 loading 狀態、釋放資源。",
+      "verify": {
+        "checks": [
+          { "code": "function run() {\n  try {\n    console.log(\"try\");\n    return \"結果\";\n  } finally {\n    console.log(\"finally\");\n  }\n}\nconsole.log(run());", "expected": "try\nfinally\n結果" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-5-q9",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "continue 跳過本次迴圈",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/continue",
+      "story": "",
+      "prompt": "只想印出偶數，遇到奇數就跳過。這段印出什麼？",
+      "code": "for (let i = 1; i <= 5; i++) {\n  if (i % 2 !== 0) continue;\n  console.log(i);\n}",
+      "options": [
+        { "id": "a", "text": "2 然後 4" },
+        { "id": "b", "text": "1 2 3 4 5" },
+        { "id": "c", "text": "1 3 5" },
+        { "id": "d", "text": "什麼都不印" }
+      ],
+      "answer": "a",
+      "explanation": "continue 只跳過「這一輪」剩下的程式碼，直接跳去下一次迴圈的判斷式，迴圈本身不會停。跟 break（整個迴圈直接收工不玩了）不一樣——continue 是「這局不算，繼續玩下一局」。這題如果誤用 break，只會印出「什麼都不印」，因為第一輪 i=1 遇到就整個迴圈中止了。",
+      "verify": {
+        "checks": [
+          { "code": "for (let i = 1; i <= 5; i++) {\n  if (i % 2 !== 0) continue;\n  console.log(i);\n}", "expected": "2\n4" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-5-q10",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "短路賦值 ??= 補預設值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Logical_nullish_assignment",
+      "story": "",
+      "prompt": "使用者設定裡 volume 還沒設定（是 undefined），要補上預設值 50，但如果已經是 0（靜音）要保留 0。把空格填起來",
+      "code": "const settings = { volume: undefined };\nsettings.volume ____ 50;\nconsole.log(settings.volume);",
+      "options": [
+        { "id": "a", "text": "??=" },
+        { "id": "b", "text": "||=" },
+        { "id": "c", "text": "&&=" },
+        { "id": "d", "text": "+=" }
+      ],
+      "answer": "a",
+      "explanation": "??= 是「左邊是 null 或 undefined 才賦值」的簡寫，等於 settings.volume = settings.volume ?? 50。這裡 volume 是 undefined，所以補上 50。如果用 ||=，只要左邊是 falsy（包含 0）就會被蓋掉——靜音的 0 會被誤判成「沒設定」而換成 50，這正是 jsb-1-q11 用 ?? 保護 0 的邏輯，只是這裡多了「順便賦值」這個動作。",
+      "verify": {
+        "checks": [
+          { "code": "const settings = { volume: undefined };\nsettings.volume ??= 50;\nconsole.log(settings.volume);", "expected": "50" },
+          { "code": "const settings = { volume: 0 };\nsettings.volume ??= 50;\nconsole.log(settings.volume);", "expected": "0" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-5-q11",
+      "type": "same-or-not",
+      "difficulty": 2,
+      "topic": "do-while 至少跑一次",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/do...while",
+      "story": "",
+      "prompt": "條件一開始就不成立。while 和 do-while 的執行次數一樣嗎？",
+      "code": "let count = 10;\n\n// 版本一\nwhile (count < 5) {\n  console.log(\"while 執行了\");\n  count++;\n}\n\n// 版本二\ndo {\n  console.log(\"do-while 執行了\");\n  count++;\n} while (count < 5);\n\nconsole.log(\"結束\");",
+      "options": [
+        { "id": "a", "text": "不一樣：while 一次都不跑，do-while 一定先跑一次，印出「do-while 執行了」然後「結束」" },
+        { "id": "b", "text": "一樣：兩個都不會印任何執行訊息，只印「結束」" },
+        { "id": "c", "text": "一樣：兩個都會印「執行了」" },
+        { "id": "d", "text": "不一樣：while 會報錯" }
+      ],
+      "answer": "a",
+      "explanation": "while 是「先問再做」，條件一開始就不成立（10 < 5 是 false），一次都不會進去執行。do-while 是「先做再問」，不管條件一開始成不成立，body 至少會跑一次，跑完才檢查要不要再繼續。需要「至少執行一次」的情境（例如至少要顯示一次選單再問要不要重複）就該用 do-while。",
+      "verify": {
+        "checks": [
+          { "code": "let count = 10;\nwhile (count < 5) {\n  console.log(\"while 執行了\");\n  count++;\n}\ndo {\n  console.log(\"do-while 執行了\");\n  count++;\n} while (count < 5);\nconsole.log(\"結束\");", "expected": "do-while 執行了\n結束" }
+        ]
+      }
+    },
+    {
+      "id": "jsb-5-q12",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "&& 串接的短路求值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Logical_AND",
+      "story": "",
+      "prompt": "&& 串接多個條件，只要前面短路，後面的表達式根本不會被執行。這段印出什麼？",
+      "code": "function checkA() {\n  console.log(\"檢查 A\");\n  return false;\n}\nfunction checkB() {\n  console.log(\"檢查 B\");\n  return true;\n}\nconst result = checkA() && checkB();\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "檢查 A 然後 false（checkB 完全沒被呼叫）" },
+        { "id": "b", "text": "檢查 A 然後 檢查 B 然後 false" },
+        { "id": "c", "text": "檢查 A 然後 檢查 B 然後 true" },
+        { "id": "d", "text": "會報錯" }
+      ],
+      "answer": "a",
+      "explanation": "&& 一路往右算，只要前面出現一個 falsy 值就立刻收工，右邊的表達式連呼叫都不會被呼叫——這不只是「回傳值」的問題，是真的不會執行。如果 checkB 裡面藏著發 API 請求或修改資料等副作用，誤以為「反正兩個都會跑」就會漏算。這也是 ?? 與 ||/&& 行為不同（jsb-1-q11）的延伸：短路運算子不只影響結果，也影響「哪些程式碼真的被執行到」。",
+      "verify": {
+        "checks": [
+          { "code": "function checkA() {\n  console.log(\"檢查 A\");\n  return false;\n}\nfunction checkB() {\n  console.log(\"檢查 B\");\n  return true;\n}\nconst result = checkA() && checkB();\nconsole.log(result);", "expected": "檢查 A\nfalse" }
+        ]
+      }
     }
   ]
 }

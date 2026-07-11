@@ -139,6 +139,145 @@
           { "code": "(async () => {\n  const url = \"data:text/javascript,let n = 0; export const inc = () => ++n;\";\n  const m1 = await import(url);\n  const m2 = await import(url);\n  m1.inc();\n  console.log(m2.inc());\n})();", "expected": "2" }
         ]
       }
+    },
+    {
+      "id": "jsa-7-q7",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "具名匯入用 as 改名",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/import",
+      "story": "",
+      "prompt": "utils.js 匯出的 value 跟 main.js 自己想用的變數名字撞了。這樣寫會怎樣？",
+      "code": "// utils.js\nexport const value = 10;\n\n// main.js\nimport { value as utilValue } from \"./utils.js\";\nconst value = 99;\nconsole.log(value, utilValue);",
+      "options": [
+        { "id": "a", "text": "99 10" },
+        { "id": "b", "text": "10 99" },
+        { "id": "c", "text": "會報錯，value 被重複宣告" },
+        { "id": "d", "text": "99 99" }
+      ],
+      "answer": "a",
+      "explanation": "import { value as utilValue } 是「領貨的時候順便改名」：匯入進來的東西在這個檔案裡從頭到尾只認得 utilValue 這個名字，跟本地自己宣告的 value 完全是兩個獨立的變數，不會撞名。如果沒加 as、直接 import { value } 又同時 const value = 99，那才會真的因為同一個作用域裡重複宣告而報錯——as 正是拿來解決「進口貨跟自家貨同名」的標準做法。",
+      "verify": {
+        "checks": [
+          { "code": "(async () => {\n  const mod = await import(\"data:text/javascript,export const value = 10;\");\n  const { value: utilValue } = mod;\n  const value = 99;\n  console.log(value, utilValue);\n})();", "expected": "99 10" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-7-q8",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "尾端集中 export { a, b, c }",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/export",
+      "story": "",
+      "prompt": "utils.js 想一次把三個東西開放出去，不想在每一行前面各加一次 export。這樣寫合法嗎？印出什麼？",
+      "code": "// utils.js\nfunction add(a, b) { return a + b; }\nfunction sub(a, b) { return a - b; }\nconst PI = 3.14;\n\nexport { add, sub, PI };\n\n// main.js\nimport { add, sub, PI } from \"./utils.js\";\nconsole.log(add(1, 2), sub(5, 2), PI);",
+      "options": [
+        { "id": "a", "text": "3 3 3.14" },
+        { "id": "b", "text": "會報錯，export 一定要寫在宣告的前面" },
+        { "id": "c", "text": "undefined undefined undefined" },
+        { "id": "d", "text": "3 3 undefined" }
+      ],
+      "answer": "a",
+      "explanation": "export { a, b, c } 這種「尾端集中匯出」跟在每個宣告前面各自加 export 效果完全一樣，只是把「這個檔案對外開放了什麼」集中寫成一張清單放在檔案最後，很多人覺得一眼就能看完整份匯出名單、比較好維護。兩種寫法混著用也沒問題，純粹是風格選擇。",
+      "verify": {
+        "checks": [
+          { "code": "(async () => {\n  const mod = await import(\"data:text/javascript,function add(a, b) { return a + b; } function sub(a, b) { return a - b; } const PI = 3.14; export { add, sub, PI };\");\n  console.log(mod.add(1, 2), mod.sub(5, 2), mod.PI);\n})();", "expected": "3 3 3.14" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-7-q9",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "re-export：轉手把別人的匯出讓出去",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/export",
+      "story": "",
+      "prompt": "index.js 想讓外面可以直接跟它拿 double，不用知道 double 其實是 math.js 寫的。這樣寫印出什麼？",
+      "code": "// math.js\nexport const double = (n) => n * 2;\n\n// index.js\nexport { double } from \"./math.js\";\n\n// main.js\nimport { double } from \"./index.js\";\nconsole.log(double(21));",
+      "options": [
+        { "id": "a", "text": "42" },
+        { "id": "b", "text": "會報錯，index.js 沒有 import double 就不能 export" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "21" }
+      ],
+      "answer": "a",
+      "explanation": "export { double } from \"./math.js\" 是「re-export」的語法糖：index.js 不用先 import 再 export 兩步，一行就把 math.js 的東西轉手開放出去，而且它自己內部並不會多出一個叫 double 的本地變數（想在 index.js 裡面用它還是得另外 import）。這招常用來幫一堆散落的小檔案做「統一出口」的 index.js，讓外面只需要記得一個進入點。",
+      "verify": {
+        "checks": [
+          { "code": "(async () => {\n  const mathUrl = \"data:text/javascript,export const double = (n) => n * 2;\";\n  const indexUrl = \"data:text/javascript,\" + encodeURIComponent(`export { double } from \"${mathUrl}\";`);\n  const mod = await import(indexUrl);\n  console.log(mod.double(21));\n})();", "expected": "42" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-7-q10",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "動態 import()：用到才載入",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/import",
+      "story": "",
+      "prompt": "想等使用者真的按下按鈕才載入這個很肥的模組，不要一開頭就載入。把空格填起來",
+      "code": "// heavy.js\nexport const run = () => \"重模組執行了\";\n\n// main.js\nasync function onClick() {\n  const mod = await ____;\n  console.log(mod.run());\n}\nonClick();",
+      "options": [
+        { "id": "a", "text": "import(\"./heavy.js\")" },
+        { "id": "b", "text": "import \"./heavy.js\"" },
+        { "id": "c", "text": "require(\"./heavy.js\")" },
+        { "id": "d", "text": "import { run } from \"./heavy.js\"" }
+      ],
+      "answer": "a",
+      "explanation": "動態 import() 是一個函式呼叫（表達式），回傳一個 Promise，resolve 之後拿到整個模組物件——跟開頭寫死的靜態 import 不一樣，它可以放在任何時機才觸發，例如點擊事件裡才去下載某個很少用到的模組，這就是 code splitting／延遲載入的基礎。選項 b 是靜態語句寫法，不是表達式、不能 await；選項 c 是 CommonJS 的東西，跟 ESM 是兩套系統；選項 d 的靜態具名匯入語法必須寫在檔案最上層，不能塞進函式裡按需執行。",
+      "verify": {
+        "checks": [
+          { "code": "(async () => {\n  const mod = await import(\"data:text/javascript,export const run = () => '重模組執行了';\");\n  console.log(mod.run());\n})();", "expected": "重模組執行了" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-7-q11",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "循環依賴：互相 import 會怎樣",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Guide/Modules",
+      "story": "",
+      "prompt": "a.js 和 b.js 互相 import 對方（循環依賴，AI 重構拆檔案時偶爾會不小心搞出這種結構）。main.js 印出什麼？",
+      "code": "// a.js\nimport { bFn } from \"./b.js\";\nexport function aFn() { return \"a\"; }\nexport function callB() { return bFn(); }\n\n// b.js\nimport { aFn } from \"./a.js\";\nexport function bFn() { return \"b+\" + aFn(); }\n\n// main.js\nimport { callB } from \"./a.js\";\nconsole.log(callB());",
+      "options": [
+        { "id": "a", "text": "\"b+a\" —— 因為真正呼叫的時候，兩個檔案都已經完整載入好了" },
+        { "id": "b", "text": "會報錯，JS 不准兩個模組互相 import" },
+        { "id": "c", "text": "\"undefined\"" },
+        { "id": "d", "text": "程式會卡在無窮迴圈裡" }
+      ],
+      "answer": "a",
+      "explanation": "循環依賴（a 引用 b、b 又引用 a）在 ESM 裡不會直接報錯：模組載入器碰到循環時會先讓大家「佔位」，這裡兩邊用的都是 function 宣告——它會被整個掛起來、提前就可以被看見，而且真正呼叫 bFn()／aFn() 是在 main.js 呼叫 callB() 的當下，那時候 a.js、b.js 早就各自完整跑過一輪，所以能順利拿到 \"b+a\"。但如果換成用 const 賦值的箭頭函式、又在模組最上層（不是函式內部）就立刻拿對方的值來用，就會撞到對方還沒初始化的空窗期、變成 undefined 甚至直接報錯——循環依賴能不能安全運作，關鍵在於「真正用到的時候，對方是不是已經跑完了」。",
+      "verify": {
+        "checks": [
+          { "code": "(async () => {\n  const fs = require('node:fs');\n  const path = require('node:path');\n  const os = require('node:os');\n  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'circ-'));\n  fs.writeFileSync(path.join(dir, 'a.mjs'), 'import { bFn } from \"./b.mjs\"; export function aFn() { return \"a\"; } export function callB() { return bFn(); }');\n  fs.writeFileSync(path.join(dir, 'b.mjs'), 'import { aFn } from \"./a.mjs\"; export function bFn() { return \"b+\" + aFn(); }');\n  const mod = await import('file://' + path.join(dir, 'a.mjs'));\n  console.log(mod.callB());\n  fs.rmSync(dir, { recursive: true, force: true });\n})();", "expected": "b+a" }
+        ]
+      }
+    },
+    {
+      "id": "jsa-7-q12",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "一個模組只能有一個 export default",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/export",
+      "story": "",
+      "prompt": "utils.js 想把兩個函式都設成「預設」，一次全部匯出。哪裡出錯了？",
+      "code": "// utils.js\nexport default function greet() { return \"hi\"; }   // A 行\nexport default function bye() { return \"bye\"; }    // B 行 💥",
+      "options": [
+        { "id": "a", "text": "B 行：一個模組最多只能有一個 export default，重複宣告是語法錯誤" },
+        { "id": "b", "text": "兩個 default 會自動合併成一個陣列" },
+        { "id": "c", "text": "後面那個會安靜蓋掉前面那個，不會報錯" },
+        { "id": "d", "text": "沒問題，這是合法的" }
+      ],
+      "answer": "a",
+      "explanation": "export default 是「單一包裹」：一個模組最多只能貼一張預設標籤，寫第二次會直接 SyntaxError，整個檔案跑不起來（不是選項 c 講的「安靜覆蓋」，那種行為只會發生在物件屬性或 Map 的 set 上，模組匯出不是這樣運作的）。真的想一次開放兩樣東西，做法是留一個當 default、其餘的都用具名匯出（export const、export function），或乾脆兩個都用具名匯出。",
+      "verify": {
+        "checks": [
+          { "code": "(async () => {\n  await import(\"data:text/javascript,export default function greet() { return 'hi'; } export default function bye() { return 'bye'; }\");\n})();", "expectError": "Duplicate export of 'default'" },
+          { "code": "(async () => {\n  const mod = await import(\"data:text/javascript,export default function greet() { return 'hi'; }\");\n  console.log(mod.default());\n})();", "expected": "hi" }
+        ]
+      }
     }
   ]
 }

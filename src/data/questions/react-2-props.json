@@ -140,6 +140,147 @@
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Price({ discount }) {\n  return (\n    <p>折扣：{discount || \"無\"}｜{discount ?? \"無\"}</p>\n  );\n}\nconsole.log(renderToStaticMarkup(<Price discount={0} />));", "expected": "<p>折扣：無｜0</p>" }
         ]
       }
+    },
+    {
+      "id": "react-2-q7",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "props 是唯讀的，元件不該自己改",
+      "docs": "https://react.dev/learn/keeping-components-pure",
+      "story": "",
+      "prompt": "AI 寫的元件想「調整」收到的 count，直接動手改了 props 物件。執行下去會發生什麼事？",
+      "code": "function Counter(props) {\n  props.count = props.count + 1;   // B 行\n  return <p>目前：{props.count}</p>;\n}\n\n// 使用：<Counter count={2} />",
+      "options": [
+        { "id": "a", "text": "直接噴出 TypeError：Cannot assign to read only property——React 在開發模式下把 props 物件凍結起來，改了就報錯" },
+        { "id": "b", "text": "正常運作，畫面顯示「目前：3」" },
+        { "id": "c", "text": "React 會自動把改過的值同步回父層" },
+        { "id": "d", "text": "沒有任何影響，count 這個名字本身就不能被累加" }
+      ],
+      "answer": "a",
+      "explanation": "props 就像函式的參數，是父層傳下來的一份唯讀快照，元件不該偷偷把它改掉——這不只是慣例，React 在開發模式下真的會把每個元件收到的 props 物件凍結（Object.freeze），一改就直接丟 TypeError，而不是悄悄壞掉又不出聲。這是 React 刻意做的保護，逼你老實面對「props 唯讀」這條規則。想要一個「調整後的值」，該做的是另外宣告一個變數：const display = props.count + 1，完全不去碰 props 本身；畫面要能因為使用者操作而變化，靠的是下一章要學的 state。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Counter(props) {\n  props.count = props.count + 1;\n  return <p>目前：{props.count}</p>;\n}\nconsole.log(renderToStaticMarkup(<Counter count={2} />));", "expectError": "Cannot assign to read only property" },
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Counter({ count }) {\n  const display = count + 1;\n  return <p>目前：{display}</p>;\n}\nconsole.log(renderToStaticMarkup(<Counter count={2} />));", "expected": "<p>目前：3</p>" }
+        ]
+      }
+    },
+    {
+      "id": "react-2-q8",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "傳函式當 props，交給子層在事件發生時呼叫",
+      "docs": "https://react.dev/learn/responding-to-events",
+      "story": "",
+      "prompt": "父層把 handleSave 整個（不加括號）當成 onSave prop 傳給子層。渲染這個 App 的當下（還沒按任何按鈕），「已儲存！」會被印出來嗎？",
+      "code": "function SaveButton({ onSave }) {\n  return <button onClick={onSave}>儲存</button>;\n}\n\nfunction App() {\n  function handleSave() {\n    console.log(\"已儲存！\");\n  }\n  return <SaveButton onSave={handleSave} />;\n}",
+      "options": [
+        { "id": "a", "text": "不會 —— onSave={handleSave} 傳的是函式本身（還沒被呼叫），要等真的觸發 onClick 才會執行" },
+        { "id": "b", "text": "會，元件一渲染就會呼叫 handleSave" },
+        { "id": "c", "text": "會，因為 SaveButton 裡的 onClick={onSave} 在渲染時就先執行了一次" },
+        { "id": "d", "text": "不確定，要看瀏覽器環境才知道" }
+      ],
+      "answer": "a",
+      "explanation": "把函式整個（不加括號呼叫）當成 prop 傳下去，子層拿到的是一個「還沒被呼叫」的函式引用，等真正需要的時機（這裡是按鈕的 onClick）才由子層代為呼叫。這樣父層可以決定「按下去要做什麼」，子層只負責「什麼時候該做」——這是 React 元件溝通最常見的模式。要是不小心寫成 onSave={handleSave()}，那就是在渲染當下立刻呼叫並把回傳值（undefined）當成 prop，「已儲存！」會在畫面都還沒畫出來時就先印出來，是很典型的 AI 誤植錯誤。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction SaveButton({ onSave }) {\n  return <button onClick={onSave}>儲存</button>;\n}\nfunction App() {\n  function handleSave() {\n    console.log(\"已儲存！\");\n  }\n  return <SaveButton onSave={handleSave} />;\n}\nrenderToStaticMarkup(<App />);\nconsole.log(\"渲染完成\");", "expected": "渲染完成" },
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction SaveButton({ onSave }) {\n  return <button onClick={onSave}>儲存</button>;\n}\nfunction App() {\n  function handleSave() {\n    console.log(\"已儲存！\");\n  }\n  return <SaveButton onSave={handleSave()} />;\n}\nrenderToStaticMarkup(<App />);\nconsole.log(\"渲染完成\");", "expected": "已儲存！\n渲染完成" }
+        ]
+      }
+    },
+    {
+      "id": "react-2-q9",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "展開 props：{...props}",
+      "docs": "https://react.dev/learn/passing-props-to-a-component",
+      "story": "",
+      "prompt": "FancyButton 把自己收到的所有 props 原封不動用 {...props} 轉送給內層的 button。畫面渲染出什麼？",
+      "code": "function FancyButton(props) {\n  return <button className=\"fancy\" {...props} />;\n}\n\nfunction App() {\n  return (\n    <FancyButton type=\"submit\" disabled>\n      送出\n    </FancyButton>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "button 同時拿到 type、disabled、children（送出）—— {...props} 會把收到的每一個 prop 全部展開貼上去" },
+        { "id": "b", "text": "只有 className=\"fancy\" 生效，其他 props 都被吃掉" },
+        { "id": "c", "text": "會報錯，button 不能用展開語法接收 props" },
+        { "id": "d", "text": "type 和 disabled 被忽略，只顯示「送出」兩個字" }
+      ],
+      "answer": "a",
+      "explanation": "{...props} 是把整個 props 物件的每一把鍵值，原封不動地攤開貼到標籤上——包含呼叫端傳的 type、disabled，也包含標籤中間那段文字自動變成的 children。這是「包一層外觀、其餘原樣轉發」的元件很愛用的寫法，例如自訂 Button 元件想長得不一樣、但保留 disabled、onClick 這些原生行為。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction FancyButton(props) {\n  return <button className=\"fancy\" {...props} />;\n}\nfunction App() {\n  return (\n    <FancyButton type=\"submit\" disabled>\n      送出\n    </FancyButton>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<button class=\"fancy\" type=\"submit\" disabled=\"\">送出</button>" }
+        ]
+      }
+    },
+    {
+      "id": "react-2-q10",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "children 只有一個插槽；多個區塊就用具名 prop 傳 JSX",
+      "docs": "https://react.dev/learn/passing-props-to-a-component",
+      "story": "",
+      "prompt": "Layout 元件想同時收「側邊欄」和「主要內容」兩塊 JSX，只靠 children 塞得下嗎？",
+      "code": "function Layout({ sidebar, children }) {\n  return (\n    <div>\n      <aside>{sidebar}</aside>\n      <main>{children}</main>\n    </div>\n  );\n}\n\nfunction App() {\n  return (\n    <Layout sidebar={<nav>選單</nav>}>\n      <p>主要內容</p>\n    </Layout>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "<div><aside><nav>選單</nav></aside><main><p>主要內容</p></main></div> —— sidebar 走具名 prop、children 走標籤中間那份，兩者互不衝突" },
+        { "id": "b", "text": "只有 main 裡有內容，aside 是空的，因為一個元件只能收一份 JSX" },
+        { "id": "c", "text": "會報錯，prop 不能傳遞 JSX 元素" },
+        { "id": "d", "text": "sidebar 跟 children 會互相覆蓋，最後只剩其中一個生效" }
+      ],
+      "answer": "a",
+      "explanation": "children 是 React 內建、專門對應「寫在標籤中間」那份內容的 prop，一個元件永遠只有一份 children。但 JSX 元素本身就是普通的值，可以像任何資料一樣透過「具名 prop」多開幾個插槽，例如這裡的 sidebar——這是 Layout、Modal、Card 這類「有多個內容區塊」元件的標準寫法，children 負責主要內容，其餘區塊各自取名傳進去。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Layout({ sidebar, children }) {\n  return (\n    <div>\n      <aside>{sidebar}</aside>\n      <main>{children}</main>\n    </div>\n  );\n}\nfunction App() {\n  return (\n    <Layout sidebar={<nav>選單</nav>}>\n      <p>主要內容</p>\n    </Layout>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<div><aside><nav>選單</nav></aside><main><p>主要內容</p></main></div>" }
+        ]
+      }
+    },
+    {
+      "id": "react-2-q11",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "陣列、物件都能整包當 props 傳下去",
+      "docs": "https://react.dev/learn/passing-props-to-a-component",
+      "story": "",
+      "prompt": "user 是一個物件、tags 是一個陣列，兩個都直接當 props 傳給子元件。畫面顯示什麼？",
+      "code": "function Profile({ user, tags }) {\n  return <p>{user.name}（{tags.join(\"、\")}）</p>;\n}\n\nfunction App() {\n  const user = { name: \"小美\" };\n  const tags = [\"前端\", \"React\"];\n  return <Profile user={user} tags={tags} />;\n}",
+      "options": [
+        { "id": "a", "text": "小美（前端、React） —— props 能裝任何 JS 值，物件和陣列當然也行，子層照樣能用 .name、.join 操作它們" },
+        { "id": "b", "text": "會報錯，props 只能傳字串和數字" },
+        { "id": "c", "text": "[object Object]（前端,React）" },
+        { "id": "d", "text": "小美（[\"前端\",\"React\"]）" }
+      ],
+      "answer": "a",
+      "explanation": "props 說到底就是「函式的參數」，是個普通的 JS 物件，塞進去的值想是字串、數字、函式、陣列、物件，甚至另一個 JSX 元素都行（上一題就示範了 JSX）。子元件收到後就用平常操作 JS 值的方式處理它——user.name 取欄位、tags.join 串陣列，完全沒有特殊限制，這也是為什麼 React 元件之間傳整包資料（例如一筆商品、一份表單狀態）這麼自然。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Profile({ user, tags }) {\n  return <p>{user.name}（{tags.join(\"、\")}）</p>;\n}\nfunction App() {\n  const user = { name: \"小美\" };\n  const tags = [\"前端\", \"React\"];\n  return <Profile user={user} tags={tags} />;\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<p>小美（前端、React）</p>" }
+        ]
+      }
+    },
+    {
+      "id": "react-2-q12",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "沒傳的 prop 是 undefined，插進文字會印出「undefined」",
+      "docs": "https://react.dev/learn/passing-props-to-a-component",
+      "story": "",
+      "prompt": "AI 沒幫 Avatar 元件的 title 設定預設值，畫面上出現了詭異的「undefined」四個字。哪裡出了問題？",
+      "code": "function Avatar({ title }) {\n  return <img alt={\"頭像：\" + title} src=\"/a.png\" />;\n}\n\nfunction App() {\n  return <Avatar />;   // 忘了傳 title\n}",
+      "options": [
+        { "id": "a", "text": "沒傳的 prop 值是 undefined，字串相加會把它轉成文字 \"undefined\" 黏進去；要嘛呼叫端補上 title，要嘛給參數預設值 title = \"\"" },
+        { "id": "b", "text": "img 標籤不能使用 alt 屬性" },
+        { "id": "c", "text": "App 忘了寫 return" },
+        { "id": "d", "text": "title 要寫成 this.title 才抓得到值" }
+      ],
+      "answer": "a",
+      "explanation": "props 沒傳，對應的參數就是貨真價實的 undefined，不會自動變成空字串或任何預設值。字串相加時 JS 會把 undefined 轉型成文字 \"undefined\" 接上去，於是畫面出現這個詭異的英文字——這跟第一章「字串 + undefined」的坑是同一個原理，只是換了個舞台在 React 重演。修法呼應 react-2-q1：用解構預設值 { title = \"\" } 擋掉，或是呼叫端記得補齊 title。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Avatar({ title }) {\n  return <img alt={\"頭像：\" + title} src=\"/a.png\" />;\n}\nfunction App() {\n  return <Avatar />;\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<link rel=\"preload\" as=\"image\" href=\"/a.png\"/><img alt=\"頭像：undefined\" src=\"/a.png\"/>" },
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Avatar({ title = \"\" }) {\n  return <img alt={\"頭像：\" + title} src=\"/a.png\" />;\n}\nfunction App() {\n  return <Avatar />;\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<link rel=\"preload\" as=\"image\" href=\"/a.png\"/><img alt=\"頭像：\" src=\"/a.png\"/>" }
+        ]
+      }
     }
   ]
 }

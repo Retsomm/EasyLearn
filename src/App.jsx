@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { useProgress } from './hooks/useProgress'
 import { getLevel, getWrongQuestions } from './data/chapters'
-import { shuffle, sampleQuestions, QUIZ_SIZE } from './utils/quiz'
+import { shuffle, sampleQuestions, REVIEW_SIZE } from './utils/quiz'
 import Home from './screens/Home'
 import ChapterMap from './screens/ChapterMap'
 import Quiz from './screens/Quiz'
-
-const REVIEW_SIZE = QUIZ_SIZE
 
 export default function App() {
   const { progress, answerQuestion, finishLevel, finishReview, exportProgress, importProgress } =
@@ -14,7 +12,7 @@ export default function App() {
   const [view, setView] = useState({ name: 'home' })
 
   function startLevel(levelId) {
-    // 從關卡題池隨機抽題，重玩不重複
+    // 整個題池隨機排序作答（同難度內順序每次不同）
     const level = getLevel(levelId)
     setView({ name: 'quiz', levelId, questions: sampleQuestions(level.questions) })
   }
