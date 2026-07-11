@@ -17,6 +17,7 @@ export default function Quiz({
   finishLevel,
   finishReview,
   onExit,
+  exitTo = 'levellist',
 }) {
   const [index, setIndex] = useState(0)
   const [selected, setSelected] = useState(null)
@@ -90,7 +91,7 @@ export default function Quiz({
             : '皮皮吃飽了，明天也要來餵牠喔！'}
         </p>
         <button className="primary-btn" onClick={onExit}>
-          {skipsLevelProgress ? '回首頁' : '返回關卡地圖'}
+          {exitTo === 'home' ? '回首頁' : exitTo === 'notes' ? '返回筆記' : '返回關卡地圖'}
         </button>
       </div>
     )

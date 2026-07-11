@@ -22,7 +22,7 @@
 - 錯題本改成 Leitner 盒制：`wrongIds[id] = { count, lastWrong, box }`，答錯重置回第 1 盒、答對升一盒，
   超過 `GRADUATE_BOX`（=3）才真正畢業移出錯題本，不再是「碰巧對一次就消失」
 - 舊資料相容：`wrongIds` 舊格式是 `{ id: true }`，新增 `migrateWrongIds()` 在 `load()`／`importProgress()`
-  時把 boolean 轉成盒制物件——這是第一個需要真正 migration（非 shallow merge 就够）的欄位變更
+  時把 boolean 轉成盒制物件——這是第一個需要真正 migration（非 shallow merge 就夠）的欄位變更
 - 新增收藏：`savedIds: { id: true }` ＋ `toggleSaved()`，答題卡片右上角星號可收藏
 - 新增兩個瀏覽頁（`src/screens/QuestionBook.jsx` 共用元件，`kind="wrong"|"saved"`）：
   不用重考就能翻看題目、正解、解釋；錯題本頁另外顯示答錯次數／熟練度／最近答錯日期，並可直接「開始重練」

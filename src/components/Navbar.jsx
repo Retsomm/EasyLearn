@@ -21,6 +21,7 @@ export default function Navbar({ active, onNavigate }) {
               key={item.key}
               className={`navbar-tab ${active === item.key ? 'is-active' : ''}`}
               onClick={() => onNavigate(item.key)}
+              aria-current={active === item.key ? 'page' : undefined}
             >
               <Icon name={item.icon} size={18} />
               {item.label}

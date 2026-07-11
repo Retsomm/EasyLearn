@@ -45,7 +45,7 @@ export default function App() {
 
   function startMixedPractice() {
     const pool = chapters.flatMap((ch) => ch.levels.flatMap((l) => l.questions))
-    const picked = sampleQuestions(pool).slice(0, MIXED_SIZE)
+    const picked = shuffle(pool).slice(0, MIXED_SIZE).sort((a, b) => a.difficulty - b.difficulty)
     setView({ name: 'mixed', questions: picked })
   }
 
@@ -73,6 +73,7 @@ export default function App() {
         finishLevel={finishLevel}
         finishReview={finishReview}
         onExit={() => setView({ name: 'levellist', chapterId: navGroupOfChapter(level.id) })}
+        exitTo="levellist"
       />
     )
   } else if (view.name === 'review') {
@@ -87,6 +88,7 @@ export default function App() {
         finishLevel={finishLevel}
         finishReview={finishReview}
         onExit={() => setView({ name: 'notes' })}
+        exitTo="notes"
       />
     )
   } else if (view.name === 'mixed') {
@@ -101,6 +103,7 @@ export default function App() {
         finishLevel={finishLevel}
         finishReview={finishReview}
         onExit={() => setView({ name: 'home' })}
+        exitTo="home"
       />
     )
   } else if (view.name === 'savedpractice') {
@@ -115,6 +118,7 @@ export default function App() {
         finishLevel={finishLevel}
         finishReview={finishReview}
         onExit={() => setView({ name: 'notes' })}
+        exitTo="notes"
       />
     )
   } else if (view.name === 'wrongbook') {
