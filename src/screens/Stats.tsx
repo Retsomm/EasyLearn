@@ -93,8 +93,6 @@ const Stats = ({ progress }: StatsProps) => {
 
   return (
     <div className="screen stats-screen">
-      <h2 className="page-title">學習數據分析</h2>
-
       <div className="stat-tile-row">
         <div className="stat-tile">
           <span className="stat-tile-label">總答題數</span>

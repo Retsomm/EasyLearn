@@ -427,7 +427,6 @@ button {
 }
 
 .progress-io {
-  margin-top: 28px;
   font-size: 14px;
 }
 
@@ -1237,15 +1236,197 @@ button {
 }
 
 /* ── 個人資料 ─────────────────────── */
+.profile-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.profile-card .section-title {
+  margin: 0 0 12px;
+  align-self: flex-start;
+}
+
 .profile-screen .mascot {
   margin-top: 8px;
+}
+
+.growth-toggle {
+  margin-top: 10px;
+}
+
+.growth-toggle .icon {
+  transition: transform 0.15s ease;
+}
+
+.growth-toggle .icon.is-open {
+  transform: rotate(90deg);
+}
+
+.growth-history {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.growth-history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--option-bg);
+  opacity: 0.5;
+}
+
+.growth-history-item.is-reached {
+  opacity: 1;
+}
+
+.growth-history-item.is-current {
+  background: var(--badge-bg);
+  outline: 1px solid var(--primary);
+  outline-offset: -1px;
+}
+
+.growth-history-emoji {
+  font-size: 22px;
+  width: 28px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.growth-history-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.growth-history-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.growth-history-xp {
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.logout-btn {
+  align-self: center;
+  margin: 24px 0 8px;
+}
+
+.login-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100dvh - 60px);
+  padding: 24px;
+}
+
+.login-box {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px 28px;
+  max-width: 340px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.login-box .page-title {
+  margin: 4px 0 0;
+}
+
+.login-desc {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 12px;
+}
+
+.account-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.account-avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background-color: var(--option-bg);
+  background-size: cover;
+  background-repeat: no-repeat;
+  box-shadow: var(--shadow);
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  touch-action: none;
+  user-select: none;
+}
+
+.account-avatar.is-repositioning {
+  cursor: grab;
+  outline: 2px dashed var(--primary);
+  outline-offset: 3px;
+}
+
+.account-avatar.is-repositioning:active {
+  cursor: grabbing;
+}
+
+.account-avatar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 10px;
+}
+
+.account-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.account-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.account-name-input {
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--option-border);
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: var(--bg);
+  color: var(--ink);
 }
 
 .profile-stat-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-  margin-top: 24px;
 }
 
 .profile-stat {
