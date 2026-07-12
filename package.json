@@ -10,6 +10,7 @@
     "web": "yarn workspace web dev",
     "web:build": "yarn workspace web build",
     "web:lint": "yarn workspace web lint",
-    "web:typecheck": "yarn workspace web typecheck"
+    "web:typecheck": "yarn workspace web typecheck",
+    "mobile:typecheck": "yarn workspace mobile typecheck"
   }
 }
