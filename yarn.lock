@@ -3890,6 +3890,11 @@ eventemitter3@^5.0.1:
   resolved "https://registry.npmmirror.com/eventemitter3/-/eventemitter3-5.0.4.tgz#a86d66170433712dde814707ac52b5271ceb1feb"
   integrity sha512-mlsTRyGaPBjPedk6Bvw+aqbsXDtoAyAzm5MO7JgU+yVRyMQ5O8bD4Kcci7BS85f93veegeCPkL8R4GLClnjLFw==
 
+expo-application@~57.0.0:
+  version "57.0.0"
+  resolved "https://registry.npmmirror.com/expo-application/-/expo-application-57.0.0.tgz#8300bacd68ba198d1d18432d721d98bcf860fcf3"
+  integrity sha512-vNrnYlqtRS5pFUm1tjut4dogZxW/uhmMOD5GeLQ8Z9Ji3KMYKLOy5dG0BlUsMrcSgyPJvJqP0TFopkEZ02ec6g==
+
 expo-asset@~57.0.3:
   version "57.0.3"
   resolved "https://registry.npmmirror.com/expo-asset/-/expo-asset-57.0.3.tgz#e08de1baa7cef3285182d0217008067bc88553e6"
@@ -3898,12 +3903,29 @@ expo-asset@~57.0.3:
     "@expo/image-utils" "^0.11.1"
     expo-constants "~57.0.3"
 
+expo-auth-session@~57.0.2:
+  version "57.0.2"
+  resolved "https://registry.npmmirror.com/expo-auth-session/-/expo-auth-session-57.0.2.tgz#c3fe14ade0c2b3f712e8c8be24893738dd2c3b76"
+  integrity sha512-jnwer1V3TXu7YymlJ55aU5aE5kna6JbHNgy63T/nHavm88AEnE9rD3R39BAmKw2y/5C5Sd0qg2+SMDiIP6toig==
+  dependencies:
+    expo-application "~57.0.0"
+    expo-constants "~57.0.3"
+    expo-crypto "~57.0.0"
+    expo-linking "~57.0.2"
+    expo-web-browser "~57.0.0"
+    invariant "^2.2.4"
+
 expo-constants@~57.0.3:
   version "57.0.3"
   resolved "https://registry.npmmirror.com/expo-constants/-/expo-constants-57.0.3.tgz#ca226539ffaa46459b5de1cd9f59062275de2a4b"
   integrity sha512-BghbZlzwFnA22BG0CWv6W29zx8w19FozYPfSeZ3HjMitoy4aAmF1FnFbbjYSmZz6HHXXTWOfqwobOEIaglfzxg==
   dependencies:
     "@expo/env" "~2.4.1"
+
+expo-crypto@~57.0.0:
+  version "57.0.0"
+  resolved "https://registry.npmmirror.com/expo-crypto/-/expo-crypto-57.0.0.tgz#412f277d4898310d073ee06e3f066cf9294f70ff"
+  integrity sha512-vd0kdUO14h9CgPcgzcR8nmy/wgz3zSOhQmucnbDdyn/z9eAeR2IB5BKaDvPbg/lrIT+KweGAV5IlrK5PZFqUSQ==
 
 expo-dev-client@~57.0.5:
   version "57.0.5"

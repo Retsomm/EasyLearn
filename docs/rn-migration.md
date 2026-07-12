@@ -42,6 +42,7 @@
   - **踩過的坑**：
     - `app/_layout.tsx` 原本寫「module scope `if (!X) throw` 讓 `X` narrow 成 `string`」，但這個 narrow 效果不會帶進後面另一個 function（`RootLayout`）內部，`tsc` 報 `string | undefined` 不能指定給 `string`。修法：在用到的地方（`<ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY!}>`）額外加 `!`——module 層的 throw 已經保證執行到這裡一定有值，只是 TS 的 control flow analysis 看不到跨 function 邊界。
     - 使用者手動建的 `.env.local` 曾把 Clerk key 的前綴打成 `NEXT_PUBLIC_`（那是 apps/web 用的），Expo 只認 `EXPO_PUBLIC_` 前綴。這個 monorepo 三套前綴並存（web 用 `NEXT_PUBLIC_`，mobile 用 `EXPO_PUBLIC_`，舊 Vite 版是 `VITE_`），是最容易搞混的地方。
+    - **（2026-07-12 補記，Phase 3 驗證完才發現）**：Phase 2「一次裝齊 native module」那份清單漏了 `expo-auth-session`——`@clerk/expo` 的 `useSSO().startSSOFlow()` 同時需要 `expo-auth-session` 和 `expo-web-browser`，當時只裝了後者。使用者真機點「使用 Google 登入」直接跳出 `@clerk/expo: Unable to load expo-auth-session and expo-web-browser` 錯誤，登入完全跑不起來。已在 Phase 4 一開始補裝 `npx expo install expo-auth-session`（連帶裝入 `expo-application`／`expo-crypto` 這兩個 transitive 依賴）。**這三個套件都有原生模組，不是純 JS**，所以裝完必須重新 `npx expo run:ios`/`run:android` 重建 Dev Client，光重啟 `expo start` 不會生效——這點跟 Phase 2 文件已經提醒過的「新裝 native module 要重建 Dev Client」規則一致，只是這次是「漏裝」而不是「新裝」。
   - 已 commit（`82546e3`）並 push 到 `origin/dev`。
   - **必須使用者自己在真機／模擬器驗證，這裡完全沒辦法測**（見下方「驗證紀律」）：
     1. 上面提到的 Clerk Dashboard native redirect 設定。
@@ -57,6 +58,7 @@
   - **這個環境能驗證的都驗證了**：`yarn workspace mobile typecheck` 過、`packages/core` 單獨 `tsc --noEmit` 過、`npx expo export --platform web`（1332 modules）成功且四條路由都正確輸出、`expo-doctor` 19/20（唯一沒過的仍是 Phase 2 就有、刻意的 metro monorepo 設定，跟這次改動無關）。
   - **使用者已在真機/模擬器驗證過（2026-07-12）**：Home tab 完整流程（選章節→答題→結算→回關卡地圖、首頁隨機綜合練習）跑過沒問題；AsyncStorage 跨「app 完全關閉重開」持久化確認有效（XP/streak/完成關卡都留著）；目前是淺色主題，可讀性沒問題（深色主題下 emoji 圖示是否跟系統字體不搭，還沒實測，留意即可，不阻塞這個 phase）。
   - **範圍界定（使用者當面確認，2026-07-12）**：Profile tab 未登入畫面原本寫著「未登入的訪客模式留到 Phase 3 做」，是 Phase 2 埋的預留承諾。這次確認過**這句話指的是訪客模式的資料引擎跟 Home tab 離線流程（已完成），不包含「Profile tab 本身在未登入時顯示訪客進度」**——Profile tab 未登入時仍只有登入按鈕，不會讀 AsyncStorage 顯示訪客統計。這塊使用者選擇留到 Phase 4（跟登入同步迴圈一併處理，屆時 Profile tab 的訪客/登入切換邏輯要一次做完整），`profile.tsx` 的提示文字已改成註明這件事，不要誤以為是遺漏。
+  - 已 commit（`410a71a`）並 push 到 `origin/dev`。
 - [ ] **Phase 4**：完整登入同步迴圈（訪客進度搬遷到伺服器）。
 - [ ] **Phase 5**：剩餘畫面（Notes/QuestionBook、Stats、review/mixed/savedpractice）。
 - [ ] **Phase 6**：頭像拖曳／縮放／改名（最高複雜度的 native gesture，刻意排最後）。
