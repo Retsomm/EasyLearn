@@ -15,11 +15,8 @@ export const STAGES = [
   { min: 7000, emoji: '🕳️', name: '奇異黑洞', hint: '宇宙盡頭的謎，最終型態' },
 ]
 
-export const getStage = (xp: number) => {
-  let stage = STAGES[0]
-  for (const s of STAGES) if (xp >= s.min) stage = s
-  return stage
-}
+export const getStage = (xp: number) =>
+  STAGES.reduce((current, s) => (xp >= s.min ? s : current), STAGES[0])
 
 export const getNextStage = (xp: number) => STAGES.find((s) => s.min > xp) ?? null
 

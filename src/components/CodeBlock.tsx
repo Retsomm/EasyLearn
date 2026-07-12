@@ -5,23 +5,26 @@ const TOKEN_RE =
   /(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`)|\b(const|let|var|function|return|if|else|for|of|in|new|typeof|class|import|export|from|true|false|null|undefined)\b|(\b\d+(?:\.\d+)?\b)/g
 
 const highlight = (code: string): ReactNode[] => {
-  const parts: ReactNode[] = []
-  let last = 0
-  let m: RegExpExecArray | null
-  let key = 0
-  while ((m = TOKEN_RE.exec(code)) !== null) {
-    if (m.index > last) parts.push(code.slice(last, m.index))
-    const [text, comment, string, keyword, number] = m
-    const cls = comment ? 'tok-comment' : string ? 'tok-string' : keyword ? 'tok-keyword' : number ? 'tok-number' : ''
-    parts.push(
-      <span key={key++} className={cls}>
-        {text}
-      </span>
-    )
-    last = m.index + text.length
-  }
-  if (last < code.length) parts.push(code.slice(last))
-  return parts
+  const matches = Array.from(code.matchAll(TOKEN_RE))
+  const { parts, last } = matches.reduce<{ parts: ReactNode[]; last: number }>(
+    (acc, m, i) => {
+      const [text, comment, string, keyword, number] = m
+      const cls = comment ? 'tok-comment' : string ? 'tok-string' : keyword ? 'tok-keyword' : number ? 'tok-number' : ''
+      const gap = m.index > acc.last ? [code.slice(acc.last, m.index)] : []
+      return {
+        parts: [
+          ...acc.parts,
+          ...gap,
+          <span key={i} className={cls}>
+            {text}
+          </span>,
+        ],
+        last: m.index + text.length,
+      }
+    },
+    { parts: [], last: 0 },
+  )
+  return last < code.length ? [...parts, code.slice(last)] : parts
 }
 
 interface CodeBlockProps {

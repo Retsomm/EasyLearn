@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
@@ -24,46 +24,44 @@ export const POST = async (request: Request) => {
 
   const existing = await prisma.wrongEntry.findUnique({ where: { userId_questionId: { userId, questionId } } })
 
-  const writes: Prisma.PrismaPromise<unknown>[] = []
+  // 先算出「這次要寫入哪些操作」（計算），跟下面實際執行交易（動作）分開：
+  // 每個分支各自算出自己的 0 或 1 筆寫入，最後展開組成同一份交易清單
+  const wrongEntryWrites: Prisma.PrismaPromise<unknown>[] = correct
+    ? existing
+      ? [
+          existing.box + 1 > GRADUATE_BOX
+            ? prisma.wrongEntry.delete({ where: { userId_questionId: { userId, questionId } } })
+            : prisma.wrongEntry.update({
+                where: { userId_questionId: { userId, questionId } },
+                data: { box: existing.box + 1 },
+              }),
+        ]
+      : []
+    : [
+        prisma.wrongEntry.upsert({
+          where: { userId_questionId: { userId, questionId } },
+          update: { count: { increment: 1 }, lastWrong: today, box: 1 },
+          create: { userId, questionId, count: 1, lastWrong: today, box: 1 },
+        }),
+      ]
 
-  if (correct) {
-    if (existing) {
-      const box = existing.box + 1
-      writes.push(
-        box > GRADUATE_BOX
-          ? prisma.wrongEntry.delete({ where: { userId_questionId: { userId, questionId } } })
-          : prisma.wrongEntry.update({ where: { userId_questionId: { userId, questionId } }, data: { box } }),
-      )
-    }
-  } else {
-    writes.push(
-      prisma.wrongEntry.upsert({
-        where: { userId_questionId: { userId, questionId } },
-        update: { count: { increment: 1 }, lastWrong: today, box: 1 },
-        create: { userId, questionId, count: 1, lastWrong: today, box: 1 },
-      }),
-    )
-  }
+  const dailyStatWrite = prisma.dailyStat.upsert({
+    where: { userId_date: { userId, date: today } },
+    update: { total: { increment: 1 }, correct: { increment: correct ? 1 : 0 } },
+    create: { userId, date: today, total: 1, correct: correct ? 1 : 0 },
+  })
 
-  writes.push(
-    prisma.dailyStat.upsert({
-      where: { userId_date: { userId, date: today } },
-      update: { total: { increment: 1 }, correct: { increment: correct ? 1 : 0 } },
-      create: { userId, date: today, total: 1, correct: correct ? 1 : 0 },
-    }),
-  )
+  const chapterStatWrites: Prisma.PrismaPromise<unknown>[] = chapterId
+    ? [
+        prisma.chapterStat.upsert({
+          where: { userId_chapterId: { userId, chapterId } },
+          update: { total: { increment: 1 }, correct: { increment: correct ? 1 : 0 } },
+          create: { userId, chapterId, total: 1, correct: correct ? 1 : 0 },
+        }),
+      ]
+    : []
 
-  if (chapterId) {
-    writes.push(
-      prisma.chapterStat.upsert({
-        where: { userId_chapterId: { userId, chapterId } },
-        update: { total: { increment: 1 }, correct: { increment: correct ? 1 : 0 } },
-        create: { userId, chapterId, total: 1, correct: correct ? 1 : 0 },
-      }),
-    )
-  }
-
-  await prisma.$transaction(writes)
+  await prisma.$transaction([...wrongEntryWrites, dailyStatWrite, ...chapterStatWrites])
 
   const { progress } = await loadFullProgress(userId)
   return NextResponse.json({ progress })

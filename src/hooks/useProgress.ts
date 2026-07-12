@@ -28,13 +28,13 @@ const defaultProgress: Progress = {
 // 舊版 wrongIds 是 { [id]: true }，升級成 Leitner 盒物件
 const migrateWrongIds = (
   wrongIds: Record<string, true | WrongEntryMeta> | undefined,
-): Record<string, WrongEntryMeta> => {
-  const out: Record<string, WrongEntryMeta> = {}
-  for (const [id, entry] of Object.entries(wrongIds ?? {})) {
-    out[id] = entry === true ? { count: 1, lastWrong: null, box: 1 } : entry
-  }
-  return out
-}
+): Record<string, WrongEntryMeta> =>
+  Object.fromEntries(
+    Object.entries(wrongIds ?? {}).map(([id, entry]) => [
+      id,
+      entry === true ? { count: 1, lastWrong: null, box: 1 } : entry,
+    ]),
+  )
 
 const load = (): Progress => {
   try {
