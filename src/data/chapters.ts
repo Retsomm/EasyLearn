@@ -56,63 +56,38 @@ export const chapters: Chapter[] = [
   },
 ]
 
-export const getLevel = (levelId: string): Level | null => {
-  for (const ch of chapters) {
-    const lv = ch.levels.find((l) => l.id === levelId)
-    if (lv) return lv
-  }
-  return null
+// 抽象屏障：所有跟「題目 × 所屬章節」相關的查詢都透過這份攤平清單計算，
+// 上層函式不用重複寫三層巢狀迴圈走訪 chapters → levels → questions
+interface FlatQuestion {
+  chapterId: string
+  question: Question
 }
 
-// 題目 id → 所屬章節 id（分科成效統計用）
-const questionChapterMap = new Map<string, string>()
-for (const ch of chapters) {
-  for (const level of ch.levels) {
-    for (const q of level.questions) {
-      questionChapterMap.set(q.id, ch.id)
-    }
-  }
-}
+const flatQuestions: FlatQuestion[] = chapters.flatMap((ch) =>
+  ch.levels.flatMap((level) => level.questions.map((question) => ({ chapterId: ch.id, question }))),
+)
+
+export const getLevel = (levelId: string): Level | null =>
+  chapters.flatMap((ch) => ch.levels).find((l) => l.id === levelId) ?? null
+
+const questionChapterMap = new Map(flatQuestions.map((fq) => [fq.question.id, fq.chapterId]))
 
 export const getChapterIdForQuestion = (questionId: string): string | undefined =>
   questionChapterMap.get(questionId)
 
 // 從錯題本 id 集合撈出題目本體（照章節順序）
-export const getWrongQuestions = (wrongIds: Record<string, WrongEntryMeta>): Question[] => {
-  const out: Question[] = []
-  for (const ch of chapters) {
-    for (const level of ch.levels) {
-      for (const q of level.questions) {
-        if (wrongIds[q.id]) out.push(q)
-      }
-    }
-  }
-  return out
-}
+export const getWrongQuestions = (wrongIds: Record<string, WrongEntryMeta>): Question[] =>
+  flatQuestions.filter((fq) => wrongIds[fq.question.id]).map((fq) => fq.question)
 
 // 錯題本瀏覽用：題目本體＋熟練度資訊，最需要複習的（盒子小、越久沒複習）排前面
-export const getWrongEntries = (wrongIds: Record<string, WrongEntryMeta>): WrongEntry[] => {
-  const out: WrongEntry[] = []
-  for (const ch of chapters) {
-    for (const level of ch.levels) {
-      for (const q of level.questions) {
-        const entry = wrongIds[q.id]
-        if (entry) out.push({ question: q, ...entry })
-      }
-    }
-  }
-  return out.sort((a, b) => a.box - b.box || (a.lastWrong ?? '').localeCompare(b.lastWrong ?? ''))
-}
+export const getWrongEntries = (wrongIds: Record<string, WrongEntryMeta>): WrongEntry[] =>
+  flatQuestions
+    .flatMap((fq) => {
+      const entry = wrongIds[fq.question.id]
+      return entry ? [{ question: fq.question, ...entry }] : []
+    })
+    .sort((a, b) => a.box - b.box || (a.lastWrong ?? '').localeCompare(b.lastWrong ?? ''))
 
 // 從收藏 id 集合撈出題目本體（照章節順序）
-export const getSavedQuestions = (savedIds: Record<string, boolean>): Question[] => {
-  const out: Question[] = []
-  for (const ch of chapters) {
-    for (const level of ch.levels) {
-      for (const q of level.questions) {
-        if (savedIds[q.id]) out.push(q)
-      }
-    }
-  }
-  return out
-}
+export const getSavedQuestions = (savedIds: Record<string, boolean>): Question[] =>
+  flatQuestions.filter((fq) => savedIds[fq.question.id]).map((fq) => fq.question)
