@@ -52,7 +52,9 @@ export default function ProfileScreen() {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>登入 EasyLearn</Text>
-        <Text style={styles.subtitle}>登入後可在多裝置同步學習進度；未登入的訪客模式留到 Phase 3 做</Text>
+        <Text style={styles.subtitle}>
+          登入後可在多裝置同步學習進度；Home tab 已支援訪客模式離線答題，這裡顯示訪客進度留到 Phase 4（登入同步迴圈）一併處理
+        </Text>
         <Pressable style={styles.button} onPress={handleSignIn}>
           <Text style={styles.buttonText}>使用 Google 登入</Text>
         </Pressable>

@@ -39,12 +39,24 @@
   - **跟原計畫不同的地方**：原計畫第 3 節說「Native Applications SSO redirect allowlist 只有要加 OAuth 才需要設定，可以延到 Phase 7」——但 web 端的 Clerk instance 本來就只設定了 Google 登入，沒有 email/password 選項，所以 mobile 要能登入、要能測到关键假设，**這個 Dashboard 設定其實在 Phase 2 現在就要做，沒辦法延到 Phase 7**。使用者要去 Clerk Dashboard → Configure → Native Applications → Allowlist for mobile SSO redirect 設定 `easylearn://` 這個 scheme（`app.json` 的 `scheme` 欄位）。
   - `expo-doctor` 19/20 過，唯一沒過的是 metro monorepo 設定（`resolver.disableHierarchicalLookup` 跟官方預設不同）——這是**刻意的**，官方預設不支援 monorepo，不是漏改。另外 `react-native-screens` 手動釘到 `4.26.0`（比 SDK 57 建議的 `4.25.2` 新一個 patch）解決 `expo-router` 內部依賴版本衝突造成的 duplicate native module，在 `package.json` 的 `expo.install.exclude` 註記過。
   - **這個環境能驗證的都驗證了**：`apps/mobile`／`apps/web`／`packages/core` 三個 `tsc --noEmit` 全過、`expo-doctor` 19/20、`expo export --platform web` 成功。
+  - **踩過的坑**：
+    - `app/_layout.tsx` 原本寫「module scope `if (!X) throw` 讓 `X` narrow 成 `string`」，但這個 narrow 效果不會帶進後面另一個 function（`RootLayout`）內部，`tsc` 報 `string | undefined` 不能指定給 `string`。修法：在用到的地方（`<ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY!}>`）額外加 `!`——module 層的 throw 已經保證執行到這裡一定有值，只是 TS 的 control flow analysis 看不到跨 function 邊界。
+    - 使用者手動建的 `.env.local` 曾把 Clerk key 的前綴打成 `NEXT_PUBLIC_`（那是 apps/web 用的），Expo 只認 `EXPO_PUBLIC_` 前綴。這個 monorepo 三套前綴並存（web 用 `NEXT_PUBLIC_`，mobile 用 `EXPO_PUBLIC_`，舊 Vite 版是 `VITE_`），是最容易搞混的地方。
+  - 已 commit（`82546e3`）並 push 到 `origin/dev`。
   - **必須使用者自己在真機／模擬器驗證，這裡完全沒辦法測**（見下方「驗證紀律」）：
     1. 上面提到的 Clerk Dashboard native redirect 設定。
-    2. `apps/mobile/.env.local`（複製 `.env.example`）填真的 `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`（跟 web 同一把）跟 `EXPO_PUBLIC_API_BASE_URL`（電腦的 LAN IP，不能填 localhost）。
-    3. `cd apps/mobile && npx expo run:ios`（或 `run:android`）第一次要重新 build Dev Client，純 `expo start` 不會 pick up 剛裝的 native module。
+    2. `apps/mobile/.env.local`（複製 `.env.example`）填真的 `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`（跟 web 同一把，注意前綴）跟 `EXPO_PUBLIC_API_BASE_URL`（電腦的 LAN IP，不能填 localhost；LAN IP 換網路會變，要重新查）。
+    3. `cd apps/mobile && npx expo run:ios`（或 `run:android`）第一次要重新 build Dev Client，純 `expo start` 不會 pick up 剛裝的 native module。改 `EXPO_PUBLIC_` 環境變數只要重啟 Metro，不用重新 build 原生。
     4. 全計畫最關鍵的假設：登入後 Profile tab 能不能成功打 `GET /api/progress` 拿到資料——**這一步如果失敗，退路是幫 `apps/web` 加一個會用 `clerkMiddleware()` 的 `middleware.ts`**，這是有意識的決定，不是預設會成功。
-- [ ] **Phase 3**：Guest 模式（AsyncStorage）＋ Home tab，可離線跑一次完整答題流程。
+- [x] **Phase 3**：Guest 模式（AsyncStorage）＋ Home tab，可離線跑一次完整答題流程。
+  - 新增 `apps/mobile/hooks/useProgress.ts`：對照 `apps/web/src/hooks/useProgress.ts` 的訪客模式邏輯（answerQuestion/toggleSaved/finishLevel/finishReview 的 Leitner 盒制、streak、xpLog、dailyStats/chapterStats 計算完全共用 `packages/core`），存取層從 `localStorage`（同步）換成 `AsyncStorage`（非同步）。**這個 hook 刻意只做訪客模式，沒有接 Clerk 同步**——那是 Phase 4 的範圍，Profile tab 現有的登入讀取邏輯完全沒動。多一個 `hydrated` flag 是因為 `AsyncStorage.getItem` 是非同步的，跟 web 版掛載時就能同步讀到 localStorage 不同，畫面要等這個 flag 才能顯示，避免用預設空進度覆寫掉還沒讀出來的真實資料。
+  - 新增 `apps/mobile/screens/{Home,ChapterMap,Quiz}.tsx` ＋ `apps/mobile/components/{QuestionCard,CodeBlock,Icon}.tsx`：邏輯／資料流對照 `apps/web/src/screens/{Home,ChapterMap,Quiz}.tsx` 與 `apps/web/src/components/QuestionCard.tsx`（同樣呼叫 `packages/core` 的 `getLevel`/`sampleQuestions`/`shuffle`/`getChapterIdForQuestion`/`MIXED_SIZE` 等），畫面改用 RN 的 View/Text/Pressable/ScrollView＋StyleSheet 重寫，不是照抄 web 的 CSS class。
+  - `apps/mobile/app/(tabs)/index.tsx` 取代原本的 `ComingSoon` 佔位畫面，用跟 `apps/web/src/App.tsx` 相同的手法——一個 `view` 狀態機（home/levellist/quiz/mixed）在單一 tab 內切畫面，不是額外接 expo-router 的巢狀 stack route。範圍只到 Home tab（notes/stats 兩個 tab 各自獨立，還沒做，維持 `ComingSoon` 佔位）。
+  - **刻意跟 web 版不同、屬於 Phase 3 MVP 簡化，不是漏做**：
+    1. `Icon.tsx` 用 emoji 對照 `IconName` 聯集（`satisfies Record<IconName, string>` 確保沒漏刻），暫時頂替 web 版 `Icons.tsx` 的 SVG 圖示；`CodeBlock.tsx` 只做等寬字體顯示，沒有 web 版那種 token 語法上色。都是「先求離線答題流程能跑」，還沒做「星際 HUD」視覺，之後真的要做像素級一致的視覺時再換掉這兩個檔案。
+  - **這個環境能驗證的都驗證了**：`yarn workspace mobile typecheck` 過、`packages/core` 單獨 `tsc --noEmit` 過、`npx expo export --platform web`（1332 modules）成功且四條路由都正確輸出、`expo-doctor` 19/20（唯一沒過的仍是 Phase 2 就有、刻意的 metro monorepo 設定，跟這次改動無關）。
+  - **使用者已在真機/模擬器驗證過（2026-07-12）**：Home tab 完整流程（選章節→答題→結算→回關卡地圖、首頁隨機綜合練習）跑過沒問題；AsyncStorage 跨「app 完全關閉重開」持久化確認有效（XP/streak/完成關卡都留著）；目前是淺色主題，可讀性沒問題（深色主題下 emoji 圖示是否跟系統字體不搭，還沒實測，留意即可，不阻塞這個 phase）。
+  - **範圍界定（使用者當面確認，2026-07-12）**：Profile tab 未登入畫面原本寫著「未登入的訪客模式留到 Phase 3 做」，是 Phase 2 埋的預留承諾。這次確認過**這句話指的是訪客模式的資料引擎跟 Home tab 離線流程（已完成），不包含「Profile tab 本身在未登入時顯示訪客進度」**——Profile tab 未登入時仍只有登入按鈕，不會讀 AsyncStorage 顯示訪客統計。這塊使用者選擇留到 Phase 4（跟登入同步迴圈一併處理，屆時 Profile tab 的訪客/登入切換邏輯要一次做完整），`profile.tsx` 的提示文字已改成註明這件事，不要誤以為是遺漏。
 - [ ] **Phase 4**：完整登入同步迴圈（訪客進度搬遷到伺服器）。
 - [ ] **Phase 5**：剩餘畫面（Notes/QuestionBook、Stats、review/mixed/savedpractice）。
 - [ ] **Phase 6**：頭像拖曳／縮放／改名（最高複雜度的 native gesture，刻意排最後）。
