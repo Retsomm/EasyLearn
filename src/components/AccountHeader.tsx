@@ -24,8 +24,9 @@ const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(mi
 
 const readAvatarPosition = (metadata: unknown): AvatarPosition => {
   const pos = (metadata as { avatarPosition?: Partial<AvatarPosition> } | null | undefined)?.avatarPosition
-  if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
-    return { x: pos.x, y: pos.y, scale: typeof pos.scale === 'number' ? pos.scale : 1 }
+  if (pos && Number.isFinite(pos.x) && Number.isFinite(pos.y)) {
+    const scale = Number.isFinite(pos.scale) ? clamp(pos.scale as number, MIN_SCALE, MAX_SCALE) : 1
+    return { x: clamp(pos.x as number, 0, 100), y: clamp(pos.y as number, 0, 100), scale }
   }
   return DEFAULT_POS
 }
@@ -90,6 +91,7 @@ const AccountHeader = ({ user }: AccountHeaderProps) => {
     try {
       await user.setProfileImage({ file })
       setPos(DEFAULT_POS)
+      setPosBeforeEdit(DEFAULT_POS)
       setIsRepositioning(true)
     } catch (err) {
       console.error('avatar upload failed', err)
