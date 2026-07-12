@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { View } from '@/components/Themed';
 import { useProgress } from '@/hooks/useProgress';
@@ -20,10 +21,11 @@ type ViewState =
 export default function HomeScreen() {
   const { progress, hydrated, answerQuestion, toggleSaved, finishLevel, finishReview } = useProgress();
   const [view, setView] = useState<ViewState>({ name: 'home' });
+  const insets = useSafeAreaInsets();
 
   if (!hydrated) {
     return (
-      <View style={styles.loading}>
+      <View style={[styles.loading, { paddingTop: insets.top }]}>
         <ActivityIndicator />
       </View>
     );
@@ -41,11 +43,12 @@ export default function HomeScreen() {
     setView({ name: 'mixed', questions: picked });
   };
 
+  let content;
   if (view.name === 'quiz') {
     const level = getLevel(view.levelId);
     if (!level) return null;
     const chapterId = chapters.find((ch) => ch.levels.some((l) => l.id === view.levelId))?.id ?? '';
-    return (
+    content = (
       <Quiz
         key={view.levelId}
         level={{ ...level, questions: view.questions }}
@@ -57,10 +60,8 @@ export default function HomeScreen() {
         onExit={() => setView({ name: 'levellist', chapterId })}
       />
     );
-  }
-
-  if (view.name === 'mixed') {
-    return (
+  } else if (view.name === 'mixed') {
+    content = (
       <Quiz
         key="mixed"
         level={{ id: '__mixed__', title: '隨機綜合練習', questions: view.questions }}
@@ -74,10 +75,8 @@ export default function HomeScreen() {
         exitLabel="回首頁"
       />
     );
-  }
-
-  if (view.name === 'levellist') {
-    return (
+  } else if (view.name === 'levellist') {
+    content = (
       <ChapterMap
         chapterId={view.chapterId}
         progress={progress}
@@ -85,15 +84,17 @@ export default function HomeScreen() {
         onBack={() => setView({ name: 'home' })}
       />
     );
+  } else {
+    content = (
+      <Home
+        progress={progress}
+        onOpenChapter={(chapterId) => setView({ name: 'levellist', chapterId })}
+        onMixedPractice={startMixedPractice}
+      />
+    );
   }
 
-  return (
-    <Home
-      progress={progress}
-      onOpenChapter={(chapterId) => setView({ name: 'levellist', chapterId })}
-      onMixedPractice={startMixedPractice}
-    />
-  );
+  return <View style={[styles.flexFill, { paddingTop: insets.top }]}>{content}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -101,5 +102,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  flexFill: {
+    flex: 1,
   },
 });

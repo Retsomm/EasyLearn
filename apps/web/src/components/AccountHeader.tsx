@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { useUser } from '@clerk/nextjs'
-import Icon from './Icons'
+import Icon from '@/components/Icons'
 
 type ClerkUser = NonNullable<ReturnType<typeof useUser>['user']>
 
@@ -66,8 +66,11 @@ const AccountHeader = ({ user }: AccountHeaderProps) => {
   const [savingName, setSavingName] = useState(false)
 
   useEffect(() => {
+    // 正在拖曳／縮放調整頭像時，不能因為 Clerk user 物件因為其他更新（如改名）而重新同步，
+    // 蓋掉使用者還沒按「完成」儲存的操作
+    if (isRepositioning) return
     setPos(readAvatarPosition(user.unsafeMetadata))
-  }, [user.unsafeMetadata])
+  }, [user.unsafeMetadata, isRepositioning])
 
   useEffect(() => {
     setNaturalSize(null)
@@ -90,6 +93,9 @@ const AccountHeader = ({ user }: AccountHeaderProps) => {
     setUploading(true)
     try {
       await user.setProfileImage({ file })
+      // 立刻把新照片的預設裁切位置存進 Clerk metadata：就算使用者這次調整完直接按「取消」，
+      // 下次讀到的也是這張新照片的預設值，不會沿用上一張照片留下的舊裁切座標
+      await saveMetadata(DEFAULT_POS)
       setPos(DEFAULT_POS)
       setPosBeforeEdit(DEFAULT_POS)
       setIsRepositioning(true)
@@ -238,7 +244,7 @@ const AccountHeader = ({ user }: AccountHeaderProps) => {
             ) : (
               <>
                 <span className="account-name">{user.firstName || '未命名'}</span>
-                <span className="account-userid">USER.ID</span>
+                <span className="account-userid">USER.{user.id.slice(-8).toUpperCase()}</span>
                 <button className="text-btn" onClick={() => setNameEditing(true)}>
                   <Icon name="pencil" size={14} />
                 </button>

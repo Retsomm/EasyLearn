@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useProgress } from './hooks/useProgress'
+import { useProgress } from '@/hooks/useProgress'
 import {
   getLevel,
   getWrongQuestions,
@@ -11,14 +11,14 @@ import {
   REVIEW_SIZE,
   MIXED_SIZE,
 } from '@easylearn/core'
-import Navbar from './components/Navbar'
-import Home from './screens/Home'
-import Notes from './screens/Notes'
-import Stats from './screens/Stats'
-import Profile from './screens/Profile'
-import ChapterMap from './screens/ChapterMap'
-import Quiz from './screens/Quiz'
-import QuestionBook from './screens/QuestionBook'
+import Navbar from '@/components/Navbar'
+import Home from '@/screens/Home'
+import Notes from '@/screens/Notes'
+import Stats from '@/screens/Stats'
+import Profile from '@/screens/Profile'
+import ChapterMap from '@/screens/ChapterMap'
+import Quiz from '@/screens/Quiz'
+import QuestionBook from '@/screens/QuestionBook'
 import type { Question } from '@easylearn/core'
 
 type View =

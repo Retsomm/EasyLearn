@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
+import type { ReactNode } from 'react'
 import { ClerkProvider } from '@clerk/nextjs'
-import '../index.css'
+import '@/index.css'
 
 export const metadata: Metadata = {
   title: 'EasyLearn — 邊玩邊學 JavaScript 與 React',
@@ -26,7 +27,7 @@ export const viewport: Viewport = {
   themeColor: '#04070a',
 }
 
-const RootLayout = ({ children }: { children: React.ReactNode }) => {
+const RootLayout = ({ children }: { children: ReactNode }) => {
   return (
     <ClerkProvider afterSignOutUrl="/">
       <html lang="zh-TW">

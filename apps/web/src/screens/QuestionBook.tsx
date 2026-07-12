@@ -1,5 +1,5 @@
-import Icon from '../components/Icons'
-import QuestionReview from '../components/QuestionReview'
+import Icon from '@/components/Icons'
+import QuestionReview from '@/components/QuestionReview'
 import type { Question, WrongEntry } from '@easylearn/core'
 
 interface QuestionBookProps {

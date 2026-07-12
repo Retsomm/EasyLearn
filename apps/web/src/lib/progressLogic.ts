@@ -9,6 +9,11 @@ import type {
 } from '@prisma/client'
 import type { Progress, Streak } from '@easylearn/core'
 
+export const MAX_XP_PER_REQUEST = 1000
+export const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+export const isValidDateStr = (value: string): boolean =>
+  DATE_RE.test(value) && !Number.isNaN(new Date(value).getTime())
+
 // 純字串日期運算（不經過 Date 的時區轉換），'today'／'date' 一律由前端用使用者本地時區算好傳進來，
 // 伺服器只用來跟前一天比較，不會自己重新推算「今天」——避免主機時區跟使用者裝置不一致造成 streak 誤判
 export const addDaysToDateStr = (dateStr: string, delta: number): string => {

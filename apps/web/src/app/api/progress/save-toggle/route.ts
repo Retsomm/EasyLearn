@@ -1,8 +1,8 @@
 import { Prisma } from '@prisma/client'
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/prisma'
-import { loadFullProgress } from '../../../../lib/progressStore'
+import { prisma } from '@/lib/prisma'
+import { loadFullProgress } from '@/lib/progressStore'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +15,10 @@ export const POST = async (request: Request) => {
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const { questionId } = (await request.json()) as SaveToggleBody
+
+  if (typeof questionId !== 'string' || questionId.length === 0) {
+    return NextResponse.json({ error: 'invalid questionId' }, { status: 400 })
+  }
 
   const existing = await prisma.savedQuestion.findUnique({ where: { userId_questionId: { userId, questionId } } })
   try {

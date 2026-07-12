@@ -1,9 +1,10 @@
+import { useMemo } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
 import CodeBlock from '@/components/CodeBlock';
-import { TYPE_META, type Question } from '@easylearn/core';
+import { shuffle, TYPE_META, type Question } from '@easylearn/core';
 
 interface QuestionCardProps {
   question: Question;
@@ -27,6 +28,7 @@ export default function QuestionCard({
   const answered = selected !== null;
   const correct = answered && selected === question.answer;
   const typeMeta = TYPE_META[question.type];
+  const options = useMemo(() => shuffle(question.options), [question.options]);
 
   return (
     <View style={styles.card}>
@@ -38,7 +40,7 @@ export default function QuestionCard({
         <Text style={styles.topicLabel} numberOfLines={1}>
           {question.topic}
         </Text>
-        <Pressable onPress={() => onToggleSave(question.id)} hitSlop={8}>
+        <Pressable onPress={() => onToggleSave(question.id)} hitSlop={8} style={{ opacity: saved ? 1 : 0.35 }}>
           <Icon name="star" size={18} />
         </Pressable>
       </View>
@@ -47,7 +49,7 @@ export default function QuestionCard({
       <CodeBlock code={question.code} />
 
       <View style={styles.options}>
-        {question.options.map((opt) => {
+        {options.map((opt) => {
           const isAnswer = opt.id === question.answer;
           const isPicked = opt.id === selected;
           return (
@@ -75,7 +77,7 @@ export default function QuestionCard({
           </Text>
           <Text style={styles.feedbackExplanation}>{question.explanation}</Text>
           {question.docs && (
-            <Pressable onPress={() => Linking.openURL(question.docs)}>
+            <Pressable onPress={() => Linking.openURL(question.docs).catch(() => {})}>
               <Text style={styles.docsLink}>延伸閱讀：官方文件</Text>
             </Pressable>
           )}

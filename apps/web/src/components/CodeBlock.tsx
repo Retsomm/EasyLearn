@@ -10,17 +10,14 @@ const highlight = (code: string): ReactNode[] => {
     (acc, m, i) => {
       const [text, comment, string, keyword, number] = m
       const cls = comment ? 'tok-comment' : string ? 'tok-string' : keyword ? 'tok-keyword' : number ? 'tok-number' : ''
-      const gap = m.index > acc.last ? [code.slice(acc.last, m.index)] : []
-      return {
-        parts: [
-          ...acc.parts,
-          ...gap,
-          <span key={i} className={cls}>
-            {text}
-          </span>,
-        ],
-        last: m.index + text.length,
-      }
+      if (m.index > acc.last) acc.parts.push(code.slice(acc.last, m.index))
+      acc.parts.push(
+        <span key={i} className={cls}>
+          {text}
+        </span>,
+      )
+      acc.last = m.index + text.length
+      return acc
     },
     { parts: [], last: 0 },
   )

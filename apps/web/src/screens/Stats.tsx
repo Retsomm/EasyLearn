@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import Icon from '../components/Icons'
+import Icon from '@/components/Icons'
 import { chapters, todayStr, type Progress } from '@easylearn/core'
 
 const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']

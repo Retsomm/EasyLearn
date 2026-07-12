@@ -1,21 +1,20 @@
 import { SymbolView } from 'expo-symbols';
 import { Tabs } from 'expo-router';
+import { useAuth } from '@clerk/expo';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 
 // 對應 apps/web 的 Navbar.tsx 四個分頁（home/notes/stats/profile）
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { isSignedIn } = useAuth();
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
+        headerShown: false,
       }}>
       <Tabs.Screen
         name="index"
@@ -51,7 +50,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: '個人資料',
+          title: isSignedIn ? '個人資料' : '登入',
           tabBarIcon: ({ color }) => (
             <SymbolView name={{ ios: 'person', android: 'person', web: 'person' }} tintColor={color} size={26} />
           ),

@@ -1,4 +1,4 @@
-import { STAGES, getStage } from './Mascot'
+import { STAGES, getStage } from '@/lib/stages'
 
 interface GrowthHistoryProps {
   xp: number

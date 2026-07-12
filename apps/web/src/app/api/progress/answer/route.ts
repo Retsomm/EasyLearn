@@ -2,8 +2,9 @@ import type { Prisma } from '@prisma/client'
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { GRADUATE_BOX } from '@easylearn/core'
-import { prisma } from '../../../../lib/prisma'
-import { loadFullProgress } from '../../../../lib/progressStore'
+import { prisma } from '@/lib/prisma'
+import { isValidDateStr } from '@/lib/progressLogic'
+import { loadFullProgress } from '@/lib/progressStore'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,16 @@ export const POST = async (request: Request) => {
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const { questionId, correct, chapterId, today } = (await request.json()) as AnswerBody
+
+  if (typeof questionId !== 'string' || questionId.length === 0) {
+    return NextResponse.json({ error: 'invalid questionId' }, { status: 400 })
+  }
+  if (typeof correct !== 'boolean') {
+    return NextResponse.json({ error: 'invalid correct' }, { status: 400 })
+  }
+  if (typeof today !== 'string' || !isValidDateStr(today)) {
+    return NextResponse.json({ error: 'invalid today' }, { status: 400 })
+  }
 
   const existing = await prisma.wrongEntry.findUnique({ where: { userId_questionId: { userId, questionId } } })
 
@@ -61,7 +72,12 @@ export const POST = async (request: Request) => {
       ]
     : []
 
-  await prisma.$transaction([...wrongEntryWrites, dailyStatWrite, ...chapterStatWrites])
+  try {
+    await prisma.$transaction([...wrongEntryWrites, dailyStatWrite, ...chapterStatWrites])
+  } catch (err) {
+    console.error('[progress/answer] transaction failed', userId, err)
+    return NextResponse.json({ error: 'update failed' }, { status: 500 })
+  }
 
   const { progress } = await loadFullProgress(userId)
   return NextResponse.json({ progress })

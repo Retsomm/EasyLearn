@@ -1,5 +1,5 @@
-import { prisma } from './prisma'
-import { toProgress } from './progressLogic'
+import { prisma } from '@/lib/prisma'
+import { toProgress } from '@/lib/progressLogic'
 import type { Progress } from '@easylearn/core'
 
 // 撈這個使用者的全部子表，組回跟 localStorage 版一致的 Progress 形狀

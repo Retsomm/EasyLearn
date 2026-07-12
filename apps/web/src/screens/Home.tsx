@@ -1,4 +1,4 @@
-import Icon from '../components/Icons'
+import Icon from '@/components/Icons'
 import { chapters, todayStr, yesterdayStr, type Progress } from '@easylearn/core'
 
 const DAILY_GOAL = 20

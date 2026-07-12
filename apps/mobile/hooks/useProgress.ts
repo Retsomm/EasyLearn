@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-  bumpCounter,
+  applyAnswer,
   bumpStreak,
   bumpXpLog,
-  GRADUATE_BOX,
-  todayStr,
   type Progress,
   type WrongEntryMeta,
 } from '@easylearn/core';
@@ -63,26 +61,7 @@ export const useProgress = () => {
   }, [progress, hydrated]);
 
   const answerQuestion = useCallback((questionId: string, correct: boolean, chapterId?: string) => {
-    setProgress((p) => {
-      const wrongIds = { ...p.wrongIds };
-      const entry = wrongIds[questionId];
-      if (correct) {
-        if (entry) {
-          const box = entry.box + 1;
-          if (box > GRADUATE_BOX) delete wrongIds[questionId];
-          else wrongIds[questionId] = { ...entry, box };
-        }
-      } else {
-        wrongIds[questionId] = {
-          count: (entry?.count ?? 0) + 1,
-          lastWrong: todayStr(),
-          box: 1,
-        };
-      }
-      const dailyStats = bumpCounter(p.dailyStats, todayStr(), correct);
-      const chapterStats = chapterId ? bumpCounter(p.chapterStats, chapterId, correct) : p.chapterStats;
-      return { ...p, wrongIds, dailyStats, chapterStats };
-    });
+    setProgress((p) => applyAnswer(p, questionId, correct, chapterId));
   }, []);
 
   const toggleSaved = useCallback((questionId: string) => {

@@ -30,7 +30,7 @@
   - `apps/web/scripts/validate-questions.mjs` 的 `QUESTIONS_DIR` 路徑同步改指向 `packages/core/src/data/questions`（題目資料夾搬家的必然結果，不是額外變更）。
   - 驗證：`yarn workspace web typecheck/lint/build` 三項全過；`packages/core` 單獨 `tsc --noEmit` 過；`node scripts/validate-questions.mjs` 重新指向新路徑後跑過，5693 項通過、0 項失敗。
   - 已 commit（`71534d6`）並 push 到 `origin/dev`。
-- [~] **Phase 2（程式碼寫完，關鍵假設還沒真機驗證，不算完成）**：`apps/mobile` 用 `create-expo-app --template tabs` 建立（Expo Router），4 個 tab（home/notes/stats/profile）對應 `Navbar.tsx`，只有 Profile 有真的內容，其餘三個是「Phase X 敬請期待」的佔位畫面。
+- [x] **Phase 2**：`apps/mobile` 用 `create-expo-app --template tabs` 建立（Expo Router），4 個 tab（home/notes/stats/profile）對應 `Navbar.tsx`，只有 Profile 有真的內容，其餘三個是「Phase X 敬請期待」的佔位畫面。
   - `metro.config.js` 加 `watchFolders`/`resolver.nodeModulesPaths`/`resolver.disableHierarchicalLookup` 讓 Metro 解析 workspace 的 `packages/core`——**已用 `npx expo export --platform web` 實測 bundling 成功（1284 modules，4 條路由都正確輸出靜態頁）**，證明這個monorepo 設定真的有接通，不只是型別檢查過而已。
   - 一次裝齊 Phase 2-6 會用到的 native module：`@clerk/expo`、`expo-secure-store`、`@react-native-async-storage/async-storage`、`react-native-svg`、`react-native-gesture-handler`、`@react-native-community/slider`、`expo-image-picker`、`expo-dev-client`。之後每個 phase 不用再裝新的 native module（除非規劃有變）。
   - `app/_layout.tsx`：`ClerkProvider` 包住整個 app，`lib/tokenCache.ts` 用 `expo-secure-store` 存 session token，`WebBrowser.maybeCompleteAuthSession()` 放在 module scope。`EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` 沒設會直接 throw（不是靜默失敗）。
@@ -44,11 +44,15 @@
     - 使用者手動建的 `.env.local` 曾把 Clerk key 的前綴打成 `NEXT_PUBLIC_`（那是 apps/web 用的），Expo 只認 `EXPO_PUBLIC_` 前綴。這個 monorepo 三套前綴並存（web 用 `NEXT_PUBLIC_`，mobile 用 `EXPO_PUBLIC_`，舊 Vite 版是 `VITE_`），是最容易搞混的地方。
     - **（2026-07-12 補記，Phase 3 驗證完才發現）**：Phase 2「一次裝齊 native module」那份清單漏了 `expo-auth-session`——`@clerk/expo` 的 `useSSO().startSSOFlow()` 同時需要 `expo-auth-session` 和 `expo-web-browser`，當時只裝了後者。使用者真機點「使用 Google 登入」直接跳出 `@clerk/expo: Unable to load expo-auth-session and expo-web-browser` 錯誤，登入完全跑不起來。已在 Phase 4 一開始補裝 `npx expo install expo-auth-session`（連帶裝入 `expo-application`／`expo-crypto` 這兩個 transitive 依賴）。**這三個套件都有原生模組，不是純 JS**，所以裝完必須重新 `npx expo run:ios`/`run:android` 重建 Dev Client，光重啟 `expo start` 不會生效——這點跟 Phase 2 文件已經提醒過的「新裝 native module 要重建 Dev Client」規則一致，只是這次是「漏裝」而不是「新裝」。
   - 已 commit（`82546e3`）並 push 到 `origin/dev`。
-  - **必須使用者自己在真機／模擬器驗證，這裡完全沒辦法測**（見下方「驗證紀律」）：
-    1. 上面提到的 Clerk Dashboard native redirect 設定。
-    2. `apps/mobile/.env.local`（複製 `.env.example`）填真的 `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`（跟 web 同一把，注意前綴）跟 `EXPO_PUBLIC_API_BASE_URL`（電腦的 LAN IP，不能填 localhost；LAN IP 換網路會變，要重新查）。
-    3. `cd apps/mobile && npx expo run:ios`（或 `run:android`）第一次要重新 build Dev Client，純 `expo start` 不會 pick up 剛裝的 native module。改 `EXPO_PUBLIC_` 環境變數只要重啟 Metro，不用重新 build 原生。
-    4. 全計畫最關鍵的假設：登入後 Profile tab 能不能成功打 `GET /api/progress` 拿到資料——**這一步如果失敗，退路是幫 `apps/web` 加一個會用 `clerkMiddleware()` 的 `middleware.ts`**，這是有意識的決定，不是預設會成功。
+  - **2026-07-12，Phase 4 開工前真機測試，全計畫最關鍵的假設終於驗證成功**：Android 上登入後 Profile tab 成功打 `GET /api/progress` 拿到 200 回應——mobile 帶 Clerk session Bearer token 打 `apps/web` 的 API，不需要另外幫 `apps/web` 加 `middleware.ts`。過程中連續踩了好幾個坑，才讓登入真正跑得起來（詳細診斷過程見對話紀錄，這裡只記結論與修法，方便之後查閱）：
+    1. **漏裝 `expo-auth-session`**：`@clerk/expo` 的 `useSSO().startSSOFlow()` 同時需要 `expo-auth-session` 和 `expo-web-browser`，Phase 2 只裝了後者，導致點登入直接跳 `Unable to load expo-auth-session` 錯誤。修法：`npx expo install expo-auth-session`（連帶裝入 `expo-application`／`expo-crypto` 兩個 transitive 依賴，三個都有原生模組，需要重新 `expo run:ios`/`run:android` 重建 Dev Client）。
+    2. **`apps/mobile/.env.local` 的 `EXPO_PUBLIC_API_BASE_URL` port 跟實際跑的 `next dev` 對不上**（設 3001，實際跑在預設的 3000），Android 連線一直 `ConnectException`。改對 port 後才連得上。
+    3. **Profile tab 無限狂打 `GET /api/progress`**：`apps/mobile/app/(tabs)/profile.tsx` 的 `useEffect` 依賴到 `loadProgress`（一個 `useCallback`），而 `loadProgress` 又依賴 `getToken`——Clerk 的 `getToken` 每次 render 不保證同一個 reference，導致這個 effect 每次 render 都重跑。修法：effect 改成只依賴 `isSignedIn`。
+    4. **Android OAuth 導回閃「This screen doesn't exist」404**：查了 `node_modules/@clerk/expo/dist/hooks/useSSO.js` 原始碼才發現，`startSSOFlow` 沒指定 `redirectUrl` 時預設導去 `easylearn://sso-callback`，這個專案沒有對應路由檔案。iOS 的 `ASWebAuthenticationSession` 不會讓這個 URL 流到 expo-router 的 Linking 監聽器，但 Android 用 Custom Tabs 導回時會，才會被判定成不存在的路由（iOS 因此沒事，只有 Android 會炸）。修法：新增 `apps/mobile/app/sso-callback.tsx`，掛載後**等 `isSignedIn` 真的變 true 才 `router.replace('/(tabs)/profile')`**（不能一掛載就馬上導，那樣 Profile 重新掛載時 `isSignedIn` 可能還沒更新完，會先閃一次未登入畫面），加 15 秒逾時保底避免卡死。
+    5. **登入瞬間仍會閃一下未登入畫面**：`profile.tsx` 加 `signingIn` state，從 `handleSignIn` 一開始就設 true 蓋住「`isSignedIn` 還沒更新完」那段空窗，成功時刻意不主動設回 false（避免自己搶在 `isSignedIn` 更新前重新露出登入畫面），失敗或使用者取消才重置。
+    6. **UX 順手調整（使用者要求）**：`(tabs)/_layout.tsx` 的 Profile tab 文字改成依 `isSignedIn` 動態顯示「登入」或「個人資料」；四個 tab 與 `+not-found` 全部 `headerShown: false`，移除頂部標題列；拿掉標題列後內容跟系統狀態列（時間/WIFI/電量）重疊，加了 `SafeAreaProvider`（根 `_layout.tsx`）＋各畫面 `useSafeAreaInsets()` 的 `paddingTop`。
+  - 上述修法都已在真機（iOS 模擬器＋ Android 模擬器/裝置）測過確認有效，**但程式碼還沒 commit**，下一步要先跟使用者確認要不要一次 commit＋push。
+  - ~~必須使用者自己在真機／模擬器驗證~~（已完成，見上）：Clerk Dashboard native redirect 設定、`.env.local` 填值、Dev Client 重建、Bearer token 打 API，四項全部驗證過。
 - [x] **Phase 3**：Guest 模式（AsyncStorage）＋ Home tab，可離線跑一次完整答題流程。
   - 新增 `apps/mobile/hooks/useProgress.ts`：對照 `apps/web/src/hooks/useProgress.ts` 的訪客模式邏輯（answerQuestion/toggleSaved/finishLevel/finishReview 的 Leitner 盒制、streak、xpLog、dailyStats/chapterStats 計算完全共用 `packages/core`），存取層從 `localStorage`（同步）換成 `AsyncStorage`（非同步）。**這個 hook 刻意只做訪客模式，沒有接 Clerk 同步**——那是 Phase 4 的範圍，Profile tab 現有的登入讀取邏輯完全沒動。多一個 `hydrated` flag 是因為 `AsyncStorage.getItem` 是非同步的，跟 web 版掛載時就能同步讀到 localStorage 不同，畫面要等這個 flag 才能顯示，避免用預設空進度覆寫掉還沒讀出來的真實資料。
   - 新增 `apps/mobile/screens/{Home,ChapterMap,Quiz}.tsx` ＋ `apps/mobile/components/{QuestionCard,CodeBlock,Icon}.tsx`：邏輯／資料流對照 `apps/web/src/screens/{Home,ChapterMap,Quiz}.tsx` 與 `apps/web/src/components/QuestionCard.tsx`（同樣呼叫 `packages/core` 的 `getLevel`/`sampleQuestions`/`shuffle`/`getChapterIdForQuestion`/`MIXED_SIZE` 等），畫面改用 RN 的 View/Text/Pressable/ScrollView＋StyleSheet 重寫，不是照抄 web 的 CSS class。
@@ -59,7 +63,7 @@
   - **使用者已在真機/模擬器驗證過（2026-07-12）**：Home tab 完整流程（選章節→答題→結算→回關卡地圖、首頁隨機綜合練習）跑過沒問題；AsyncStorage 跨「app 完全關閉重開」持久化確認有效（XP/streak/完成關卡都留著）；目前是淺色主題，可讀性沒問題（深色主題下 emoji 圖示是否跟系統字體不搭，還沒實測，留意即可，不阻塞這個 phase）。
   - **範圍界定（使用者當面確認，2026-07-12）**：Profile tab 未登入畫面原本寫著「未登入的訪客模式留到 Phase 3 做」，是 Phase 2 埋的預留承諾。這次確認過**這句話指的是訪客模式的資料引擎跟 Home tab 離線流程（已完成），不包含「Profile tab 本身在未登入時顯示訪客進度」**——Profile tab 未登入時仍只有登入按鈕，不會讀 AsyncStorage 顯示訪客統計。這塊使用者選擇留到 Phase 4（跟登入同步迴圈一併處理，屆時 Profile tab 的訪客/登入切換邏輯要一次做完整），`profile.tsx` 的提示文字已改成註明這件事，不要誤以為是遺漏。
   - 已 commit（`410a71a`）並 push 到 `origin/dev`。
-- [ ] **Phase 4**：完整登入同步迴圈（訪客進度搬遷到伺服器）。
+- [ ] **Phase 4**：完整登入同步迴圈（訪客進度搬遷到伺服器）。**尚未開始**——2026-07-12 一度想直接開工，結果發現 Phase 2 的關鍵假設根本沒真的驗證過（登入從沒真機成功過），這段時間全部在修 Phase 2 遺留的 bug（見上面 Phase 2 補記），Phase 4 本身的同步邏輯（`useProgress.ts` 接上 Clerk、`migrate-local`/`answer`/`save-toggle`/`finish-level`/`finish-review` 這五支 API）完全還沒動手。目前 Home tab（訪客 AsyncStorage）跟 Profile tab（登入後讀伺服器）是兩套互不相通的進度系統，這正是 Phase 4 要接起來的部分。
 - [ ] **Phase 5**：剩餘畫面（Notes/QuestionBook、Stats、review/mixed/savedpractice）。
 - [ ] **Phase 6**：頭像拖曳／縮放／改名（最高複雜度的 native gesture，刻意排最後）。
 - [ ] **Phase 7**（視是否加 OAuth 才需要）：Clerk native SSO redirect 的 Dashboard 設定。

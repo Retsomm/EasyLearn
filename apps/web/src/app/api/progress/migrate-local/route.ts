@@ -1,8 +1,8 @@
 import { Prisma } from '@prisma/client'
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/prisma'
-import { loadFullProgress } from '../../../../lib/progressStore'
+import { prisma } from '@/lib/prisma'
+import { loadFullProgress } from '@/lib/progressStore'
 import type { Progress } from '@easylearn/core'
 
 export const dynamic = 'force-dynamic'

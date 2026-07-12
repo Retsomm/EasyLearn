@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react'
-import Icon from '../components/Icons'
+import Icon from '@/components/Icons'
 import { getWrongQuestions, type Progress } from '@easylearn/core'
 
 const handleActivateKey = (handler: () => void) => (e: KeyboardEvent) => {

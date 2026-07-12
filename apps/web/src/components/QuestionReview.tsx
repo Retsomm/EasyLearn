@@ -1,5 +1,5 @@
-import CodeBlock from './CodeBlock'
-import Icon from './Icons'
+import CodeBlock from '@/components/CodeBlock'
+import Icon from '@/components/Icons'
 import { GRADUATE_BOX, TYPE_META, type Question, type WrongEntryMeta } from '@easylearn/core'
 
 interface QuestionReviewProps {

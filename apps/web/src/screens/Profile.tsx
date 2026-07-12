@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { SignInButton, useClerk, useUser } from '@clerk/nextjs'
-import AccountHeader from '../components/AccountHeader'
-import GrowthHistory from '../components/GrowthHistory'
-import Mascot, { getStage, getNextStage } from '../components/Mascot'
-import Icon from '../components/Icons'
+import AccountHeader from '@/components/AccountHeader'
+import GrowthHistory from '@/components/GrowthHistory'
+import Mascot from '@/components/Mascot'
+import Icon from '@/components/Icons'
+import { getStage, getNextStage } from '@/lib/stages'
 import { chapters, type Progress } from '@easylearn/core'
 
 interface ProfileProps {

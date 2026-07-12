@@ -1,6 +1,7 @@
-import CodeBlock from './CodeBlock'
-import Icon from './Icons'
-import { TYPE_META, type Question } from '@easylearn/core'
+import { useMemo } from 'react'
+import CodeBlock from '@/components/CodeBlock'
+import Icon from '@/components/Icons'
+import { shuffle, TYPE_META, type Question } from '@easylearn/core'
 
 interface QuestionCardProps {
   question: Question
@@ -24,6 +25,7 @@ const QuestionCard = ({
   const answered = selected !== null
   const correct = answered && selected === question.answer
   const typeMeta = TYPE_META[question.type]
+  const options = useMemo(() => shuffle(question.options), [question.options])
 
   return (
     <div className="question-card">
@@ -46,7 +48,7 @@ const QuestionCard = ({
       <CodeBlock code={question.code} />
 
       <div className="options">
-        {question.options.map((opt) => {
+        {options.map((opt) => {
           let cls = 'option-btn'
           if (answered) {
             if (opt.id === question.answer) cls += ' is-correct'

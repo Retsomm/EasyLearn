@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import {
-  bumpCounter,
+  applyAnswer,
   bumpStreak,
   bumpXpLog,
-  GRADUATE_BOX,
   todayStr,
   type Progress,
   type WrongEntryMeta,
@@ -96,14 +95,20 @@ export const useProgress = () => {
       return
     }
     if (migratedRef.current) return
-    migratedRef.current = true
     ;(async () => {
-      const res = await fetch('/api/progress')
-      const data = (await res.json()) as { progress: Progress; isNew: boolean }
-      if (data.isNew) {
-        setProgress(await postJson('/api/progress/migrate-local', load()))
-      } else {
-        setProgress(data.progress)
+      try {
+        const res = await fetch('/api/progress')
+        if (!res.ok) throw new Error(`progress fetch failed: ${res.status}`)
+        const data = (await res.json()) as { progress: Progress; isNew: boolean }
+        if (data.isNew) {
+          setProgress(await postJson('/api/progress/migrate-local', load()))
+        } else {
+          setProgress(data.progress)
+        }
+        // 只有成功載入／搬遷完才標記完成；失敗的話留著讓下一次觸發還能重試
+        migratedRef.current = true
+      } catch (err) {
+        console.error('progress load/migration failed', err)
       }
     })()
   }, [isLoaded, isSignedIn])
@@ -112,26 +117,7 @@ export const useProgress = () => {
   // 答錯 → 記入／重置回第 1 盒；答對 → 升一盒，超過畢業盒才移出錯題本
   // 同時累計每日／分科作答統計，供學習數據頁使用
   const answerQuestion = (questionId: string, correct: boolean, chapterId?: string) => {
-    setProgress((p) => {
-      const wrongIds = { ...p.wrongIds }
-      const entry = wrongIds[questionId]
-      if (correct) {
-        if (entry) {
-          const box = entry.box + 1
-          if (box > GRADUATE_BOX) delete wrongIds[questionId]
-          else wrongIds[questionId] = { ...entry, box }
-        }
-      } else {
-        wrongIds[questionId] = {
-          count: (entry?.count ?? 0) + 1,
-          lastWrong: todayStr(),
-          box: 1,
-        }
-      }
-      const dailyStats = bumpCounter(p.dailyStats, todayStr(), correct)
-      const chapterStats = chapterId ? bumpCounter(p.chapterStats, chapterId, correct) : p.chapterStats
-      return { ...p, wrongIds, dailyStats, chapterStats }
-    })
+    setProgress((p) => applyAnswer(p, questionId, correct, chapterId))
 
     if (isSignedIn) {
       postJson('/api/progress/answer', { questionId, correct, chapterId, today: todayStr() })

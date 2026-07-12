@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { loadFullProgress } from '../../../lib/progressStore'
+import { loadFullProgress } from '@/lib/progressStore'
 
 export const dynamic = 'force-dynamic'
 

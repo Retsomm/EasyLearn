@@ -1,5 +1,5 @@
 import { useUser } from '@clerk/nextjs'
-import Icon from './Icons'
+import Icon from '@/components/Icons'
 import type { IconName } from '@easylearn/core'
 
 interface NavItem {

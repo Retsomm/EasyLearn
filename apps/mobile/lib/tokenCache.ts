@@ -5,5 +5,5 @@ import type { TokenCache } from '@clerk/expo'
 // 讓使用者重開 App 不用重新登入
 export const tokenCache: TokenCache = {
   getToken: (key) => SecureStore.getItemAsync(key).catch(() => null),
-  saveToken: (key, value) => SecureStore.setItemAsync(key, value),
+  saveToken: (key, value) => SecureStore.setItemAsync(key, value).catch(() => {}),
 }
