@@ -1,16 +1,16 @@
-# React + Vite
+# EasyLearn
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Yarn workspaces monorepo：
 
-Currently, two official plugins are available:
+- `apps/web` — Next.js（App Router）網頁版，含 API routes（Prisma + Postgres）與 Clerk 登入
+- `apps/mobile` — Expo React Native App，含 Clerk 登入與訪客模式（AsyncStorage）離線答題流程
+- `packages/core` — web／mobile 共用的純資料與純函式（題庫、型別、計算邏輯），無 DOM／Prisma 依賴
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 開發
 
-## React Compiler
+```bash
+yarn install        # repo 根目錄安裝一次即可
+yarn web            # 啟動網頁版（等同 yarn workspace web dev）
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+其餘文件見 `docs/`（`roadmap.md`、`curriculum.md`、`question-format.md`）。
