@@ -11,7 +11,11 @@ export const metadata: Metadata = {
     title: 'EasyLearn',
   },
   icons: {
-    icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐣</text></svg>',
+    icon: [
+      { url: '/icon-40.png', sizes: '40x40', type: 'image/png' },
+      { url: '/icon-87.png', sizes: '87x87', type: 'image/png' },
+      { url: '/icon-120.png', sizes: '120x120', type: 'image/png' },
+    ],
     apple: '/apple-touch-icon.png',
   },
 }
@@ -19,13 +23,21 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#201d29',
+  themeColor: '#04070a',
 }
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <ClerkProvider afterSignOutUrl="/">
       <html lang="zh-TW">
+        <head>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+            rel="stylesheet"
+          />
+        </head>
         <body>{children}</body>
       </html>
     </ClerkProvider>

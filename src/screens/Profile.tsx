@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { SignInButton, useClerk, useUser } from '@clerk/nextjs'
 import AccountHeader from '../components/AccountHeader'
 import GrowthHistory from '../components/GrowthHistory'
-import Mascot from '../components/Mascot'
+import Mascot, { getStage, getNextStage } from '../components/Mascot'
 import Icon from '../components/Icons'
 import { chapters } from '../data/chapters'
 import type { Progress } from '../types'
@@ -37,6 +37,12 @@ const Profile = ({ progress }: ProfileProps) => {
   const streak = progress.streak?.count ?? 0
   const totalAnswered = Object.values(progress.dailyStats ?? {}).reduce((n, d) => n + d.total, 0)
 
+  const stage = getStage(progress.xp)
+  const nextStage = getNextStage(progress.xp)
+  const xpProgress = nextStage
+    ? Math.min(100, Math.round(((progress.xp - stage.min) / (nextStage.min - stage.min)) * 100))
+    : 100
+
   if (!isLoaded) return null
 
   if (!isSignedIn) {
@@ -59,20 +65,34 @@ const Profile = ({ progress }: ProfileProps) => {
 
   return (
     <div className="screen profile-screen">
-      <div className="profile-card">
-        <h3 className="section-title">使用者資料</h3>
+      <div className="profile-hero">
         <AccountHeader user={user} />
-      </div>
 
-      <div className="profile-card">
-        <h3 className="section-title">經驗值</h3>
-        <Mascot xp={progress.xp} />
-        <button className="text-btn growth-toggle" onClick={() => setShowGrowth((v) => !v)}>
-          <Icon name="chevron-right" size={14} className={showGrowth ? 'is-open' : ''} />
-          {showGrowth ? '收起成長史' : '查看成長史'}
-        </button>
-        {showGrowth && <GrowthHistory xp={progress.xp} />}
+        <div className="hero-xp-row">
+          <div className="hero-xp-icon">
+            <Mascot xp={progress.xp} size="sm" />
+          </div>
+          <div className="hero-xp-info">
+            <div className="hero-xp-top">
+              <span className="hero-xp-name">{stage.name}</span>
+              <span className="hero-xp-count">
+                {nextStage ? `${progress.xp} / ${nextStage.min} XP` : `${progress.xp} XP・已達最終型態`}
+              </span>
+            </div>
+            <div className="xp-bar hero-xp-bar">
+              <div className="xp-bar-fill" style={{ width: `${xpProgress}%` }} />
+            </div>
+          </div>
+          <button className="text-btn hero-xp-link" onClick={() => setShowGrowth((v) => !v)}>
+            {showGrowth ? '收起 ‹' : '成長史 ›'}
+          </button>
+        </div>
       </div>
+      {showGrowth && (
+        <div className="growth-panel">
+          <GrowthHistory xp={progress.xp} />
+        </div>
+      )}
 
       <h3 className="section-title">學習統計</h3>
       <div className="profile-stat-grid">
@@ -96,14 +116,25 @@ const Profile = ({ progress }: ProfileProps) => {
         </div>
       </div>
 
-      <div className="account-actions">
-        <button className="secondary-btn logout-btn" onClick={() => signOut()}>
-          <Icon name="logout" size={16} />
-          登出
+      <h3 className="section-title">帳號設定</h3>
+      <div className="account-list">
+        <button className="account-list-item" onClick={() => signOut()}>
+          <span>
+            <Icon name="logout" size={15} />
+            登出
+          </span>
+          <Icon className="account-list-chevron" name="chevron-right" size={16} />
         </button>
-        <button className="text-btn danger-btn" onClick={handleDeleteAccount} disabled={deleting}>
-          <Icon name="trash" size={15} />
-          {deleting ? '刪除中…' : '刪除帳號'}
+        <button
+          className="account-list-item is-danger"
+          onClick={handleDeleteAccount}
+          disabled={deleting}
+        >
+          <span>
+            <Icon name="trash" size={15} />
+            {deleting ? '刪除中…' : '刪除帳號'}
+          </span>
+          <Icon className="account-list-chevron" name="chevron-right" size={16} />
         </button>
       </div>
     </div>

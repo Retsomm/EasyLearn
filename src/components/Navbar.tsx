@@ -28,9 +28,11 @@ const Navbar = ({ active, onNavigate }: NavbarProps) => {
   return (
     <header className="navbar">
       <div className="navbar-inner">
-        <span className="navbar-brand">
-          <Icon name="sprout" size={22} />
-          EasyLearn
+        <span className="navbar-brand" aria-label="EasyLearn">
+          <span className="navbar-brand-bracket" aria-hidden="true">&lt;</span>
+          <span aria-hidden="true">EASY</span>
+          <span className="navbar-brand-accent" aria-hidden="true">LEARN</span>
+          <span className="navbar-brand-bracket" aria-hidden="true">/&gt;</span>
         </span>
         <nav className="navbar-tabs">
           {navItems.map((item) => (

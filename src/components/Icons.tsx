@@ -138,13 +138,6 @@ const PATHS = {
   star: (
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
   ),
-  upload: (
-    <>
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <polyline points="17 8 12 3 7 8" />
-      <line x1="12" x2="12" y1="3" y2="15" />
-    </>
-  ),
   home: (
     <>
       <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
@@ -194,16 +187,6 @@ const PATHS = {
       <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
       <line x1="10" x2="10" y1="11" y2="17" />
       <line x1="14" x2="14" y1="11" y2="17" />
-    </>
-  ),
-  move: (
-    <>
-      <polyline points="5 9 2 12 5 15" />
-      <polyline points="9 5 12 2 15 5" />
-      <polyline points="15 19 12 22 9 19" />
-      <polyline points="19 9 22 12 19 15" />
-      <line x1="2" x2="22" y1="12" y2="12" />
-      <line x1="12" x2="12" y1="2" y2="22" />
     </>
   ),
 } satisfies Record<string, ReactNode>
