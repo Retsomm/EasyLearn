@@ -28,7 +28,7 @@ import react8 from './questions/react-8-sharing-state.json'
 import react9 from './questions/react-9-preserving-state.json'
 import react10 from './questions/react-10-reducer-context.json'
 import react11 from './questions/react-11-refs.json'
-import type { Chapter, Level, Question, WrongEntry, WrongEntryMeta } from '@easylearn/core'
+import type { Chapter, Level, Question, WrongEntry, WrongEntryMeta } from '../types'
 
 // 題目 JSON 的 type 欄位在匯入時只會被推斷成 string，用 as 收斂回字面量聯合型別
 const asLevel = (level: unknown) => level as Level

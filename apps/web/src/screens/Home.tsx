@@ -1,7 +1,5 @@
 import Icon from '../components/Icons'
-import { chapters } from '../data/chapters'
-import { todayStr, yesterdayStr } from '../hooks/useProgress'
-import type { Progress } from '@easylearn/core'
+import { chapters, todayStr, yesterdayStr, type Progress } from '@easylearn/core'
 
 const DAILY_GOAL = 20
 const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']

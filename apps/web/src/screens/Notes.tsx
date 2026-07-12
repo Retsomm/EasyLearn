@@ -1,7 +1,6 @@
 import type { KeyboardEvent } from 'react'
 import Icon from '../components/Icons'
-import { getWrongQuestions } from '../data/chapters'
-import type { Progress } from '@easylearn/core'
+import { getWrongQuestions, type Progress } from '@easylearn/core'
 
 const handleActivateKey = (handler: () => void) => (e: KeyboardEvent) => {
   if (e.key === 'Enter' || e.key === ' ') {

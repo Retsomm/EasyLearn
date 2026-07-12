@@ -1,8 +1,8 @@
 import type { Prisma } from '@prisma/client'
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
+import { GRADUATE_BOX } from '@easylearn/core'
 import { prisma } from '../../../../lib/prisma'
-import { GRADUATE_BOX } from '../../../../lib/progressLogic'
 import { loadFullProgress } from '../../../../lib/progressStore'
 
 export const dynamic = 'force-dynamic'

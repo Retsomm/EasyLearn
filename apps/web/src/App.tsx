@@ -1,7 +1,16 @@
 import { useState } from 'react'
 import { useProgress } from './hooks/useProgress'
-import { getLevel, getWrongQuestions, getWrongEntries, getSavedQuestions, chapters } from './data/chapters'
-import { shuffle, sampleQuestions, REVIEW_SIZE, MIXED_SIZE } from './utils/quiz'
+import {
+  getLevel,
+  getWrongQuestions,
+  getWrongEntries,
+  getSavedQuestions,
+  chapters,
+  shuffle,
+  sampleQuestions,
+  REVIEW_SIZE,
+  MIXED_SIZE,
+} from '@easylearn/core'
 import Navbar from './components/Navbar'
 import Home from './screens/Home'
 import Notes from './screens/Notes'

@@ -1,8 +1,6 @@
 import CodeBlock from './CodeBlock'
 import Icon from './Icons'
-import { TYPE_META } from '../data/typeMeta'
-import { GRADUATE_BOX } from '../hooks/useProgress'
-import type { Question, WrongEntryMeta } from '@easylearn/core'
+import { GRADUATE_BOX, TYPE_META, type Question, type WrongEntryMeta } from '@easylearn/core'
 
 interface QuestionReviewProps {
   question: Question

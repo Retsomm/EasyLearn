@@ -24,7 +24,12 @@
   - 驗證：`yarn install`（root）成功、`node_modules/@easylearn/core` symlink 正確、`yarn workspace web typecheck/lint/build` 三項全過。
   - **尚未 commit**，仍全部可回滾。
   - 2026-07-12：曾啟動 dev server（port 3001）＋ Playwright 截圖做過一次「頁面有沒有正常渲染」的最低限度自我檢查，之後使用者表明希望自己驗證，已停止該背景程序。**之後不要再用 Playwright 自動幫使用者下「已驗證」的結論**，只給使用者確切的目錄＋指令，讓使用者自己在瀏覽器/真機確認（見下方「驗證紀律」）。
-- [ ] **Phase 1**：`src/data/`、`src/utils/quiz.ts`、`src/data/typeMeta.ts` 搬進 `packages/core`；從 `useProgress.ts` 抽出 `progressCalc.ts`（`todayStr`/`yesterdayStr`/`bumpXpLog`/`bumpCounter`/`bumpStreak`/`GRADUATE_BOX`），順便解決它跟 `src/lib/progressLogic.ts` 的重複。
+- [x] **Phase 1**：`src/data/`（`chapters.ts`／`typeMeta.ts`／`questions/*.json`）、`src/utils/quiz.ts` 搬進 `packages/core/src`；從 `useProgress.ts` 抽出 `packages/core/src/progressCalc.ts`（`todayStr`/`yesterdayStr`/`bumpXpLog`/`bumpCounter`/`bumpStreak`/`GRADUATE_BOX`）。所有 `apps/web` 消費端（`App.tsx`、`screens/*`、`components/QuestionCard.tsx`／`QuestionReview.tsx`）改成從 `@easylearn/core` 匯入，不再走相對路徑。
+  - `apps/web/src/lib/progressLogic.ts`（伺服器端）原本自己重複宣告一份 `GRADUATE_BOX`，已改成從 `@easylearn/core` 匯入同一份；`answer/route.ts` 直接改匯入 `@easylearn/core`，不再繞經 `progressLogic.ts` 轉手。
+  - `bumpStreakServer`／`addDaysToDateStr` **刻意不搬進 core**：伺服器端用純 UTC 字串運算＋外部傳入 `today`，跟前端 `bumpStreak` 用裝置本地時區的 `Date` 是兩種不同機制（見 `progressLogic.ts` 內註解），硬併會破壞這個「避免主機時區誤判 streak」的設計。
+  - `apps/web/scripts/validate-questions.mjs` 的 `QUESTIONS_DIR` 路徑同步改指向 `packages/core/src/data/questions`（題目資料夾搬家的必然結果，不是額外變更）。
+  - 驗證：`yarn workspace web typecheck/lint/build` 三項全過；`packages/core` 單獨 `tsc --noEmit` 過；`node scripts/validate-questions.mjs` 重新指向新路徑後跑過，5693 項通過、0 項失敗。
+  - 這次已 commit（見對應 commit）。
 - [ ] **Phase 2**：Expo app bootstrap（`apps/mobile`，Expo Router）＋ `@clerk/expo` 登入 ＋ 只做 Profile tab（唯讀）。**第一個可跑的里程碑，也是整個計畫最關鍵的未驗證假設要在這裡測**（mobile Bearer token 打 web 端 API 是否真的不用改 middleware）。
 - [ ] **Phase 3**：Guest 模式（AsyncStorage）＋ Home tab，可離線跑一次完整答題流程。
 - [ ] **Phase 4**：完整登入同步迴圈（訪客進度搬遷到伺服器）。

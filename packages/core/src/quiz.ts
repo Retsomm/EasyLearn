@@ -1,4 +1,4 @@
-import type { Question } from '@easylearn/core'
+import type { Question } from './types'
 
 // 進關作答整個題池：洗牌後依難度由易到難排（同難度內順序隨機）
 export const REVIEW_SIZE = 6

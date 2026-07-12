@@ -1,4 +1,4 @@
-import type { IconName, QuestionType } from '@easylearn/core'
+import type { IconName, QuestionType } from '../types'
 
 export const TYPE_META: Record<QuestionType, { icon: IconName; label: string }> = {
   'predict-output': { icon: 'eye', label: '預測輸出' },

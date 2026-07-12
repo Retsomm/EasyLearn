@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 import { transformSync } from 'esbuild'
 
 const PROJECT_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const QUESTIONS_DIR = join(PROJECT_ROOT, 'src/data/questions')
+const QUESTIONS_DIR = join(PROJECT_ROOT, '../../packages/core/src/data/questions')
 const REQUIRED_FIELDS = ['id', 'type', 'difficulty', 'topic', 'docs', 'story', 'prompt', 'code', 'options', 'answer', 'explanation', 'verify']
 const VALID_TYPES = ['predict-output', 'find-bug', 'same-or-not', 'fill-in']
 const ALLOWED_DOC_HOSTS = ['developer.mozilla.org', 'react.dev']

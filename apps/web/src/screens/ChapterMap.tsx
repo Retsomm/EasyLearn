@@ -1,6 +1,5 @@
-import { chapters } from '../data/chapters'
 import Icon from '../components/Icons'
-import type { IconName, Progress } from '@easylearn/core'
+import { chapters, type IconName, type Progress } from '@easylearn/core'
 
 interface ChapterMapProps {
   chapterId: string | null

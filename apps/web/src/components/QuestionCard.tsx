@@ -1,7 +1,6 @@
 import CodeBlock from './CodeBlock'
 import Icon from './Icons'
-import { TYPE_META } from '../data/typeMeta'
-import type { Question } from '@easylearn/core'
+import { TYPE_META, type Question } from '@easylearn/core'
 
 interface QuestionCardProps {
   question: Question

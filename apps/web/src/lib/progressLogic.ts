@@ -9,9 +9,6 @@ import type {
 } from '@prisma/client'
 import type { Progress, Streak } from '@easylearn/core'
 
-// Leitner 盒制：答對升級、答錯重置回 1，box 超過畢業盒才移出錯題本（跟 useProgress.ts 的規則一致）
-export const GRADUATE_BOX = 3
-
 // 純字串日期運算（不經過 Date 的時區轉換），'today'／'date' 一律由前端用使用者本地時區算好傳進來，
 // 伺服器只用來跟前一天比較，不會自己重新推算「今天」——避免主機時區跟使用者裝置不一致造成 streak 誤判
 export const addDaysToDateStr = (dateStr: string, delta: number): string => {

@@ -1,1 +1,5 @@
 export * from './types'
+export * from './progressCalc'
+export * from './quiz'
+export * from './data/chapters'
+export * from './data/typeMeta'
