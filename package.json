@@ -2,35 +2,14 @@
   "name": "easylearn",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "postinstall": "prisma generate",
-    "build": "tsc --noEmit && next build",
-    "start": "next start",
-    "typecheck": "tsc --noEmit",
-    "lint": "oxlint",
-    "db:migrate": "prisma migrate dev",
-    "db:generate": "prisma generate"
-  },
-  "dependencies": {
-    "@clerk/nextjs": "^7.5.17",
-    "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client": "^7.8.0",
-    "next": "^16.2.10",
-    "pg": "^8.22.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
-  },
-  "devDependencies": {
-    "@types/node": "^26.1.1",
-    "@types/pg": "^8.20.0",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "dotenv": "^17.4.2",
-    "esbuild": "^0.28.1",
-    "oxlint": "^1.71.0",
-    "prisma": "^7.8.0",
-    "typescript": "^5.9.3"
+    "web": "yarn workspace web dev",
+    "web:build": "yarn workspace web build",
+    "web:lint": "yarn workspace web lint",
+    "web:typecheck": "yarn workspace web typecheck"
   }
 }
