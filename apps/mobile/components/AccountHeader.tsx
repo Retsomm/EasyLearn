@@ -52,6 +52,20 @@ const getOverflow = (natural: NaturalSize, scale: number) => {
   };
 };
 
+// RN 的 fetch().blob() 對本機 file:// URI 常會丟出「Creating blobs from 'ArrayBuffer' and
+// 'ArrayBufferView' are not supported」——RN 的 Blob 實作沒辦法從 fetch 內部轉出的 ArrayBuffer
+// 建立 Blob，只有透過 XMLHttpRequest 直接以 responseType='blob' 取得的 Blob 才是原生模組認得的
+// 那種（RN 社群/Firebase Storage RN 文件都是用這個 workaround），所以這裡改用 XHR 而不是 fetch。
+const uriToBlob = (uri: string): Promise<Blob> =>
+  new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onload = () => resolve(xhr.response as Blob);
+    xhr.onerror = () => reject(new Error('讀取照片檔案失敗'));
+    xhr.responseType = 'blob';
+    xhr.open('GET', uri, true);
+    xhr.send(null);
+  });
+
 interface AccountHeaderProps {
   user: ClerkUser;
 }
@@ -104,8 +118,7 @@ export default function AccountHeader({ user }: AccountHeaderProps) {
     setPosBeforeEdit(pos);
     setUploading(true);
     try {
-      const response = await fetch(result.assets[0].uri);
-      const blob = await response.blob();
+      const blob = await uriToBlob(result.assets[0].uri);
       await user.setProfileImage({ file: blob });
       // 立刻把新照片的預設裁切位置存進 Clerk metadata：就算使用者這次調整完直接按「取消」，
       // 下次讀到的也是這張新照片的預設值，不會沿用上一張照片留下的舊裁切座標
@@ -258,7 +271,6 @@ export default function AccountHeader({ user }: AccountHeaderProps) {
       {isRepositioning && (
         <View style={styles.repositionPanel}>
           <View style={styles.zoomRow}>
-            <Icon name="search" size={13} />
             <Slider
               style={styles.zoomSlider}
               minimumValue={MIN_SCALE}
@@ -267,6 +279,8 @@ export default function AccountHeader({ user }: AccountHeaderProps) {
               value={pos.scale}
               onValueChange={(v) => setPos((prev) => ({ ...prev, scale: clamp(v, MIN_SCALE, MAX_SCALE) }))}
               minimumTrackTintColor="#2e78b7"
+              maximumTrackTintColor="#88889940"
+              thumbTintColor="#ffffff"
             />
           </View>
           <View style={styles.repositionActions}>
@@ -310,8 +324,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarRepositioning: {
-    borderWidth: 2,
-    borderStyle: 'dashed',
+    // 原本用 borderStyle:'dashed' 表示「正在調整」，但 RN 的 dashed border 疊在圓形
+    // （borderRadius 50%）上是已知的平台限制，繞著曲線的虛線間距算不出來，實機上只會
+    // 斷斷續續露出一小段，不是我們的樣式寫錯——改用純色框，一樣能清楚表示進入編輯模式。
+    borderWidth: 3,
     borderColor: '#ffb454',
   },
   avatarInitial: {
@@ -351,6 +367,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
+    color: '#e6e6e6',
     borderWidth: 1,
     borderColor: '#88889940',
     borderRadius: 8,

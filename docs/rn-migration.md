@@ -264,7 +264,39 @@
        匯入後，bundle 回到 3.5MB（只比沒有圖示庫的原始 baseline 多 ~0.3MB，符合預期）。
   - 這輪調整驗證過：`tsc --noEmit`、`expo export --platform web`（module 數回到 1397，
     `/profile` 正確輸出）、`expo-doctor` 19/20（同樣跟這次無關的既有問題）。
-    **新版畫面（拆卡片＋線型圖示）使用者還沒回報看過**，下次要接續先請使用者確認外觀。
+  - **2026-07-13，使用者實機測試上傳頭像，抓到一個真的 bug＋兩個樣式問題**：
+    1. **Bug：`AccountHeader.tsx` 選照片上傳直接丟例外**——
+       `Error: Creating blobs from 'ArrayBuffer' and 'ArrayBufferView' are not supported`。
+       根因是 RN 的 `Blob` 實作沒辦法從 `fetch()` 內部轉出的 `ArrayBuffer` 建立 Blob，原本寫的
+       `fetch(uri).then(r => r.blob())` 在 RN 上傳本機圖片這條路徑上行不通（web 版沒這個問題，
+       瀏覽器的 `fetch().blob()` 沒有這個限制）。**修法**：改用 `XMLHttpRequest`
+       以 `responseType: 'blob'` 直接讀取本機 URI（RN 社群／Firebase Storage RN 文件都用這個
+       workaround，是原生模組認得的 Blob 來源），新增 `uriToBlob()` helper 取代原本的
+       fetch 寫法。
+    2. **樣式：縮放拉桿在深色主題下整條變成一坨白色**——原本只設定了
+       `minimumTrackTintColor`，`maximumTrackTintColor`／`thumbTintColor` 留預設（淺灰/白，
+       設計給淺色背景用），在強制深色主題下滑軌+拉桿糊成一片看不出层次。補上深色主題對應的
+       `maximumTrackTintColor="#88889940"`。
+    3. **樣式：頭像編輯模式的外框只在最上緣露出一小段橘色，不是完整虛線圓**——
+       `borderStyle: 'dashed'` 疊在圓形（`borderRadius: 50%`）上是 React Native 已知的平台
+       限制，虛線間距沒辦法正確沿著曲線計算，不是我們的樣式參數寫錯。**修法**：改用純色實線框
+       （拿掉 `borderStyle: 'dashed'`），一樣能表達「進入編輯模式」，不會有這個算不出來的問題。
+  - **2026-07-13 追加，使用者三項介面回饋**（不是 bug，是設計調整）：
+    1. 縮放拉桿左側的放大鏡圖示拿掉。
+    2. 成長史從「卡片內展開/收合清單」改成點「查看全部 ›」用 RN `Modal`（`animationType="slide"`，
+       從底部滑入）彈出完整清單，右上角 X 關閉——不再佔用個人資料頁的常駐版面。
+    3. 改名輸入框的文字是黑色看不清楚——`TextInput` 不像 `Text`／`View` 有走 `components/Themed.tsx`
+       自動套主題色，是 RN 原生元件，沒特別設定就吃系統預設黑字，在深色底自然隱形。補上
+       `color: '#e6e6e6'`（跟其他文字元件一致的淺色）。順手確認過整個 apps/mobile 只有這一處
+       用到 `TextInput`，沒有其他地方會有同樣問題。
+  - **Android 模擬器沒有內建相簿圖片可測試上傳**：模擬器預設空的，這次直接用 `adb push` 把
+    `~/桌布/` 底下三張圖推進 `/sdcard/Pictures/`，再用
+    `adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file://...`
+    觸發媒體掃描讓系統相簿索引到，讓使用者能在 Android 上實測選照片上傳這條路徑
+    （純測試用的暫時檔案，不是專案的一部分，不影響 repo）。
+  - **2026-07-13，使用者確認「功能測試 OK」**——上傳頭像（含 Android，用上面塞進去的測試圖）、
+    拖曳/縮放、改名、放大鏡移除、成長史彈窗、輸入框文字顏色，全部驗證過沒問題。
+    **Phase 6 到此真正完成**，已 commit 並 push 到 `origin/dev`。
 - [ ] **Phase 7**（視是否加 OAuth 才需要）：Clerk native SSO redirect 的 Dashboard 設定。
 
 ## 驗證紀律（跨 phase 都適用）

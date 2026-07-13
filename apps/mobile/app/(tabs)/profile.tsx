@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth, useSSO, useUser } from '@clerk/expo';
 
@@ -142,16 +142,27 @@ export default function ProfileScreen() {
                   <View style={[styles.xpBarFill, { width: `${xpProgress}%` }]} />
                 </View>
               </View>
-              <Pressable onPress={() => setShowGrowth((v) => !v)} hitSlop={8}>
-                <Text style={styles.growthLink}>{showGrowth ? '收起 ‹' : '展開 ›'}</Text>
+              <Pressable onPress={() => setShowGrowth(true)} hitSlop={8}>
+                <Text style={styles.growthLink}>查看全部 ›</Text>
               </Pressable>
             </View>
-            {showGrowth && (
-              <View style={styles.growthPanel}>
-                <GrowthHistory xp={progress.xp} />
-              </View>
-            )}
           </View>
+
+          <Modal visible={showGrowth} animationType="slide" transparent onRequestClose={() => setShowGrowth(false)}>
+            <View style={styles.modalBackdrop}>
+              <View style={[styles.modalCard, { paddingBottom: insets.bottom + 16 }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>成長史</Text>
+                  <Pressable onPress={() => setShowGrowth(false)} hitSlop={8}>
+                    <Icon name="x" size={20} />
+                  </Pressable>
+                </View>
+                <ScrollView>
+                  <GrowthHistory xp={progress.xp} />
+                </ScrollView>
+              </View>
+            </View>
+          </Modal>
 
           <Text style={styles.sectionTitle}>學習統計</Text>
           {!hydrated ? (
@@ -296,11 +307,27 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2e78b7',
   },
-  growthPanel: {
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 14,
-    backgroundColor: '#88889908',
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  modalCard: {
+    maxHeight: '75%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    backgroundColor: '#121212',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
   },
   sectionTitle: {
     fontSize: 13,
