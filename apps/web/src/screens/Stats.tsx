@@ -199,6 +199,9 @@ const Stats = ({ progress }: StatsProps) => {
       </div>
 
       <h3 className="section-title">分科成效細分</h3>
+      <p className="section-hint">
+        這裡是該章節所有作答的答對率（含隨機綜合練習），跟「每日刷題」頁的完成關卡數是不同的統計方式。
+      </p>
       <div className="chapter-stat-list">
         {chapters.map((ch) => {
           const stat = chapterStats[ch.id] ?? { total: 0, correct: 0 }

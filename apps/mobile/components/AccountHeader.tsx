@@ -250,7 +250,7 @@ export default function AccountHeader({ user }: AccountHeaderProps) {
                 maxLength={40}
                 autoFocus
               />
-              <Pressable onPress={saveName} disabled={savingName} hitSlop={8}>
+              <Pressable onPress={saveName} disabled={savingName || !nameValue.trim()} hitSlop={8}>
                 <Icon name="check-circle" size={16} />
               </Pressable>
               <Pressable onPress={cancelNameEdit} disabled={savingName} hitSlop={8}>

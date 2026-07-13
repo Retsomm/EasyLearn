@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
-import { getNextStage, getStage } from '@easylearn/core';
+import { getNextStage, getStage, getStageProgress } from '@easylearn/core';
 
 interface MascotProps {
   xp: number;
@@ -13,9 +13,7 @@ interface MascotProps {
 export default function Mascot({ xp, size = 'lg' }: MascotProps) {
   const stage = getStage(xp);
   const next = getNextStage(xp);
-  const progressToNext = next
-    ? Math.min(100, Math.round(((xp - stage.min) / (next.min - stage.min)) * 100))
-    : 100;
+  const progressToNext = getStageProgress(xp);
 
   return (
     <View style={styles.container}>

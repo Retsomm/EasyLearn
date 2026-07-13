@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
@@ -52,7 +53,6 @@ const activityLevel = (total: number): number => {
 
 const HEAT_COLORS = ['#88889912', '#2e78b730', '#2e78b760', '#2e78b790', '#2e78b7'];
 
-const MONTH_LABELS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
 
 interface StatsProps {
   progress: Progress;
@@ -63,6 +63,7 @@ interface StatsProps {
 export default function Stats({ progress }: StatsProps) {
   const dailyStats = progress.dailyStats ?? {};
   const chapterStats = progress.chapterStats ?? {};
+  const heatmapScrollRef = useRef<ScrollView>(null);
 
   const totals = Object.values(dailyStats).reduce(
     (acc, d) => ({ total: acc.total + d.total, correct: acc.correct + d.correct }),
@@ -85,7 +86,7 @@ export default function Stats({ progress }: StatsProps) {
     const month = firstReal ? new Date(firstReal).getMonth() : lastMonth;
     const show = firstReal !== undefined && month !== lastMonth;
     lastMonth = month;
-    return show ? MONTH_LABELS[month] : '';
+    return show ? String(month + 1) : '';
   });
 
   return (
@@ -119,11 +120,16 @@ export default function Stats({ progress }: StatsProps) {
               </Text>
             ))}
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            ref={heatmapScrollRef}
+            onContentSizeChange={() => heatmapScrollRef.current?.scrollToEnd({ animated: false })}
+          >
             <View>
               <View style={styles.heatmapMonths}>
                 {heatmapMonthLabels.map((label, i) => (
-                  <Text style={styles.heatmapMonthLabel} key={i}>
+                  <Text style={styles.heatmapMonthLabel} numberOfLines={1} key={i}>
                     {label}
                   </Text>
                 ))}
@@ -207,6 +213,9 @@ export default function Stats({ progress }: StatsProps) {
       </View>
 
       <Text style={styles.sectionTitle}>分科成效細分</Text>
+      <Text style={styles.sectionHint}>
+        這裡是該章節所有作答的答對率（含隨機綜合練習），跟「每日刷題」頁的完成關卡數是不同的統計方式。
+      </Text>
       <View style={styles.chapterList}>
         {chapters.map((ch) => {
           const stat = chapterStats[ch.id] ?? { total: 0, correct: 0 };
@@ -272,6 +281,12 @@ const styles = StyleSheet.create({
     opacity: 0.6,
     marginTop: 10,
   },
+  sectionHint: {
+    fontSize: 11,
+    opacity: 0.5,
+    marginTop: -4,
+    lineHeight: 16,
+  },
   heatmapCard: {
     borderRadius: 14,
     padding: 14,
@@ -299,7 +314,11 @@ const styles = StyleSheet.create({
     height: 14,
   },
   heatmapMonthLabel: {
-    width: 11,
+    // 只顯示月份數字（不含「月」字），16px 寬夠放到 2 位數（"12"）也不會被 Text 自己的
+    // 換行邏輯裁掉——先前用「讓文字視覺溢出方框」的寫法在這裡的水平 ScrollView 裡不可靠
+    // （超出 ScrollView 量到的內容寬度那段一樣會被裁掉，尤其是捲到最右邊、沒有下一欄可以
+    // 借用空間的最後一個月份），所以改成單純夠寬的固定寬度，不依賴溢出。
+    width: 16,
     fontSize: 9,
     opacity: 0.55,
   },
@@ -308,6 +327,8 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   heatmapCol: {
+    width: 16,
+    alignItems: 'center',
     gap: 3,
   },
   heatmapCell: {

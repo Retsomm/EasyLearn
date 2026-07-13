@@ -263,6 +263,13 @@ button {
   margin: 24px 0 12px;
 }
 
+.section-hint {
+  margin: -8px 0 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-faint);
+}
+
 /* ── 首頁 ─────────────────────────── */
 .app-title {
   font-family: var(--font-mono);

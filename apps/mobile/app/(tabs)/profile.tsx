@@ -10,7 +10,7 @@ import Mascot from '@/components/Mascot';
 import GrowthHistory from '@/components/GrowthHistory';
 import { useProgress } from '@/context/ProgressContext';
 import { request } from '@/lib/api';
-import { chapters, getNextStage, getStage } from '@easylearn/core';
+import { chapters, getNextStage, getStage, getStageProgress } from '@easylearn/core';
 
 // Phase 4：不再自己打 GET /api/progress，改讀 ProgressProvider 共用的 state——跟 Home tab
 // 是同一份進度，登入時的搬遷（migrate-local）也只會在 provider 裡觸發一次。
@@ -112,9 +112,7 @@ export default function ProfileScreen() {
 
   const stage = getStage(progress.xp);
   const nextStage = getNextStage(progress.xp);
-  const xpProgress = nextStage
-    ? Math.min(100, Math.round(((progress.xp - stage.min) / (nextStage.min - stage.min)) * 100))
-    : 100;
+  const xpProgress = getStageProgress(progress.xp);
 
   return (
     <ScrollView contentContainerStyle={containerStyle}>
