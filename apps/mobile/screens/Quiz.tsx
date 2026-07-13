@@ -105,7 +105,7 @@ export default function Quiz({
         </View>
         <Text style={styles.resultHint}>
           {isReview && questions.some((q) => progress.wrongIds[q.id])
-            ? '還沒畢業的錯題會留著，繼續練會更熟練！'
+            ? '答對一次就會從錯題本移除，還沒答對的之後可以再挑戰！'
             : '你的星球又長大了一點，明天也要回來澆灌它喔！'}
         </Text>
         <Pressable style={styles.primaryBtn} onPress={onExit}>
@@ -136,7 +136,7 @@ export default function Quiz({
       {isReview && (
         <View style={styles.banner}>
           <Icon name="rotate-ccw" size={13} />
-          <Text style={styles.bannerText}>錯題重練模式：答對升熟練度，答錯重來，練到最高熟練度才畢業</Text>
+          <Text style={styles.bannerText}>錯題重練模式：答對一次就從錯題本移除，答錯會留到下次</Text>
         </View>
       )}
       {isMixed && (

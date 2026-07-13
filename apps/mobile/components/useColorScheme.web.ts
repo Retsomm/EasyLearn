@@ -1,8 +1,4 @@
-// NOTE: The default React Native styling doesn't support server rendering.
-// Server rendered styles should not change between the first render of the HTML
-// and the first render on the client. Typically, web developers will use CSS media queries
-// to render different styles on the client and server, these aren't directly supported in React Native
-// but can be achieved using a styling library like Nativewind.
+// 目前整個 app 先強制走深色主題（不看裝置系統設定），Phase 5/6 做完整視覺前的過渡措施
 export function useColorScheme() {
-  return 'light';
+  return 'dark';
 }

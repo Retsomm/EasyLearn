@@ -1,4 +1,4 @@
-import { getNextStage, getStage } from '@/lib/stages'
+import { getNextStage, getStage, getStageProgress } from '@easylearn/core'
 
 interface MascotProps {
   xp: number
@@ -9,9 +9,7 @@ interface MascotProps {
 const Mascot = ({ xp, mood = 'idle', size = 'lg' }: MascotProps) => {
   const stage = getStage(xp)
   const next = getNextStage(xp)
-  const progressToNext = next
-    ? Math.min(100, Math.round(((xp - stage.min) / (next.min - stage.min)) * 100))
-    : 100
+  const progressToNext = getStageProgress(xp)
 
   return (
     <div className={`mascot mascot-${size} mood-${mood}`}>

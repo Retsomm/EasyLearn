@@ -15,7 +15,8 @@ const defaultProgress: Progress = {
   xp: 0,
   // { [levelId]: { best: 答對題數, total: 題數 } }
   completedLevels: {},
-  // 錯題本：{ [questionId]: { count: 答錯次數, lastWrong: 'YYYY-MM-DD', box: 熟練度 1~GRADUATE_BOX } }
+  // 錯題本：{ [questionId]: { count: 答錯次數, lastWrong: 'YYYY-MM-DD', box } }（box 是舊版 Leitner
+  // 盒制留下的欄位，現在答對一次就直接移出錯題本，box 不再影響移出時機，維持型別/DB 相容）
   wrongIds: {},
   // 收藏題目：{ [questionId]: true }
   savedIds: {},
@@ -113,8 +114,7 @@ export const useProgress = () => {
     })()
   }, [isLoaded, isSignedIn])
 
-  // 每答一題就更新錯題本（Leitner 盒制）：
-  // 答錯 → 記入／重置回第 1 盒；答對 → 升一盒，超過畢業盒才移出錯題本
+  // 每答一題就更新錯題本：答錯 → 記入／重置錯題紀錄；答對 → 這題若在錯題本裡就直接移出
   // 同時累計每日／分科作答統計，供學習數據頁使用
   const answerQuestion = (questionId: string, correct: boolean, chapterId?: string) => {
     setProgress((p) => applyAnswer(p, questionId, correct, chapterId))

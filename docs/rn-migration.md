@@ -155,8 +155,148 @@
   - **Phase 4 到此可以視為完成並 commit**：登入搬遷、雙 tab 共用 progress state、iOS／Android 
     真機（模擬器）搬遷路徑都驗證過。「反覆登出登入不會重新同步」是刻意的既有設計（跟 web 版一致），
     不是待辦事項。
-- [ ] **Phase 5**：剩餘畫面（Notes/QuestionBook、Stats、review/mixed/savedpractice）。
-- [ ] **Phase 6**：頭像拖曳／縮放／改名（最高複雜度的 native gesture，刻意排最後）。
+- **2026-07-13，Phase 5 開工前追加**：使用者反映 apps/mobile 淺色主題太刺眼，已把
+  `useColorScheme`（含 `.web.ts` 變體）鎖死回傳 `dark`，不再看裝置系統設定；`Colors.ts`
+  的 dark 色票從刺眼的純黑 `#000`／純白 `#fff` 改成柔和的 `#121212`／`#e6e6e6`。過程中
+  發現 `Icon.tsx` 原本用 `react-native` 原生 `Text` 顯示非 emoji 符號（`✕←→›↺`），預設黑字
+  在深色背景幾乎全隱形（真正的彩色 emoji 圖示不受影響），改成從 `components/Themed.tsx`
+  匯入 `Text` 讓它跟著主題文字色走。這是暫時性的過渡措施，不是 Phase 5/6 要做的「星際 HUD」
+  視覺（那個之後會直接取代 Colors.ts 這套機制），**之後真的動視覺 phase 時要記得這裡的
+  強制 dark 是暫時的，不要誤以為是最終設計**。已 commit（`98c3923`）並 push 到 `origin/dev`。
+  這個環境沒辦法看實際畫面，使用者尚未回報確認過修好之後的顯示效果。
+- [x] **Phase 5：剩餘畫面**（2026-07-13 實作完成，**尚未經使用者在模擬器/真機驗證**）
+  - 新增 `apps/mobile/screens/{Notes,QuestionBook,QuestionReview,Stats}.tsx`：邏輯／資料流對照
+    `apps/web/src/screens/{Notes,QuestionBook,Stats}.tsx` 與 `apps/web/src/components/QuestionReview.tsx`，
+    同樣呼叫 `packages/core` 的 `getWrongQuestions`/`getWrongEntries`/`getSavedQuestions`/`REVIEW_SIZE`
+    等既有函式，畫面改用 RN 的 View/Text/Pressable/ScrollView＋StyleSheet 重寫。
+  - `app/(tabs)/notes.tsx` 取代原本的 `ComingSoon` 佔位畫面，用跟 `app/(tabs)/index.tsx`（Home tab）
+    同一種手法——一個 `view` 狀態機（notes/wrongbook/savedbook/review/savedpractice）在單一 tab 內
+    切畫面，`review`/`savedpractice` 直接複用 Phase 3 就有的 `Quiz` 元件（`mode="review"`／
+    `mode="mixed"`），跟 Home tab 各自獨立一個狀態機、但共用同一份 `ProgressProvider` context。
+  - `app/(tabs)/stats.tsx` 取代 `ComingSoon`，是單一唯讀畫面（不需要 view 狀態機，跟 Profile tab
+    同構）。`screens/Stats.tsx` 把 web 版的日期／熱力圖／統計計算邏輯整段搬過來（沒有搬進
+    `packages/core`，因為這些函式只有 UI 層在用，不是 web/mobile 共用的資料邏輯），熱力圖用
+    RN 的 `ScrollView horizontal` 取代 web 版的 CSS overflow-x scroll。
+  - **刻意跟 web 版不同、屬於 MVP 簡化，不是漏做**：熱力圖格子跟迷你長條圖拿掉了 web 版滑鼠
+    hover 才有的 `title` tooltip——觸控裝置本來就沒有 hover 這個互動，跟 Phase 3 `CodeBlock`/
+    `Icon.tsx` 用 emoji 頂替 SVG 圖示是同一個「先求功能完整，不追求像素級一致視覺」原則。
+  - 沒用到的 `components/ComingSoon.tsx`（Phase 2/3 的四個佔位畫面已經全部被真正內容取代）
+    已直接刪除，不留 dead code。
+  - **這個環境能驗證的都驗證了**：`apps/mobile` `tsc --noEmit` 過、`expo-doctor` 19/20（唯一沒過的
+    仍是 Phase 2 就有、刻意的 metro monorepo 設定，跟這次改動無關）、`npx expo export --platform web`
+    成功（1358 modules，`/notes`／`/stats` 兩條新路由都正確輸出）。
+  - **2026-07-13，使用者在真機/模擬器測過（Notes tab 巢狀按鈕觸控、Stats tab 熱力圖橫向捲動、
+    review/savedpractice 結算流程、深色主題配色）四項都 OK**。
+  - **2026-07-13 追加，使用者測試後要求改變錯題本規則**：原本是 Leitner 盒制（答對要升滿
+    `GRADUATE_BOX`＝3 盒才移出錯題本），改成「答對一次就直接移出錯題本」。這是 `packages/core`
+    的共用邏輯（`progressCalc.ts` 的 `applyAnswer`），同時也要改 `apps/web/src/app/api/progress/
+    answer/route.ts`（登入時的伺服器端寫入是另外手刻同一套規則的 Prisma 交易，沒有共用
+    `applyAnswer`，這次一起改成答對就 `delete`，不再比較 `box+1 > GRADUATE_BOX`）。`GRADUATE_BOX`
+    常數跟 `熟練度 X/3` 的 UI 顯示（`QuestionReview.tsx`，web/mobile 各一份）已經完全移除，因為
+    移出時機改成單次答對後，這個欄位永遠停在 1，留著顯示只會誤導。**`WrongEntryMeta.box` 欄位／
+    Prisma `WrongEntry.box` 資料庫欄位本身刻意保留沒動**（一律寫 1，不再遞增）——避免多動一次
+    schema migration，這欄位現在只是歷史包袱，之後如果要徹底清乾淨可以再考慮拿掉。這個環境驗證過
+    `apps/web`／`apps/mobile` 的 `tsc --noEmit`、`web` 的 `lint`／`build`、`mobile` 的
+    `expo export --platform web`，都過；**2026-07-13 使用者已在真機/模擬器測過，答對後錯題確實
+    從清單消失，符合預期**。已 commit（`18de9d2`）並 push 到 `origin/dev`。
+- [x] **Phase 6：頭像拖曳／縮放／改名**（2026-07-13 實作完成，**完全沒有真機/模擬器驗證過，
+      風險最高，需要先重新原生建置才能測**）
+  - `packages/core/src/stages.ts`（新增）：把 `apps/web/src/lib/stages.ts` 的吉祥物成長階段資料
+    （`STAGES`/`getStage`/`getNextStage`）搬進共用層——這是 Phase 1 就該搬但當時漏掉的純資料/
+    函式，這次 mobile 的 `Mascot`/`GrowthHistory` 也要用到才發現。`apps/web` 的
+    `lib/stages.ts` 已刪除，`Profile.tsx`／`Quiz.tsx`／`Mascot.tsx`／`GrowthHistory.tsx`
+    改成從 `@easylearn/core` 匯入，行為完全沒變，純粹是搬家。
+  - 新增 `apps/mobile/components/{Mascot,GrowthHistory}.tsx`：對照 web 同名元件，靜態顯示，
+    沒有搬 web 版 `mood="happy"` 的彈跳動畫（跟 Phase 3 的簡化原則一致）。
+  - 新增 `apps/mobile/components/AccountHeader.tsx`（這個 phase 最複雜的部分）：對照 web 版
+    `AccountHeader.tsx` 的頭像拖曳/縮放/改名，換算公式（`getOverflow`／裁切位置計算）整段照搬，
+    只有互動層换成 RN 對應方案：
+    - 拖曳：web 版用滑鼠 `onPointerDown/Move/Up` 手算 dx/dy；mobile 改用
+      `react-native-gesture-handler` 的 `PanGestureHandler`（沿用 v1 的 `onGestureEvent`/
+      `onHandlerStateChange` API，不是新版 `Gesture.Pan()`＋worklet，减少複雜度），
+      `translationX/Y` 本來就是相對手勢起點的累計位移，跟 web 版邏輯概念一致，公式沒改。
+      `react-native-gesture-handler` 需要整個 app 包一層 `GestureHandlerRootView`，
+      已經加到 `app/_layout.tsx` 最外層。
+    - 縮放：`<input type=range>` 換成 `@react-native-community/slider` 的 `<Slider>`。
+    - 選照片：`expo-image-picker` 的 `launchImageLibraryAsync`，選到的本機 `file://` URI
+      透過 `fetch(uri).then(r => r.blob())` 轉成 `Blob` 再交給 Clerk 的
+      `user.setProfileImage({ file: blob })`——RN 沒有瀏覽器的 `File`/`<input type=file>`，
+      這個 URI→Blob 轉換是 RN 上傳圖片給任何 API（含 Clerk）的標準作法，但**這條路徑完全沒有
+      實機測過，`fetch().blob()` 在 Expo 的 polyfill 下是否真的能把 Clerk 需要的圖片資料正確
+      送出，是這個 phase 最大的不確定性**。
+    - 已在 `app.json` 的 `plugins` 加上 `expo-image-picker` 的設定（帶中文相簿權限說明文字），
+      這是 Phase 2 只裝套件、沒寫 config plugin 設定的收尾。
+  - `app/(tabs)/profile.tsx` 大幅擴充：原本只有登入後顯示 4 個統計數字＋登出按鈕的極簡版，
+    這次補齊 web 版 `Profile.tsx` 其餘一直沒搬的部分——`AccountHeader`（頭像/改名）、
+    `Mascot`（size="sm"）＋ XP 進度條、「成長史」展開/收合、`GrowthHistory`、帳號設定區塊的
+    登出／刪除帳號。刪除帳號用 `Alert.alert` 的 destructive 按鈕做確認（RN 没有
+    `window.confirm`），呼叫既有的 `DELETE /api/account`（`lib/api.ts` 的 `request`，這支
+    endpoint 在 Phase 4 就已經存在於 apps/web，這次是 mobile 第一次呼叫它）。
+  - **這個環境能驗證的都驗證了**：`packages/core`／`apps/web`／`apps/mobile` 三個
+    `tsc --noEmit` 過、`apps/web` 的 `lint`／`build` 過、`apps/mobile` 的
+    `expo export --platform web` 成功（1516 modules，`/profile` 路由正確輸出）、
+    `expo-doctor` 19/20（唯一沒過的仍是 Phase 2 就有、刻意的 metro monorepo 設定）。
+  - **完全沒有測過、風險最高的部分（使用者要自己在真機/模擬器驗證才能定案）**：
+    1. `app.json` 這次改了 `plugins`（新增 `expo-image-picker` 設定）＋ `app/_layout.tsx`
+       加了 `GestureHandlerRootView`，**必須重新 `npx expo run:ios`/`run:android` 完整原生
+       建置**（不是新裝 native module，但 app.json 的 config plugin 變更同樣需要重新產生
+       原生專案設定），光重啟 `expo start` 不會生效，這點跟 Phase 2/4 提醒過的規則一致。
+    2. 拖曳頭像的手感、縮放拉桿是否跟拖曳同步、放開後位置是否正確换算——這組數學公式是照搬
+       web 版沒改邏輯，但 web 是滑鼠事件、mobile 是觸控手勢，實際手感需要真機才能判斷。
+    3. 選照片→上傳→Clerk `setProfileImage` 整條路徑能不能成功（見上面 URI→Blob 轉換的
+       不確定性），包含相簿權限彈窗文字是否正確顯示。
+    4. 改名存檔、成長史展開/收合、刪除帳號的確認對話框與實際刪除流程。
+  - **2026-07-13，使用者原生重建後實機測過，回報三項 UI 調整**（不是 bug，是設計回饋）：
+    1. 個人資料不需要顯示 `USER.XXXXXXXX` 這行——`AccountHeader.tsx` 已移除。
+    2. 成長史（吉祥物／XP／展開清單）不該跟大頭貼/改名擠在同一張卡片裡——`profile.tsx`
+       拆成「個人資料」「成長史」兩張各自獨立的卡片區塊（各自有自己的 section title），
+       原本卡片內部的 dashed 分隔線樣式跟著拿掉。
+    3. 圖示要換成跟 tab bar 一樣的線型簡約風格，不要用 emoji——`Icon.tsx` 整個換掉，改用
+       `lucide-react-native`（新增依賴，peer dep 是已裝好的 `react-native-svg`，純 JS，
+       **不需要重新原生建置**，Metro/`expo start` 重新整理就會生效）。這個套件就是
+       apps/web `Icons.tsx` 那組線型圖示（lucide.dev）的官方 RN 版本，圖示名稱/路徑跟 web
+       版同源，只有 3 個圖示在新版 lucide 改了名字（`check-circle`→`CircleCheck`、
+       `home`→`House`、`bar-chart`→`ChartColumn`），對照 SVG path 資料確認過是同一個圖示。
+       **踩過的坑**：一開始用根套件的具名匯入（`import { ArrowLeft } from 'lucide-react-native'`），
+       `expo export --platform web` 一測發現 bundle 從 3.1MB 漲到 5.3MB、module 數從 1516
+       跳到 3296——Metro 對這種全量 barrel re-export 的 tree-shaking 不夠乾淨，即使只用 29
+       個圖示還是把全部 3000+ 個圖示打包進去。改成 `lucide-react-native/icons/xxx` 逐一深層
+       匯入後，bundle 回到 3.5MB（只比沒有圖示庫的原始 baseline 多 ~0.3MB，符合預期）。
+  - 這輪調整驗證過：`tsc --noEmit`、`expo export --platform web`（module 數回到 1397，
+    `/profile` 正確輸出）、`expo-doctor` 19/20（同樣跟這次無關的既有問題）。
+  - **2026-07-13，使用者實機測試上傳頭像，抓到一個真的 bug＋兩個樣式問題**：
+    1. **Bug：`AccountHeader.tsx` 選照片上傳直接丟例外**——
+       `Error: Creating blobs from 'ArrayBuffer' and 'ArrayBufferView' are not supported`。
+       根因是 RN 的 `Blob` 實作沒辦法從 `fetch()` 內部轉出的 `ArrayBuffer` 建立 Blob，原本寫的
+       `fetch(uri).then(r => r.blob())` 在 RN 上傳本機圖片這條路徑上行不通（web 版沒這個問題，
+       瀏覽器的 `fetch().blob()` 沒有這個限制）。**修法**：改用 `XMLHttpRequest`
+       以 `responseType: 'blob'` 直接讀取本機 URI（RN 社群／Firebase Storage RN 文件都用這個
+       workaround，是原生模組認得的 Blob 來源），新增 `uriToBlob()` helper 取代原本的
+       fetch 寫法。
+    2. **樣式：縮放拉桿在深色主題下整條變成一坨白色**——原本只設定了
+       `minimumTrackTintColor`，`maximumTrackTintColor`／`thumbTintColor` 留預設（淺灰/白，
+       設計給淺色背景用），在強制深色主題下滑軌+拉桿糊成一片看不出层次。補上深色主題對應的
+       `maximumTrackTintColor="#88889940"`。
+    3. **樣式：頭像編輯模式的外框只在最上緣露出一小段橘色，不是完整虛線圓**——
+       `borderStyle: 'dashed'` 疊在圓形（`borderRadius: 50%`）上是 React Native 已知的平台
+       限制，虛線間距沒辦法正確沿著曲線計算，不是我們的樣式參數寫錯。**修法**：改用純色實線框
+       （拿掉 `borderStyle: 'dashed'`），一樣能表達「進入編輯模式」，不會有這個算不出來的問題。
+  - **2026-07-13 追加，使用者三項介面回饋**（不是 bug，是設計調整）：
+    1. 縮放拉桿左側的放大鏡圖示拿掉。
+    2. 成長史從「卡片內展開/收合清單」改成點「查看全部 ›」用 RN `Modal`（`animationType="slide"`，
+       從底部滑入）彈出完整清單，右上角 X 關閉——不再佔用個人資料頁的常駐版面。
+    3. 改名輸入框的文字是黑色看不清楚——`TextInput` 不像 `Text`／`View` 有走 `components/Themed.tsx`
+       自動套主題色，是 RN 原生元件，沒特別設定就吃系統預設黑字，在深色底自然隱形。補上
+       `color: '#e6e6e6'`（跟其他文字元件一致的淺色）。順手確認過整個 apps/mobile 只有這一處
+       用到 `TextInput`，沒有其他地方會有同樣問題。
+  - **Android 模擬器沒有內建相簿圖片可測試上傳**：模擬器預設空的，這次直接用 `adb push` 把
+    `~/桌布/` 底下三張圖推進 `/sdcard/Pictures/`，再用
+    `adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file://...`
+    觸發媒體掃描讓系統相簿索引到，讓使用者能在 Android 上實測選照片上傳這條路徑
+    （純測試用的暫時檔案，不是專案的一部分，不影響 repo）。
+  - **2026-07-13，使用者確認「功能測試 OK」**——上傳頭像（含 Android，用上面塞進去的測試圖）、
+    拖曳/縮放、改名、放大鏡移除、成長史彈窗、輸入框文字顏色，全部驗證過沒問題。
+    **Phase 6 到此真正完成**，已 commit 並 push 到 `origin/dev`。
 - [ ] **Phase 7**（視是否加 OAuth 才需要）：Clerk native SSO redirect 的 Dashboard 設定。
 
 ## 驗證紀律（跨 phase 都適用）

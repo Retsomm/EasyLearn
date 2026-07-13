@@ -18,3 +18,9 @@ export const STAGES = [
 export const getStage = (xp: number) => STAGES.reduce((current, s) => (xp >= s.min ? s : current), STAGES[0])
 
 export const getNextStage = (xp: number) => STAGES.find((s) => s.min > xp) ?? null
+
+export const getStageProgress = (xp: number): number => {
+  const stage = getStage(xp)
+  const next = getNextStage(xp)
+  return next ? Math.min(100, Math.round(((xp - stage.min) / (next.min - stage.min)) * 100)) : 100
+}
