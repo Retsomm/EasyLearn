@@ -2,8 +2,7 @@ import { useState } from 'react'
 import QuestionCard from '@/components/QuestionCard'
 import Mascot from '@/components/Mascot'
 import Icon from '@/components/Icons'
-import { getStage } from '@/lib/stages'
-import { getChapterIdForQuestion, type Level, type Progress } from '@easylearn/core'
+import { getChapterIdForQuestion, getStage, type Level, type Progress } from '@easylearn/core'
 
 const XP_CORRECT = 10
 const XP_WRONG = 2

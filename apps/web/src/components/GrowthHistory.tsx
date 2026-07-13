@@ -1,4 +1,4 @@
-import { STAGES, getStage } from '@/lib/stages'
+import { STAGES, getStage } from '@easylearn/core'
 
 interface GrowthHistoryProps {
   xp: number

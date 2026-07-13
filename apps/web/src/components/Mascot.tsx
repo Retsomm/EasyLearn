@@ -1,4 +1,4 @@
-import { getNextStage, getStage } from '@/lib/stages'
+import { getNextStage, getStage } from '@easylearn/core'
 
 interface MascotProps {
   xp: number

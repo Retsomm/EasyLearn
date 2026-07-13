@@ -199,7 +199,54 @@
     `apps/web`／`apps/mobile` 的 `tsc --noEmit`、`web` 的 `lint`／`build`、`mobile` 的
     `expo export --platform web`，都過；**2026-07-13 使用者已在真機/模擬器測過，答對後錯題確實
     從清單消失，符合預期**。已 commit（`18de9d2`）並 push 到 `origin/dev`。
-- [ ] **Phase 6**：頭像拖曳／縮放／改名（最高複雜度的 native gesture，刻意排最後）。
+- [x] **Phase 6：頭像拖曳／縮放／改名**（2026-07-13 實作完成，**完全沒有真機/模擬器驗證過，
+      風險最高，需要先重新原生建置才能測**）
+  - `packages/core/src/stages.ts`（新增）：把 `apps/web/src/lib/stages.ts` 的吉祥物成長階段資料
+    （`STAGES`/`getStage`/`getNextStage`）搬進共用層——這是 Phase 1 就該搬但當時漏掉的純資料/
+    函式，這次 mobile 的 `Mascot`/`GrowthHistory` 也要用到才發現。`apps/web` 的
+    `lib/stages.ts` 已刪除，`Profile.tsx`／`Quiz.tsx`／`Mascot.tsx`／`GrowthHistory.tsx`
+    改成從 `@easylearn/core` 匯入，行為完全沒變，純粹是搬家。
+  - 新增 `apps/mobile/components/{Mascot,GrowthHistory}.tsx`：對照 web 同名元件，靜態顯示，
+    沒有搬 web 版 `mood="happy"` 的彈跳動畫（跟 Phase 3 的簡化原則一致）。
+  - 新增 `apps/mobile/components/AccountHeader.tsx`（這個 phase 最複雜的部分）：對照 web 版
+    `AccountHeader.tsx` 的頭像拖曳/縮放/改名，換算公式（`getOverflow`／裁切位置計算）整段照搬，
+    只有互動層换成 RN 對應方案：
+    - 拖曳：web 版用滑鼠 `onPointerDown/Move/Up` 手算 dx/dy；mobile 改用
+      `react-native-gesture-handler` 的 `PanGestureHandler`（沿用 v1 的 `onGestureEvent`/
+      `onHandlerStateChange` API，不是新版 `Gesture.Pan()`＋worklet，减少複雜度），
+      `translationX/Y` 本來就是相對手勢起點的累計位移，跟 web 版邏輯概念一致，公式沒改。
+      `react-native-gesture-handler` 需要整個 app 包一層 `GestureHandlerRootView`，
+      已經加到 `app/_layout.tsx` 最外層。
+    - 縮放：`<input type=range>` 換成 `@react-native-community/slider` 的 `<Slider>`。
+    - 選照片：`expo-image-picker` 的 `launchImageLibraryAsync`，選到的本機 `file://` URI
+      透過 `fetch(uri).then(r => r.blob())` 轉成 `Blob` 再交給 Clerk 的
+      `user.setProfileImage({ file: blob })`——RN 沒有瀏覽器的 `File`/`<input type=file>`，
+      這個 URI→Blob 轉換是 RN 上傳圖片給任何 API（含 Clerk）的標準作法，但**這條路徑完全沒有
+      實機測過，`fetch().blob()` 在 Expo 的 polyfill 下是否真的能把 Clerk 需要的圖片資料正確
+      送出，是這個 phase 最大的不確定性**。
+    - 已在 `app.json` 的 `plugins` 加上 `expo-image-picker` 的設定（帶中文相簿權限說明文字），
+      這是 Phase 2 只裝套件、沒寫 config plugin 設定的收尾。
+  - `app/(tabs)/profile.tsx` 大幅擴充：原本只有登入後顯示 4 個統計數字＋登出按鈕的極簡版，
+    這次補齊 web 版 `Profile.tsx` 其餘一直沒搬的部分——`AccountHeader`（頭像/改名）、
+    `Mascot`（size="sm"）＋ XP 進度條、「成長史」展開/收合、`GrowthHistory`、帳號設定區塊的
+    登出／刪除帳號。刪除帳號用 `Alert.alert` 的 destructive 按鈕做確認（RN 没有
+    `window.confirm`），呼叫既有的 `DELETE /api/account`（`lib/api.ts` 的 `request`，這支
+    endpoint 在 Phase 4 就已經存在於 apps/web，這次是 mobile 第一次呼叫它）。
+  - **這個環境能驗證的都驗證了**：`packages/core`／`apps/web`／`apps/mobile` 三個
+    `tsc --noEmit` 過、`apps/web` 的 `lint`／`build` 過、`apps/mobile` 的
+    `expo export --platform web` 成功（1516 modules，`/profile` 路由正確輸出）、
+    `expo-doctor` 19/20（唯一沒過的仍是 Phase 2 就有、刻意的 metro monorepo 設定）。
+  - **完全沒有測過、風險最高的部分（使用者要自己在真機/模擬器驗證才能定案）**：
+    1. `app.json` 這次改了 `plugins`（新增 `expo-image-picker` 設定）＋ `app/_layout.tsx`
+       加了 `GestureHandlerRootView`，**必須重新 `npx expo run:ios`/`run:android` 完整原生
+       建置**（不是新裝 native module，但 app.json 的 config plugin 變更同樣需要重新產生
+       原生專案設定），光重啟 `expo start` 不會生效，這點跟 Phase 2/4 提醒過的規則一致。
+    2. 拖曳頭像的手感、縮放拉桿是否跟拖曳同步、放開後位置是否正確换算——這組數學公式是照搬
+       web 版沒改邏輯，但 web 是滑鼠事件、mobile 是觸控手勢，實際手感需要真機才能判斷。
+    3. 選照片→上傳→Clerk `setProfileImage` 整條路徑能不能成功（見上面 URI→Blob 轉換的
+       不確定性），包含相簿權限彈窗文字是否正確顯示。
+    4. 改名存檔、成長史展開/收合、刪除帳號的確認對話框與實際刪除流程。
+- [ ] **Phase 7**（視是否加 OAuth 才需要）：Clerk native SSO redirect 的 Dashboard 設定。
 - [ ] **Phase 7**（視是否加 OAuth 才需要）：Clerk native SSO redirect 的 Dashboard 設定。
 
 ## 驗證紀律（跨 phase 都適用）

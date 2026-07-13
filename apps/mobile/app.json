@@ -37,7 +37,13 @@
         }
       ],
       "@clerk/expo",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "需要存取你的相簿才能選擇頭像照片"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

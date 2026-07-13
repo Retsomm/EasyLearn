@@ -4,8 +4,7 @@ import AccountHeader from '@/components/AccountHeader'
 import GrowthHistory from '@/components/GrowthHistory'
 import Mascot from '@/components/Mascot'
 import Icon from '@/components/Icons'
-import { getStage, getNextStage } from '@/lib/stages'
-import { chapters, type Progress } from '@easylearn/core'
+import { chapters, getStage, getNextStage, type Progress } from '@easylearn/core'
 
 interface ProfileProps {
   progress: Progress
