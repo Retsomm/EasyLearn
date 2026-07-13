@@ -4806,6 +4806,11 @@ lru.min@^1.0.0, lru.min@^1.1.0:
   resolved "https://registry.npmmirror.com/lru.min/-/lru.min-1.1.4.tgz#6ea1737a8c1ba2300cc87ad46910a4bdffa0117b"
   integrity sha512-DqC6n3QQ77zdFpCMASA1a3Jlb64Hv2N2DciFGkO/4L9+q/IpIAuRlKOvCXabtRW6cQf8usbmM6BE/TOPysCdIA==
 
+lucide-react-native@^1.24.0:
+  version "1.24.0"
+  resolved "https://registry.npmmirror.com/lucide-react-native/-/lucide-react-native-1.24.0.tgz#165498e47aff0b570a8655333f4743ebf9991703"
+  integrity sha512-4nfHfK75Azty3bilbuW1tzgi0kqG4eHFIex7x2hP2MMNM4CuRDo9+4PEtKKoImXiFSMc7J0BeOixZlz6Ucm9VA==
+
 makeerror@1.0.12:
   version "1.0.12"
   resolved "https://registry.npmmirror.com/makeerror/-/makeerror-1.0.12.tgz#3e5dd2079a82e812e983cc6610c4a2cb0eaa801a"

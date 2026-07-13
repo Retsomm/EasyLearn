@@ -246,7 +246,25 @@
     3. 選照片→上傳→Clerk `setProfileImage` 整條路徑能不能成功（見上面 URI→Blob 轉換的
        不確定性），包含相簿權限彈窗文字是否正確顯示。
     4. 改名存檔、成長史展開/收合、刪除帳號的確認對話框與實際刪除流程。
-- [ ] **Phase 7**（視是否加 OAuth 才需要）：Clerk native SSO redirect 的 Dashboard 設定。
+  - **2026-07-13，使用者原生重建後實機測過，回報三項 UI 調整**（不是 bug，是設計回饋）：
+    1. 個人資料不需要顯示 `USER.XXXXXXXX` 這行——`AccountHeader.tsx` 已移除。
+    2. 成長史（吉祥物／XP／展開清單）不該跟大頭貼/改名擠在同一張卡片裡——`profile.tsx`
+       拆成「個人資料」「成長史」兩張各自獨立的卡片區塊（各自有自己的 section title），
+       原本卡片內部的 dashed 分隔線樣式跟著拿掉。
+    3. 圖示要換成跟 tab bar 一樣的線型簡約風格，不要用 emoji——`Icon.tsx` 整個換掉，改用
+       `lucide-react-native`（新增依賴，peer dep 是已裝好的 `react-native-svg`，純 JS，
+       **不需要重新原生建置**，Metro/`expo start` 重新整理就會生效）。這個套件就是
+       apps/web `Icons.tsx` 那組線型圖示（lucide.dev）的官方 RN 版本，圖示名稱/路徑跟 web
+       版同源，只有 3 個圖示在新版 lucide 改了名字（`check-circle`→`CircleCheck`、
+       `home`→`House`、`bar-chart`→`ChartColumn`），對照 SVG path 資料確認過是同一個圖示。
+       **踩過的坑**：一開始用根套件的具名匯入（`import { ArrowLeft } from 'lucide-react-native'`），
+       `expo export --platform web` 一測發現 bundle 從 3.1MB 漲到 5.3MB、module 數從 1516
+       跳到 3296——Metro 對這種全量 barrel re-export 的 tree-shaking 不夠乾淨，即使只用 29
+       個圖示還是把全部 3000+ 個圖示打包進去。改成 `lucide-react-native/icons/xxx` 逐一深層
+       匯入後，bundle 回到 3.5MB（只比沒有圖示庫的原始 baseline 多 ~0.3MB，符合預期）。
+  - 這輪調整驗證過：`tsc --noEmit`、`expo export --platform web`（module 數回到 1397，
+    `/profile` 正確輸出）、`expo-doctor` 19/20（同樣跟這次無關的既有問題）。
+    **新版畫面（拆卡片＋線型圖示）使用者還沒回報看過**，下次要接續先請使用者確認外觀。
 - [ ] **Phase 7**（視是否加 OAuth 才需要）：Clerk native SSO redirect 的 Dashboard 設定。
 
 ## 驗證紀律（跨 phase 都適用）

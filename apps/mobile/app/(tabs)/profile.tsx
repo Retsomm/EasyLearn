@@ -122,9 +122,13 @@ export default function ProfileScreen() {
         <ActivityIndicator />
       ) : (
         <>
+          <Text style={styles.sectionTitle}>個人資料</Text>
           <View style={styles.hero}>
             <AccountHeader user={user} />
+          </View>
 
+          <Text style={styles.sectionTitle}>成長史</Text>
+          <View style={styles.hero}>
             <View style={styles.heroXpRow}>
               <Mascot xp={progress.xp} size="sm" />
               <View style={styles.heroXpInfo}>
@@ -139,16 +143,15 @@ export default function ProfileScreen() {
                 </View>
               </View>
               <Pressable onPress={() => setShowGrowth((v) => !v)} hitSlop={8}>
-                <Text style={styles.growthLink}>{showGrowth ? '收起 ‹' : '成長史 ›'}</Text>
+                <Text style={styles.growthLink}>{showGrowth ? '收起 ‹' : '展開 ›'}</Text>
               </Pressable>
             </View>
+            {showGrowth && (
+              <View style={styles.growthPanel}>
+                <GrowthHistory xp={progress.xp} />
+              </View>
+            )}
           </View>
-
-          {showGrowth && (
-            <View style={styles.growthPanel}>
-              <GrowthHistory xp={progress.xp} />
-            </View>
-          )}
 
           <Text style={styles.sectionTitle}>學習統計</Text>
           {!hydrated ? (
@@ -177,12 +180,12 @@ export default function ProfileScreen() {
               disabled={deleting}
             >
               <View style={styles.accountItemLabel}>
-                <Icon name="trash" size={15} />
+                <Icon name="trash" size={15} color="#e5484d" />
                 <Text style={[styles.accountItemText, styles.accountItemDangerText]}>
                   {deleting ? '刪除中…' : '刪除帳號'}
                 </Text>
               </View>
-              <Icon name="chevron-right" size={16} />
+              <Icon name="chevron-right" size={16} color="#e5484d80" />
             </Pressable>
           </View>
         </>
@@ -258,11 +261,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    marginTop: 16,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#88889918',
-    borderStyle: 'dashed',
   },
   heroXpInfo: {
     flex: 1,
@@ -301,6 +299,7 @@ const styles = StyleSheet.create({
   growthPanel: {
     borderRadius: 12,
     padding: 12,
+    marginTop: 14,
     backgroundColor: '#88889908',
   },
   sectionTitle: {

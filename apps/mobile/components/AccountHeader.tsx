@@ -252,7 +252,6 @@ export default function AccountHeader({ user }: AccountHeaderProps) {
               </Pressable>
             </View>
           )}
-          <Text style={styles.userId}>USER.{user.id.slice(-8).toUpperCase()}</Text>
         </View>
       </View>
 
@@ -357,10 +356,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
-  },
-  userId: {
-    fontSize: 11,
-    opacity: 0.5,
   },
   repositionPanel: {
     gap: 10,
