@@ -2,7 +2,9 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
+import { SecondaryButton, buttonTextStyles } from '@/components/Button';
 import QuestionReview from '@/screens/QuestionReview';
+import { colors, fonts } from '@/constants/theme';
 import type { Question, WrongEntry } from '@easylearn/core';
 
 interface QuestionBookProps {
@@ -23,16 +25,16 @@ export default function QuestionBook({ kind, entries, savedIds, onToggleSave, on
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={onBack} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size={18} />
+          <Icon name="arrow-left" size={20} color={colors.cyan} />
         </Pressable>
         <Text style={styles.title}>{title}</Text>
       </View>
 
       {isWrong && entries.length > 0 && (
-        <Pressable style={styles.reviewBtn} onPress={onReview}>
-          <Icon name="rotate-ccw" size={17} />
-          <Text style={styles.reviewBtnText}>開始重練（{entries.length} 題）</Text>
-        </Pressable>
+        <SecondaryButton onPress={onReview} style={styles.reviewBtn}>
+          <Icon name="rotate-ccw" size={17} color={colors.wrong} />
+          <Text style={buttonTextStyles.secondary}>開始重練（{entries.length} 題）</Text>
+        </SecondaryButton>
       )}
 
       {entries.length === 0 ? (
@@ -59,40 +61,41 @@ export default function QuestionBook({ kind, entries, savedIds, onToggleSave, on
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 40,
     gap: 10,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 6,
+    gap: 14,
+    marginBottom: 8,
   },
   backBtn: {
-    padding: 4,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  reviewBtn: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#2e78b755',
-    borderRadius: 12,
-    paddingVertical: 13,
-    marginBottom: 4,
+    borderColor: 'rgba(95, 240, 224, 0.25)',
+    width: 38,
+    height: 38,
   },
-  reviewBtnText: {
+  title: {
+    fontFamily: fonts.sans.bold,
+    fontSize: 17,
     fontWeight: '700',
-    fontSize: 14,
+    color: colors.ink,
+  },
+  reviewBtn: {
+    width: '100%',
+    maxWidth: 280,
+    marginBottom: 4,
   },
   empty: {
     textAlign: 'center',
-    opacity: 0.6,
+    fontFamily: fonts.sans.regular,
+    color: colors.inkSoft,
     fontSize: 14,
     marginTop: 40,
   },

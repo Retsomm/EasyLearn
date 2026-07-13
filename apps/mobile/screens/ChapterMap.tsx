@@ -2,7 +2,16 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
+import { colors, fonts } from '@/constants/theme';
 import { chapters, type IconName, type Progress } from '@easylearn/core';
+
+type StatusIcon = 'lock' | 'check-circle' | 'play';
+
+const STATUS_COLOR: Record<StatusIcon, string> = {
+  lock: colors.locked,
+  'check-circle': colors.cyan,
+  play: colors.primary,
+};
 
 interface ChapterMapProps {
   chapterId: string | null;
@@ -20,9 +29,9 @@ export default function ChapterMap({ chapterId, progress, onStartLevel, onBack }
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={onBack} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size={18} />
+          <Icon name="arrow-left" size={20} color={colors.cyan} />
         </Pressable>
-        <Icon name={chapter.icon} size={20} />
+        <Icon name={chapter.icon} size={22} color={colors.cyan} />
         <Text style={styles.title}>{chapter.title}</Text>
       </View>
 
@@ -30,15 +39,17 @@ export default function ChapterMap({ chapterId, progress, onStartLevel, onBack }
         const record = progress.completedLevels[level.id];
         const prevDone = i === 0 || progress.completedLevels[chapter.levels[i - 1].id];
         const locked = !prevDone;
-        const statusIcon: IconName = locked ? 'lock' : record ? 'check-circle' : 'play';
+        const statusIcon: StatusIcon = locked ? 'lock' : record ? 'check-circle' : 'play';
         return (
           <Pressable
             key={level.id}
             disabled={locked}
             onPress={() => onStartLevel(level.id)}
-            style={[styles.levelRow, locked && styles.levelLocked, record && styles.levelDone]}
+            style={[styles.levelRow, locked && styles.levelLocked]}
           >
-            <Icon name={statusIcon} size={18} />
+            <View style={styles.levelIcon}>
+              <Icon name={statusIcon} size={20} color={STATUS_COLOR[statusIcon]} />
+            </View>
             <Text style={styles.levelName}>
               {i + 1}. {level.title}
             </Text>
@@ -64,37 +75,54 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 6,
+    gap: 14,
+    marginBottom: 4,
   },
   backBtn: {
-    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: 'rgba(95, 240, 224, 0.25)',
+    width: 38,
+    height: 38,
   },
   title: {
-    fontSize: 18,
+    fontFamily: fonts.sans.bold,
+    fontSize: 17,
     fontWeight: '700',
+    color: colors.inkStrong,
   },
   levelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    borderRadius: 12,
-    padding: 14,
-    backgroundColor: '#88889910',
+    gap: 14,
+    width: '100%',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.optionBorder,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
   },
   levelLocked: {
-    opacity: 0.45,
+    opacity: 0.55,
   },
-  levelDone: {
-    backgroundColor: '#2f9e4418',
+  levelIcon: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   levelName: {
     flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonts.sans.bold,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.ink,
   },
   levelRecord: {
-    fontSize: 12,
-    opacity: 0.65,
+    fontFamily: fonts.mono.regular,
+    fontSize: 11,
+    color: colors.inkFaint,
   },
 });

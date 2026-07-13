@@ -298,6 +298,243 @@
     拖曳/縮放、改名、放大鏡移除、成長史彈窗、輸入框文字顏色，全部驗證過沒問題。
     **Phase 6 到此真正完成**，已 commit 並 push 到 `origin/dev`。
 - [ ] **Phase 7**（視是否加 OAuth 才需要）：Clerk native SSO redirect 的 Dashboard 設定。
+- [ ] **UI 全面對齊 apps/web 窄螢幕樣式**（2026-07-13 實作完成，**完全沒有原生重建／真機驗證過，
+      風險最高，需要先重新原生建置才能測**）
+  - 使用者要求「RN 專案的 UI 對齊網頁的窄螢幕樣式，要完全一模一樣」，範圍是全部畫面
+    （Home／ChapterMap／Quiz／Notes／QuestionBook／Stats／Profile），並確認要做到「含缺角與
+    自訂字型的像素級還原」（AskUserQuestion 問過，不是我自己假設的範圍）。
+  - 新增 `constants/theme.ts`：把 `apps/web/src/index.css` 的 `:root` CSS variables（顏色／
+    notch 尺寸）整套搬進 RN 常數，之後任何畫面要用顏色都從這裡引用，不再各自硬編十六進位色碼。
+  - 新增 `components/NotchedView.tsx`：RN 沒有原生 `clip-path`，用 `react-native-svg` 的
+    `Polygon` 畫一個缺角多邊形當背景（`onLayout` 量到實際寬高才畫，第一幀會有一瞬間無背景，
+    是可接受的 trade-off），取代網頁版 `.question-card`／`.note-card`／`.login-box`（notch=18，
+    切右上/左下）與 `.primary-btn`（notch-sm=12，切左上/右下）的 clip-path 缺角造型。
+  - 新增 `components/Button.tsx`（PrimaryButton／SecondaryButton／TextButton）、
+    `components/XpBar.tsx`（cyan→primary 漸層進度條，用新裝的 `expo-linear-gradient`）、
+    `components/TabBarButton.tsx`（讓底部 tab bar 選中分頁露出 2px primary 色細線，
+    對照 index.css `.navbar-tab.is-active` 在 `@media(max-width:640px)` 的樣式）。
+  - **新增字型**：裝 `@expo-google-fonts/jetbrains-mono`／`@expo-google-fonts/noto-sans-tc`
+    （跟 `apps/web/src/app/layout.tsx` 從 Google Fonts 載入的同一組 weight：JetBrains Mono
+    400/500/700/800、Noto Sans TC 400/500/700/900），`app/_layout.tsx` 的 `useFonts` 換成載入
+    這 8 個字重，取代原本沒被用到的 Expo 模板預設字型 `SpaceMono`。畫面裡凡是網頁版
+    `font-family:var(--font-mono)`／`var(--font-sans)` 的地方都改引用 `theme.ts` 對應的
+    `fonts.mono.*`／`fonts.sans.*` weight-specific family 名稱（RN 自訂字型不能用
+    `fontFamily+fontWeight` 組合模擬粗細，要載入時就分開每個字重）。
+  - `constants/Colors.ts`／`components/Themed.tsx`：`dark` 主題改成直接對照 `theme.ts` 的
+    `colors.bg`／`colors.ink`（原本是 Expo 模板預設的 `#121212`／`#e6e6e6`，跟網頁版的星際深色
+    主題完全不同色），`Text` 元件預設套上 `fonts.sans.regular`（對照網頁版 `body{font-family:
+    var(--font-sans)}`）。
+  - 逐畫面把 hard-coded 的通用色碼（`#2e78b7`／`#88889910` 這類 Expo 模板殘留色）換成
+    `theme.ts` 的網頁版色票，並把所有 `borderRadius` 拿掉（網頁版 `--radius:0`，RN View 預設
+    `borderRadius` 本來就是 0，不用特別寫）。過程中也順手修正了幾個現有程式碼跟網頁版行為
+    不一致的地方（都是照網頁版 index.css/JSX 逐一核對抓出來的）：
+    - `ChapterMap.tsx` 的 `levelDone`（完成關卡的綠色底）：網頁版 `.level-done` 這個
+      class 在 index.css 裡其實沒有對應規則（沒視覺效果），只有 `:disabled` 的鎖定關卡才變半透明，
+      mobile 原本畫的綠色底是多出來的，已拿掉。
+    - `Home.tsx` 的今日日期 pill：`is-today` 應該蓋掉 `is-done` 的底色（CSS source order
+      `.is-today` 排在 `.is-done` 後面），原本 mobile 的 style array 順序相反，已對調。
+    - `QuestionCard.tsx`／`QuestionReview.tsx` 的 `is-dimmed` 選項透明度：網頁版是 `0.4`，
+      mobile 原本寫 `0.5`。
+    - `QuestionCard.tsx`／`QuestionReview.tsx`／`Quiz.tsx` 補齊網頁版有但 mobile 缺的幾個
+      視覺元素：收藏星號改用 lucide `fill` prop 真的填滿（不是只變色）、feedback 標題列補上
+      對應圖示、「延伸閱讀」連結補上 book-open 圖示、下一題按鈕補上 flag/arrow-right 圖示、
+      Quiz 結算畫面補上 `Mascot`／全對時的獎盃圖示、答題頁 header 補上會依照 XP 換階段表情的
+      吉祥物 emoji（`quiz-pet`，先前完全沒渲染這個元素）。
+    - `Profile.tsx` 的「學習統計」四格：網頁版在 `@media(max-width:480px)`（幾乎所有手機寬度
+      都會落在這個斷點內）是單欄橫列（標籤在左、數字在右），不是桌面版的 4 欄 grid，
+      mobile 原本用的是 2 欄 wrap grid，已改成對照手機斷點的單欄橫列樣式。
+    - `Stats.tsx` 的分科成效長條顏色：mobile 原本用綠色，網頁版 `.chapter-bar-fill` 基底規則
+      是 cyan（Stats 頁沒有套用 Home 頁那組 `.chapter-list:nth-child` 的 cyan/primary/wrong
+      三色 override，因為那組選擇器只認 `.chapter-list` 這個 class，Stats 用的是
+      `.chapter-stat-list`），已改回 cyan。
+  - **成長史彈窗（使用者這次特別交代的部分）**：因為 mobile 已經在 Phase 6 把成長史從「卡片內
+    展開清單」改成 `Modal` 彈窗（網頁版目前仍是原地展開，兩邊介面結構不同，沒有網頁版樣式可以
+    直接照抄），這次是「依照整體設計系統風格新增」：`modalCard` 背景改成 `--card` 深色卡片色
+    （不是原本模板殘留的 `#121212`）、拿掉原本的圓角（`borderTopLeftRadius/RightRadius:20`，
+    改成跟全站一致的直角 `radius:0`，只保留一條 cyan 邊框分隔線）、標題與清單項目字體/顏色
+    全部改用 `theme.ts` 的 mono／sans 字型與色票，維持跟其他卡片一致的視覺語言。
+  - **刻意維持、沒有還原成網頁版的兩處差異**（都是先前對話使用者當面要求拿掉的，不是這次漏做）：
+    (1) 個人資料不顯示 `USER.XXXXXXXX` 那行（網頁版 `AccountHeader.tsx` 還留著這行，mobile
+    在 Phase 6 已經拿掉，這次沒有加回來）；(2) 頭像縮放拉桿左側沒有放大鏡圖示（網頁版
+    `avatar-zoom` 還有 `search` icon，mobile 在 Phase 6 已經拿掉，這次也沒加回來）。
+  - **這個環境能驗證的都驗證了**：`packages/core`／`apps/web`／`apps/mobile` 三個
+    `tsc --noEmit` 過、`apps/mobile` 的 `expo export --platform web` 成功（1601 modules，
+    比裝字型/gradient 前的 1516 略增，符合預期）、`expo-doctor` 19/20（唯一沒過的仍是既有的
+    metro monorepo 設定，跟這次改動無關）。
+  - **完全沒有測過、風險最高的部分（使用者要自己在真機/模擬器驗證才能定案）**：
+    1. 這次新增了 `expo-linear-gradient`（xp 進度條漸層）＋兩套 Google Fonts 套件，
+       都是原生層級的新依賴，**必須重新 `npx expo run:ios`/`run:android` 完整原生建置**，
+       光重啟 `expo start` 不會生效（跟 Phase 2/6 提醒過的規則一致）。
+    2. 整體視覺是否真的跟網頁版窄螢幕「一模一樣」——這次是照著 index.css 的數值逐一手動換算成
+       RN style，沒有工具能自動比對兩邊的實際渲染像素，需要使用者自己並排網頁版（縮小瀏覽器
+       視窗到手機寬度）跟 app 截圖比對。
+    3. 缺角卡片（`NotchedView`）用 SVG 畫背景，`onLayout` 量到尺寸前的那一瞬間沒有背景色，
+       正常情況下應該快到看不出來，但沒有在真機上實際感受過這個時間差。
+    4. 成長史彈窗、頭像編輯、答題流程等既有功能這次只有動樣式沒有動邏輯，理論上功能行為不受
+       影響，但沒有重新整輪測過。
+  - 尚未 commit，等使用者原生重建後測過視覺／功能都沒問題才能 commit。
+  - **2026-07-13 追加，使用者實機測試回報兩個問題**：
+    1. Android 點個人資料 tab 直接丟 `IllegalViewOperationException: Can't find ViewManager
+       'ViewManagerAdapter_ExpoLinearGradient'`——確認就是原生依賴沒重建，`expo start` 不會
+       重新連結新裝的 `expo-linear-gradient`，需要 `npx expo run:android`。
+    2. iOS 模擬器上「成長史」卡片的 XP 進度條顯示一塊「Unimplement...」的灰色佔位框——同一個
+       根因，iOS 跟 Android 是各自獨立的原生專案，Android 重建過不代表 iOS 也連結了，需要
+       另外 `npx expo run:ios`。
+    3. （同一輪回報）近半年學習熱力圖沒有預設捲到今天，要手動往右滑才看得到——這是 Phase 5
+       就存在、從來沒被使用者實測過的舊問題，不是這次改動造成的。原本只掛
+       `onContentSizeChange` 觸發 `scrollToEnd`，在 iOS 上有時會搶在這個水平 ScrollView
+       自己的 viewport 寬度量到之前就先觸發，算出來的捲動位置不準。修法：額外掛 `onLayout`
+       也觸發同一個函式，並包一層 `requestAnimationFrame` 讓捲動盡量等這輪版面真的
+       commit 完再執行（`screens/Stats.tsx`）。**這個修法沒有模擬器可以實測，只是邏輯上的
+       強化，需要使用者重建後確認。**
+  - **2026-07-13 再追加，使用者回報成長史彈窗底部有奇怪的黑色背景（第一輪判斷錯誤，見下）**：
+    第一輪猜測根因是 RN 核心 `<Modal>` 在 Android 上另開系統 `Dialog` 視窗、不繼承 app 主視窗
+    的 edge-to-edge／安全區設定，因此整個拿掉 `<Modal>`，改成同一棵 React tree 裡的絕對定位
+    覆蓋層（`position:'absolute'`，順手把「點背景關閉」也補上）。**使用者重建後回報黑底依舊
+    存在**——證明 Modal 完全不是根因（拿掉之後問題還在）。
+    - **真正根因**：`<ScrollView>`（包住 `<GrowthHistory>` 清單）沒有給 `flexShrink`，
+      放在只有 `maxHeight`（沒有固定 `height`）的父層 `modalCard` 裡時，Yoga 預設不會讓它
+      乖乖依內容縮小，而是撐開去填滿 `maxHeight` 的上限——清單實際內容（12 個階段，遠不到
+      `maxHeight:75%` 的高度）結束後，卡片下半部留了一大塊空的 `colors.card`（`#0a1216`，
+      深色主題下跟純黑幾乎無法用肉眼分辨）背景，看起來就像「一塊怪異的黑色」。
+    - **修法**：`ScrollView` 補上 `style={{flexShrink:1}}`（讓它可以縮到比內容還小，這是這個
+      RN pattern——「maxHeight 容器裡包一個高度不固定、內容短時要貼合內容的 ScrollView」——
+      的標準解法），並把原本掛在 `modalCard` 外層的 `paddingBottom: insets.bottom+16`
+      移進 `ScrollView` 的 `contentContainerStyle`，讓安全區留白緊貼在清單最後一項後面、
+      而不是卡片外層一塊獨立算出來、跟清單實際高度脫勾的空間。
+    - **教訓**：這類「RN 容器留白/黑塊」的視覺 bug，先檢查是不是 `ScrollView`／可捲動容器
+      在 `maxHeight`-限制的父層裡沒設 `flexShrink` 撐開了不該有的空間，比先假設是原生視窗/
+      安全區問題更該優先排查——後者(Modal 分離視窗)雖然是真實存在的平台限制，但這次並不是
+      這個 bug 的成因，**拿掉 `<Modal>` 這個改動本身沒有錯（仍然是比較穩妥的架構，順手修好
+      的「點背景關閉」也是真的改善），只是它沒有解到使用者回報的這個黑底問題，之後如果
+      再遇到全螢幕覆蓋層的怪異留白，直接先看 ScrollView 有沒有 flexShrink，不用重新走一次
+      Modal 分離視窗的排查路徑。**
+    - 同樣沒有模擬器可以實測，需要使用者重建後（這次是純 JS 邏輯改動，理論上不需要重新
+      原生建置，reload 就會生效）確認黑底真的消失。
+  - **2026-07-13 第三輪，使用者回報 flexShrink 那次修完問題依舊，且不接受再猜——這次改用
+    RN 內建 Element Inspector（`Cmd+D` → Show Element Inspector）直接點選問題區塊，
+    才抓到真正根因**：
+    - Inspector 顯示被點到的元素（`modalHeader`／`heroXpRow` 這類純版面用的 row 容器）
+      實際 `backgroundColor` 是 `#04070a`，但這兩個 style 物件根本沒有寫
+      `backgroundColor` 這個屬性——代表這個顏色不是我寫的樣式套上去的，是別的地方硬塗上去的。
+    - 查出來是 `app/(tabs)/profile.tsx` 這支檔案的 `import { Text, View } from
+      '@/components/Themed'`：`components/Themed.tsx` 的 `View` 元件只要呼叫端沒有明確給
+      `backgroundColor`，就會**強制**塗上整頁背景色 `colors.bg`（`#04070a`）。這個顏色跟卡片色
+      `colors.card`（`#0a1216`）非常接近、單獨看幾乎分不出來，但當一個純版面用的 row/column
+      容器（沒特別設背景）疊在卡片內部時，就會用 `#04070a` 蓋掉卡片本來的 `#0a1216`，
+      在有邊界的地方（例如這個 row 剛好佔滿卡片下半部）看起來就是「一塊比周圍明顯偏黑的
+      區域」——這就是使用者一路回報的「黑色背景」，跟 Modal、ScrollView flexShrink、
+      insets 都無關，前兩輪修法方向完全錯了。
+    - **檢查範圍**：`grep` 過整個 `apps/mobile`，這次改版所有畫面裡，只有
+      `app/(tabs)/profile.tsx` 跟沒動過的 `app/+not-found.tsx`／`app/sso-callback.tsx`
+      會從 `@/components/Themed` 匯入 `View`；其餘畫面（Home／ChapterMap／Quiz／
+      QuestionCard／QuestionReview／Notes／QuestionBook／Stats／AccountHeader／Mascot／
+      GrowthHistory）都只匯入 `Text`，版面用的 `View` 本來就是從 `react-native` 直接拿
+      （預設透明），所以這個 bug**只出現在 profile.tsx 這一支檔案**，不是全站性的。
+    - **修法**：`profile.tsx` 的 `View` 改成從 `react-native` 直接匯入（不再用 Themed 版），
+      `Text` 仍保留 Themed 版本（`Text` 只影響文字顏色，不會有「蓋住底下內容」的問題，
+      不受這個 bug 影響）。原本仰賴 Themed View 預設塗色的 `container` style（登入中的
+      loading 畫面用）額外補上明確的 `backgroundColor: colors.bg`，避免拿掉預設塗色後
+      這個情境變透明。
+    - **教訓**：這類「顏色看起來對不上」的 bug，之後優先用 RN 內建 Element Inspector 或
+      React DevTools 直接點出實際套用的 style 值，不要只憑程式碼推論或猜測平台限制
+      （Modal 分離視窗、ScrollView maxHeight 那兩輪都是合理但錯誤的推論，实測工具一次就
+      定位到真正原因）。也提醒：`Themed.tsx` 的 `View` 元件「沒寫 backgroundColor 就強制
+      塗上整頁背景色」這個設計，只適合拿來當「畫面最外層的頁面背景容器」用，**不要拿它
+      當純版面用的 row/column 容器**（那種情境要用 `react-native` 原生的 `View`），
+      以後這個專案或其他用同一套 Expo 模板起家的專案都要注意這個界線。
+    - 這次已經在使用者的 Element Inspector 截圖上直接對照原始碼確認 `#04070a` 對應
+      沒設 `backgroundColor` 的 `heroXpRow`／`modalHeader`，可信度比前兩輪高，但**修完
+      這版還是沒有經過使用者重新整理後的實機確認，不能標記完成**。
+    - **使用者測完回報：黑底問題確實解決了**，同時新發現「捲動畫面時內容會跟頂部系統
+      狀態列（時間/電量）重疊」。根因是 `profile.tsx` 原本把 `insets.top` 的安全區留白
+      直接寫進 `ScrollView` 的 `contentContainerStyle`（屬於可捲動內容的一部分），往上捲
+      一下這塊留白就跟著捲走，底下內容接著就畫到狀態列後面去了。其他三個 tab（Home／Notes／
+      Stats）本來就沒有這個問題，因為它們是在 `app/(tabs)/index.tsx`／`notes.tsx`／`stats.tsx`
+      外層包一個**不會捲動**的 `View`（自己的 `paddingTop:insets.top`，不屬於任何 ScrollView
+      的內容），只有 `profile.tsx` 這支是把整個畫面自己組出來、沒有套用這個既有的固定安全區
+      包裝模式。**修法**：把 `insets.top` 從 `contentContainerStyle` 移到外層新增的
+      `screenWrap`（`flex:1, backgroundColor: colors.bg`）自己的 `paddingTop`，讓這塊
+      留白變成固定不捲動的區域，跟其他三個 tab 的作法一致。**這輪修法尚未經使用者驗證。**
+  - **2026-07-13 又追加，使用者回報 iOS 模擬器成長史彈窗滑不到最後 3 個階段（超新星／星雲／
+    黑洞），只看得到前 9 個；Android 捲動正常**：確認是（先問過使用者「是完全看不到多滑的
+    內容、還是內容都在只是滑不動」釐清屬於後者，不是「本來就沒有更多內容」的誤判）
+    上一輪加的 `ScrollView` `flexShrink:1` 在 iOS／Android 上算出來的實際可捲動框架不一致——
+    Android 正確、iOS 疑似把可捲動框架算得比視覺內容還小（內容因為 `overflow:visible` 還是
+    看得到，但手指划的範圍在框架外，滑不動）。**修法**：改用 `flex:1`（不是 `flexShrink:1`），
+    讓 Yoga 直接用「`modalCard` 扣掉 header 後的剩餘空間」決定 ScrollView 框架大小，不透過
+    內容自身高度做縮放計算。這個改法之所以安全：`GrowthHistory` 固定顯示全部 12 個階段，
+    內容高度不會因進度而變短，不用擔心 `flex:1` 在內容偏短時把卡片撐到 `maxHeight` 上限
+    留空白（那個「撐開留空白」的擔心本來就是上一輪的假設，這次的黑底 bug 已經證實是
+    Themed View 蓋色造成的，跟 flexShrink/flex 的選擇無關，所以換掉不會有回歸風險）。
+    **這輪修法尚未經使用者驗證。**
+    - **使用者測完回報：改用 `flex:1` 之後兩個平台都壞了，連內容都看不到**（iOS/Android
+      皆是），比原本只有 iOS 滑不到最後幾項還更糟。根因查出來：`modalCard` 自己沒有固定
+      `height`（只有 `maxHeight` 上限），`ScrollView` 給 `flexGrow:1`（`flex:1` 隱含）等於
+      要求「長到填滿父層可用空間」，但父層自己的高度是靠內容反推的（`flexBasis:auto` 加
+      `maxHeight` 上限），這種「子層要長滿、父層要靠子層決定大小」互相依賴的情況 Yoga
+      解不出明確答案，兩邊乾脆都塌縮成 0——這是這幾輪裡我學到最扎實的一條：**`flexGrow`／
+      `flex:1` 只能用在父層有明確（不是靠內容反推、不是只有 maxHeight 上限）高度的情境**，
+      這次的父層不符合這個前提，是我沒有先確認就套用的錯誤。
+    - **改法（第三次嘗試，這次換一個完全不同、不依賴 flex 協商的策略）**：不再讓 ScrollView
+      的高度依賴跟父層的 flex 協商，改用 `useWindowDimensions()` 量出實際螢幕高度，算出一個
+      **明確的數字** `growthModalMaxHeight = windowHeight * 0.75 - 80`（80 是標題列＋卡片
+      padding 的估計扣除量），直接當 `<ScrollView style={{maxHeight: 數字}}>` 的 `maxHeight`。
+      這是 ScrollView 最基礎、最不會出錯的標準用法——內容超過這個明確數字就自動可捲動，
+      不需要 Yoga 去解任何父子互相依賴的 flex 協商，兩個平台算出來的結果理論上會一致。
+      `modalCard` 自己的 `maxHeight:'75%'` 保留（當一個無害的外層保險上限，反正 ScrollView
+      自己的數字上限已經比它小，實際生效的是 ScrollView 這層）。
+    - **這輪修法尚未經使用者驗證，且是同一個子問題（成長史彈窗捲動）第三次嘗試修**，
+      如果這次還是不行，下次不要再用 flex 相關屬性猜，直接考慮把整個彈窗改成用
+      `FlatList`／固定像素高度的簡單方案，或請使用者用 React DevTools 直接量測
+      `ScrollView` 實際 render 出來的 frame/contentSize 數字。
+    - **使用者測完回報：加上 onLayout/onContentSizeChange log 量出來的數字完全正常**
+      （`modalCard` 653、ScrollView 可視區域 575.3、內容高度 760，內容確實比可視區域高
+      約 185px），**但滑動依舊沒反應**——這組數字第一次證實版面尺寸從頭到尾都沒問題，
+      問題出在別的地方。
+    - **第四輪，終於抓到真正根因**：`modalCard` 外層包了一個 `Pressable`
+      （`onPress={(e) => e.stopPropagation()}`，用來擋「點卡片內部不要連動關閉背景遮罩」），
+      這個 `Pressable` **直接包住了 ScrollView**——Touchable/Pressable 包住 ScrollView 在
+      iOS 上是已知會搶走捲動手勢的問題類別（Pressable 為了顯示按壓回饋，一碰到就搶著宣告
+      自己是 responder，導致 ScrollView 原生的 pan 手勢辨識器拿不到那個觸控）。**修法**：
+      `modalCard` 改用 `View`（拿掉 `Pressable`／`stopPropagation`），代價是「點卡片內部
+      空白處會誤觸關閉彈窗」這個保護跟著沒了——這是刻意接受的取捨，捲不動的清單是更嚴重的
+      問題。**這輪修法尚未經使用者驗證，是同一個子問題第四次嘗試**。
+    - **教訓**：這次的排查順序值得記下來——(1) 先懷疑版面尺寸算錯（flexShrink/flex 那兩輪，
+      都錯），(2) 用量測數字排除版面尺寸這個可能性，(3) 數字排除之後才轉向手勢/觸控衝突
+      這個完全不同類別的原因，一次就找對。**同一個症狀（滑不動/內容被截斷）不代表原因只有
+      一種，量測數字能幫忙排除掉一整類假設，不用每次都重新從頭猜。**
+    - **第五輪，使用者回報拿掉 modalCard 的 Pressable 之後更糟**：現在點卡片內容會直接觸發
+      關閉彈窗，而且還是完全滑不動。根因：拿掉 modalCard 自己的 Pressable 之後，整棵卡片
+      （含 ScrollView）都還是包在 `modalBackdrop` 這個外層 `Pressable` 底下——問題本來就不是
+      「哪一層 Pressable」，而是「任何 Pressable 只要是 ScrollView 的祖先節點，就會搶走
+      iOS 的捲動手勢」，加上少了 modalCard 自己的 stopPropagation，現在連點擊都直接冒泡到
+      最外層的 `modalBackdrop.onPress` 觸發關閉。
+    - **正確架構（這次徹底改結構，不再只是調參數）**：背景（點擊關閉）跟卡片本體改成
+      **手足關係**，不是卡片包在背景 Pressable 裡面：
+      ```tsx
+      <View modalRoot>                         {/* 純容器，不接觸控 */}
+        <Pressable modalBackdrop onPress={close} />  {/* 鋪滿全螢幕，負責變暗＋點擊關閉 */}
+        <View modalCardWrap pointerEvents="box-none">  {/* 鋪滿全螢幕、flex-end 對齊，
+                                                            自己不接觸控只負責排版 */}
+          <View modalCard>...header/ScrollView...</View>
+        </View>
+      </View>
+      ```
+      RN 的觸控命中測試是照畫面上實際疊放的視覺樹（不是純粹的 React 元件父子關係）由上而下
+      找最上層的視圖決定要交給誰處理：點在卡片本體範圍內，會直接命中卡片自己的畫面元素
+      （因為卡片視覺上疊在背景「上面」，即使兩者在 React tree 裡是手足不是父子），不會經過
+      `modalBackdrop` 的 `Pressable`；只有點在卡片以外、真正露出背景的空白處，才會落到
+      `modalBackdrop` 上觸發關閉。`modalCardWrap` 用 `pointerEvents="box-none"`：這層本身
+      鋪滿全螢幕只是為了用 `justifyContent:'flex-end'` 排版卡片位置，`box-none` 讓它自己
+      不吃觸控（沒被卡片佔到的空白部分的觸控會穿過它，落到底下的 `modalBackdrop`），只有
+      它的子節點（卡片本體）會正常接收觸控。這樣 ScrollView 的祖先鏈裡完全沒有任何
+      Pressable/Touchable，捲動手勢不會被搶。
+    - **這是同一個子問題第五次修，這次是結構性重寫、不是調參數。使用者已在 iOS 模擬器
+      實測確認：黑底、狀態列重疊、無法捲動、誤觸關閉四個問題全部解決。** 完整踩坑筆記
+      （含每一輪為什麼猜錯、最終正確架構）已整理進
+      `~/my-agent/000_Agent/knowledge/learn/EasyLearn/feedback_rn-profile-modal-overlay-bugs.md`，
+      跨專案通用的 RN 教訓也記到全域 CLAUDE.md。
 
 ## 驗證紀律（跨 phase 都適用）
 

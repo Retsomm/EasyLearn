@@ -2,6 +2,7 @@ import { ActivityIndicator, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { View } from '@/components/Themed';
+import { colors } from '@/constants/theme';
 import { useProgress } from '@/context/ProgressContext';
 import Stats from '@/screens/Stats';
 
@@ -12,7 +13,7 @@ export default function StatsScreen() {
   if (!hydrated) {
     return (
       <View style={[styles.loading, { paddingTop: insets.top }]}>
-        <ActivityIndicator />
+        <ActivityIndicator color={colors.primary} />
       </View>
     );
   }

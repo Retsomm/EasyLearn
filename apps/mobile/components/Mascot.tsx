@@ -1,6 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
+import XpBar from '@/components/XpBar';
+import { colors, fonts } from '@/constants/theme';
 import { getNextStage, getStage, getStageProgress } from '@easylearn/core';
 
 interface MascotProps {
@@ -16,14 +18,12 @@ export default function Mascot({ xp, size = 'lg' }: MascotProps) {
   const progressToNext = getStageProgress(xp);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, size === 'sm' && styles.containerSm]}>
       <Text style={[styles.emoji, size === 'sm' && styles.emojiSm]}>{stage.emoji}</Text>
       {size === 'lg' && (
         <>
           <Text style={styles.name}>{stage.name}</Text>
-          <View style={styles.xpBar}>
-            <View style={[styles.xpBarFill, { width: `${progressToNext}%` }]} />
-          </View>
+          <XpBar progress={progressToNext} width={220} height={12} />
           <Text style={styles.hint}>
             {next ? `${xp} XP・再 ${next.min - xp} XP 進化成 ${next.emoji}` : `${xp} XP・已達最終型態！`}
           </Text>
@@ -36,36 +36,31 @@ export default function Mascot({ xp, size = 'lg' }: MascotProps) {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
+    marginBottom: 8,
+  },
+  containerSm: {
+    marginBottom: 0,
   },
   emoji: {
-    fontSize: 72,
-    lineHeight: 84,
+    fontSize: 96,
+    lineHeight: 115,
   },
   emojiSm: {
     fontSize: 32,
     lineHeight: 38,
   },
   name: {
+    fontFamily: fonts.mono.bold,
     fontWeight: '700',
-    fontSize: 15,
-    marginTop: 4,
-  },
-  xpBar: {
-    width: 200,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#88889920',
-    overflow: 'hidden',
+    fontSize: 18,
+    color: colors.inkStrong,
     marginTop: 8,
   },
-  xpBarFill: {
-    height: '100%',
-    backgroundColor: '#2e78b7',
-  },
   hint: {
-    fontSize: 12,
-    opacity: 0.6,
-    marginTop: 6,
+    fontFamily: fonts.sans.regular,
+    fontSize: 13,
+    color: colors.inkSoft,
+    marginTop: 8,
     textAlign: 'center',
   },
 });

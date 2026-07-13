@@ -3,6 +3,8 @@ import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
 import CodeBlock from '@/components/CodeBlock';
+import NotchedView from '@/components/NotchedView';
+import { colors, fonts, notch } from '@/constants/theme';
 import { TYPE_META, type Question, type WrongEntryMeta } from '@easylearn/core';
 
 interface QuestionReviewProps {
@@ -17,17 +19,24 @@ export default function QuestionReview({ question, saved, onToggleSave, meta }: 
   const typeMeta = TYPE_META[question.type];
 
   return (
-    <View style={styles.card}>
+    <NotchedView
+      notch={notch}
+      corners="tr-bl"
+      backgroundColor={colors.card}
+      borderColor="rgba(95, 240, 224, 0.2)"
+      borderWidth={1}
+      contentStyle={styles.card}
+    >
       <View style={styles.metaRow}>
         <View style={styles.typeBadge}>
-          <Icon name={typeMeta.icon} size={13} />
+          <Icon name={typeMeta.icon} size={14} color={colors.primary} />
           <Text style={styles.typeBadgeText}>{typeMeta.label}</Text>
         </View>
         <Text style={styles.topicLabel} numberOfLines={1}>
           {question.topic}
         </Text>
-        <Pressable onPress={() => onToggleSave(question.id)} hitSlop={8} style={{ opacity: saved ? 1 : 0.35 }}>
-          <Icon name="star" size={18} />
+        <Pressable onPress={() => onToggleSave(question.id)} hitSlop={8} style={styles.saveBtn}>
+          <Icon name="star" size={18} color={saved ? colors.primary : colors.inkFaint} fill={saved ? colors.primary : 'none'} />
         </Pressable>
       </View>
 
@@ -42,123 +51,151 @@ export default function QuestionReview({ question, saved, onToggleSave, meta }: 
       <CodeBlock code={question.code} />
 
       <View style={styles.options}>
-        {question.options.map((opt) => (
-          <View
-            key={opt.id}
-            style={[styles.optionBtn, opt.id === question.answer ? styles.optionCorrect : styles.optionDimmed]}
-          >
-            <Text style={styles.optionText}>{opt.text}</Text>
-          </View>
-        ))}
+        {question.options.map((opt) => {
+          const isAnswer = opt.id === question.answer;
+          return (
+            <View key={opt.id} style={[styles.optionBtn, isAnswer ? styles.optionCorrect : styles.optionDimmed]}>
+              <Text style={[styles.optionText, isAnswer && styles.optionTextCorrect]}>{opt.text}</Text>
+            </View>
+          );
+        })}
       </View>
 
       <View style={styles.feedback}>
         <View style={styles.feedbackTitleRow}>
-          <Icon name="lightbulb" size={20} />
+          <Icon name="lightbulb" size={20} color={colors.correct} />
           <Text style={styles.feedbackTitle}>解釋</Text>
         </View>
         <Text style={styles.feedbackExplanation}>{question.explanation}</Text>
         {question.docs && (
-          <Pressable onPress={() => Linking.openURL(question.docs).catch(() => {})}>
-            <Text style={styles.docsLink}>延伸閱讀：官方文件</Text>
+          <Pressable onPress={() => Linking.openURL(question.docs).catch(() => {})} style={styles.docsLink}>
+            <Icon name="book-open" size={16} color={colors.cyan} />
+            <Text style={styles.docsLinkText}>延伸閱讀：官方文件</Text>
           </Pressable>
         )}
       </View>
-    </View>
+    </NotchedView>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    gap: 4,
-    borderRadius: 14,
-    padding: 16,
-    backgroundColor: '#88889910',
+    padding: 22,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 8,
+    marginBottom: 14,
+    flexWrap: 'wrap',
   },
   typeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#2e78b722',
-    borderRadius: 999,
+    gap: 6,
+    backgroundColor: colors.badgeBg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 180, 84, 0.4)',
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
   },
   typeBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontFamily: fonts.mono.bold,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.primary,
   },
   topicLabel: {
     flex: 1,
+    fontFamily: fonts.sans.regular,
     fontSize: 12,
-    opacity: 0.6,
+    color: colors.inkSoft,
+  },
+  saveBtn: {
+    marginLeft: 'auto',
+    padding: 4,
   },
   reviewMetaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    marginBottom: 6,
+    marginBottom: 8,
+    marginTop: -4,
   },
   reviewMetaText: {
+    fontFamily: fonts.mono.regular,
     fontSize: 11,
-    opacity: 0.55,
+    color: colors.inkFaint,
   },
   prompt: {
+    fontFamily: fonts.sans.bold,
     fontSize: 16,
-    fontWeight: '600',
-    lineHeight: 22,
+    fontWeight: '700',
+    color: colors.inkStrong,
+    lineHeight: 26,
+    marginBottom: 14,
   },
   options: {
-    gap: 8,
-    marginTop: 6,
+    gap: 10,
   },
   optionBtn: {
+    backgroundColor: colors.optionBg,
     borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    borderColor: colors.optionBorder,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   optionCorrect: {
-    borderColor: '#2f9e44',
-    backgroundColor: '#2f9e4422',
+    backgroundColor: colors.correctFill,
+    borderColor: colors.correct,
   },
   optionDimmed: {
-    borderColor: '#8888991a',
-    backgroundColor: '#88889908',
-    opacity: 0.5,
+    opacity: 0.4,
   },
   optionText: {
-    fontSize: 14,
+    fontFamily: fonts.sans.regular,
+    fontSize: 14.5,
+    lineHeight: 21,
+    color: colors.ink,
+  },
+  optionTextCorrect: {
+    color: colors.correct,
+    fontWeight: '700',
   },
   feedback: {
-    marginTop: 12,
-    borderRadius: 10,
-    padding: 14,
-    gap: 8,
-    backgroundColor: '#2f9e4418',
+    marginTop: 16,
+    borderWidth: 1,
+    padding: 18,
+    backgroundColor: colors.correctSoft,
+    borderColor: 'rgba(95, 240, 224, 0.3)',
   },
   feedbackTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginBottom: 10,
   },
   feedbackTitle: {
-    fontSize: 15,
+    fontFamily: fonts.mono.bold,
     fontWeight: '700',
+    fontSize: 14,
+    color: colors.correct,
   },
   feedbackExplanation: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontFamily: fonts.sans.regular,
+    fontSize: 13.5,
+    lineHeight: 23,
+    color: colors.inkSoft,
+    marginBottom: 12,
   },
   docsLink: {
-    fontSize: 13,
-    color: '#2e78b7',
-    textDecorationLine: 'underline',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  docsLinkText: {
+    fontFamily: fonts.sans.regular,
+    fontSize: 12.5,
+    color: colors.cyan,
   },
 });

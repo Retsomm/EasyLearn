@@ -2,6 +2,8 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
+import NotchedView from '@/components/NotchedView';
+import { colors, fonts, notch } from '@/constants/theme';
 import { getWrongQuestions, type Progress } from '@easylearn/core';
 
 interface NotesProps {
@@ -19,40 +21,58 @@ export default function Notes({ progress, onOpenWrongBook, onOpenSavedBook, onRe
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Pressable style={[styles.card, styles.cardWrong]} onPress={onOpenWrongBook}>
-        <View style={styles.cardHead}>
-          <Icon name="book-open" size={20} />
-          <Text style={styles.cardTitle}>錯題本</Text>
-        </View>
-        <Text style={styles.cardCount}>目前累積 {wrongCount} 題錯題</Text>
-        <Pressable
-          style={[styles.cardBtn, wrongCount === 0 && styles.cardBtnDisabled]}
-          disabled={wrongCount === 0}
-          onPress={(e) => {
-            e.stopPropagation();
-            onReview();
-          }}
+      <Pressable onPress={onOpenWrongBook}>
+        <NotchedView
+          notch={notch}
+          corners="tr-bl"
+          backgroundColor={colors.noteWrongBg}
+          borderColor={colors.noteWrongBorder}
+          borderWidth={1}
+          contentStyle={styles.card}
         >
-          <Text style={styles.cardBtnText}>開始複習</Text>
-        </Pressable>
+          <View style={styles.cardHead}>
+            <Icon name="book-open" size={20} color={colors.wrong} />
+            <Text style={[styles.cardTitle, { color: colors.wrong }]}>錯題本</Text>
+          </View>
+          <Text style={styles.cardCount}>目前累積 {wrongCount} 題錯題</Text>
+          <Pressable
+            style={[styles.cardBtn, { borderColor: 'rgba(255, 92, 114, 0.2)' }, wrongCount === 0 && styles.cardBtnDisabled]}
+            disabled={wrongCount === 0}
+            onPress={(e) => {
+              e.stopPropagation();
+              onReview();
+            }}
+          >
+            <Text style={styles.cardBtnText}>開始複習</Text>
+          </Pressable>
+        </NotchedView>
       </Pressable>
 
-      <Pressable style={[styles.card, styles.cardSaved]} onPress={onOpenSavedBook}>
-        <View style={styles.cardHead}>
-          <Icon name="star" size={20} />
-          <Text style={styles.cardTitle}>收藏題庫</Text>
-        </View>
-        <Text style={styles.cardCount}>目前累積 {savedCount} 題收藏</Text>
-        <Pressable
-          style={[styles.cardBtn, savedCount === 0 && styles.cardBtnDisabled]}
-          disabled={savedCount === 0}
-          onPress={(e) => {
-            e.stopPropagation();
-            onPracticeSaved();
-          }}
+      <Pressable onPress={onOpenSavedBook}>
+        <NotchedView
+          notch={notch}
+          corners="tr-bl"
+          backgroundColor={colors.noteSavedBg}
+          borderColor={colors.noteSavedBorder}
+          borderWidth={1}
+          contentStyle={styles.card}
         >
-          <Text style={styles.cardBtnText}>{savedCount === 0 ? '無收藏題' : '開始練習'}</Text>
-        </Pressable>
+          <View style={styles.cardHead}>
+            <Icon name="star" size={20} color={colors.primary} fill={colors.primary} />
+            <Text style={[styles.cardTitle, { color: colors.primary }]}>收藏題庫</Text>
+          </View>
+          <Text style={styles.cardCount}>目前累積 {savedCount} 題收藏</Text>
+          <Pressable
+            style={[styles.cardBtn, { borderColor: 'rgba(255, 180, 84, 0.2)' }, savedCount === 0 && styles.cardBtnDisabled]}
+            disabled={savedCount === 0}
+            onPress={(e) => {
+              e.stopPropagation();
+              onPracticeSaved();
+            }}
+          >
+            <Text style={styles.cardBtnText}>{savedCount === 0 ? '無收藏題' : '開始練習'}</Text>
+          </Pressable>
+        </NotchedView>
       </Pressable>
     </ScrollView>
   );
@@ -60,51 +80,45 @@ export default function Notes({ progress, onOpenWrongBook, onOpenSavedBook, onRe
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 40,
     gap: 16,
   },
   card: {
-    borderRadius: 16,
-    padding: 20,
-    gap: 4,
-    borderWidth: 1,
-  },
-  cardWrong: {
-    backgroundColor: '#e5484d14',
-    borderColor: '#e5484d40',
-  },
-  cardSaved: {
-    backgroundColor: '#2e78b714',
-    borderColor: '#2e78b740',
+    padding: 22,
   },
   cardHead: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   cardTitle: {
+    fontFamily: fonts.mono.bold,
     fontSize: 16,
     fontWeight: '700',
   },
   cardCount: {
+    fontFamily: fonts.sans.regular,
     fontSize: 13,
-    opacity: 0.7,
-    marginTop: 6,
-    marginBottom: 14,
+    color: colors.inkSoft,
+    marginTop: 8,
+    marginBottom: 16,
   },
   cardBtn: {
     alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: '#88889940',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 11,
+    paddingHorizontal: 22,
   },
   cardBtnDisabled: {
-    opacity: 0.5,
+    opacity: 0.7,
   },
   cardBtnText: {
+    fontFamily: fonts.mono.bold,
     fontSize: 13,
     fontWeight: '700',
+    color: colors.inkFaint,
   },
 });

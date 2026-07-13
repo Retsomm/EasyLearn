@@ -1,13 +1,23 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth, useSSO, useUser } from '@clerk/expo';
 
-import { Text, View } from '@/components/Themed';
+// 注意：View 刻意從 'react-native' 引入（預設透明），不是 Themed 的 View——Themed.View
+// 沒有明確設定 backgroundColor 時會強制塗上整頁背景色 colors.bg（#04070a），拿來當純版面
+// 容器（例如卡片內部的 row/column）會蓋掉外層卡片自己的 colors.card（#0a1216）背景，
+// 兩色非常接近、肉眼平常看不出來，但疊起來後有些區塊會比周圍明顯偏黑，就是這次「怪異黑底」
+// 的真正根因（用 RN 內建 Element Inspector 點出來確認過：backgroundColor 顯示的是 #04070a
+// 而不是預期的 #0a1216）。這個檔案是目前唯一同時匯入 Themed 的 Text／View 又拿 View 當純版面
+// 容器用的地方，其他畫面都已經是用這裡的 plain View，只有這支需要修正。
+import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
 import AccountHeader from '@/components/AccountHeader';
 import Mascot from '@/components/Mascot';
 import GrowthHistory from '@/components/GrowthHistory';
+import XpBar from '@/components/XpBar';
+import { PrimaryButton, TextButton, buttonTextStyles } from '@/components/Button';
+import { colors, fonts } from '@/constants/theme';
 import { useProgress } from '@/context/ProgressContext';
 import { request } from '@/lib/api';
 import { chapters, getNextStage, getStage, getStageProgress } from '@easylearn/core';
@@ -26,7 +36,15 @@ export default function ProfileScreen() {
   const [showGrowth, setShowGrowth] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const insets = useSafeAreaInsets();
-  const containerStyle = [styles.container, { paddingTop: insets.top }];
+  const { height: windowHeight } = useWindowDimensions();
+  const containerStyle = [styles.container, { paddingTop: 24 }];
+  // 上一輪的 bug：modalCard 自己的 maxHeight:'75%' 是相對於「背景遮罩層」（不含底部 tab bar，
+  // 比整個視窗矮）算的，但這裡用 useWindowDimensions() 量的是整個視窗高度，兩個基準對不起來，
+  // 算出來給 ScrollView 的數字可能比 modalCard 自己被夾住的高度還大，導致外層先把畫面切掉、
+  // ScrollView 自己的 maxHeight 根本沒機會生效。這次把 modalCard 自己的高度也改成同一個基準
+  // 算出來的明確數字（不再用 '75%' 字串），兩層用同一個數字，才不會互相打架。
+  const growthModalCardMaxHeight = windowHeight * 0.75;
+  const growthModalScrollMaxHeight = growthModalCardMaxHeight - 80; // 80 ≈ 標題列＋卡片上下 padding
 
   const handleSignIn = async () => {
     setError(null);
@@ -82,8 +100,8 @@ export default function ProfileScreen() {
   // 蓋到 setActive 真的完成（isSignedIn 變 true）或失敗（跳回登入畫面＋錯誤訊息）為止。
   if (!isSignedIn && signingIn) {
     return (
-      <View style={containerStyle}>
-        <ActivityIndicator />
+      <View style={[styles.container, { paddingTop: insets.top + 24 }]}>
+        <ActivityIndicator color={colors.primary} />
       </View>
     );
   }
@@ -92,13 +110,13 @@ export default function ProfileScreen() {
     return (
       <View style={styles.loginContainer}>
         <View style={[styles.loginBox, { marginTop: insets.top }]}>
-          <Icon name="sprout" size={36} />
+          <Icon name="sprout" size={36} color={colors.ink} />
           <Text style={styles.title}>登入 EasyLearn</Text>
           <Text style={styles.subtitle}>登入後可在多裝置同步學習進度；未登入也能繼續刷題，進度先存在這台裝置。</Text>
-          <Pressable style={styles.button} onPress={handleSignIn}>
-            <Icon name="user" size={18} />
-            <Text style={styles.buttonText}>使用 Google 登入</Text>
-          </Pressable>
+          <PrimaryButton onPress={handleSignIn} style={styles.loginBtn}>
+            <Icon name="user" size={18} color={colors.primaryInk} />
+            <Text style={buttonTextStyles.primary}>使用 Google 登入</Text>
+          </PrimaryButton>
           {error && <Text style={styles.error}>{error}</Text>}
         </View>
       </View>
@@ -115,161 +133,193 @@ export default function ProfileScreen() {
   const xpProgress = getStageProgress(progress.xp);
 
   return (
-    <ScrollView contentContainerStyle={containerStyle}>
-      {!user ? (
-        <ActivityIndicator />
-      ) : (
-        <>
-          <Text style={styles.sectionTitle}>個人資料</Text>
-          <View style={styles.hero}>
-            <AccountHeader user={user} />
-          </View>
+    <>
+      {/* 這層包住 ScrollView 的 View 才是真正的安全區留白：paddingTop 是它自己的 padding，
+          不屬於可捲動內容，所以捲動時不會被捲走，狀態列底下永遠有這個不透明的 colors.bg
+          墊著。之前把 insets.top 放進 ScrollView 的 contentContainerStyle，那塊留白屬於
+          「捲動內容」的一部分，往上捲一下就跟著捲走了，底下的內容接著就直接畫到狀態列後面，
+          跟狀態列的時間/電量文字重疊。 */}
+      <View style={[styles.screenWrap, { paddingTop: insets.top }]}>
+        <ScrollView contentContainerStyle={containerStyle}>
+          {!user ? (
+            <ActivityIndicator color={colors.primary} />
+        ) : (
+          <>
+            <Text style={styles.sectionTitle}>個人資料</Text>
+            <View style={styles.hero}>
+              <AccountHeader user={user} />
+            </View>
 
-          <Text style={styles.sectionTitle}>成長史</Text>
-          <View style={styles.hero}>
-            <View style={styles.heroXpRow}>
-              <Mascot xp={progress.xp} size="sm" />
-              <View style={styles.heroXpInfo}>
-                <View style={styles.heroXpTop}>
-                  <Text style={styles.heroXpName}>{stage.name}</Text>
-                  <Text style={styles.heroXpCount}>
-                    {nextStage ? `${progress.xp} / ${nextStage.min} XP` : `${progress.xp} XP・已達最終型態`}
+            <Text style={styles.sectionTitle}>成長史</Text>
+            <View style={styles.hero}>
+              <View style={styles.heroXpRow}>
+                <Mascot xp={progress.xp} size="sm" />
+                <View style={styles.heroXpInfo}>
+                  <View style={styles.heroXpTop}>
+                    <Text style={styles.heroXpName}>{stage.name}</Text>
+                    <Text style={styles.heroXpCount}>
+                      {nextStage ? `${progress.xp} / ${nextStage.min} XP` : `${progress.xp} XP・已達最終型態`}
+                    </Text>
+                  </View>
+                  <View style={styles.xpBarWrap}>
+                    <XpBar progress={xpProgress} width="100%" height={8} />
+                  </View>
+                </View>
+                <TextButton onPress={() => setShowGrowth(true)}>
+                  <Text style={buttonTextStyles.text}>查看全部 ›</Text>
+                </TextButton>
+              </View>
+            </View>
+
+            <Text style={styles.sectionTitle}>學習統計</Text>
+            {!hydrated ? (
+              <ActivityIndicator style={styles.spinner} color={colors.primary} />
+            ) : (
+              <View style={styles.statGrid}>
+                <StatItem label="總 XP" value={progress.xp} />
+                <StatItem label="連續學習" value={`${streak} 天`} />
+                <StatItem label="完成關卡" value={`${doneLevels} / ${totalLevels}`} />
+                <StatItem label="累計答題" value={totalAnswered} />
+              </View>
+            )}
+
+            <Text style={styles.sectionTitle}>帳號設定</Text>
+            <View style={styles.accountList}>
+              <Pressable style={styles.accountItem} onPress={() => signOut()}>
+                <View style={styles.accountItemLabel}>
+                  <Icon name="logout" size={15} color={colors.ink} />
+                  <Text style={styles.accountItemText}>登出</Text>
+                </View>
+                <Icon name="chevron-right" size={16} color="rgba(95, 240, 224, 0.4)" />
+              </Pressable>
+              <Pressable
+                style={[styles.accountItem, styles.accountItemDanger]}
+                onPress={handleDeleteAccount}
+                disabled={deleting}
+              >
+                <View style={styles.accountItemLabel}>
+                  <Icon name="trash" size={15} color={colors.wrong} />
+                  <Text style={[styles.accountItemText, styles.accountItemDangerText]}>
+                    {deleting ? '刪除中…' : '刪除帳號'}
                   </Text>
                 </View>
-                <View style={styles.xpBar}>
-                  <View style={[styles.xpBarFill, { width: `${xpProgress}%` }]} />
-                </View>
-              </View>
-              <Pressable onPress={() => setShowGrowth(true)} hitSlop={8}>
-                <Text style={styles.growthLink}>查看全部 ›</Text>
+                <Icon name="chevron-right" size={16} color="rgba(255, 92, 114, 0.5)" />
               </Pressable>
             </View>
-          </View>
+          </>
+        )}
+        </ScrollView>
+      </View>
 
-          <Modal visible={showGrowth} animationType="slide" transparent onRequestClose={() => setShowGrowth(false)}>
-            <View style={styles.modalBackdrop}>
-              <View style={[styles.modalCard, { paddingBottom: insets.bottom + 16 }]}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>成長史</Text>
-                  <Pressable onPress={() => setShowGrowth(false)} hitSlop={8}>
-                    <Icon name="x" size={20} />
-                  </Pressable>
-                </View>
-                <ScrollView>
-                  <GrowthHistory xp={progress.xp} />
-                </ScrollView>
+      {/* 成長史彈窗刻意不用 RN 的 <Modal>：Android 上 Modal 是另開一個系統 Dialog 視窗，
+          不會繼承 app 主視窗的 edge-to-edge／安全區設定，導致底部導覽列那塊區域露出系統預設的
+          純黑背景（實機回報過這個視覺問題）。改成同一棵 React tree 裡的絕對定位覆蓋層，
+          確保跟其他畫面共用同一個視窗、同一份安全區設定。
+          背景（點擊關閉）跟卡片本體刻意是「手足」關係，不是卡片包在背景 Pressable 裡面：
+          上一版把整個卡片放進背景 Pressable 底下，結果 (1) Pressable 包住 ScrollView 讓
+          iOS 滑不動，(2) 拿掉卡片自己的 stopPropagation 保護後，點卡片內容也會被判定成
+          點到背景、直接關閉彈窗。改成背景 Pressable 蓋滿全螢幕、卡片容器用
+          pointerEvents="box-none" 疊在背景「上面」（手足關係，卡片不是背景的子節點）：
+          點卡片本體時，RN 的觸控命中測試會直接打到卡片自己的畫面元素，不會經過背景
+          Pressable；只有點卡片以外、真正露出背景的空白處，才會落到背景 Pressable 上觸發關閉。 */}
+      {user && showGrowth && (
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setShowGrowth(false)} />
+          <View style={styles.modalCardWrap} pointerEvents="box-none">
+            <View style={[styles.modalCard, { maxHeight: growthModalCardMaxHeight }]}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>成長史</Text>
+                <Pressable onPress={() => setShowGrowth(false)} hitSlop={8}>
+                  <Icon name="x" size={20} color={colors.ink} />
+                </Pressable>
               </View>
+              <ScrollView
+                style={{ maxHeight: growthModalScrollMaxHeight }}
+                contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+              >
+                <GrowthHistory xp={progress.xp} />
+              </ScrollView>
             </View>
-          </Modal>
-
-          <Text style={styles.sectionTitle}>學習統計</Text>
-          {!hydrated ? (
-            <ActivityIndicator style={styles.spinner} />
-          ) : (
-            <View style={styles.statGrid}>
-              <StatItem label="總 XP" value={progress.xp} />
-              <StatItem label="連續學習" value={`${streak} 天`} />
-              <StatItem label="完成關卡" value={`${doneLevels} / ${totalLevels}`} />
-              <StatItem label="累計答題" value={totalAnswered} />
-            </View>
-          )}
-
-          <Text style={styles.sectionTitle}>帳號設定</Text>
-          <View style={styles.accountList}>
-            <Pressable style={styles.accountItem} onPress={() => signOut()}>
-              <View style={styles.accountItemLabel}>
-                <Icon name="logout" size={15} />
-                <Text style={styles.accountItemText}>登出</Text>
-              </View>
-              <Icon name="chevron-right" size={16} />
-            </Pressable>
-            <Pressable
-              style={[styles.accountItem, styles.accountItemDanger]}
-              onPress={handleDeleteAccount}
-              disabled={deleting}
-            >
-              <View style={styles.accountItemLabel}>
-                <Icon name="trash" size={15} color="#e5484d" />
-                <Text style={[styles.accountItemText, styles.accountItemDangerText]}>
-                  {deleting ? '刪除中…' : '刪除帳號'}
-                </Text>
-              </View>
-              <Icon name="chevron-right" size={16} color="#e5484d80" />
-            </Pressable>
           </View>
-        </>
+        </View>
       )}
-    </ScrollView>
+    </>
   );
 }
 
 function StatItem({ label, value }: { label: string; value: string | number }) {
   return (
     <View style={styles.statItem}>
-      <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
+      <Text style={styles.statValue}>{value}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenWrap: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
   container: {
-    padding: 16,
-    gap: 14,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    backgroundColor: colors.bg,
   },
   loginContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: 24,
+    backgroundColor: colors.bg,
   },
   loginBox: {
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     maxWidth: 340,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: 'rgba(95, 240, 224, 0.25)',
+    paddingVertical: 36,
+    paddingHorizontal: 28,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: fonts.mono.bold,
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.inkStrong,
+    marginTop: 4,
   },
   subtitle: {
-    fontSize: 14,
-    opacity: 0.6,
+    fontFamily: fonts.sans.regular,
+    fontSize: 13,
+    lineHeight: 22,
+    color: colors.inkSoft,
     textAlign: 'center',
+    marginBottom: 4,
+  },
+  loginBtn: {
+    marginTop: 8,
   },
   spinner: {
     marginTop: 8,
   },
   error: {
-    color: '#e5484d',
+    fontFamily: fonts.sans.regular,
+    color: colors.wrong,
     fontSize: 13,
     textAlign: 'center',
   },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    backgroundColor: '#2e78b7',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
   hero: {
-    borderRadius: 16,
-    padding: 18,
-    backgroundColor: '#88889910',
-    gap: 4,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.optionBorder,
+    padding: 22,
   },
   heroXpRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 16,
   },
   heroXpInfo: {
     flex: 1,
@@ -282,40 +332,48 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   heroXpName: {
+    fontFamily: fonts.mono.bold,
     fontWeight: '700',
     fontSize: 13,
+    color: colors.primary,
   },
   heroXpCount: {
+    fontFamily: fonts.mono.regular,
     fontSize: 11,
-    opacity: 0.6,
+    color: colors.inkSoft,
   },
-  xpBar: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#88889920',
-    overflow: 'hidden',
-    marginTop: 6,
+  xpBarWrap: {
+    marginTop: 8,
   },
-  xpBarFill: {
-    height: '100%',
-    backgroundColor: '#2e78b7',
-  },
-  growthLink: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#2e78b7',
+  modalRoot: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   modalBackdrop: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(4, 7, 10, 0.75)',
+  },
+  modalCardWrap: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.6)',
   },
   modalCard: {
     maxHeight: '75%',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
     padding: 20,
-    backgroundColor: '#121212',
+    backgroundColor: colors.card,
+    borderTopWidth: 1,
+    borderColor: colors.optionBorder,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -324,42 +382,49 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   modalTitle: {
+    fontFamily: fonts.mono.bold,
     fontSize: 16,
     fontWeight: '700',
+    color: colors.inkStrong,
   },
   sectionTitle: {
+    fontFamily: fonts.mono.bold,
     fontSize: 13,
     fontWeight: '700',
-    opacity: 0.6,
-    marginTop: 4,
+    letterSpacing: 1.5,
+    color: 'rgba(95, 240, 224, 0.65)',
+    marginTop: 24,
+    marginBottom: 12,
   },
+  // 對照 index.css @media(max-width:480px) 的 .profile-stat-grid 手機版變體：手機寬度幾乎
+  // 都落在這個斷點內，直接採用單欄、標籤在左數值在右的橫列樣式（不是桌面版 4 欄 grid）。
   statGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 12,
   },
   statItem: {
-    flexBasis: '47%',
-    flexGrow: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderRadius: 14,
-    padding: 14,
-    backgroundColor: '#88889910',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.optionBorder,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   statValue: {
+    fontFamily: fonts.mono.extraBold,
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '800',
+    color: colors.cyan,
   },
   statLabel: {
+    fontFamily: fonts.sans.regular,
     fontSize: 12,
-    opacity: 0.6,
-    marginTop: 2,
+    color: colors.inkFaint,
   },
   accountList: {
-    borderRadius: 12,
-    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#88889918',
+    borderColor: colors.optionBorder,
   },
   accountItem: {
     flexDirection: 'row',
@@ -368,7 +433,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#88889912',
+    borderBottomColor: 'rgba(95, 240, 224, 0.12)',
   },
   accountItemDanger: {
     borderBottomWidth: 0,
@@ -379,9 +444,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   accountItemText: {
+    fontFamily: fonts.sans.regular,
     fontSize: 14,
+    color: colors.ink,
   },
   accountItemDangerText: {
-    color: '#e5484d',
+    color: colors.wrong,
   },
 });
