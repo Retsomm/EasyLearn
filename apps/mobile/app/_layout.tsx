@@ -1,4 +1,16 @@
 import { ClerkProvider } from '@clerk/expo';
+import {
+  JetBrainsMono_400Regular,
+  JetBrainsMono_500Medium,
+  JetBrainsMono_700Bold,
+  JetBrainsMono_800ExtraBold,
+} from '@expo-google-fonts/jetbrains-mono';
+import {
+  NotoSansTC_400Regular,
+  NotoSansTC_500Medium,
+  NotoSansTC_700Bold,
+  NotoSansTC_900Black,
+} from '@expo-google-fonts/noto-sans-tc';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -36,8 +48,18 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  // 對照 apps/web/src/app/layout.tsx 從 Google Fonts 載入的同一組字型／weight
+  // （JetBrains Mono 400/500/700/800、Noto Sans TC 400/500/700/900），
+  // 樣式裡要用哪個 weight 直接引用 constants/theme.ts 的 fonts.mono／fonts.sans。
   const [loaded, error] = useFonts({
-    SpaceMono: require('@/assets/fonts/SpaceMono-Regular.ttf'),
+    JetBrainsMono_400Regular,
+    JetBrainsMono_500Medium,
+    JetBrainsMono_700Bold,
+    JetBrainsMono_800ExtraBold,
+    NotoSansTC_400Regular,
+    NotoSansTC_500Medium,
+    NotoSansTC_700Bold,
+    NotoSansTC_900Black,
   });
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.

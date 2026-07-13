@@ -76,10 +76,13 @@ interface IconProps {
   name: IconName;
   size?: number;
   color?: string;
+  fill?: string;
 }
 
-export default function Icon({ name, size = 18, color }: IconProps) {
+// fill 對照網頁版 Icons.tsx 的 `icon-filled` class（星號收藏時 fill=currentColor 塗滿），
+// lucide-react-native 的圖示元件本來就接受 fill prop，不用另外處理。
+export default function Icon({ name, size = 18, color, fill }: IconProps) {
   const theme = useColorScheme();
   const IconComponent = ICONS[name];
-  return <IconComponent size={size} color={color ?? Colors[theme].text} strokeWidth={2} />;
+  return <IconComponent size={size} color={color ?? Colors[theme].text} fill={fill} strokeWidth={2} />;
 }

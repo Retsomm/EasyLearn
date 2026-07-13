@@ -5,6 +5,8 @@
   "dependencies": {
     "@clerk/expo": "^3.7.4",
     "@easylearn/core": "*",
+    "@expo-google-fonts/jetbrains-mono": "^0.4.1",
+    "@expo-google-fonts/noto-sans-tc": "^0.4.3",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/slider": "5.2.0",
     "expo": "~57.0.4",
@@ -13,6 +15,7 @@
     "expo-dev-client": "~57.0.5",
     "expo-font": "~57.0.0",
     "expo-image-picker": "~57.0.2",
+    "expo-linear-gradient": "^57.0.0",
     "expo-linking": "~57.0.2",
     "expo-router": "~57.0.4",
     "expo-secure-store": "~57.0.0",

@@ -7,6 +7,8 @@ import { useUser } from '@clerk/expo';
 
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
+import { buttonTextStyles } from '@/components/Button';
+import { colors, fonts } from '@/constants/theme';
 
 type ClerkUser = NonNullable<ReturnType<typeof useUser>['user']>;
 
@@ -231,12 +233,12 @@ export default function AccountHeader({ user }: AccountHeaderProps) {
               ) : user.firstName ? (
                 <Text style={styles.avatarInitial}>{user.firstName[0].toUpperCase()}</Text>
               ) : (
-                <Icon name="user" size={28} />
+                <Icon name="user" size={28} color={colors.inkSoft} />
               )}
             </View>
           </PanGestureHandler>
           <Pressable style={styles.avatarEditBtn} onPress={pickAvatar} disabled={uploading}>
-            <Icon name="pencil" size={11} />
+            <Icon name="pencil" size={11} color={colors.primaryInk} />
           </Pressable>
         </View>
 
@@ -251,17 +253,17 @@ export default function AccountHeader({ user }: AccountHeaderProps) {
                 autoFocus
               />
               <Pressable onPress={saveName} disabled={savingName || !nameValue.trim()} hitSlop={8}>
-                <Icon name="check-circle" size={16} />
+                <Icon name="check-circle" size={14} color={colors.primary} />
               </Pressable>
               <Pressable onPress={cancelNameEdit} disabled={savingName} hitSlop={8}>
-                <Icon name="x" size={16} />
+                <Icon name="x" size={14} color={colors.primary} />
               </Pressable>
             </View>
           ) : (
             <View style={styles.nameRow}>
               <Text style={styles.name}>{user.firstName || '未命名'}</Text>
               <Pressable onPress={() => setNameEditing(true)} hitSlop={8}>
-                <Icon name="pencil" size={14} />
+                <Icon name="pencil" size={14} color={colors.primary} />
               </Pressable>
             </View>
           )}
@@ -278,19 +280,19 @@ export default function AccountHeader({ user }: AccountHeaderProps) {
               step={0.05}
               value={pos.scale}
               onValueChange={(v) => setPos((prev) => ({ ...prev, scale: clamp(v, MIN_SCALE, MAX_SCALE) }))}
-              minimumTrackTintColor="#2e78b7"
-              maximumTrackTintColor="#88889940"
-              thumbTintColor="#ffffff"
+              minimumTrackTintColor={colors.primary}
+              maximumTrackTintColor="rgba(255, 180, 84, 0.25)"
+              thumbTintColor={colors.primary}
             />
           </View>
           <View style={styles.repositionActions}>
             <Pressable style={styles.repositionBtn} onPress={confirmReposition}>
-              <Icon name="check-circle" size={14} />
-              <Text style={styles.repositionBtnText}>完成</Text>
+              <Icon name="check-circle" size={14} color={colors.primary} />
+              <Text style={buttonTextStyles.text}>完成</Text>
             </Pressable>
             <Pressable style={styles.repositionBtn} onPress={cancelReposition}>
-              <Icon name="x" size={14} />
-              <Text style={styles.repositionBtnText}>取消</Text>
+              <Icon name="x" size={14} color={colors.primary} />
+              <Text style={buttonTextStyles.text}>取消</Text>
             </Pressable>
           </View>
           <Text style={styles.repositionNote}>拖曳照片可移動位置，拉桿可縮放，完成後按「完成」儲存。</Text>
@@ -317,9 +319,9 @@ const styles = StyleSheet.create({
     height: AVATAR_SIZE,
     borderRadius: AVATAR_SIZE / 2,
     overflow: 'hidden',
-    backgroundColor: '#88889918',
+    backgroundColor: colors.optionBg,
     borderWidth: 2,
-    borderColor: '#2e78b7',
+    borderColor: colors.cyan,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -328,20 +330,24 @@ const styles = StyleSheet.create({
     // （borderRadius 50%）上是已知的平台限制，繞著曲線的虛線間距算不出來，實機上只會
     // 斷斷續續露出一小段，不是我們的樣式寫錯——改用純色框，一樣能清楚表示進入編輯模式。
     borderWidth: 3,
-    borderColor: '#ffb454',
+    borderColor: colors.primary,
   },
   avatarInitial: {
+    fontFamily: fonts.mono.bold,
     fontWeight: '700',
     fontSize: 26,
+    color: colors.cyan,
   },
   avatarEditBtn: {
     position: 'absolute',
     bottom: -2,
     right: -2,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#2e78b7',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -355,8 +361,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   name: {
+    fontFamily: fonts.sans.bold,
     fontSize: 17,
     fontWeight: '700',
+    color: colors.ink,
   },
   nameEditRow: {
     flexDirection: 'row',
@@ -365,17 +373,19 @@ const styles = StyleSheet.create({
   },
   nameInput: {
     flex: 1,
+    fontFamily: fonts.sans.medium,
     fontSize: 14,
     fontWeight: '600',
-    color: '#e6e6e6',
+    color: colors.ink,
     borderWidth: 1,
-    borderColor: '#88889940',
-    borderRadius: 8,
+    borderColor: colors.optionBorder,
     paddingHorizontal: 8,
     paddingVertical: 4,
+    backgroundColor: colors.bg,
   },
   repositionPanel: {
     gap: 10,
+    marginTop: 10,
   },
   zoomRow: {
     flexDirection: 'row',
@@ -394,12 +404,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
   },
-  repositionBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
   repositionNote: {
+    fontFamily: fonts.sans.regular,
     fontSize: 12,
-    opacity: 0.6,
+    color: colors.inkSoft,
   },
 });

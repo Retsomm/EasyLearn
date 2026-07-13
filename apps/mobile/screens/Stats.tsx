@@ -1,8 +1,9 @@
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
+import { colors, fonts } from '@/constants/theme';
 import { chapters, todayStr, type Progress } from '@easylearn/core';
 
 const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
@@ -51,8 +52,8 @@ const activityLevel = (total: number): number => {
   return 4;
 };
 
-const HEAT_COLORS = ['#88889912', '#2e78b730', '#2e78b760', '#2e78b790', '#2e78b7'];
-
+// 對照 index.css 的 --heat-0..4（sequential 色階，經 dataviz skill 驗證過）
+const HEAT_COLORS = [colors.heat0, colors.heat1, colors.heat2, colors.heat3, colors.heat4];
 
 interface StatsProps {
   progress: Progress;
@@ -64,6 +65,13 @@ export default function Stats({ progress }: StatsProps) {
   const dailyStats = progress.dailyStats ?? {};
   const chapterStats = progress.chapterStats ?? {};
   const heatmapScrollRef = useRef<ScrollView>(null);
+  // 熱力圖要預設捲到最右邊（今天）。只用 onContentSizeChange 在某些情況下會搶在這個
+  // 水平 ScrollView 自己的寬度（viewport）量到之前就先觸發，算出來的捲動位置不準——
+  // 額外掛 onLayout 一起觸發同一個函式，兩邊哪個晚到就以哪個為準，同時包一層
+  // requestAnimationFrame 讓 scrollToEnd 儘量等到這一輪版面真的 commit 完再執行。
+  const scrollHeatmapToLatest = useCallback(() => {
+    requestAnimationFrame(() => heatmapScrollRef.current?.scrollToEnd({ animated: false }));
+  }, []);
 
   const totals = Object.values(dailyStats).reduce(
     (acc, d) => ({ total: acc.total + d.total, correct: acc.correct + d.correct }),
@@ -102,10 +110,10 @@ export default function Stats({ progress }: StatsProps) {
         </View>
       </View>
       <View style={styles.tileWide}>
-        <Text style={styles.tileLabel}>累計答對題數</Text>
+        <Text style={styles.tileWideLabel}>累計答對題數</Text>
         <View style={styles.tileWideValueRow}>
-          <Icon name="check-circle" size={19} />
-          <Text style={styles.tileValue}>{totals.correct} 題</Text>
+          <Icon name="check-circle" size={19} color={colors.cyan} />
+          <Text style={styles.tileWideValue}>{totals.correct} 題</Text>
         </View>
       </View>
 
@@ -124,7 +132,8 @@ export default function Stats({ progress }: StatsProps) {
             horizontal
             showsHorizontalScrollIndicator={false}
             ref={heatmapScrollRef}
-            onContentSizeChange={() => heatmapScrollRef.current?.scrollToEnd({ animated: false })}
+            onContentSizeChange={scrollHeatmapToLatest}
+            onLayout={scrollHeatmapToLatest}
           >
             <View>
               <View style={styles.heatmapMonths}>
@@ -169,7 +178,7 @@ export default function Stats({ progress }: StatsProps) {
       <View style={styles.miniChartPair}>
         <View style={styles.miniChart}>
           <View style={styles.miniChartTitleRow}>
-            <View style={[styles.legendDot, { backgroundColor: '#2e78b7' }]} />
+            <View style={[styles.legendDot, { backgroundColor: colors.chartCount }]} />
             <Text style={styles.miniChartTitle}>做題量</Text>
           </View>
           <View style={styles.miniChartBars}>
@@ -179,7 +188,7 @@ export default function Stats({ progress }: StatsProps) {
                 <View
                   style={[
                     styles.miniBar,
-                    { backgroundColor: '#2e78b7', height: Math.max(4, (d.total / maxCount) * 72) },
+                    { backgroundColor: colors.chartCount, height: Math.max(4, (d.total / maxCount) * 72) },
                   ]}
                 />
                 <Text style={[styles.miniBarLabel, d.isToday && styles.miniBarLabelToday]}>{d.label}</Text>
@@ -189,7 +198,7 @@ export default function Stats({ progress }: StatsProps) {
         </View>
         <View style={styles.miniChart}>
           <View style={styles.miniChartTitleRow}>
-            <View style={[styles.legendDot, { backgroundColor: '#2f9e44' }]} />
+            <View style={[styles.legendDot, { backgroundColor: colors.chartAccuracy }]} />
             <Text style={styles.miniChartTitle}>正確率</Text>
           </View>
           <View style={styles.miniChartBars}>
@@ -200,7 +209,7 @@ export default function Stats({ progress }: StatsProps) {
                   style={[
                     styles.miniBar,
                     {
-                      backgroundColor: '#2f9e44',
+                      backgroundColor: colors.chartAccuracy,
                       height: d.total > 0 ? Math.max(4, (d.accuracy / 100) * 72) : 2,
                     },
                   ]}
@@ -242,7 +251,9 @@ export default function Stats({ progress }: StatsProps) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 40,
     gap: 12,
   },
   tileRow: {
@@ -251,16 +262,21 @@ const styles = StyleSheet.create({
   },
   tile: {
     flex: 1,
-    borderRadius: 14,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.optionBorder,
     padding: 16,
-    backgroundColor: '#88889910',
     gap: 8,
   },
   tileWide: {
-    borderRadius: 14,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 180, 84, 0.25)',
     padding: 16,
-    backgroundColor: '#2e78b714',
-    gap: 8,
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   tileWideValueRow: {
     flexDirection: 'row',
@@ -268,29 +284,47 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   tileLabel: {
+    fontFamily: fonts.mono.regular,
     fontSize: 11,
-    opacity: 0.6,
+    color: 'rgba(95, 240, 224, 0.55)',
+  },
+  tileWideLabel: {
+    fontFamily: fonts.mono.regular,
+    fontSize: 11,
+    color: 'rgba(255, 180, 84, 0.6)',
   },
   tileValue: {
+    fontFamily: fonts.mono.extraBold,
     fontSize: 24,
     fontWeight: '800',
+    color: colors.cyan,
+  },
+  tileWideValue: {
+    fontFamily: fonts.mono.extraBold,
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.primary,
   },
   sectionTitle: {
+    fontFamily: fonts.mono.bold,
     fontSize: 13,
     fontWeight: '700',
-    opacity: 0.6,
-    marginTop: 10,
+    letterSpacing: 1.5,
+    color: 'rgba(95, 240, 224, 0.65)',
+    marginTop: 12,
   },
   sectionHint: {
-    fontSize: 11,
-    opacity: 0.5,
+    fontFamily: fonts.sans.regular,
+    fontSize: 12,
+    lineHeight: 19,
+    color: colors.inkFaint,
     marginTop: -4,
-    lineHeight: 16,
   },
   heatmapCard: {
-    borderRadius: 14,
-    padding: 14,
-    backgroundColor: '#88889910',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: 'rgba(95, 240, 224, 0.18)',
+    padding: 16,
   },
   heatmapRow: {
     flexDirection: 'row',
@@ -305,8 +339,9 @@ const styles = StyleSheet.create({
   heatmapWeekday: {
     height: 11,
     lineHeight: 11,
+    fontFamily: fonts.mono.regular,
     fontSize: 9,
-    opacity: 0.55,
+    color: colors.inkFaint,
   },
   heatmapMonths: {
     flexDirection: 'row',
@@ -319,8 +354,9 @@ const styles = StyleSheet.create({
     // （超出 ScrollView 量到的內容寬度那段一樣會被裁掉，尤其是捲到最右邊、沒有下一欄可以
     // 借用空間的最後一個月份），所以改成單純夠寬的固定寬度，不依賴溢出。
     width: 16,
+    fontFamily: fonts.mono.regular,
     fontSize: 9,
-    opacity: 0.55,
+    color: colors.inkFaint,
   },
   heatmapGrid: {
     flexDirection: 'row',
@@ -334,7 +370,6 @@ const styles = StyleSheet.create({
   heatmapCell: {
     width: 11,
     height: 11,
-    borderRadius: 2,
   },
   heatmapCellBlank: {
     width: 11,
@@ -348,15 +383,19 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   heatmapLegendText: {
+    fontFamily: fonts.mono.regular,
     fontSize: 10,
-    opacity: 0.55,
+    color: colors.inkFaint,
   },
   miniChartPair: {
     flexDirection: 'row',
     gap: 16,
-    borderRadius: 14,
-    padding: 16,
-    backgroundColor: '#88889910',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: 'rgba(95, 240, 224, 0.18)',
+    paddingTop: 18,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
   miniChart: {
     flex: 1,
@@ -368,13 +407,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   miniChartTitle: {
-    fontSize: 12,
-    opacity: 0.7,
+    fontFamily: fonts.sans.regular,
+    fontSize: 13,
+    color: colors.inkSoft,
   },
   legendDot: {
     width: 8,
     height: 8,
-    borderRadius: 2,
   },
   miniChartBars: {
     flexDirection: 'row',
@@ -390,31 +429,34 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   miniBarValue: {
+    fontFamily: fonts.mono.regular,
     fontSize: 10,
-    opacity: 0.5,
+    color: colors.inkFaint,
     height: 14,
   },
   miniBar: {
     width: '60%',
     minWidth: 6,
-    borderRadius: 2,
   },
   miniBarLabel: {
+    fontFamily: fonts.mono.regular,
     fontSize: 10,
-    opacity: 0.5,
+    color: colors.inkFaint,
     marginTop: 6,
   },
   miniBarLabelToday: {
-    opacity: 1,
+    color: colors.primary,
+    fontFamily: fonts.mono.bold,
     fontWeight: '700',
   },
   chapterList: {
     gap: 12,
   },
   chapterCard: {
-    borderRadius: 14,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: 'rgba(95, 240, 224, 0.18)',
     padding: 16,
-    backgroundColor: '#88889910',
     gap: 8,
   },
   chapterCardHead: {
@@ -422,25 +464,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   chapterCardTitle: {
+    fontFamily: fonts.sans.regular,
     fontSize: 14,
     fontWeight: '700',
+    color: colors.ink,
   },
   chapterCardPct: {
+    fontFamily: fonts.mono.bold,
     fontSize: 14,
     fontWeight: '700',
+    color: colors.cyan,
   },
   chapterBar: {
     height: 6,
-    borderRadius: 3,
-    backgroundColor: '#88889925',
+    backgroundColor: colors.track,
     overflow: 'hidden',
   },
   chapterBarFill: {
     height: '100%',
-    backgroundColor: '#2f9e44',
+    backgroundColor: colors.cyan,
   },
   chapterCardSub: {
-    fontSize: 11,
-    opacity: 0.55,
+    fontFamily: fonts.mono.regular,
+    fontSize: 10,
+    color: colors.inkFaint,
   },
 });

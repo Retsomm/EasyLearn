@@ -1,13 +1,15 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
+import { colors, fonts } from '@/constants/theme';
 import { STAGES, getStage } from '@easylearn/core';
 
 interface GrowthHistoryProps {
   xp: number;
 }
 
-// 對照 apps/web 的 GrowthHistory.tsx：吉祥物成長史清單
+// 對照 apps/web 的 GrowthHistory.tsx：吉祥物成長史清單。mobile 這裡改用 Modal 彈窗顯示
+// （見 app/(tabs)/profile.tsx），本體清單樣式仍照抄 index.css 的 .growth-history 系列。
 export default function GrowthHistory({ xp }: GrowthHistoryProps) {
   const current = getStage(xp);
 
@@ -19,7 +21,7 @@ export default function GrowthHistory({ xp }: GrowthHistoryProps) {
         return (
           <View
             key={stage.name}
-            style={[styles.item, !reached && styles.itemLocked, isCurrent && styles.itemCurrent]}
+            style={[styles.item, reached && styles.itemReached, isCurrent && styles.itemCurrent]}
           >
             <Text style={styles.emoji}>{stage.emoji}</Text>
             <View style={styles.info}>
@@ -43,17 +45,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    padding: 10,
-    borderRadius: 10,
-    backgroundColor: '#88889910',
+    padding: 8,
+    paddingHorizontal: 10,
+    backgroundColor: colors.optionBg,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    opacity: 0.5,
   },
-  itemLocked: {
-    opacity: 0.4,
+  itemReached: {
+    opacity: 1,
   },
   itemCurrent: {
-    backgroundColor: '#2e78b722',
-    borderWidth: 1,
-    borderColor: '#2e78b755',
+    backgroundColor: colors.badgeBg,
+    borderColor: colors.primary,
   },
   emoji: {
     fontSize: 22,
@@ -64,11 +68,14 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   name: {
+    fontFamily: fonts.sans.medium,
     fontSize: 13,
     fontWeight: '600',
+    color: colors.ink,
   },
   xp: {
+    fontFamily: fonts.mono.regular,
     fontSize: 11,
-    opacity: 0.55,
+    color: colors.inkFaint,
   },
 });

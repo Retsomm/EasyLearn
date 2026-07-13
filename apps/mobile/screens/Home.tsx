@@ -2,10 +2,15 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
+import { PrimaryButton, buttonTextStyles } from '@/components/Button';
+import { colors, fonts } from '@/constants/theme';
 import { chapters, todayStr, yesterdayStr, type Progress } from '@easylearn/core';
 
 const DAILY_GOAL = 20;
 const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日'];
+
+// 對照 index.css 的 chapter-list nth-child(1..3) 規則：三個章節依序 cyan／primary／wrong
+const CHAPTER_ACCENTS = [colors.cyan, colors.primary, colors.wrong];
 
 const getWeekDates = (): string[] => {
   const now = new Date();
@@ -46,22 +51,30 @@ export default function Home({ progress, onOpenChapter, onMixedPractice }: HomeP
           <Text style={styles.streakTopText}>今日任務完成 {todayStats.total} 題</Text>
         </View>
         <View style={styles.streakCount}>
-          <Icon name="flame" size={24} />
+          <Icon name="flame" size={28} color={colors.primary} />
           <Text style={styles.streakCountText}>{streak} 天</Text>
         </View>
         <View style={styles.streakWeek}>
-          {weekDates.map((date, i) => (
-            <View
-              key={date}
-              style={[
-                styles.streakDay,
-                date === today && styles.streakDayToday,
-                progress.dailyStats[date] && styles.streakDayDone,
-              ]}
-            >
-              <Text style={styles.streakDayText}>{WEEKDAY_LABELS[i]}</Text>
-            </View>
-          ))}
+          {weekDates.map((date, i) => {
+            const isDone = !!progress.dailyStats[date];
+            const isToday = date === today;
+            return (
+              <View
+                key={date}
+                style={[styles.streakDay, isDone && styles.streakDayDone, isToday && styles.streakDayToday]}
+              >
+                <Text
+                  style={[
+                    styles.streakDayText,
+                    isDone && styles.streakDayTextDone,
+                    isToday && styles.streakDayTextToday,
+                  ]}
+                >
+                  {WEEKDAY_LABELS[i]}
+                </Text>
+              </View>
+            );
+          })}
         </View>
       </View>
 
@@ -69,7 +82,7 @@ export default function Home({ progress, onOpenChapter, onMixedPractice }: HomeP
         <View style={styles.statCard}>
           <View style={styles.statCardHead}>
             <Text style={styles.statCardHeadText}>今日正確率</Text>
-            <Icon name="check-circle" size={15} />
+            <Icon name="check-circle" size={17} color={colors.cyan} />
           </View>
           <Text style={styles.statCardValue}>{todayAccuracy}%</Text>
           <Text style={styles.statCardHint}>
@@ -79,36 +92,37 @@ export default function Home({ progress, onOpenChapter, onMixedPractice }: HomeP
         <View style={styles.statCard}>
           <View style={styles.statCardHead}>
             <Text style={styles.statCardHeadText}>今日已做</Text>
-            <Icon name="pencil" size={15} />
+            <Icon name="pencil" size={17} color={colors.cyan} />
           </View>
           <Text style={styles.statCardValue}>{todayStats.total} 題</Text>
           <Text style={styles.statCardHint}>目標：{DAILY_GOAL} 題</Text>
         </View>
       </View>
 
-      <Pressable style={styles.mixedBtn} onPress={onMixedPractice}>
-        <Icon name="shuffle" size={17} />
-        <Text style={styles.mixedBtnText}>隨機綜合練習（10 題）</Text>
-      </Pressable>
+      <PrimaryButton onPress={onMixedPractice} style={styles.mixedBtn}>
+        <Icon name="shuffle" size={19} color={colors.primaryInk} />
+        <Text style={buttonTextStyles.primary}>隨機綜合練習（10 題）</Text>
+      </PrimaryButton>
 
       <Text style={styles.sectionTitle}>分科高效刷題</Text>
       <View style={styles.chapterList}>
-        {chapters.map((ch) => {
+        {chapters.map((ch, i) => {
           const done = ch.levels.filter((l) => progress.completedLevels[l.id]).length;
           const pct = ch.levels.length ? (done / ch.levels.length) * 100 : 0;
+          const accent = CHAPTER_ACCENTS[i] ?? colors.ink;
           return (
             <Pressable key={ch.id} style={styles.chapterCard} onPress={() => onOpenChapter(ch.id)}>
-              <Icon name={ch.icon} size={28} />
+              <Icon name={ch.icon} size={30} color={accent} />
               <View style={styles.chapterInfo}>
                 <Text style={styles.chapterName}>{ch.title}</Text>
                 <Text style={styles.chapterProgress}>
                   完成 {done} / {ch.levels.length} 關
                 </Text>
                 <View style={styles.chapterBar}>
-                  <View style={[styles.chapterBarFill, { width: `${pct}%` }]} />
+                  <View style={[styles.chapterBarFill, { width: `${pct}%`, backgroundColor: accent }]} />
                 </View>
               </View>
-              <Icon name="chevron-right" size={20} />
+              <Icon name="chevron-right" size={22} color="rgba(95, 240, 224, 0.4)" />
             </Pressable>
           );
         })}
@@ -123,9 +137,10 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   streakCard: {
-    backgroundColor: '#2e78b722',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 180, 84, 0.35)',
+    padding: 20,
     gap: 10,
   },
   streakTop: {
@@ -133,8 +148,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   streakTopText: {
+    fontFamily: fonts.mono.regular,
     fontSize: 12,
-    opacity: 0.7,
+    color: 'rgba(95, 240, 224, 0.6)',
+    letterSpacing: 0.5,
   },
   streakCount: {
     flexDirection: 'row',
@@ -142,41 +159,60 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   streakCountText: {
-    fontSize: 24,
+    fontFamily: fonts.mono.extraBold,
+    fontSize: 30,
     fontWeight: '800',
+    color: colors.primary,
   },
   streakWeek: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: 6,
+    marginTop: 6,
   },
   streakDay: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: '#88889915',
-  },
-  streakDayToday: {
+    justifyContent: 'center',
+    height: 30,
+    backgroundColor: colors.track,
     borderWidth: 1,
-    borderColor: '#2e78b7',
+    borderColor: colors.optionBorder,
   },
   streakDayDone: {
-    backgroundColor: '#2f9e4433',
+    backgroundColor: 'rgba(95, 240, 224, 0.25)',
+    borderColor: 'transparent',
+  },
+  streakDayToday: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   streakDayText: {
+    fontFamily: fonts.mono.regular,
     fontSize: 12,
-    fontWeight: '600',
+    color: 'rgba(95, 240, 224, 0.55)',
+  },
+  streakDayTextDone: {
+    color: colors.cyan,
+    fontFamily: fonts.mono.bold,
+    fontWeight: '700',
+  },
+  streakDayTextToday: {
+    color: '#241300',
+    fontFamily: fonts.mono.bold,
+    fontWeight: '700',
   },
   statRow: {
     flexDirection: 'row',
     gap: 12,
+    marginTop: 14,
   },
   statCard: {
     flex: 1,
-    borderRadius: 14,
-    padding: 14,
-    backgroundColor: '#88889910',
-    gap: 6,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.optionBorder,
+    padding: 16,
   },
   statCardHead: {
     flexDirection: 'row',
@@ -184,66 +220,72 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statCardHeadText: {
-    fontSize: 12,
-    opacity: 0.7,
+    fontFamily: fonts.mono.regular,
+    fontSize: 11,
+    letterSpacing: 0.5,
+    color: 'rgba(95, 240, 224, 0.55)',
   },
   statCardValue: {
-    fontSize: 22,
+    fontFamily: fonts.mono.extraBold,
+    fontSize: 26,
     fontWeight: '800',
+    color: colors.cyan,
+    marginTop: 8,
   },
   statCardHint: {
-    fontSize: 11,
-    opacity: 0.6,
+    fontFamily: fonts.sans.regular,
+    fontSize: 12,
+    color: colors.inkFaint,
+    marginTop: 4,
   },
   mixedBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#2e78b7',
-    borderRadius: 12,
-    paddingVertical: 14,
-  },
-  mixedBtnText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 15,
+    width: '100%',
+    marginTop: 4,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontFamily: fonts.mono.bold,
+    fontSize: 13,
     fontWeight: '700',
+    letterSpacing: 1.5,
+    color: 'rgba(95, 240, 224, 0.65)',
+    marginTop: 8,
   },
   chapterList: {
-    gap: 10,
+    marginTop: -6,
+    gap: 12,
   },
   chapterCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    borderRadius: 14,
-    padding: 14,
-    backgroundColor: '#88889910',
+    gap: 14,
+    width: '100%',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.optionBorder,
+    padding: 16,
   },
   chapterInfo: {
     flex: 1,
-    gap: 4,
+    gap: 2,
   },
   chapterName: {
+    fontFamily: fonts.sans.bold,
     fontSize: 15,
     fontWeight: '700',
+    color: colors.ink,
   },
   chapterProgress: {
-    fontSize: 12,
-    opacity: 0.65,
+    fontFamily: fonts.mono.regular,
+    fontSize: 11,
+    color: 'rgba(95, 240, 224, 0.4)',
   },
   chapterBar: {
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#88889925',
+    height: 6,
+    backgroundColor: colors.track,
     overflow: 'hidden',
+    marginTop: 4,
   },
   chapterBarFill: {
     height: '100%',
-    backgroundColor: '#2f9e44',
   },
 });
