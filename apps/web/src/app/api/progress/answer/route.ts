@@ -1,7 +1,6 @@
 import type { Prisma } from '@prisma/client'
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { GRADUATE_BOX } from '@easylearn/core'
 import { prisma } from '@/lib/prisma'
 import { isValidDateStr } from '@/lib/progressLogic'
 import { loadFullProgress } from '@/lib/progressStore'
@@ -15,8 +14,8 @@ interface AnswerBody {
   today: string
 }
 
-// 答題後更新 Leitner 錯題本＋每日／分科作答統計，規則跟 useProgress.ts 的 answerQuestion 一致：
-// 答錯→記入或重置回第 1 盒；答對→有錯題紀錄才升一盒，超過畢業盒就移出錯題本
+// 答題後更新錯題本＋每日／分科作答統計，規則跟 useProgress.ts 的 answerQuestion 一致：
+// 答錯→記入或重置錯題紀錄；答對→只要這題還在錯題本裡就直接刪除（答對一次就畢業）
 export const POST = async (request: Request) => {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
@@ -39,14 +38,7 @@ export const POST = async (request: Request) => {
   // 每個分支各自算出自己的 0 或 1 筆寫入，最後展開組成同一份交易清單
   const wrongEntryWrites: Prisma.PrismaPromise<unknown>[] = correct
     ? existing
-      ? [
-          existing.box + 1 > GRADUATE_BOX
-            ? prisma.wrongEntry.delete({ where: { userId_questionId: { userId, questionId } } })
-            : prisma.wrongEntry.update({
-                where: { userId_questionId: { userId, questionId } },
-                data: { box: existing.box + 1 },
-              }),
-        ]
+      ? [prisma.wrongEntry.delete({ where: { userId_questionId: { userId, questionId } } })]
       : []
     : [
         prisma.wrongEntry.upsert({

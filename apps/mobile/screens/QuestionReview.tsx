@@ -3,7 +3,7 @@ import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
 import CodeBlock from '@/components/CodeBlock';
-import { GRADUATE_BOX, TYPE_META, type Question, type WrongEntryMeta } from '@easylearn/core';
+import { TYPE_META, type Question, type WrongEntryMeta } from '@easylearn/core';
 
 interface QuestionReviewProps {
   question: Question;
@@ -34,9 +34,6 @@ export default function QuestionReview({ question, saved, onToggleSave, meta }: 
       {meta && (
         <View style={styles.reviewMetaRow}>
           <Text style={styles.reviewMetaText}>答錯 {meta.count} 次</Text>
-          <Text style={styles.reviewMetaText}>
-            熟練度 {meta.box}/{GRADUATE_BOX}
-          </Text>
           {meta.lastWrong && <Text style={styles.reviewMetaText}>最近答錯：{meta.lastWrong}</Text>}
         </View>
       )}

@@ -1,8 +1,5 @@
 import type { DailyStat, Progress, Streak, WrongEntryMeta } from './types'
 
-// Leitner 盒制：答對升級、答錯重置回 1，box 超過畢業盒才移出錯題本
-export const GRADUATE_BOX = 3
-
 const toDateStr = (d: Date): string => d.toLocaleDateString('en-CA') // 本地時區的 YYYY-MM-DD
 
 export const todayStr = (): string => toDateStr(new Date())
@@ -43,8 +40,8 @@ export const bumpStreak = (streak: Streak): Streak => {
   }
 }
 
-// 答題後更新 Leitner 錯題本＋每日／分科作答統計，web／mobile 的 useProgress 共用同一份規則：
-// 答錯→記入或重置回第 1 盒；答對→有錯題紀錄才升一盒，超過畢業盒就移出錯題本
+// 答題後更新錯題本＋每日／分科作答統計，web／mobile 的 useProgress 共用同一份規則：
+// 答錯→記入或重置錯題紀錄；答對→只要這題還在錯題本裡就直接移出（答對一次就畢業）
 export const applyAnswer = (
   progress: Progress,
   questionId: string,
@@ -54,11 +51,7 @@ export const applyAnswer = (
   const wrongIds = { ...progress.wrongIds }
   const entry = wrongIds[questionId]
   if (correct) {
-    if (entry) {
-      const box = entry.box + 1
-      if (box > GRADUATE_BOX) delete wrongIds[questionId]
-      else wrongIds[questionId] = { ...entry, box }
-    }
+    if (entry) delete wrongIds[questionId]
   } else {
     const nextEntry: WrongEntryMeta = { count: (entry?.count ?? 0) + 1, lastWrong: todayStr(), box: 1 }
     wrongIds[questionId] = nextEntry

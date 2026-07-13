@@ -1,6 +1,6 @@
 import CodeBlock from '@/components/CodeBlock'
 import Icon from '@/components/Icons'
-import { GRADUATE_BOX, TYPE_META, type Question, type WrongEntryMeta } from '@easylearn/core'
+import { TYPE_META, type Question, type WrongEntryMeta } from '@easylearn/core'
 
 interface QuestionReviewProps {
   question: Question
@@ -33,9 +33,6 @@ const QuestionReview = ({ question, saved, onToggleSave, meta }: QuestionReviewP
       {meta && (
         <div className="review-meta-info">
           <span>答錯 {meta.count} 次</span>
-          <span>
-            熟練度 {meta.box}/{GRADUATE_BOX}
-          </span>
           {meta.lastWrong && <span>最近答錯：{meta.lastWrong}</span>}
         </div>
       )}

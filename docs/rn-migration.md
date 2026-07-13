@@ -185,12 +185,20 @@
   - **這個環境能驗證的都驗證了**：`apps/mobile` `tsc --noEmit` 過、`expo-doctor` 19/20（唯一沒過的
     仍是 Phase 2 就有、刻意的 metro monorepo 設定，跟這次改動無關）、`npx expo export --platform web`
     成功（1358 modules，`/notes`／`/stats` 兩條新路由都正確輸出）。
-  - **完全沒有測過的部分（使用者要自己在真機/模擬器驗證才能定案）**：Notes tab 四張卡片／清單的
-    觸控互動是否正常（尤其卡片本身可點開清單、卡片內又有一個獨立的「開始複習/開始練習」按鈕，
-    這種巢狀 `Pressable` 在 RN 的觸控responder 機制跟 web 的事件冒泡不是同一套，行為需要真機確認）；
-    Stats tab 熱力圖橫向捲動手感、迷你長條圖數字是否對得上；`review`／`savedpractice` 兩個模式
-    重用 `Quiz` 元件后結算/離開流程是否正確；深色主題下這幾個新畫面的顏色（尤其錯題卡的紅色調、
-    收藏卡的藍色調）是否跟其他畫面一致、看起來舒服。
+  - **2026-07-13，使用者在真機/模擬器測過（Notes tab 巢狀按鈕觸控、Stats tab 熱力圖橫向捲動、
+    review/savedpractice 結算流程、深色主題配色）四項都 OK**。
+  - **2026-07-13 追加，使用者測試後要求改變錯題本規則**：原本是 Leitner 盒制（答對要升滿
+    `GRADUATE_BOX`＝3 盒才移出錯題本），改成「答對一次就直接移出錯題本」。這是 `packages/core`
+    的共用邏輯（`progressCalc.ts` 的 `applyAnswer`），同時也要改 `apps/web/src/app/api/progress/
+    answer/route.ts`（登入時的伺服器端寫入是另外手刻同一套規則的 Prisma 交易，沒有共用
+    `applyAnswer`，這次一起改成答對就 `delete`，不再比較 `box+1 > GRADUATE_BOX`）。`GRADUATE_BOX`
+    常數跟 `熟練度 X/3` 的 UI 顯示（`QuestionReview.tsx`，web/mobile 各一份）已經完全移除，因為
+    移出時機改成單次答對後，這個欄位永遠停在 1，留著顯示只會誤導。**`WrongEntryMeta.box` 欄位／
+    Prisma `WrongEntry.box` 資料庫欄位本身刻意保留沒動**（一律寫 1，不再遞增）——避免多動一次
+    schema migration，這欄位現在只是歷史包袱，之後如果要徹底清乾淨可以再考慮拿掉。這個環境驗證過
+    `apps/web`／`apps/mobile` 的 `tsc --noEmit`、`web` 的 `lint`／`build`、`mobile` 的
+    `expo export --platform web`，都過；**新規則本身的效果（答對後錯題確實從清單消失）使用者
+    還沒回報驗證過**。
 - [ ] **Phase 6**：頭像拖曳／縮放／改名（最高複雜度的 native gesture，刻意排最後）。
 - [ ] **Phase 7**（視是否加 OAuth 才需要）：Clerk native SSO redirect 的 Dashboard 設定。
 
