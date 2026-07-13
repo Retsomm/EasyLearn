@@ -19,7 +19,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.retsnom.easylearnmobile"
+      "package": "com.retsnom.easylearnmobile",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",
@@ -41,12 +42,21 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "需要存取你的相簿才能選擇頭像照片"
+          "photosPermission": "需要存取你的相簿才能選擇頭像照片",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3b061355-ca44-44b3-b59c-08dcba64fb4a"
+      }
+    },
+    "owner": "retsnom"
   }
 }
