@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { View } from '@/components/Themed';
-import { useProgress } from '@/hooks/useProgress';
+import { useProgress } from '@/context/ProgressContext';
 import Home from '@/screens/Home';
 import ChapterMap from '@/screens/ChapterMap';
 import Quiz from '@/screens/Quiz';
@@ -15,9 +15,10 @@ type ViewState =
   | { name: 'quiz'; levelId: string; questions: Question[] }
   | { name: 'mixed'; questions: Question[] };
 
-// Phase 3：訪客模式離線答題流程。跟 apps/web 的 App.tsx 一樣用一個 view 狀態機切畫面，
-// 差別是這裡範圍只到 Home tab（levellist/quiz/mixed 都是從這個 tab 進去的子畫面），
-// notes/stats tab 各自獨立，不需要共用同一個狀態機。
+// 跟 apps/web 的 App.tsx 一樣用一個 view 狀態機切畫面，差別是這裡範圍只到 Home tab
+// （levellist/quiz/mixed 都是從這個 tab 進去的子畫面），notes/stats tab 各自獨立，不需要共用
+// 同一個狀態機。進度資料（訪客 AsyncStorage／登入後打 API）統一由 ProgressProvider 提供，
+// 跟 Profile tab 共用同一份 state。
 export default function HomeScreen() {
   const { progress, hydrated, answerQuestion, toggleSaved, finishLevel, finishReview } = useProgress();
   const [view, setView] = useState<ViewState>({ name: 'home' });

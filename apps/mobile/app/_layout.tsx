@@ -9,6 +9,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { tokenCache } from '@/lib/tokenCache';
+import { ProgressProvider } from '@/context/ProgressContext';
 
 // OAuth 登入走系統瀏覽器跳轉回 App 時，讓瀏覽器 session 正常關閉
 WebBrowser.maybeCompleteAuthSession();
@@ -56,7 +57,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY!} tokenCache={tokenCache}>
-        <RootLayoutNav />
+        <ProgressProvider>
+          <RootLayoutNav />
+        </ProgressProvider>
       </ClerkProvider>
     </SafeAreaProvider>
   );

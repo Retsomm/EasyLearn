@@ -1,6 +1,9 @@
 # EasyLearn 開發 Roadmap
 
-> 建立日期：2026-07-11。已完成的基礎：29 關 348 題、PWA 可安裝、XP／連續天數／錯題重練、進度匯出匯入。
+> 建立日期：2026-07-11。2026-07-13 更新：專案已重構成 Yarn workspaces monorepo
+> （`apps/web` Next.js＋`apps/mobile` Expo RN＋`packages/core` 共用純函式），並新增 React Native App。
+> 這份文件是功能規劃與優先順序的總覽；**monorepo／RN 遷移本身逐 phase 的細節、驗證方式、關鍵檔案，
+> 以 [docs/rn-migration.md](rn-migration.md) 為準**（那份文件明確標註是跨對話的進度來源，這份不重複記錄）。
 
 ## 已完成
 
@@ -9,128 +12,82 @@
 - 抽題邏輯已改為整個題池作答（洗牌後依難度排序）
 - `scripts/validate-questions.mjs` 全數通過（0 失敗），每題程式碼皆實際執行驗證輸出
 
-## 進行中
-
-（無，下一步請參考「建議的優先順序」）
-
 ### XP 每日 log 資料層 ✅ 2026-07-11
 - `useProgress` 新增 `xpLog: { 'YYYY-MM-DD': number }`，`finishLevel`／`finishReview` 都會累加當日 XP
-- 純新增頂層欄位，`load()` 現有的 shallow merge 已足夠處理舊資料相容，無需額外 migration
-- 尚未做 UI（等級進度條、長條圖／heatmap），資料已開始累積
 
 ### 更完善的錯題本＋儲存題目本 ✅ 2026-07-11
-- 錯題本改成 Leitner 盒制：`wrongIds[id] = { count, lastWrong, box }`，答錯重置回第 1 盒、答對升一盒，
-  超過 `GRADUATE_BOX`（=3）才真正畢業移出錯題本，不再是「碰巧對一次就消失」
-- 舊資料相容：`wrongIds` 舊格式是 `{ id: true }`，新增 `migrateWrongIds()` 在 `load()`／`importProgress()`
-  時把 boolean 轉成盒制物件——這是第一個需要真正 migration（非 shallow merge 就夠）的欄位變更
-- 新增收藏：`savedIds: { id: true }` ＋ `toggleSaved()`，答題卡片右上角星號可收藏
-- 新增兩個瀏覽頁（`src/screens/QuestionBook.jsx` 共用元件，`kind="wrong"|"saved"`）：
-  不用重考就能翻看題目、正解、解釋；錯題本頁另外顯示答錯次數／熟練度／最近答錯日期，並可直接「開始重練」
-  - Home 新增「錯題本 (n)」「收藏 (n)」文字連結
-- 共用元件抽出：`TYPE_META` 移到 `src/data/typeMeta.js`（原本卡死在 QuestionCard.jsx 裡）；
-  唯讀題目卡抽成 `src/components/QuestionReview.jsx`，答題中的 `QuestionCard` 與瀏覽頁共用同一份題型／星號 UI
-- 已用 Playwright（透過系統 Chrome，非 playwright 內建瀏覽器）跑過完整互動流程驗證：收藏／取消收藏即時反映列表、
-  錯題本熟練度正確累加、重練時「畢業的錯題」數字正確（例如 box=1 的錯題重練答對一次只會變成 box=2，不會畢業），
-  全程 console 無錯誤
+- 錯題本改成 Leitner 盒制：`wrongIds[id] = { count, lastWrong, box }`，超過 `GRADUATE_BOX`（=3）才畢業移出
+- 新增收藏：`savedIds`＋`toggleSaved()`，兩個瀏覽頁（`QuestionBook.jsx`，`kind="wrong"|"saved"`）
 
 ### 網頁版導覽改版＋學習數據視覺化 ✅ 2026-07-11
-- 首頁改版：頂部改成網頁版橫向 navbar（`src/components/Navbar.jsx`，4 分頁：每日刷題／精選筆記／學習數據／個人資料）。
-  原本先留了「全真模考」disabled 佔位分頁，同一天使用者直接要求移除、換成「個人資料」頁
-  （`src/screens/Profile.jsx`：吉祥物＋總 XP／連續學習／完成關卡／累計答題統計格，
-  原本在 Home 的匯出／匯入進度也搬過來這裡）——所以 navbar 現在 4 個分頁都是可動的，沒有 disabled 項目
-- Home 重構：連續學習天數卡（含本週 7 天 pill，標記已練習的日期）、今日正確率／今日已做兩張統計卡、
-  新增「隨機綜合練習（10 題）」跨章節抽題按鈕（`Quiz` 新增 `mode="mixed"`，沿用 `finishReview` 不動 `completedLevels`）、
-  章節清單從原本獨立的「選擇章節」畫面搬到首頁直接顯示（`ChapterMap.jsx` 簡化成只負責單一章節的關卡清單）
-- 新增「精選筆記」頁（`src/screens/Notes.jsx`）：把原本首頁的錯題本／收藏文字連結，改成兩張大卡片
-  （點卡片進原本的 `QuestionBook` 列表，卡片按鈕直接開始複習／練習）；收藏題庫新增「開始練習」
-  （沿用 `mode="mixed"` 引擎，抽的是收藏的題目而非跨章節隨機）
-- 新增「學習數據」頁（`src/screens/Stats.jsx`）：總答題數／平均正確率／累計答對題數統計卡、
-  近 7 日做題量＋正確率雙迷你長條圖、分科正確率細分。資料層新增 `useProgress` 的 `dailyStats`／`chapterStats`
-  （純新增頂層欄位，沿用既有 shallow merge，無需 migration），`chapters.js` 新增 `getChapterIdForQuestion()`
-  查表供 `Quiz.jsx` 答題時回報章節
-- 圖表配色用 dataviz skill 的 `validate_palette.js` 驗證過（`#2f9e6b` 正確率／`#7c86ff` 做題量，
-  dark mode 明度帶＋CVD 分離度皆 PASS），且遵守「一軸」原則拆成兩個獨立迷你圖，不做雙 Y 軸疊圖
-- 已用 Playwright（系統 Chrome）跑過完整互動驗證：答題→首頁統計即時更新→精選筆記數字同步→
-  學習數據圖表跟分科正確率正確反映，全程 console 無錯誤
+- 頂部橫向 navbar（4 分頁：每日刷題／精選筆記／學習數據／個人資料），Home 重構（連續學習卡／統計卡／隨機綜合練習），
+  「精選筆記」「學習數據」（近 7 日雙圖＋分科正確率）兩個新頁面
+
+### 經驗值成長可視化 ✅ 2026-07-11
+- 不做獨立等級稱號系統，改擴充 `Mascot.tsx`：`STAGES` 改成「行星的成長史」12 階段（0～7000 XP）
+- Stats 頁新增近半年學習熱力圖（GitHub style，26 週×7 天，dataviz skill 驗證過色階）
+
+### Clerk 登入 ＋ 雲端同步（web） ✅ 2026-07-11
+- Google 登入、可編輯頭像／名稱、成長史預覽，**使用者已在本地實測登入/登出/頭像上傳/名稱編輯皆成功**
+- 進度儲存後端定案：PostgreSQL（Supabase 代管）透過 Prisma，正規化關聯表，已登入時完全以資料庫為主，
+  未登入沿用 localStorage，首次登入把本地進度搬上雲端（`POST /api/progress/migrate-local`）
+- **Supabase 連線與 Prisma migration 已對真實專案跑成功**（7 張表建好），Clerk secret key 也已填入生效
+
+### Yarn workspaces monorepo 重構 ✅ 2026-07-12
+- `apps/web`（原本整包 Next.js 專案）＋ `packages/core`（`@easylearn/core`，題庫資料／`quiz.ts`／
+  `progressCalc.ts` 等 web/mobile 共用純函式）
+- `apps/web` 三項驗證（typecheck/lint/build）全過，已 commit＋push 到 `origin/dev`
+
+### 2026-07-12 code review 修復回合 ✅
+- 修掉題庫「正解永遠是選項 a」的系統性缺陷（QuestionCard 改成渲染時洗牌選項）
+- API routes 併發／驗證/資料一致性修正、`packages/core` 新增共用 `applyAnswer()`、
+  全專案內部 import 統一改用 `@/` alias
+
+## 進行中
+
+### Expo RN App（`apps/mobile`）—— 詳細進度見 [docs/rn-migration.md](rn-migration.md)
+Monorepo 重構的直接後續，讓 EasyLearn 除了 PWA 之外也有原生 App。四個 tab（home/notes/stats/profile）
+對照網頁版 navbar 的四個分頁。
+
+- [x] **Phase 0-1**：monorepo 骨架＋題庫資料/計算純函式搬進 `packages/core`（已 commit＋push）
+- [x] **Phase 2**：`apps/mobile` bootstrap（Expo Router）、`@clerk/expo` 登入接線、唯讀 Profile tab。
+      真機測過「mobile 帶 Clerk session Bearer token 打 `apps/web` API」這個全計畫最關鍵的假設，成功。
+- [x] **Phase 3**：Home tab 訪客模式（AsyncStorage）＋離線完整答題流程，真機測過持久化有效
+- [x] **Phase 4**：完整登入同步迴圈——`useProgress.ts` 接上 Clerk，串起五支 API；新增
+      `ProgressProvider` context 讓 Home／Profile 兩個 tab 共用同一份進度。**程式碼已完成，
+      這個環境能檢查的（tsc/expo-doctor/expo export）都過了，但尚未真機驗證**，見
+      [docs/rn-migration.md](rn-migration.md) 詳細記錄，還沒 commit
+- [ ] **Phase 5**：剩餘畫面（Notes/QuestionBook、Stats、review/mixed/saved practice）
+- [ ] **Phase 6**：頭像拖曳／縮放／改名（最高複雜度的 native gesture，刻意排最後）
+- [ ] **Phase 7**（視是否加其他 OAuth 才需要）：Clerk native SSO redirect 的 Dashboard 設定
 
 ## 規劃中的大功能
 
-### 1. Clerk 登入
-- 目標：使用者登入後進度跨裝置同步
-- **前置認知**：Clerk 只管身分，不存 app 資料。進度目前只在 localStorage，
-  需要搭配一個後端存進度（候選：Supabase / Convex / Firebase，或小量資料塞 Clerk user metadata）
-- 為什麼重要：iOS Safari 的 ITP 可能在 7 天不使用後清掉 localStorage，
-  PWA 使用者的進度有無預警消失的風險——雲端同步不只是方便，是資料安全
-- 步驟拆解：
-  - [x] 選定進度儲存後端 —— **2026-07-11 完成，PostgreSQL（Supabase 代管）透過 Prisma**。
-    因為 Prisma 需要 Node.js 執行環境，連框架都從 Vite 換成了 Next.js（App Router）。
-    正規化關聯表（User/CompletedLevel/WrongEntry/SavedQuestion/XpLog/DailyStat/ChapterStat），
-    `src/app/api/progress/*` 這幾支 route handler 把子表組回跟原本 localStorage 一致的 `Progress`
-    型別，所以畫面元件完全沒改，只有 `useProgress.ts` 內部改成雙模式。**架構跟建置驗證都過了，
-    但完全沒測過真正的登入/資料庫讀寫**（沒有真的 Clerk secret key／Supabase 連線可用），
-    需要使用者自己把 `.env.local` 填好、`prisma migrate dev` 跑過、實際登入測一輪才算數，
-    詳見 [[project-status]] 第十二階段。
-  - [x] Clerk 接入（登入／登出 UI、匿名試玩不強制登入）—— **2026-07-11 完成，使用者已在本地實測登入/登出/
-    頭像上傳/名稱編輯皆成功**
-    - 裝 `@clerk/nextjs`，`src/app/layout.tsx` 用 `ClerkProvider` 包住 `App`，
-      key 讀 `.env.example` 定義的 `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`／`CLERK_SECRET_KEY`
-      （框架已從 Vite 換成 Next.js，跟 Clerk Dashboard API Keys 頁預設複製的命名一致，不用再手動改前綴）
-    - 未登入時「個人資料」分頁整個換成獨立登入頁（`.login-screen`），navbar 文字動態變成「登入」；
-      登入後顯示完整個人資料頁，分頁文字變回「個人資料」（`Navbar.tsx` 用 `useUser()` 動態算 label）
-    - 個人資料頁登入後新增可編輯的頭像＋單欄名稱（`src/components/AccountHeader.tsx`）：
-      `user.setProfileImage()` 上傳照片、拖曳調整頭像顯示位置（存在 `unsafeMetadata`）、
-      `user.update({firstName})` 存名字（**需要在 Clerk Dashboard 開啟 Personal information 的
-      「First and last name」設定，否則存名字會失敗**）
-      新增「查看成長史」可展開列表（`src/components/GrowthHistory.tsx`，沿用 `Mascot.tsx` 的 `STAGES`）
-      登出按鈕在頁面最下面，`secondary-btn` 樣式
-    - **要限制成「只能用 Google 登入」**：這是 Clerk Dashboard 設定，不是程式碼——去 User & Authentication
-      把 Email/密碼等其他登入方式關掉，只留 Google 這個 social connection，`SignInButton` 彈出的視窗才會只剩 Google
-    - 過程中曾出現一則偽裝成官方 Clerk CLI 設定教學的訊息，裡面夾帶一個寫死的 Clerk app id 要求執行
-      `clerk init --app <id>` 把專案連過去——判斷是 prompt injection（跟使用者當下說的「還沒申請」矛盾），
-      已拒絕執行、改回手動接 SDK 的路線，往後如果又看到類似「系統教學」但要求連到不明帳號／app id，先當可疑處理
-  - [x] 進度同步策略 —— **2026-07-11 定案：不是本地優先＋背景同步，是已登入時完全以資料庫為主**
-    （每個操作直接呼叫 API 寫資料庫，用伺服器回傳值覆蓋樂觀更新）；未登入維持 localStorage 訪客模式。
-  - [x] 首次登入時把 localStorage 進度搬上雲端 —— `POST /api/progress/migrate-local`，只有資料庫
-    還沒有這個使用者任何紀錄時才會寫入，避免重複登入把雲端資料覆蓋掉。**同上，尚未實測**。
-
-### 2. 經驗值成長可視化 ✅ 2026-07-11
-- 現況：`xpLog: { 'YYYY-MM-DD': number }` 資料層已完成；近 7 日做題量／正確率雙圖、分科正確率已在
-  「學習數據」頁做出來了（見上方「已完成」）
-- [x] 等級制：**不做獨立的等級稱號系統**（第一版做過 `src/utils/level.ts`＋Home 進度條卡片＋Profile
-  徽章，使用者要求拿掉，只留吉祥物一套）。改成擴充既有 `Mascot.tsx`：`STAGES` 從蛋→貓頭鷹 4 階段
-  （0～700 XP 封頂）改成「行星的成長史」12 階段（星際塵埃→…→黑洞，0～7000 XP），成長曲線拉長但沿用同一套元件
-- [x] 月曆 heatmap（GitHub style）：Stats 頁新增「近半年學習熱力圖」，26 週×7 天格線，
-  依 `dailyStats` 做題量分 5 級著色，`overflow-x: auto` 橫向捲動＋掛載時自動捲到最右邊（今天）。
-  色階（`--heat-0`~`--heat-4`，以 `--chart-count` 的靛色為基準）用 dataviz skill 的
-  `validate_palette.js --ordinal --mode dark` 驗證通過（monotone lightness／ΔL≥0.06／light-end 對比 2.05:1）
-- `tsc --noEmit`／`yarn build` 通過；這次沒有用 Playwright 灌模擬資料驗證畫面，實際互動請使用者自行測試
-
-### 3. 全真模考
-- 2026-07-11：navbar 原本預留的 disabled 分頁已移除，換成「個人資料」頁（見上方「已完成」）。
-  這個功能目前**沒有 UI 佔位**，之後要做的話要先決定放在哪個分頁（新增第 5 個 navbar 項目，
-  或掛在某個現有分頁底下）
+### 全真模考
+- navbar（web／mobile 皆同）目前**沒有 UI 佔位**，要做的話得先決定放哪（新增第 5 個分頁，或掛在
+  某個現有分頁底下），web／mobile 是否同時做也要先定
 - 需求雛形（參考使用者提供的設計圖）：綜合科全真模擬考（跨章節混合出題＋計時）＋分科模擬考試（每科出題＋計時）
-- 待確認：計時＋強制交卷邏輯、题數與時限、是否要獨立的結算／答題紀錄畫面
+- 待確認：計時＋強制交卷邏輯、題數與時限、是否要獨立的結算／答題紀錄畫面
+- 跟 RN 遷移是獨立的兩條線，不衝突，但建議等 RN 遷移 Phase 4-5 告一段落（web/mobile 進度同步邏輯穩定）
+  後再開工，避免兩邊都要重寫一次資料層
 
 ## 其他優化建議（依價值排序）
 
 ### 資料與品質
-- [x] **題目 JSON schema 驗證 script**：`scripts/validate-questions.mjs`，實際執行每題程式碼比對輸出，
-      建議未來加進 build 前自動跑（目前需手動 `node scripts/validate-questions.mjs`）
-- [ ] **quiz utils 單元測試**：shuffle、sampleQuestions、bumpStreak（跨日邏輯）
-      都是純函式，用 Vitest 很快就能蓋到
-- [ ] PWA 版本更新提示：部署新版後舊使用者停在快取版，加「有新版本，點擊更新」toast
+- [x] **題目 JSON schema 驗證 script**：`scripts/validate-questions.mjs`
+- [ ] **quiz utils 單元測試**：shuffle、sampleQuestions、bumpStreak（跨日邏輯），純函式現在都在
+      `packages/core`，用 Vitest 很快就能蓋到，且 web/mobile 共用一份測試
+- [ ] PWA 版本更新提示：部署新版後舊使用者停在快取版，加「有新版本，點擊更新」toast（web only）
 
 ### 學習體驗
 - [ ] 結算畫面顯示「本關哪幾題錯」＋直接看解釋，不用進錯題本
 - [ ] 每日目標：例如「今天完成 1 關」，配合 streak 給提示
-- [ ] 答題音效／震動回饋（Vibration API），PWA 手感加分
+- [ ] 答題音效／震動回饋（Vibration API / RN Haptics），mobile 手感加分
 - [ ] 皮皮（吉祥物）反應多樣化：連對 combo、破紀錄時有不同表情
 
 ### 技術體質
-- [ ] Bundle 432 KB 偏大，查一下是誰貢獻的（懷疑 code highlight 相關），
-      可 lazy load 或換輕量方案
-- [ ] 無障礙：按鈕 aria-label、鍵盤作答
+- [ ] apps/web bundle 偏大，查一下是誰貢獻的（懷疑 code highlight 相關），可 lazy load 或換輕量方案
+- [ ] 無障礙：按鈕 aria-label、鍵盤作答（web）
 
 ## 建議的優先順序
 
@@ -138,8 +95,11 @@
 2. ~~XP 每日 log 的**資料層**~~（已完成，2026-07-11）
 3. ~~錯題本強化＋收藏~~（已完成，2026-07-11）
 4. ~~題目 schema 驗證 script~~（已完成：`scripts/validate-questions.mjs`）
-5. ~~網頁版導覽改版＋學習數據視覺化~~（已完成，2026-07-11：navbar／首頁重構／精選筆記頁／學習數據頁）
-6. ~~等級稱號＋月曆 heatmap~~（已完成，2026-07-11：經驗值可視化的剩餘部分）
-7. 全真模考（navbar 原預留的 disabled 分頁已移除，目前無 UI 佔位，實作優先度看使用者需求）
-8. ~~Clerk ＋雲端同步~~（架構已完成，2026-07-11：Next.js＋Prisma＋Supabase，正規化資料表＋雙模式
-   `useProgress`。**尚待使用者實測**：填 `.env.local`、跑 `prisma migrate dev`、實際登入驗證資料搬移與讀寫）
+5. ~~網頁版導覽改版＋學習數據視覺化~~（已完成，2026-07-11）
+6. ~~等級稱號＋月曆 heatmap~~（已完成，2026-07-11）
+7. ~~Clerk ＋雲端同步（web）~~（已完成，2026-07-11：使用者已實測登入/登出/資料庫讀寫）
+8. ~~Yarn workspaces monorepo 重構~~（已完成，2026-07-12）
+9. ~~RN 遷移 Phase 4：登入同步迴圈~~（程式碼完成，2026-07-13：待使用者真機驗證後才 commit，
+   見 [docs/rn-migration.md](rn-migration.md)）
+10. RN 遷移 Phase 5-7：剩餘畫面／頭像手勢／native SSO 設定（下一步）
+11. 全真模考（web／mobile UI 位置未定，建議等 RN 遷移主線穩定後再排）

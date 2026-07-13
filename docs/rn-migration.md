@@ -63,7 +63,98 @@
   - **使用者已在真機/模擬器驗證過（2026-07-12）**：Home tab 完整流程（選章節→答題→結算→回關卡地圖、首頁隨機綜合練習）跑過沒問題；AsyncStorage 跨「app 完全關閉重開」持久化確認有效（XP/streak/完成關卡都留著）；目前是淺色主題，可讀性沒問題（深色主題下 emoji 圖示是否跟系統字體不搭，還沒實測，留意即可，不阻塞這個 phase）。
   - **範圍界定（使用者當面確認，2026-07-12）**：Profile tab 未登入畫面原本寫著「未登入的訪客模式留到 Phase 3 做」，是 Phase 2 埋的預留承諾。這次確認過**這句話指的是訪客模式的資料引擎跟 Home tab 離線流程（已完成），不包含「Profile tab 本身在未登入時顯示訪客進度」**——Profile tab 未登入時仍只有登入按鈕，不會讀 AsyncStorage 顯示訪客統計。這塊使用者選擇留到 Phase 4（跟登入同步迴圈一併處理，屆時 Profile tab 的訪客/登入切換邏輯要一次做完整），`profile.tsx` 的提示文字已改成註明這件事，不要誤以為是遺漏。
   - 已 commit（`410a71a`）並 push 到 `origin/dev`。
-- [ ] **Phase 4**：完整登入同步迴圈（訪客進度搬遷到伺服器）。**尚未開始**——2026-07-12 一度想直接開工，結果發現 Phase 2 的關鍵假設根本沒真的驗證過（登入從沒真機成功過），這段時間全部在修 Phase 2 遺留的 bug（見上面 Phase 2 補記），Phase 4 本身的同步邏輯（`useProgress.ts` 接上 Clerk、`migrate-local`/`answer`/`save-toggle`/`finish-level`/`finish-review` 這五支 API）完全還沒動手。目前 Home tab（訪客 AsyncStorage）跟 Profile tab（登入後讀伺服器）是兩套互不相通的進度系統，這正是 Phase 4 要接起來的部分。
+- [x] **Phase 4：完整登入同步迴圈**（2026-07-13，**使用者已在 iOS 模擬器與 Android 模擬器分別實測成功**，
+      詳見本節最後的驗證紀錄；已可 commit）
+  - `apps/mobile/hooks/useProgress.ts` 的 `useProgressState()` 改成跟 `apps/web/src/hooks/useProgress.ts`
+    同一套雙模式邏輯：未登入沿用 Phase 3 的 AsyncStorage 訪客模式；已登入時用 `@clerk/expo` 的
+    `useAuth().getToken()` 拿 token，透過 `lib/api.ts` 的 `request()` 打 `apps/web` 既有的
+    `GET /api/progress`／`POST /api/progress/{migrate-local,answer,save-toggle,finish-level,finish-review}`
+    五支 API，伺服器回傳的權威 `Progress` 直接覆蓋本地樂觀更新（跟 web 版同一個設計：不是本地優先＋
+    背景同步，已登入時完全以伺服器回應為準）。
+  - **新增 `apps/mobile/context/ProgressContext.tsx`（`ProgressProvider`）**——這是跟 web 版行為不同、
+    mobile 特有的必要調整：web 的 `useProgress()` 只在 `App.tsx` 呼叫一次，往下用 props 傳給所有畫面；
+    但 mobile 用 Expo Router 的 tab 架構，Home tab（`app/(tabs)/index.tsx`）跟 Profile tab
+    （`app/(tabs)/profile.tsx`）是兩棵獨立的元件樹，各自呼叫 `useProgressState()` 會變成兩份互不相通
+    的 state，且登入搬遷（migrate-local）邏輯會被觸發兩次。改成 `ProgressProvider` 包在
+    `app/_layout.tsx` 的 `ClerkProvider` 內側（需要 Clerk 的 `useAuth`，所以一定要在 `ClerkProvider`
+    裡面），Home／Profile 兩個 tab 都改成從 `@/context/ProgressContext` 讀 `useProgress()`，共用同一份
+    progress state 跟同一次登入搬遷。
+  - `profile.tsx` 不再自己打 `GET /api/progress`／管理 `loading`／`progress` local state，改直接讀
+    context 提供的 `progress`／`hydrated`，登入/登出/SSO 錯誤處理邏輯完全沒動。
+  - **設計決定：本機讀取跟登入判斷的 race**——Phase 3 就有的 `hydrated` flag（AsyncStorage 讀取非同步）
+    這次多了一個新的race 要處理：登入搬遷的 `useEffect` 原本只依賴 `[isLoaded, isSignedIn]`，這次改成
+    多依賴 `hydrated`（`if (!isLoaded || !hydrated) return`）——因為本地讀取跟登入後打 API 誰先完成
+    不保證，沒有這道 guard 可能會先拿到伺服器資料、又被稍後才完成的本地讀取蓋掉。
+  - **這個環境能驗證的都驗證了**：`packages/core`／`apps/mobile`／`apps/web` 三個 `tsc --noEmit` 全過、
+    `expo-doctor` 19/20（唯一沒過的仍是 Phase 2 就有、刻意的 metro monorepo 設定，跟這次改動無關）、
+    `npx expo export --platform web` 成功（1356 modules，`/`／`/notes`／`/stats`／`/profile` 等 11 條
+    路由都正確輸出，證明 `ProgressProvider` 沒有造成任何 render/bundle 期的錯誤）。
+  - **完全沒有測過的部分（使用者要自己在真機/模擬器驗證才能定案）**：訪客刷題資料在登入瞬間是否正確
+    搬進資料庫（`migrate-local`）；已登入時答題／收藏／完成關卡是否正確寫回 `apps/web` 的 7 張表；
+    Home tab 跟 Profile tab 切換時進度數字是否即時同步（這正是這次改成 `ProgressProvider` context
+    要驗證的核心行為）；登出再登入是否讀到同一份雲端進度、且正確切回訪客模式的 AsyncStorage 資料。
+  - **2026-07-13 追加，使用者實測回報第一個 bug（iOS 模擬器）**：訪客先答完 12 題（Home 正確顯示
+    streak/正確率/已做題數），切到 Profile 登入後，Home 整頁變回全 0（等同 `defaultProgress`），
+    不是「維持登入前的數字」而是被洗成空的。
+    - **根因**：登入搬遷那段 `if (data.isNew) { const local = await loadLocal(); ... }` 又另外重新
+      讀了一次 AsyncStorage，而不是直接用當下畫面已經顯示、確定正確的 `progress` state。問題出在
+      寫回 AsyncStorage 的那個 effect（`AsyncStorage.setItem(...).catch(() => {})`）是 fire-and-forget、
+      沒有 await 的非同步寫入，登入那一刻最後一次寫入很可能還沒真的落盤，`loadLocal()` 這時讀到的是
+      舊值甚至完全空值——空的訪客進度就這樣被搬進資料庫，而且之後不會再重搬（資料庫已經有一筆
+      「非 isNew」的紀錄，即使內容是空的）。
+    - **修法**：新增 `progressRef`（`useEffect(() => { progressRef.current = progress }, [progress])`
+      同步鏡射目前的 `progress` state），搬遷時直接送 `progressRef.current`，不再呼叫 `loadLocal()`
+      重讀 AsyncStorage。`tsc --noEmit` 過。
+  - **2026-07-13 再追加，使用者第二次實測回報「未登入跟登入後資料還是不一致」（連續天數 1→0、
+    今日已做 30→20），但這次診斷後發現＊不是＊程式碼的 bug**：
+    - 徵得使用者同意後，直接用唯讀的 Prisma 查詢連 Supabase 確認了實際資料庫內容（一次性診斷，
+      沒有寫入任何資料，查完就把腳本刪掉，不是這條同步邏輯的常態做法）。
+    - 發現這次測試用的 Clerk 帳號，資料庫裡早在 2026-07-11（比 RN 遷移還早，應該是網頁版開發
+      期間）就已經留了 5 筆 `WrongEntry`（錯題本）紀錄。`isNew` 的判斷邏輯（見 Phase 4 一開始
+      的實作說明）是「`completedLevels`／`wrongEntries`／`savedQuestions`／`xpLogs` 四張表都空
+      才算新使用者」——這是刻意的保護機制（避免每次登入都拿裝置端資料覆蓋掉雲端真實進度），
+      但也代表**這個帳號的 `isNew` 從此永遠是 `false`**，不管訪客模式在裝置上刷了幾題，登入時
+      都會被判定「不是新使用者」而完全跳過搬遷，只顯示資料庫裡早就存在的舊資料。使用者看到的
+      「20 題／streak 0」正是資料庫裡某次已登入狀態刷題留下的舊紀錄，不是這次訪客的 30 題被
+      搬壞了。
+    - **結論**：`useProgress.ts` 的搬遷邏輯（含上面那次 `progressRef` 修法）本身沒有問題，只是
+      這個特定測試帳號因為帶著遷移前就有的舊資料，永遠無法命中「isNew」分支，沒辦法拿來驗證
+      搬遷路徑。**之後要驗證登入搬遷，必須用一個資料庫裡四張子表全空的全新帳號測試**（換一個
+      從沒登入過這個 app 的 Google 帳號最乾淨；或用 web 版「個人資料→刪除帳號」把舊帳號連
+      Clerk 身分一起刪掉重來，但那是不可逆操作）。**教訓**：這台機器上的測試帳號經過好幾輪
+      不同 phase 的測試（Phase 2 唯讀 Profile 測試、web 版原本的開發測試），很容易在資料庫裡
+      留下「不是空但也不是有意義」的殘餘資料，之後任何要驗證「首次登入搬遷」邏輯的測試，
+      第一步都要先確認測試帳號在資料庫裡真的是一張白紙，不要預設「這個帳號感覺沒認真用過」
+      就等於「資料庫是空的」。
+    - **這輪修法（`progressRef`）仍然還沒有用乾淨帳號重新驗證過**，下次要接續時，先用全新帳號
+      走一次「訪客刷題→登入→確認 Home 數字保留」，這次是真的能檢驗到搬遷邏輯本身。
+  - **2026-07-13 三度追加，加了臨時除錯 log 後第三次實測，才真正抓到根因**：在 `useProgress.ts`
+    的每個關鍵步驟（掛載讀取本機資料、寫回 AsyncStorage、GET /api/progress 回應、送出搬遷 body、
+    migrate-local 回應）跟 `apps/web` 的 `GET /api/progress`／`POST /api/progress/migrate-local`
+    兩支 route 都加了 `[progress-debug]` 前綴的 `console.log`，讓手機端 Metro 終端機跟網頁端
+    `next dev` 終端機兩邊的 log 可以對照看。
+    - 從 log 完整重建出流程：**app 啟動時 Clerk 用 Keychain 裡殘留的 session 幾乎立刻自動登入**
+      （不是使用者手動按登入），這時本地訪客資料根本還是空的就先觸發了一次搬遷判斷；接著使用者
+      手動登出、在訪客模式下多刷了幾題、再登入——但因為第一次自動登入時 `isNew` 已經翻成 `false`
+      （資料庫從那時起就不是空的），第二次登入時 `isNew` 依然是 `false`，直接跳過搬遷、顯示的是
+      更早以前的舊資料，跟訪客模式剛累積的新資料對不起來。
+    - **結論確認**：不是 race condition、不是搬遷邏輯寫錯，就是「終身只搬一次」設計下，反覆登出
+      /登入本來就不會觸發第二次搬遷——這跟上一輪（第二次追加）發現的成因是同一類問題，這次用
+      log 徹底證實了。跟使用者確認過，**維持「只搬一次」設計不變**，之後測試／使用都不要預期
+      「登出再登入」會重新同步。
+    - **真正乾淨的驗證**：把資料庫整個清空兩次（每次都先跟使用者確認過範圍才動手，用一次性
+      Prisma 腳本 `prisma.user.deleteMany({})` 靠 `onDelete: Cascade` 連帶清光 6 張子表，腳本
+      用完即刪，不留在 repo 裡）＋裝置端徹底清掉（iOS 用 `xcrun simctl uninstall` 再
+      `npx expo run:ios` 重裝；Android 用 `adb shell pm clear com.retsnom.easylearnmobile`
+      清資料，不用整個重裝重 build），確保 Clerk session 也真的被清掉、不會一開 app 就自動登入。
+      照「先訪客刷題→再登入一次，中間不登出」這個順序，**iOS 模擬器與 Android 模擬器都各自
+      實測成功**：`isNew: true` 正確觸發搬遷、送出的訪客資料（`wrongIdsCount`／`dailyStats` 等）
+      跟搬遷後資料庫回傳的資料完全一致，Home tab 數字登入前後沒有變動。
+    - 驗證通過後，除錯用的 `console.log` 已經全部清掉（`useProgress.ts` 只留下 `progressRef` 這個
+      正式修法，兩支 API route 恢復乾淨），`tsc --noEmit`（三個 package）／`oxlint` 都重新跑過確認過。
+  - **Phase 4 到此可以視為完成並 commit**：登入搬遷、雙 tab 共用 progress state、iOS／Android 
+    真機（模擬器）搬遷路徑都驗證過。「反覆登出登入不會重新同步」是刻意的既有設計（跟 web 版一致），
+    不是待辦事項。
 - [ ] **Phase 5**：剩餘畫面（Notes/QuestionBook、Stats、review/mixed/savedpractice）。
 - [ ] **Phase 6**：頭像拖曳／縮放／改名（最高複雜度的 native gesture，刻意排最後）。
 - [ ] **Phase 7**（視是否加 OAuth 才需要）：Clerk native SSO redirect 的 Dashboard 設定。
