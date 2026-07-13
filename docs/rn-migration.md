@@ -197,8 +197,8 @@
     Prisma `WrongEntry.box` 資料庫欄位本身刻意保留沒動**（一律寫 1，不再遞增）——避免多動一次
     schema migration，這欄位現在只是歷史包袱，之後如果要徹底清乾淨可以再考慮拿掉。這個環境驗證過
     `apps/web`／`apps/mobile` 的 `tsc --noEmit`、`web` 的 `lint`／`build`、`mobile` 的
-    `expo export --platform web`，都過；**新規則本身的效果（答對後錯題確實從清單消失）使用者
-    還沒回報驗證過**。
+    `expo export --platform web`，都過；**2026-07-13 使用者已在真機/模擬器測過，答對後錯題確實
+    從清單消失，符合預期**。已 commit（`18de9d2`）並 push 到 `origin/dev`。
 - [ ] **Phase 6**：頭像拖曳／縮放／改名（最高複雜度的 native gesture，刻意排最後）。
 - [ ] **Phase 7**（視是否加 OAuth 才需要）：Clerk native SSO redirect 的 Dashboard 設定。
 
