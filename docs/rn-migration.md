@@ -155,7 +155,42 @@
   - **Phase 4 到此可以視為完成並 commit**：登入搬遷、雙 tab 共用 progress state、iOS／Android 
     真機（模擬器）搬遷路徑都驗證過。「反覆登出登入不會重新同步」是刻意的既有設計（跟 web 版一致），
     不是待辦事項。
-- [ ] **Phase 5**：剩餘畫面（Notes/QuestionBook、Stats、review/mixed/savedpractice）。
+- **2026-07-13，Phase 5 開工前追加**：使用者反映 apps/mobile 淺色主題太刺眼，已把
+  `useColorScheme`（含 `.web.ts` 變體）鎖死回傳 `dark`，不再看裝置系統設定；`Colors.ts`
+  的 dark 色票從刺眼的純黑 `#000`／純白 `#fff` 改成柔和的 `#121212`／`#e6e6e6`。過程中
+  發現 `Icon.tsx` 原本用 `react-native` 原生 `Text` 顯示非 emoji 符號（`✕←→›↺`），預設黑字
+  在深色背景幾乎全隱形（真正的彩色 emoji 圖示不受影響），改成從 `components/Themed.tsx`
+  匯入 `Text` 讓它跟著主題文字色走。這是暫時性的過渡措施，不是 Phase 5/6 要做的「星際 HUD」
+  視覺（那個之後會直接取代 Colors.ts 這套機制），**之後真的動視覺 phase 時要記得這裡的
+  強制 dark 是暫時的，不要誤以為是最終設計**。已 commit（`98c3923`）並 push 到 `origin/dev`。
+  這個環境沒辦法看實際畫面，使用者尚未回報確認過修好之後的顯示效果。
+- [x] **Phase 5：剩餘畫面**（2026-07-13 實作完成，**尚未經使用者在模擬器/真機驗證**）
+  - 新增 `apps/mobile/screens/{Notes,QuestionBook,QuestionReview,Stats}.tsx`：邏輯／資料流對照
+    `apps/web/src/screens/{Notes,QuestionBook,Stats}.tsx` 與 `apps/web/src/components/QuestionReview.tsx`，
+    同樣呼叫 `packages/core` 的 `getWrongQuestions`/`getWrongEntries`/`getSavedQuestions`/`REVIEW_SIZE`
+    等既有函式，畫面改用 RN 的 View/Text/Pressable/ScrollView＋StyleSheet 重寫。
+  - `app/(tabs)/notes.tsx` 取代原本的 `ComingSoon` 佔位畫面，用跟 `app/(tabs)/index.tsx`（Home tab）
+    同一種手法——一個 `view` 狀態機（notes/wrongbook/savedbook/review/savedpractice）在單一 tab 內
+    切畫面，`review`/`savedpractice` 直接複用 Phase 3 就有的 `Quiz` 元件（`mode="review"`／
+    `mode="mixed"`），跟 Home tab 各自獨立一個狀態機、但共用同一份 `ProgressProvider` context。
+  - `app/(tabs)/stats.tsx` 取代 `ComingSoon`，是單一唯讀畫面（不需要 view 狀態機，跟 Profile tab
+    同構）。`screens/Stats.tsx` 把 web 版的日期／熱力圖／統計計算邏輯整段搬過來（沒有搬進
+    `packages/core`，因為這些函式只有 UI 層在用，不是 web/mobile 共用的資料邏輯），熱力圖用
+    RN 的 `ScrollView horizontal` 取代 web 版的 CSS overflow-x scroll。
+  - **刻意跟 web 版不同、屬於 MVP 簡化，不是漏做**：熱力圖格子跟迷你長條圖拿掉了 web 版滑鼠
+    hover 才有的 `title` tooltip——觸控裝置本來就沒有 hover 這個互動，跟 Phase 3 `CodeBlock`/
+    `Icon.tsx` 用 emoji 頂替 SVG 圖示是同一個「先求功能完整，不追求像素級一致視覺」原則。
+  - 沒用到的 `components/ComingSoon.tsx`（Phase 2/3 的四個佔位畫面已經全部被真正內容取代）
+    已直接刪除，不留 dead code。
+  - **這個環境能驗證的都驗證了**：`apps/mobile` `tsc --noEmit` 過、`expo-doctor` 19/20（唯一沒過的
+    仍是 Phase 2 就有、刻意的 metro monorepo 設定，跟這次改動無關）、`npx expo export --platform web`
+    成功（1358 modules，`/notes`／`/stats` 兩條新路由都正確輸出）。
+  - **完全沒有測過的部分（使用者要自己在真機/模擬器驗證才能定案）**：Notes tab 四張卡片／清單的
+    觸控互動是否正常（尤其卡片本身可點開清單、卡片內又有一個獨立的「開始複習/開始練習」按鈕，
+    這種巢狀 `Pressable` 在 RN 的觸控responder 機制跟 web 的事件冒泡不是同一套，行為需要真機確認）；
+    Stats tab 熱力圖橫向捲動手感、迷你長條圖數字是否對得上；`review`／`savedpractice` 兩個模式
+    重用 `Quiz` 元件后結算/離開流程是否正確；深色主題下這幾個新畫面的顏色（尤其錯題卡的紅色調、
+    收藏卡的藍色調）是否跟其他畫面一致、看起來舒服。
 - [ ] **Phase 6**：頭像拖曳／縮放／改名（最高複雜度的 native gesture，刻意排最後）。
 - [ ] **Phase 7**（視是否加 OAuth 才需要）：Clerk native SSO redirect 的 Dashboard 設定。
 
