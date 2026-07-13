@@ -122,7 +122,7 @@ export const useProgressState = () => {
     (questionId: string, correct: boolean, chapterId?: string) => {
       setProgress((p) => applyAnswer(p, questionId, correct, chapterId));
 
-      if (isSignedIn) {
+      if (isSignedIn && migratedRef.current) {
         getToken()
           .then((token) =>
             postJson('/api/progress/answer', { questionId, correct, chapterId, today: todayStr() }, token),
@@ -143,7 +143,7 @@ export const useProgressState = () => {
         return { ...p, savedIds };
       });
 
-      if (isSignedIn) {
+      if (isSignedIn && migratedRef.current) {
         getToken()
           .then((token) => postJson('/api/progress/save-toggle', { questionId }, token))
           .then(setProgress)
@@ -169,7 +169,7 @@ export const useProgressState = () => {
         };
       });
 
-      if (isSignedIn) {
+      if (isSignedIn && migratedRef.current) {
         getToken()
           .then((token) =>
             postJson(
@@ -195,7 +195,7 @@ export const useProgressState = () => {
         xpLog: bumpXpLog(p.xpLog, xpEarned),
       }));
 
-      if (isSignedIn) {
+      if (isSignedIn && migratedRef.current) {
         getToken()
           .then((token) => postJson('/api/progress/finish-review', { xpEarned, today: todayStr() }, token))
           .then(setProgress)

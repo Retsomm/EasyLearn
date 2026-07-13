@@ -72,7 +72,7 @@ export default function ProfileScreen() {
   const totalAnswered = Object.values(progress.dailyStats ?? {}).reduce((n, d) => n + d.total, 0);
 
   return (
-    <View style={styles.container}>
+    <View style={containerStyle}>
       <Text style={styles.title}>
         {user?.firstName ?? user?.primaryEmailAddress?.emailAddress ?? '已登入'}
       </Text>
