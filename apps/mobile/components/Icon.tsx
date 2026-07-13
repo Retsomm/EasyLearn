@@ -1,4 +1,4 @@
-import { Text } from 'react-native';
+import { Text } from '@/components/Themed';
 import type { IconName } from '@easylearn/core';
 
 // Phase 3 MVP：先用 emoji 頂替 web 版的 SVG 圖示（apps/web/src/components/Icons.tsx），
