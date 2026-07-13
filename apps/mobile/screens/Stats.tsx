@@ -286,6 +286,7 @@ const styles = StyleSheet.create({
   tileLabel: {
     fontFamily: fonts.mono.regular,
     fontSize: 11,
+    // 一次性淡化標籤用的透明度，跟 colors 裡既有的 cyan/primary 系列 token 沒有對應值
     color: 'rgba(95, 240, 224, 0.55)',
   },
   tileWideLabel: {
@@ -310,6 +311,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 1.5,
+    // 一次性淡化標籤用的透明度，跟 colors 裡既有的 cyan 系列 token 沒有對應值
     color: 'rgba(95, 240, 224, 0.65)',
     marginTop: 12,
   },
@@ -323,7 +325,7 @@ const styles = StyleSheet.create({
   heatmapCard: {
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: 'rgba(95, 240, 224, 0.18)',
+    borderColor: colors.optionBorder,
     padding: 16,
   },
   heatmapRow: {
@@ -392,7 +394,7 @@ const styles = StyleSheet.create({
     gap: 16,
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: 'rgba(95, 240, 224, 0.18)',
+    borderColor: colors.optionBorder,
     paddingTop: 18,
     paddingHorizontal: 16,
     paddingBottom: 8,
@@ -455,7 +457,7 @@ const styles = StyleSheet.create({
   chapterCard: {
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: 'rgba(95, 240, 224, 0.18)',
+    borderColor: colors.optionBorder,
     padding: 16,
     gap: 8,
   },

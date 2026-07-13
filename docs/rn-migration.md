@@ -512,7 +512,7 @@
       最外層的 `modalBackdrop.onPress` 觸發關閉。
     - **正確架構（這次徹底改結構，不再只是調參數）**：背景（點擊關閉）跟卡片本體改成
       **手足關係**，不是卡片包在背景 Pressable 裡面：
-      ```
+      ```tsx
       <View modalRoot>                         {/* 純容器，不接觸控 */}
         <Pressable modalBackdrop onPress={close} />  {/* 鋪滿全螢幕，負責變暗＋點擊關閉 */}
         <View modalCardWrap pointerEvents="box-none">  {/* 鋪滿全螢幕、flex-end 對齊，

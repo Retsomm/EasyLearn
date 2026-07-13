@@ -375,7 +375,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.sans.medium,
     fontSize: 14,
-    fontWeight: '600',
     color: colors.ink,
     borderWidth: 1,
     borderColor: colors.optionBorder,

@@ -5,11 +5,13 @@ import Icon from '@/components/Icon';
 import { colors, fonts } from '@/constants/theme';
 import { chapters, type IconName, type Progress } from '@easylearn/core';
 
-const STATUS_COLOR: Record<IconName, string> = {
+type StatusIcon = 'lock' | 'check-circle' | 'play';
+
+const STATUS_COLOR: Record<StatusIcon, string> = {
   lock: colors.locked,
   'check-circle': colors.cyan,
   play: colors.primary,
-} as Record<IconName, string>;
+};
 
 interface ChapterMapProps {
   chapterId: string | null;
@@ -37,7 +39,7 @@ export default function ChapterMap({ chapterId, progress, onStartLevel, onBack }
         const record = progress.completedLevels[level.id];
         const prevDone = i === 0 || progress.completedLevels[chapter.levels[i - 1].id];
         const locked = !prevDone;
-        const statusIcon: IconName = locked ? 'lock' : record ? 'check-circle' : 'play';
+        const statusIcon: StatusIcon = locked ? 'lock' : record ? 'check-circle' : 'play';
         return (
           <Pressable
             key={level.id}

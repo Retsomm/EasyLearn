@@ -8,27 +8,31 @@ import Svg, { Polygon } from 'react-native-svg';
 // 'tl-br' = 切左上/右下角（.primary-btn 用，notch-sm=12）
 export type NotchCorners = 'tr-bl' | 'tl-br';
 
-const buildPoints = (w: number, h: number, n: number, corners: NotchCorners): string => {
-  const notch = Math.min(n, w / 2, h / 2);
+// inset：邊框寬度的一半，讓 stroke（畫在路徑正中央、一半往外一半往內）完全落在 Svg 畫布內，
+// 不會被容器邊界裁掉一半。inset=0（無邊框）時跟原本行為完全一致。
+const buildPoints = (w: number, h: number, n: number, corners: NotchCorners, inset: number = 0): string => {
+  const iw = w - inset * 2;
+  const ih = h - inset * 2;
+  const notch = Math.min(n, iw / 2, ih / 2);
   const pts =
     corners === 'tr-bl'
       ? [
           [0, 0],
-          [w - notch, 0],
-          [w, notch],
-          [w, h],
-          [notch, h],
-          [0, h - notch],
+          [iw - notch, 0],
+          [iw, notch],
+          [iw, ih],
+          [notch, ih],
+          [0, ih - notch],
         ]
       : [
           [notch, 0],
-          [w, 0],
-          [w, h - notch],
-          [w - notch, h],
-          [0, h],
+          [iw, 0],
+          [iw, ih - notch],
+          [iw - notch, ih],
+          [0, ih],
           [0, notch],
         ];
-  return pts.map((p) => p.join(',')).join(' ');
+  return pts.map((p) => `${p[0] + inset},${p[1] + inset}`).join(' ');
 };
 
 interface NotchedViewProps {
@@ -66,7 +70,7 @@ export default function NotchedView({
       {size ? (
         <Svg width={size.width} height={size.height} style={StyleSheet.absoluteFill}>
           <Polygon
-            points={buildPoints(size.width, size.height, notch, corners)}
+            points={buildPoints(size.width, size.height, notch, corners, borderWidth / 2)}
             fill={backgroundColor}
             stroke={borderColor}
             strokeWidth={borderWidth}

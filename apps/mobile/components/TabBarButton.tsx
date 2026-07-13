@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, type PressableProps } from 'react-native';
+import { Pressable, StyleSheet, type PressableProps, type PressableStateCallbackType } from 'react-native';
 
 import { colors } from '@/constants/theme';
 
@@ -16,7 +16,11 @@ export default function TabBarButton({ children, style, accessibilityState, ...r
     <Pressable
       {...rest}
       accessibilityState={accessibilityState}
-      style={[styles.base, focused && styles.active, style as never]}
+      style={(state: PressableStateCallbackType) => [
+        styles.base,
+        focused && styles.active,
+        typeof style === 'function' ? style(state) : style,
+      ]}
     >
       {children}
     </Pressable>
