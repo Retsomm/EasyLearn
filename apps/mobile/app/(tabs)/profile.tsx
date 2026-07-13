@@ -1,46 +1,22 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth, useSSO, useUser } from '@clerk/expo';
-import type { Progress } from '@easylearn/core';
 
 import { Text, View } from '@/components/Themed';
-import { request } from '@/lib/api';
+import { useProgress } from '@/context/ProgressContext';
 
-// Phase 2：唯讀 Profile——只讀 GET /api/progress 顯示 XP/streak/關卡數，不寫入。
-// 這個畫面也是驗證「mobile 帶 Bearer token 打 web API 不用改 middleware」這個關鍵假設的地方。
+// Phase 4：不再自己打 GET /api/progress，改讀 ProgressProvider 共用的 state——跟 Home tab
+// 是同一份進度，登入時的搬遷（migrate-local）也只會在 provider 裡觸發一次。
 export default function ProfileScreen() {
-  const { isLoaded, isSignedIn, getToken, signOut } = useAuth();
+  const { isLoaded, isSignedIn, signOut } = useAuth();
   const { user } = useUser();
   const { startSSOFlow } = useSSO();
-  const [progress, setProgress] = useState<Progress | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { progress, hydrated } = useProgress();
   const [error, setError] = useState<string | null>(null);
   const [signingIn, setSigningIn] = useState(false);
   const insets = useSafeAreaInsets();
   const containerStyle = [styles.container, { paddingTop: insets.top }];
-
-  const loadProgress = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const token = await getToken();
-      const data = await request<{ progress: Progress }>('/api/progress', { token });
-      setProgress(data.progress);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '讀取進度失敗');
-    } finally {
-      setLoading(false);
-    }
-  }, [getToken]);
-
-  // 只在 isSignedIn 變成 true 時打一次，不能依賴 loadProgress 本身：
-  // Clerk 的 getToken 每次 render 不保證是同一個 reference，若依賴 loadProgress
-  // 會導致這個 effect 每次 render 都重跑，變成無限狂打 GET /api/progress
-  useEffect(() => {
-    if (isSignedIn) loadProgress();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn]);
 
   const handleSignIn = async () => {
     setError(null);
@@ -84,9 +60,7 @@ export default function ProfileScreen() {
     return (
       <View style={containerStyle}>
         <Text style={styles.title}>登入 EasyLearn</Text>
-        <Text style={styles.subtitle}>
-          登入後可在多裝置同步學習進度；Home tab 已支援訪客模式離線答題，這裡顯示訪客進度留到 Phase 4（登入同步迴圈）一併處理
-        </Text>
+        <Text style={styles.subtitle}>登入後可在多裝置同步學習進度；未登入也能繼續刷題，進度先存在這台裝置。</Text>
         <Pressable style={styles.button} onPress={handleSignIn}>
           <Text style={styles.buttonText}>使用 Google 登入</Text>
         </Pressable>
@@ -95,18 +69,17 @@ export default function ProfileScreen() {
     );
   }
 
-  const totalAnswered = Object.values(progress?.dailyStats ?? {}).reduce((n, d) => n + d.total, 0);
+  const totalAnswered = Object.values(progress.dailyStats ?? {}).reduce((n, d) => n + d.total, 0);
 
   return (
-    <View style={styles.container}>
+    <View style={containerStyle}>
       <Text style={styles.title}>
         {user?.firstName ?? user?.primaryEmailAddress?.emailAddress ?? '已登入'}
       </Text>
 
-      {loading && <ActivityIndicator style={styles.spinner} />}
-      {error && <Text style={styles.error}>{error}</Text>}
+      {!hydrated && <ActivityIndicator style={styles.spinner} />}
 
-      {progress && (
+      {hydrated && (
         <View style={styles.statGrid}>
           <StatItem label="總 XP" value={progress.xp} />
           <StatItem label="連續學習" value={`${progress.streak.count} 天`} />
