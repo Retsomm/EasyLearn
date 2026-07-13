@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: '隱私權政策 — EasyLearn',
 }
 
-const CONTACT_EMAIL = '112182ssss@gmail.com'
+const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? '112182ssss@gmail.com'
 
 const PrivacyPage = () => {
   return (
@@ -63,19 +63,19 @@ const PrivacyPage = () => {
       <p>本服務使用以下第三方服務商處理資料，請參考各自的隱私權政策了解其資料處理方式：</p>
       <ul style={styles.ul}>
         <li>
-          <a href="https://clerk.com/legal/privacy" target="_blank" rel="noreferrer">
+          <a href="https://clerk.com/legal/privacy" target="_blank" rel="noreferrer noopener">
             Clerk
           </a>
           ——帳號驗證、Google 登入、大頭貼儲存
         </li>
         <li>
-          <a href="https://supabase.com/privacy" target="_blank" rel="noreferrer">
+          <a href="https://supabase.com/privacy" target="_blank" rel="noreferrer noopener">
             Supabase
           </a>
           ——學習進度資料庫代管
         </li>
         <li>
-          <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noreferrer">
+          <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noreferrer noopener">
             Vercel
           </a>
           ——網頁版服務代管
