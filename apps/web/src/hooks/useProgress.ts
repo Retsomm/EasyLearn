@@ -183,11 +183,20 @@ export const useProgress = () => {
     }
   }
 
+  // 清除本機殘留進度：刪除帳號或使用者手動要求清除時呼叫。
+  // 不只是清 localStorage，也要同步重置記憶體中的 progress state，
+  // 否則畫面（尤其是尚未觸發重新讀取的頁面）還會顯示清除前的舊資料。
+  const resetLocalProgress = () => {
+    localStorage.removeItem(STORAGE_KEY)
+    setProgress(defaultProgress)
+  }
+
   return {
     progress,
     answerQuestion,
     toggleSaved,
     finishLevel,
     finishReview,
+    resetLocalProgress,
   }
 }

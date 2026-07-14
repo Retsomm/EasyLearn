@@ -46,7 +46,8 @@ const navGroupOfChapter = (levelId: string): string | null =>
   chapters.find((ch) => ch.levels.some((l) => l.id === levelId))?.id ?? null
 
 const App = () => {
-  const { progress, answerQuestion, toggleSaved, finishLevel, finishReview } = useProgress()
+  const { progress, answerQuestion, toggleSaved, finishLevel, finishReview, resetLocalProgress } =
+    useProgress()
   const [view, setView] = useState<View>({ name: 'home' })
 
   const startLevel = (levelId: string) => {
@@ -187,7 +188,7 @@ const App = () => {
       case 'stats':
         return <Stats progress={progress} />
       case 'profile':
-        return <Profile progress={progress} />
+        return <Profile progress={progress} onClearLocalData={resetLocalProgress} />
       default:
         return (
           <Home

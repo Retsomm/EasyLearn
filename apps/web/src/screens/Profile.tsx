@@ -8,13 +8,22 @@ import { chapters, getStage, getNextStage, type Progress } from '@easylearn/core
 
 interface ProfileProps {
   progress: Progress
+  onClearLocalData: () => void
 }
 
-const Profile = ({ progress }: ProfileProps) => {
+const Profile = ({ progress, onClearLocalData }: ProfileProps) => {
   const [showGrowth, setShowGrowth] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const { user, isSignedIn, isLoaded } = useUser()
   const { signOut } = useClerk()
+
+  const handleClearLocalData = () => {
+    const confirmed = window.confirm(
+      '確定要清除本機暫存的學習資料嗎？此操作無法復原，已同步到雲端的資料不受影響。',
+    )
+    if (!confirmed) return
+    onClearLocalData()
+  }
 
   const handleDeleteAccount = async () => {
     const confirmed = window.confirm('確定要刪除帳號嗎？此操作無法復原，雲端學習進度會一併刪除。')
@@ -23,6 +32,9 @@ const Profile = ({ progress }: ProfileProps) => {
     try {
       const res = await fetch('/api/account', { method: 'DELETE' })
       if (!res.ok) throw new Error('delete account failed')
+      // 刪除帳號後本機仍殘留 localStorage 進度；不清掉的話，下次登入（含用同帳號重新註冊）
+      // 會被判定成訪客進度，透過 migrate-local 把舊資料搬回新帳號，造成「殘留舊資料」。
+      onClearLocalData()
       await signOut()
     } catch (err) {
       console.error('delete account failed', err)
@@ -117,6 +129,13 @@ const Profile = ({ progress }: ProfileProps) => {
 
       <h3 className="section-title">帳號設定</h3>
       <div className="account-list">
+        <button className="account-list-item" onClick={handleClearLocalData}>
+          <span>
+            <Icon name="trash" size={15} />
+            清除資料
+          </span>
+          <Icon className="account-list-chevron" name="chevron-right" size={16} />
+        </button>
         <button className="account-list-item" onClick={() => signOut()}>
           <span>
             <Icon name="logout" size={15} />
