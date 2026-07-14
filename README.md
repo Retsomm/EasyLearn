@@ -1,5 +1,5 @@
 # EasyLearn
-
+<img width="1024" height="500" alt="feature-graphic-1024x500" src="https://github.com/user-attachments/assets/9d91eb20-927c-47d5-b0e2-3f925f0b259f" />
 JavaScript／React 學習刷題 App：關卡制刷題（對照 MDN《JavaScript Guide》與 react.dev
 《Learn React》規劃課綱）、錯題本（Leitner 盒制）、收藏題、XP／連續學習／成長史動畫、
 近半年學習熱力圖，支援訪客離線模式與 Google 登入雲端同步。同時有網頁版（PWA）與 Android／iOS
