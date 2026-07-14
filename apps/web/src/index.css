@@ -1518,11 +1518,41 @@ button {
   color: var(--cyan);
 }
 
-.growth-panel {
-  margin-top: 16px;
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 360px;
+  max-height: 80vh;
+  overflow-y: auto;
   padding: 16px;
   background: var(--card);
   border: 1px solid rgba(95, 240, 224, 0.18);
+  border-radius: var(--radius);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.modal-header .section-title {
+  margin: 0;
+}
+
+.modal-close {
+  flex-shrink: 0;
 }
 
 .growth-history {
@@ -1665,6 +1695,11 @@ button {
   margin: 0 0 12px;
 }
 
+.login-clear-btn {
+  margin-top: 8px;
+  color: var(--ink-faint);
+}
+
 .account-header {
   display: flex;
   flex-direction: column;
@@ -1780,12 +1815,6 @@ button {
   font-size: 17px;
   font-weight: 700;
   color: var(--ink);
-}
-
-.account-userid {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: rgba(95, 240, 224, 0.5);
 }
 
 .account-name-input {

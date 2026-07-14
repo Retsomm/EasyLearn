@@ -71,6 +71,7 @@ export const useProgress = () => {
   const [progress, setProgress] = useState(defaultProgress)
   const [hydrated, setHydrated] = useState(false)
   const migratedRef = useRef(false)
+  const prevIsSignedInRef = useRef(isSignedIn)
 
   // 掛載後立刻補讀一次本機 localStorage（不用等 Clerk 的 isLoaded），訪客模式才能馬上看到資料
   useEffect(() => {
@@ -80,10 +81,16 @@ export const useProgress = () => {
 
   // 訪客模式：跟以前一樣，任何 progress 變動都寫回 localStorage。
   // 用 hydrated 擋住「掛載當下那一輪」：那一輪 progress 還是初始的 defaultProgress，
-  // 這裡如果沒擋，會搶在上面那個 effect 讀到真資料之前，先把 localStorage 洗成空的
+  // 這裡如果沒擋，會搶在上面那個 effect 讀到真資料之前，先把 localStorage 洗成空的。
+  // 另外用 prevIsSignedInRef 擋住「剛從已登入切成未登入」的那一輪：這個當下 progress state
+  // 還是切換前的雲端資料（要等下面登出效果的 setProgress(load()) 才會變成訪客資料），
+  // 如果這裡沒擋，會把切換前的舊雲端資料寫回 localStorage，蓋掉 resetLocalProgress 剛清空的內容，
+  // 讓下面的登出效果讀回這份「復活」的舊資料——這正是刪除帳號後重新登入還會看到舊資料殘留的成因。
   useEffect(() => {
     if (!hydrated) return
-    if (!isSignedIn) localStorage.setItem(STORAGE_KEY, JSON.stringify(progress))
+    const justSignedOut = prevIsSignedInRef.current && !isSignedIn
+    prevIsSignedInRef.current = isSignedIn
+    if (!isSignedIn && !justSignedOut) localStorage.setItem(STORAGE_KEY, JSON.stringify(progress))
   }, [progress, isSignedIn, hydrated])
 
   // 登入狀態切換：登入時去讀資料庫（第一次登入且資料庫是空的，就把訪客進度搬過去）；
@@ -183,12 +190,14 @@ export const useProgress = () => {
     }
   }
 
-  // 清除本機殘留進度：刪除帳號或使用者手動要求清除時呼叫。
-  // 不只是清 localStorage，也要同步重置記憶體中的 progress state，
-  // 否則畫面（尤其是尚未觸發重新讀取的頁面）還會顯示清除前的舊資料。
+  // 清除本機殘留進度：刪除帳號或使用者手動要求清除本機快取時呼叫。
+  // localStorage 一律清除；但記憶體中的 progress state 只有訪客身分才重置——
+  // 已登入使用者的 progress 是雲端資料的權威副本，清本機快取不代表雲端資料被清掉，
+  // 畫面不該瞬間歸零。刪除帳號流程則交給呼叫端接著執行的 signOut()：
+  // 之後 isSignedIn 變 false 的 effect 會重新讀（已清空的）localStorage，自然歸零。
   const resetLocalProgress = () => {
     localStorage.removeItem(STORAGE_KEY)
-    setProgress(defaultProgress)
+    if (!isSignedIn) setProgress(defaultProgress)
   }
 
   return {

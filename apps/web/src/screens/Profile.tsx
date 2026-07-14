@@ -23,6 +23,7 @@ const Profile = ({ progress, onClearLocalData }: ProfileProps) => {
     )
     if (!confirmed) return
     onClearLocalData()
+    alert('本機資料已清除')
   }
 
   const handleDeleteAccount = async () => {
@@ -69,6 +70,10 @@ const Profile = ({ progress, onClearLocalData }: ProfileProps) => {
               使用 Google 登入
             </button>
           </SignInButton>
+          <button className="text-btn login-clear-btn" onClick={handleClearLocalData}>
+            <Icon name="trash" size={13} />
+            清除本機資料
+          </button>
         </div>
       </div>
     )
@@ -94,14 +99,26 @@ const Profile = ({ progress, onClearLocalData }: ProfileProps) => {
               <div className="xp-bar-fill" style={{ width: `${xpProgress}%` }} />
             </div>
           </div>
-          <button className="text-btn hero-xp-link" onClick={() => setShowGrowth((v) => !v)}>
-            {showGrowth ? '收起 ‹' : '成長史 ›'}
+          <button className="text-btn hero-xp-link" onClick={() => setShowGrowth(true)}>
+            成長史 ›
           </button>
         </div>
       </div>
       {showGrowth && (
-        <div className="growth-panel">
-          <GrowthHistory xp={progress.xp} />
+        <div className="modal-overlay" onClick={() => setShowGrowth(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="section-title">成長史</h3>
+              <button
+                className="text-btn modal-close"
+                onClick={() => setShowGrowth(false)}
+                aria-label="關閉"
+              >
+                <Icon name="x" size={16} />
+              </button>
+            </div>
+            <GrowthHistory xp={progress.xp} />
+          </div>
         </div>
       )}
 

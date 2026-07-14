@@ -244,7 +244,6 @@ const AccountHeader = ({ user }: AccountHeaderProps) => {
             ) : (
               <>
                 <span className="account-name">{user.firstName || '未命名'}</span>
-                <span className="account-userid">USER.{user.id.slice(-8).toUpperCase()}</span>
                 <button className="text-btn" onClick={() => setNameEditing(true)}>
                   <Icon name="pencil" size={14} />
                 </button>
