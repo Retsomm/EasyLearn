@@ -75,8 +75,8 @@
 1. 【觀念】defensive copying 的兩條規則是什麼？（資料進入/離開安全區時各要做什麼？）
 2. 【觀念】copy-on-write 和 defensive copying 的使用時機有什麼不同？
 3. 【程式實作】某個 legacy 函式 `black_friday_promotion(cart)` 會直接修改傳入的 cart，請用 defensive copying 包裝它。
-4. 【選擇】defensive copying 使用的是？
-   (A) 淺拷貝 (B) 深拷貝 (C) 結構共享 (D) 不拷貝
+4. 【選擇】對於包含可變巢狀結構（nested mutable structures）的資料，defensive copying 跨越信任邊界時通常使用的是？
+   (A) 淺拷貝 (B) 深拷貝 (C) 結構共享 (D) 視資料結構與修改範圍而定
 5. 【觀念】為什麼深拷貝比淺拷貝昂貴？什麼情況下才值得用？
 
 ### Ch8 分層設計（一）（★★★ 中等，6 題）
@@ -177,10 +177,10 @@
 
 1. 【觀念】什麼是並行原語（concurrency primitive）？為什麼 JavaScript 需要自己動手建？
 2. 【觀念】Queue（佇列）如何保證「共享資源一次只被一條時間線使用」？
-3. 【程式實作】實作一個基本的 `Queue()`：`push` 任務進來後依序執行，每次只跑一個，做完才跑下一個。
-4. 【程式實作】把上一題泛化成可重用的 `Queue(worker)`，讓 worker 由呼叫端決定。
+3. 【程式實作】實作一個基本的 `Queue()`：`push(task)` 傳入的 `task` 是一個回傳 `Promise<void>` 的函式；佇列依序執行，前一個 `task` 的 promise resolve 後才跑下一個。若某個 `task` reject，說明你的佇列是繼續處理後續任務，還是中斷／記錄錯誤。
+4. 【程式實作】把上一題泛化成可重用的 `Queue(worker)`：`worker(task)` 是呼叫端傳入、回傳 `Promise<void>` 的函式，佇列對每個 `push` 進來的 `task` 依序呼叫 `worker(task)` 並等待其 resolve/reject 後才處理下一個；worker reject 時佇列應記錄錯誤但繼續處理後續任務，不能整條佇列卡死。
 5. 【觀念】什麼是「skip queue」（只保留最後一筆任務的佇列）？什麼情境適用？
-6. 【程式實作】實作 `DroppingQueue(max, worker)`，佇列超過 max 筆時丟棄最舊的任務。
+6. 【程式實作】實作 `DroppingQueue(max, worker)`：`worker` 的非同步契約與上題相同，佇列中尚未執行的任務超過 max 筆時丟棄最舊的任務。
 7. 【選擇】購物車 DOM 更新用 Queue 排隊後，解決的是哪一種時間線問題？
    (A) 動作太慢 (B) 不同時間線對共享資源（DOM/全域 cart）的交錯寫入 (C) 記憶體洩漏 (D) callback hell
 8. 【情境分析】前端有個「自動儲存」功能，使用者連續輸入會發出多個儲存請求且可能亂序完成。你會用哪種 queue？為什麼？
@@ -188,7 +188,7 @@
 ### Ch17 協調時間線（★★★★★ 困難，8 題）
 
 1. 【觀念】什麼是 race condition？用「兩個 ajax 回應順序不定」的例子說明。
-2. 【程式實作】實作 `Cut(num, callback)`：等 `num` 條時間線都完成後才執行一次 callback。
+2. 【程式實作】實作 `Cut(num, callback)`：回傳一個「完成通知函式」`done(result)`，`num` 條時間線各自完成時呼叫一次；等所有 `num` 條時間線都呼叫過 `done` 後，才執行一次 `callback(results)`，其中 `results` 依呼叫順序收集成陣列。說明若某條時間線出錯或逾時、從未呼叫 `done`，你的實作會怎麼處理（避免永久等待）。
 3. 【程式實作】用 `Cut()` 改寫：`cost_ajax()` 與 `shipping_ajax()` 平行發出，兩者都完成後才更新 DOM。
 4. 【程式實作】實作 `JustOnce(action)`：不管被呼叫幾次，action 只會執行第一次。
 5. 【觀念】「顯性的時間模型 vs 隱性的時間模型」是什麼意思？Cut/Queue/JustOnce 各自改變了時間模型的哪個面向（順序/重複）？

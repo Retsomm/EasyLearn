@@ -75,10 +75,12 @@ const QuestionCard = ({
             {correct ? '答對了！+10 XP' : '沒關係，弄懂它才是重點 +2 XP'}
           </div>
           <p className="feedback-explanation">{question.explanation}</p>
-          <a className="docs-link" href={question.docs} target="_blank" rel="noreferrer">
-            <Icon name="book-open" size={16} />
-            延伸閱讀：官方文件
-          </a>
+          {question.docs && (
+            <a className="docs-link" href={question.docs} target="_blank" rel="noreferrer">
+              <Icon name="book-open" size={16} />
+              延伸閱讀：官方文件
+            </a>
+          )}
           <button className="primary-btn next-btn" onClick={onNext}>
             {isLast ? '看結算' : '下一題'}
             <Icon name={isLast ? 'flag' : 'arrow-right'} size={18} />
