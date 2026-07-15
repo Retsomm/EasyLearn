@@ -1,0 +1,151 @@
+{
+  "id": "fp-13",
+  "title": "串連函數式工具",
+  "questions": [
+    {
+      "id": "fp-13-q1",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "鏈式呼叫的可讀性",
+      "docs": "",
+      "story": "",
+      "prompt": "比較兩種寫法，都是「找出下單次數超過 5 次的顧客 email，取前 3 名」：\n版本一：customers.filter(c => c.orders.length > 5).map(c => c.email).slice(0, 3)\n版本二：const frequentBuyers = customers.filter(c => c.orders.length > 5); const emails = frequentBuyers.map(c => c.email); const top3 = emails.slice(0, 3);\n步驟只有 3 步時兩者都好讀；如果串連的步驟變成 6、7 步呢？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "步驟一多，版本一那種一路串到底的寫法會讓人很難一眼看出「這一步做完之後，資料變成了什麼形狀」；版本二把每個中間結果存進有意義名稱的變數，等於用變數名稱標註了每一步的產出，步驟越多，這種寫法的可讀性優勢越明顯" },
+        { "id": "b", "text": "不管幾個步驟，版本一永遠比版本二好讀，因為程式碼行數比較少" },
+        { "id": "c", "text": "兩種寫法在任何步驟數量下可讀性都完全相同，沒有差別" },
+        { "id": "d", "text": "只要用了 filter/map/reduce，可讀性就自動比手寫 for 迴圈差" }
+      ],
+      "answer": "a",
+      "explanation": "鏈式呼叫的可讀性關鍵不在「串了幾步」，而在「每一步的資料形狀是否清楚」；適度用變數命名中間結果，能讓整條鏈讀起來像一段有邏輯的敘事，步驟越多這個做法越有價值。",
+      "verify": { "manual": "概念題：以具體兩版寫法對比取代抽象可讀性討論，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-13-q2",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "找出最佳顧客金額最大的訂單",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "找出「每位最佳顧客（訂單 ≥ 3 筆）金額最大的一筆訂單」，用 filter + map（內含 reduce）完成。這段程式會印出什麼？",
+      "code": "const customers = [\n  { name: 'A', orders: [{ amount: 10 }, { amount: 30 }, { amount: 20 }] },\n  { name: 'B', orders: [{ amount: 5 }, { amount: 8 }] },\n  { name: 'C', orders: [{ amount: 100 }, { amount: 50 }, { amount: 75 }, { amount: 20 }] },\n];\n\nconst result = customers\n  .filter((c) => c.orders.length >= 3)\n  .map((c) => ({\n    name: c.name,\n    biggest: c.orders.reduce((max, o) => Math.max(max, o.amount), 0),\n  }));\n\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "[ { name: 'A', biggest: 30 }, { name: 'C', biggest: 100 } ]" },
+        { "id": "b", "text": "[ { name: 'A', biggest: 30 }, { name: 'B', biggest: 8 }, { name: 'C', biggest: 100 } ]" },
+        { "id": "c", "text": "[ { name: 'C', biggest: 100 } ]" },
+        { "id": "d", "text": "[ 30, 100 ]" }
+      ],
+      "answer": "a",
+      "explanation": "filter 先篩掉訂單少於 3 筆的 B；map 再把剩下每位顧客轉成 { name, biggest }，biggest 是用 reduce 在該顧客的訂單裡找出最大金額——三個函數式工具依序串連，各司其職。",
+      "verify": {
+        "checks": [
+          { "code": "const customers = [\n  { name: 'A', orders: [{ amount: 10 }, { amount: 30 }, { amount: 20 }] },\n  { name: 'B', orders: [{ amount: 5 }, { amount: 8 }] },\n  { name: 'C', orders: [{ amount: 100 }, { amount: 50 }, { amount: 75 }, { amount: 20 }] },\n];\nconst result = customers.filter((c) => c.orders.length >= 3).map((c) => ({ name: c.name, biggest: c.orders.reduce((max, o) => Math.max(max, o.amount), 0) }));\nconsole.log(result);", "expected": "[ { name: 'A', biggest: 30 }, { name: 'C', biggest: 100 } ]" }
+        ]
+      }
+    },
+    {
+      "id": "fp-13-q3",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "stream fusion",
+      "docs": "",
+      "story": "",
+      "prompt": "customers.filter(f1).map(f2).filter(f3) 這樣串三個操作，如果照字面意思執行，陣列會被完整走訪三次、還會產生兩份用完就丟的中間陣列。資料量很大時這可能是效能疑慮。stream fusion 想解決的是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "把多個串連的操作「融合」成一次走訪就把 f1、f2、f3 都做完，不用真的產生中間陣列，藉此保留鏈式寫法的可讀性，同時避免多次走訪、多次配置陣列的額外成本" },
+        { "id": "b", "text": "stream fusion 是把多個非同步請求合併成一個 HTTP 請求" },
+        { "id": "c", "text": "stream fusion 專指把多支影片串流檔案合併成一個檔案播放" },
+        { "id": "d", "text": "stream fusion 只會讓程式碼變得更難讀，是單純犧牲可讀性換效能的技巧" }
+      ],
+      "answer": "a",
+      "explanation": "鏈式呼叫最常被詬病的地方就是「每一步都多走一次陣列」；stream fusion（許多函式庫或引擎會自動做這件事）讓你保有鏈式寫法的可讀性，同時把實際執行壓縮成一次走訪，不用真的產生中間陣列。",
+      "verify": { "manual": "概念題：以具體三段串連的效能疑慮取代抽象說明，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-13-q4",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "實作 frequenciesBy",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "frequenciesBy(array, f) 回傳以 f(item) 為 key、出現次數為 value 的物件。這段程式會印出什麼？",
+      "code": "function frequenciesBy(array, f) {\n  return array.reduce((acc, item) => {\n    const key = f(item);\n    acc[key] = (acc[key] || 0) + 1;\n    return acc;\n  }, {});\n}\n\nconsole.log(frequenciesBy(['apple', 'banana', 'avocado', 'blueberry', 'cherry'], (w) => w[0]));",
+      "options": [
+        { "id": "a", "text": "{ a: 2, b: 2, c: 1 }" },
+        { "id": "b", "text": "{ apple: 1, banana: 1, avocado: 1, blueberry: 1, cherry: 1 }" },
+        { "id": "c", "text": "[ 2, 2, 1 ]" },
+        { "id": "d", "text": "{ a: 1, b: 1, c: 1 }" }
+      ],
+      "answer": "a",
+      "explanation": "以每個字串的第一個字母當 key：apple、avocado 都是 a（2 次），banana、blueberry 都是 b（2 次），cherry 是 c（1 次），reduce 把累加器當成計數用的物件，一路累加出現次數。",
+      "verify": {
+        "checks": [
+          { "code": "function frequenciesBy(array, f) {\n  return array.reduce((acc, item) => {\n    const key = f(item);\n    acc[key] = (acc[key] || 0) + 1;\n    return acc;\n  }, {});\n}\nconsole.log(frequenciesBy(['apple', 'banana', 'avocado', 'blueberry', 'cherry'], (w) => w[0]));", "expected": "{ a: 2, b: 2, c: 1 }" }
+        ]
+      }
+    },
+    {
+      "id": "fp-13-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "實作 groupBy",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "groupBy(array, f) 回傳以 f(item) 為 key、符合項目陣列為 value 的物件。這段程式會印出什麼？",
+      "code": "function groupBy(array, f) {\n  return array.reduce((acc, item) => {\n    const key = f(item);\n    if (!acc[key]) acc[key] = [];\n    acc[key].push(item);\n    return acc;\n  }, {});\n}\n\nconsole.log(groupBy([1, 2, 3, 4, 5, 6], (n) => (n % 2 === 0 ? 'even' : 'odd')));",
+      "options": [
+        { "id": "a", "text": "{ odd: [ 1, 3, 5 ], even: [ 2, 4, 6 ] }" },
+        { "id": "b", "text": "{ even: [ 1, 3, 5 ], odd: [ 2, 4, 6 ] }" },
+        { "id": "c", "text": "[ 1, 3, 5, 2, 4, 6 ]" },
+        { "id": "d", "text": "{ odd: 3, even: 3 }" }
+      ],
+      "answer": "a",
+      "explanation": "跟 frequenciesBy 的差別在於：groupBy 的累加器每個 key 對應的是一個「陣列」（把整筆項目 push 進去），而不是一個數字計數。奇數依序被分到 odd（先遇到 1，所以 odd 這個 key 先建立），偶數分到 even。",
+      "verify": {
+        "checks": [
+          { "code": "function groupBy(array, f) {\n  return array.reduce((acc, item) => {\n    const key = f(item);\n    if (!acc[key]) acc[key] = [];\n    acc[key].push(item);\n    return acc;\n  }, {});\n}\nconsole.log(groupBy([1, 2, 3, 4, 5, 6], (n) => (n % 2 === 0 ? 'even' : 'odd')));", "expected": "{ odd: [ 1, 3, 5 ], even: [ 2, 4, 6 ] }" }
+        ]
+      }
+    },
+    {
+      "id": "fp-13-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "把迴圈重構成函數式工具的訣竅",
+      "docs": "",
+      "story": "",
+      "prompt": "有一段 for 迴圈同時做了「篩選金額 > 1000 的訂單」和「把符合的訂單轉成 { id, total } 精簡格式」。如果想把它拆成 filter + map，第一步該怎麼做比較安全？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "先看清楚這個迴圈實際在操作的資料形狀（原始訂單物件 → 精簡物件），再一次只處理一件事：先把「篩選」的部分抽成 filter，確認行為沒變之後，再把「轉換格式」的部分抽成 map——一次一小步、逐步拆解，比一口氣重寫整個迴圈更安全" },
+        { "id": "b", "text": "直接刪掉整個迴圈，憑感覺重新寫一次 filter+map，不用對照原本的行為" },
+        { "id": "c", "text": "把迴圈裡所有邏輯一次全部塞進 reduce 的 callback，一步到位不用拆" },
+        { "id": "d", "text": "只要把 for 換成 forEach，就等於完成了函數式重構" }
+      ],
+      "answer": "a",
+      "explanation": "漸進式、一次一小步地把迴圈拆解，比一次性重寫更安全：每拆出一步就能先確認行為沒變，再繼續拆下一步，出錯時也容易定位是哪一步的問題。",
+      "verify": { "manual": "概念題：以具體迴圈拆解步驟取代抽象訣竅說明，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-13-q7",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "情境分析：60 行迴圈重構",
+      "docs": "",
+      "story": "",
+      "prompt": "有一段 60 行的 for 迴圈同時做了篩選、轉換、加總三件事，請描述你的重構步驟與最終樣貌。",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "先在迴圈旁邊列出「這一輪到底在檢查什麼條件、轉換成什麼形狀、最後彙總成什麼值」；接著依序抽出 filter（把符合條件的項目留下）、map（把每個項目轉換成需要的形狀）、reduce（把轉換後的結果彙總成最終值），每抽出一步就跑一次確認結果不變；最終這段 60 行迴圈會收斂成一條 array.filter(...).map(...).reduce(...) 的鏈，並視情況把中間結果命名成有意義的變數" },
+        { "id": "b", "text": "直接把 60 行原封不動包進一個函式裡改名字，就算完成重構" },
+        { "id": "c", "text": "把迴圈整段複製三份，分別命名成 filterPart、mapPart、reducePart 但邏輯不變" },
+        { "id": "d", "text": "刪除這段迴圈，改成回傳寫死的固定值" }
+      ],
+      "answer": "a",
+      "explanation": "重構的核心不是「一次性大改」，而是先看懂資料的三段轉換（篩選→轉換→彙總），再逐步替換成對應的函數式工具，過程中隨時可以用原本的輸出驗證新寫法沒有改變行為。",
+      "verify": { "manual": "概念題：情境分析，無可執行程式碼。" }
+    }
+  ]
+}

@@ -1,0 +1,162 @@
+{
+  "id": "fp-15",
+  "title": "時間線拆解：分析執行順序",
+  "questions": [
+    {
+      "id": "fp-15-q1",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "時間線圖的兩條基本規則",
+      "docs": "",
+      "story": "",
+      "prompt": "這段程式：\nconsole.log('A');\nsetTimeout(() => console.log('B'), 0);\nconsole.log('C');\n實際輸出順序是 A、C、B，不是照撰寫順序的 A、B、C。這個結果符合時間線圖的哪一條規則？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "console.log('A') 和 console.log('C') 在同一條時間線（主程式的同步執行）上，一定照程式碼順序執行；setTimeout 的 callback（印 B）屬於另一條時間線，即使寫在 C 前面，仍然要等主程式這條時間線執行完才輪到它——這正是「同一條時間線內順序固定，不同時間線之間順序不保證跟撰寫順序一致」的具體體現" },
+        { "id": "b", "text": "這個結果代表 JavaScript 引擎的執行順序是隨機的，跟時間線圖的規則無關" },
+        { "id": "c", "text": "這個結果代表 setTimeout 的 callback 永遠會在下一行程式碼「之前」先執行" },
+        { "id": "d", "text": "這個結果只在瀏覽器環境成立，Node.js 環境會依照撰寫順序印出 A、B、C" }
+      ],
+      "answer": "a",
+      "explanation": "同一條時間線內順序固定、不同時間線之間順序不保證跟撰寫順序一致——這兩條規則是畫時間線圖的地基，A/C/B 的實際輸出正是最簡單的具體示範，所有時序 bug 幾乎都源自第二條規則被忽略。",
+      "verify": {
+        "checks": [
+          { "code": "console.log('A');\nsetTimeout(() => console.log('B'), 0);\nconsole.log('C');", "expected": "A\nC\nB" }
+        ]
+      }
+    },
+    {
+      "id": "fp-15-q2",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "什麼會建立新的時間線",
+      "docs": "",
+      "story": "",
+      "prompt": "下列四段程式碼，哪一段會開啟一條新的時間線？\n① const x = a + b;\n② button.addEventListener('click', handleClick);\n③ for (let i = 0; i < 10; i++) { total += i; }\n④ fetch('/api/data').then(handleResponse);",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "② 和 ④ 會開啟新的時間線——② 註冊的 click handler 要等使用者實際點擊時才會在不確定的時間點執行；④ 的 .then(handleResponse) 要等網路請求回來才會執行，兩者的執行時機都脫離了目前這段程式碼的線性掌控。① 和 ③ 都是會立刻、同步跑完的計算，屬於呼叫它們那條時間線的一部分" },
+        { "id": "b", "text": "只有 ③ 的 for 迴圈會開啟新的時間線，因為它會重複執行多次" },
+        { "id": "c", "text": "四段程式碼都會開啟新的時間線，因為它們都是獨立的敘述" },
+        { "id": "d", "text": "四段程式碼都不會開啟新的時間線，因為 JavaScript 是單執行緒" }
+      ],
+      "answer": "a",
+      "explanation": "凡是「執行時機脫離目前這段程式碼線性掌控」的地方，都是新時間線的起點：註冊的事件處理器、非同步請求的 callback 都符合這個特徵，單純的同步運算和迴圈則不會。",
+      "verify": { "manual": "概念題：以四段具體程式碼取代抽象定義列舉，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-15-q3",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "描述按鈕點擊觸發雙 ajax 的時間線",
+      "docs": "",
+      "story": "",
+      "prompt": "按鈕 click handler 呼叫 add_item_to_cart()，其中 cost_ajax() 與 shipping_ajax() 是非同步請求。下列哪個文字描述正確畫出了這段程式的時間線圖？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "click handler 本身是一條時間線：呼叫 add_item_to_cart() 之後，函式內部發出 cost_ajax() 和 shipping_ajax() 兩個非同步請求，這兩個請求各自會在之後某個不確定的時間點觸發自己的 callback，形成另外兩條各自獨立的時間線；這兩條 callback 時間線誰先執行、誰後執行並不保證，取決於兩個請求各自的網路延遲" },
+        { "id": "b", "text": "click handler、cost_ajax、shipping_ajax 三者永遠在同一條時間線上依序執行，順序完全確定" },
+        { "id": "c", "text": "cost_ajax 和 shipping_ajax 兩個非同步請求一定會同時、在同一個時刻完成" },
+        { "id": "d", "text": "click handler 只會建立一條時間線，兩個 ajax 的 callback 都會排進同一條時間線依序執行" }
+      ],
+      "answer": "a",
+      "explanation": "一次點擊會分岔出三條時間線：click handler 本身，加上兩個 ajax 各自的 callback；後兩者互相獨立、順序不保證，正是這類程式容易出現交錯 bug 的根源。",
+      "verify": { "manual": "概念題：程式實作型（畫時間線圖）改寫成選擇題，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-15-q4",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "快速連點導致總額錯誤",
+      "docs": "",
+      "story": "",
+      "prompt": "為什麼「快速連點兩次購買鈕」會導致總金額錯誤？請用時間線交錯來解釋。",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "快速連點兩次會啟動兩條各自獨立、幾乎同時進行的時間線；如果兩條時間線都會讀取並修改同一個共享的總額變數（讀取目前總額 → 加上新商品金額 → 寫回總額），兩條時間線的讀寫步驟可能交錯執行，導致其中一次寫入蓋掉另一次的結果，總額因此少算了一次商品的金額" },
+        { "id": "b", "text": "因為瀏覽器一次只能處理一次點擊，第二次點擊一定會被自動忽略，不可能出錯" },
+        { "id": "c", "text": "因為 JavaScript 引擎會自動把兩次點擊合併成一次事件，所以不會有問題" },
+        { "id": "d", "text": "這種情況下金額只會被多算，不可能被少算" }
+      ],
+      "answer": "a",
+      "explanation": "典型的交錯順序是：時間線 A 讀到總額 100 → 時間線 B 也讀到總額 100（A 還沒寫回）→ A 寫回 100+30=130 → B 寫回 100+20=120，把 A 的結果整個蓋掉，最終總額少算了 A 那筆商品。",
+      "verify": { "manual": "概念題：對照書中雙擊交錯範例，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-15-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "簡化時間線圖的原則",
+      "docs": "",
+      "story": "",
+      "prompt": "一張時間線圖裡有一段「連續三行都在操作同一個區域變數 total，中間沒有被其他時間線插入」，另外還有一段「讀取一個完全沒有被其他時間線碰過的區域變數 count」。簡化這張圖時，可以怎麼處理這兩段？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "那三行操作同一個 total 的連續動作，因為中間沒被插入，可以合併畫成一個區塊；讀取 count 的那一步因為完全不涉及共享資源，可以直接省略不畫——簡化的原則就是「只留下真正需要關注交錯風險的部分」" },
+        { "id": "b", "text": "應該把所有動作都畫得一樣詳細，不能省略任何一步，否則圖會不準確" },
+        { "id": "c", "text": "應該把整張時間線圖畫成一條直線，把所有時間線都合併成一條" },
+        { "id": "d", "text": "簡化時間線圖沒有固定原則，全憑個人喜好決定要不要省略" }
+      ],
+      "answer": "a",
+      "explanation": "簡化的目標是「只留下會影響共享資源交錯結果的部分」：不涉及共享狀態的步驟可以直接省略，同一時間線上連續且沒被插入的動作可以合併，這樣才能把注意力集中在真正可能出 bug 的地方。",
+      "verify": { "manual": "概念題：以具體時間線圖片段取代抽象簡化原則說明，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-15-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "把全域變數改成區域變數與參數傳遞",
+      "docs": "",
+      "story": "",
+      "prompt": "下列 handler 用全域變數共享狀態。哪一種重構正確地減少了時間線之間的共享資源？",
+      "code": "var total = 0;\nfunction add_item_to_cart(item) {\n  cart = add_item(cart, item);\n  update_total_queue(cart);\n}",
+      "options": [
+        { "id": "a", "text": "function add_item_to_cart(cart, item) { var newCart = add_item(cart, item); var total = calc_total(newCart); return { cart: newCart, total }; }——不再讀寫任何全域的 cart 或 total，兩條同時觸發的時間線各自拿到自己的回傳值，不會互相干擾對方的計算過程" },
+        { "id": "b", "text": "把 var total = 0 改成 let total = 0，其餘完全不變，就能解決交錯問題" },
+        { "id": "c", "text": "把整個函式包進 setTimeout(fn, 0) 裡，藉此避免交錯" },
+        { "id": "d", "text": "把 cart 改成存進 localStorage，其餘邏輯完全不變" }
+      ],
+      "answer": "a",
+      "explanation": "根治交錯問題的方法，是讓每條時間線各自擁有自己的一份資料，不再共用同一個會被讀寫的全域變數；cart 從參數傳入、結果從回傳值送出，兩條時間線就不會互相踩到對方的計算過程。",
+      "verify": { "manual": "概念題：程式實作型改寫成選擇題，正解程式碼已於選項給出，無需執行驗證。" }
+    },
+    {
+      "id": "fp-15-q7",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "單執行緒事件迴圈模型的意涵",
+      "docs": "",
+      "story": "",
+      "prompt": "使用者在畫面上快速點擊兩次按鈕，各自觸發一次非同步 API 請求。JavaScript 是單執行緒、事件迴圈模型，這代表兩次點擊各自觸發的 callback，執行時會發生什麼事？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "兩個 callback 各自的程式碼在執行時不會被彼此打斷（同一個 callback 執行到一半不會被插隊），但兩個 callback 誰先被排進事件迴圈執行、以什麼順序交錯，仍然不保證跟兩次點擊發生的先後順序完全一致" },
+        { "id": "b", "text": "因為是單執行緒，兩次點擊只會有一次真正觸發 callback，另一次會被引擎自動忽略" },
+        { "id": "c", "text": "單執行緒代表兩個 callback 一定會嚴格按照點擊發生的先後順序執行，不會有任何意外" },
+        { "id": "d", "text": "單執行緒代表這種情境不可能出現任何時序問題，不需要特別處理" }
+      ],
+      "answer": "a",
+      "explanation": "「單執行緒」保證的只是「同一段同步程式碼跑完之前不會被插隊」，但多個非同步 callback 誰先被排進事件迴圈執行仍然不確定，這正是時間線圖存在的意義。",
+      "verify": { "manual": "概念題：以具體雙擊觸發非同步請求情境取代抽象定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-15-q8",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "情境分析：即時搜尋結果對不上輸入",
+      "docs": "",
+      "story": "",
+      "prompt": "「搜尋框即時搜尋」功能：使用者每次 keyup 都會發出一次搜尋 API 請求，並在 callback 裡把結果直接塞進畫面上的搜尋結果清單。用時間線圖的概念，下列哪個解釋正確說明了「畫面顯示的結果有時對不上目前輸入框內容」這個 bug 的成因？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "每次 keyup 都會開一條新的非同步時間線（各自的 API 請求與 callback）；因為網路延遲不固定，先發出的請求不保證先回來——例如連續輸入 a、ap、app 三次搜尋，三條時間線的 callback 到達順序可能是 ap、app、a，若每個 callback 都直接覆蓋畫面結果，最後顯示的會是最晚回來、卻不一定是最新輸入的那次搜尋結果" },
+        { "id": "b", "text": "因為瀏覽器會自動確保 API 回應順序跟發送順序完全一致，這種 bug 不可能發生" },
+        { "id": "c", "text": "因為 keyup 事件本身是同步觸發的，所以不會有任何時間線交錯的問題" },
+        { "id": "d", "text": "因為 JavaScript 是單執行緒，所有非同步 callback 一定會照發送順序依序執行" }
+      ],
+      "answer": "a",
+      "explanation": "這類 bug 的修法通常是：只採用「最後一次發出的請求」的結果（例如比對請求序號，或用 Ch17 的 JustOnce／取消機制），忽略掉比它更早發出、卻更晚回來的過期回應。",
+      "verify": { "manual": "概念題：情境分析，無可執行程式碼。" }
+    }
+  ]
+}

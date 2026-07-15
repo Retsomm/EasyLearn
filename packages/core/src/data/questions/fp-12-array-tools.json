@@ -1,0 +1,159 @@
+{
+  "id": "fp-12",
+  "title": "走訪陣列的函數式工具",
+  "questions": [
+    {
+      "id": "fp-12-q1",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "map／filter／reduce 的定位",
+      "docs": "",
+      "story": "",
+      "prompt": "有一份訂單陣列 orders。你要：(a) 算出每筆訂單的含稅金額（陣列元素一對一轉換）；(b) 只留下金額超過 1000 的訂單（篩選掉不符合的）；(c) 把所有訂單金額加總成一個總數字（收斂成單一值）。這三個需求分別該用 map、filter、reduce 中的哪一個？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "(a) 用 map（輸入陣列與轉換函式，輸出一個元素數量相同、但每個都被轉換過的新陣列）；(b) 用 filter（輸入陣列與判斷函式，輸出只保留符合條件元素的新陣列）；(c) 用 reduce（輸入陣列、初始值與累加函式，把整個陣列收斂成單一個值）" },
+        { "id": "b", "text": "三個需求都可以只用 map 完成，filter 和 reduce 只是 map 的別名" },
+        { "id": "c", "text": "(a) 用 reduce、(b) 用 map、(c) 用 filter，跟正確對應剛好相反" },
+        { "id": "d", "text": "三者的差異只在於函式名稱不同，實際行為完全一樣" }
+      ],
+      "answer": "a",
+      "explanation": "把迴圈拆成這三種標準形狀，是把「for 迴圈」重構成函數式工具的第一步：一對一轉換用 map、篩選用 filter、彙總成一個值用 reduce，各自的輸出形狀（陣列/陣列/單一值）也不一樣。",
+      "verify": { "manual": "概念題：以具體訂單處理需求取代抽象定位敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-12-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "自己實作 map",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/map",
+      "story": "",
+      "prompt": "不用內建方法，自己實作 map(array, f)。這段程式會印出什麼？",
+      "code": "function myMap(array, f) {\n  var result = [];\n  for (let i = 0; i < array.length; i++) {\n    result.push(f(array[i]));\n  }\n  return result;\n}\n\nconsole.log(myMap([1, 2, 3], (x) => x * 2));",
+      "options": [
+        { "id": "a", "text": "[ 2, 4, 6 ]" },
+        { "id": "b", "text": "[ 1, 2, 3 ]" },
+        { "id": "c", "text": "6" },
+        { "id": "d", "text": "[ 2, 4, 6, undefined ]" }
+      ],
+      "answer": "a",
+      "explanation": "myMap 走訪每個元素、把 f(array[i]) 的結果推進新陣列，回傳的新陣列跟原陣列長度相同，每個元素都被 x * 2 轉換過。",
+      "verify": {
+        "checks": [
+          { "code": "function myMap(array, f) {\n  var result = [];\n  for (let i = 0; i < array.length; i++) { result.push(f(array[i])); }\n  return result;\n}\nconsole.log(myMap([1, 2, 3], (x) => x * 2));", "expected": "[ 2, 4, 6 ]" }
+        ]
+      }
+    },
+    {
+      "id": "fp-12-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "自己實作 filter",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/filter",
+      "story": "",
+      "prompt": "不用內建方法，自己實作 filter(array, f)。這段程式會印出什麼？",
+      "code": "function myFilter(array, f) {\n  var result = [];\n  for (let i = 0; i < array.length; i++) {\n    if (f(array[i])) result.push(array[i]);\n  }\n  return result;\n}\n\nconsole.log(myFilter([1, 2, 3, 4, 5], (x) => x % 2 === 0));",
+      "options": [
+        { "id": "a", "text": "[ 2, 4 ]" },
+        { "id": "b", "text": "[ 1, 3, 5 ]" },
+        { "id": "c", "text": "[ 1, 2, 3, 4, 5 ]" },
+        { "id": "d", "text": "[ true, false, true, false, true ]" }
+      ],
+      "answer": "a",
+      "explanation": "myFilter 只把「呼叫 f 後回傳 truthy」的元素留下來，x % 2 === 0 只有 2 和 4 成立，所以結果是 [2, 4]。",
+      "verify": {
+        "checks": [
+          { "code": "function myFilter(array, f) {\n  var result = [];\n  for (let i = 0; i < array.length; i++) { if (f(array[i])) result.push(array[i]); }\n  return result;\n}\nconsole.log(myFilter([1, 2, 3, 4, 5], (x) => x % 2 === 0));", "expected": "[ 2, 4 ]" }
+        ]
+      }
+    },
+    {
+      "id": "fp-12-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "自己實作 reduce",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "不用內建方法，自己實作 reduce(array, init, f)。這段程式會印出什麼？",
+      "code": "function myReduce(array, init, f) {\n  var acc = init;\n  for (let i = 0; i < array.length; i++) {\n    acc = f(acc, array[i]);\n  }\n  return acc;\n}\n\nconsole.log(myReduce([1, 2, 3, 4], 0, (acc, x) => acc + x));",
+      "options": [
+        { "id": "a", "text": "10" },
+        { "id": "b", "text": "[ 1, 2, 3, 4 ]" },
+        { "id": "c", "text": "0" },
+        { "id": "d", "text": "24" }
+      ],
+      "answer": "a",
+      "explanation": "acc 從 0 開始，依序累加 1、2、3、4，最後收斂成單一個值 10——這正是 reduce「把陣列收斂成一個值」的本質。",
+      "verify": {
+        "checks": [
+          { "code": "function myReduce(array, init, f) {\n  var acc = init;\n  for (let i = 0; i < array.length; i++) { acc = f(acc, array[i]); }\n  return acc;\n}\nconsole.log(myReduce([1, 2, 3, 4], 0, (acc, x) => acc + x));", "expected": "10" }
+        ]
+      }
+    },
+    {
+      "id": "fp-12-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "用 reduce 實作 map 與 filter",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "用 reduce() 實作出 map() 和 filter()。這段程式會印出什麼？",
+      "code": "function myMap(array, f) {\n  return array.reduce((acc, x) => { acc.push(f(x)); return acc; }, []);\n}\nfunction myFilter(array, f) {\n  return array.reduce((acc, x) => { if (f(x)) acc.push(x); return acc; }, []);\n}\n\nconsole.log(myMap([1, 2, 3], (x) => x + 1));\nconsole.log(myFilter([1, 2, 3, 4], (x) => x > 2));",
+      "options": [
+        { "id": "a", "text": "[ 2, 3, 4 ]\n[ 3, 4 ]" },
+        { "id": "b", "text": "[ 1, 2, 3 ]\n[ 1, 2, 3, 4 ]" },
+        { "id": "c", "text": "10\n7" },
+        { "id": "d", "text": "[ 2, 3, 4 ]\n[ 1, 2, 3, 4 ]" }
+      ],
+      "answer": "a",
+      "explanation": "reduce 本身已經是最泛用的收斂工具，map 和 filter 都可以看成是「累加器是陣列」的特化版 reduce：map 每次都 push 轉換後的值，filter 只在條件成立時才 push。",
+      "verify": {
+        "checks": [
+          { "code": "function myMap(array, f) {\n  return array.reduce((acc, x) => { acc.push(f(x)); return acc; }, []);\n}\nfunction myFilter(array, f) {\n  return array.reduce((acc, x) => { if (f(x)) acc.push(x); return acc; }, []);\n}\nconsole.log(myMap([1, 2, 3], (x) => x + 1));\nconsole.log(myFilter([1, 2, 3, 4], (x) => x > 2));", "expected": "[ 2, 3, 4 ]\n[ 3, 4 ]" }
+        ]
+      }
+    },
+    {
+      "id": "fp-12-q6",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "回傳陣列長度的關係",
+      "docs": "",
+      "story": "",
+      "prompt": "map() 回傳的陣列長度、filter() 回傳的陣列長度，與原陣列的關係分別是？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "相同／相同" },
+        { "id": "b", "text": "相同／小於等於" },
+        { "id": "c", "text": "小於等於／相同" },
+        { "id": "d", "text": "不一定／不一定" }
+      ],
+      "answer": "b",
+      "explanation": "map 是一對一轉換，每個元素都會產生對應的新元素，長度必定相同；filter 只保留符合條件的元素，長度只會小於等於原長度。",
+      "verify": { "manual": "概念題：定義題，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-12-q7",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "情境分析：只下過一筆訂單的顧客",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/filter",
+      "story": "",
+      "prompt": "找出「只下過一筆訂單的顧客」的 email，用 filter + map 組合完成。這段程式會印出什麼？",
+      "code": "const customers = [\n  { name: 'A', email: 'a@x.com', orders: [1] },\n  { name: 'B', email: 'b@x.com', orders: [1, 2] },\n  { name: 'C', email: 'c@x.com', orders: [1] },\n];\n\nconst result = customers\n  .filter((c) => c.orders.length === 1)\n  .map((c) => c.email);\n\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "[ 'a@x.com', 'c@x.com' ]" },
+        { "id": "b", "text": "[ 'b@x.com' ]" },
+        { "id": "c", "text": "[ 'a@x.com', 'b@x.com', 'c@x.com' ]" },
+        { "id": "d", "text": "[ { name: 'A', ... }, { name: 'C', ... } ]" }
+      ],
+      "answer": "a",
+      "explanation": "先用 filter 篩出 orders.length === 1 的顧客（A 和 C），得到一份「顧客物件」陣列；再用 map 把每個顧客物件轉換成單純的 email 字串，資料形狀從「顧客物件陣列」一步步收斂成「email 字串陣列」。",
+      "verify": {
+        "checks": [
+          { "code": "const customers = [\n  { name: 'A', email: 'a@x.com', orders: [1] },\n  { name: 'B', email: 'b@x.com', orders: [1, 2] },\n  { name: 'C', email: 'c@x.com', orders: [1] },\n];\nconst result = customers.filter((c) => c.orders.length === 1).map((c) => c.email);\nconsole.log(result);", "expected": "[ 'a@x.com', 'c@x.com' ]" }
+        ]
+      }
+    }
+  ]
+}

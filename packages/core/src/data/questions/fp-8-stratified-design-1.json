@@ -1,0 +1,120 @@
+{
+  "id": "fp-8",
+  "title": "分層設計（一）",
+  "questions": [
+    {
+      "id": "fp-8-q1",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "分層設計與抽象程度",
+      "docs": "",
+      "story": "",
+      "prompt": "呼叫圖裡有兩個函式：checkout(cart) 呼叫了 calcTotal(cart)，calcTotal(cart) 呼叫了 sumPrices(cart.items)。checkout 站在「要不要套用促銷折扣」這種業務語彙的層級；sumPrices 只是單純把陣列裡的數字加總，完全不知道「促銷」是什麼。這種由業務語彙到底層運算逐層遞減的排列方式，屬於什麼設計？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "分層設計（stratified design）——依照抽象程度把函式排成階層，checkout 站在最貼近業務語彙的高層，sumPrices 站在最具體、最不需要知道業務規則的底層，呼叫圖由上而下正好對應由抽象到具體" },
+        { "id": "b", "text": "這只是巧合，函式呼叫誰、被誰呼叫，跟抽象程度沒有任何關係" },
+        { "id": "c", "text": "這代表 sumPrices 寫錯了，底層函式也應該懂得判斷促銷規則才對" },
+        { "id": "d", "text": "這是物件導向裡的繼承關係，跟函式的抽象層級無關" }
+      ],
+      "answer": "a",
+      "explanation": "分層不是資料夾結構，而是一種心智模型：checkout、calcTotal、sumPrices 三層各自站在不同抽象高度，越靠下越不知道「促銷」這種業務概念，只管眼前的資料運算。",
+      "verify": { "manual": "概念題：以具體呼叫鏈取代抽象定義列舉，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-8-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "函式複雜度暗示抽象層級",
+      "docs": "",
+      "story": "",
+      "prompt": "函式 renderCartSummary(cart, user) 裡面有一段 for 迴圈手動組 HTML 字串塞進 DOM，中間又插了一行呼叫 calcLoyaltyDiscount(user) 這種商業邏輯判斷。這個函式讀起來特別長、特別難懂，最可能的原因是？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "函式體同時包含「組 DOM 字串」這種底層畫面細節，以及「判斷會員折扣」這種商業邏輯，兩種不同抽象高度的操作混在一起，讀者要不斷切換思考層次——函式的長度與複雜度往往正是「抽象層級混雜」的外顯症狀" },
+        { "id": "b", "text": "函式太長只是因為變數命名太長，跟抽象層級混不混雜沒有關係" },
+        { "id": "c", "text": "這代表 for 迴圈的執行效能有問題，應該換成其他迴圈語法" },
+        { "id": "d", "text": "函式的長度與複雜度，完全無法反映任何設計層面的問題" }
+      ],
+      "answer": "a",
+      "explanation": "把組 DOM 字串的細節抽到下層函式、把會員折扣判斷抽到另一個負責業務規則的函式，renderCartSummary 就能只剩下同一抽象高度的呼叫，自然變短也變好懂。",
+      "verify": { "manual": "概念題：以具體混雜函式取代抽象關聯敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-8-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "呼叫圖箭頭長短",
+      "docs": "",
+      "story": "",
+      "prompt": "呼叫圖裡，renderCartPage() 通常呼叫 renderCartSummary()、renderCartSummary() 才呼叫 formatPrice()——一層一層往下。但現在 renderCartPage() 直接跳過中間兩層，自己呼叫了最底層的 roundToTwoDecimals()。這種「長箭頭直接跳層」代表什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "代表 renderCartPage 承擔了原本該由中間層負責的細節工作，抽象層級被跳過或混雜，是該把這段邏輯搬回合適的中間層、或補上缺少的中間層函式的訊號" },
+        { "id": "b", "text": "代表這樣寫執行效能比較好，因為省略了中間層函式的呼叫開銷" },
+        { "id": "c", "text": "呼叫圖的箭頭長短只是畫圖時的版面問題，沒有任何設計意涵" },
+        { "id": "d", "text": "這代表 roundToTwoDecimals 這個函式的命名有誤，跟呼叫關係無關" }
+      ],
+      "answer": "a",
+      "explanation": "健康的呼叫圖裡，箭頭大多連接相鄰層級；renderCartPage 直接跳過 renderCartSummary 去碰最底層的細節，通常意味著它管太多事，該把這段職責還給中間層。",
+      "verify": { "manual": "概念題：以具體跳層呼叫情境取代抽象閱讀方式敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-8-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "情境分析：freeTieClip 層級混雜",
+      "docs": "",
+      "story": "",
+      "prompt": "freeTieClip() 直接操作陣列 index 和 for 迴圈，為什麼是層級混雜的訊號？該怎麼改？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "freeTieClip() 如果自己動手寫 for 迴圈、直接用 index 找符合條件的商品，等於在一個「業務規則」層級的函式裡混入了「陣列走訪」這種底層實作細節；應該把「走訪並找出符合條件項目」抽成一個底層的通用函式，freeTieClip() 只呼叫這個底層函式、專心表達業務規則本身" },
+        { "id": "b", "text": "不需要改，for 迴圈寫在業務規則函式裡完全沒問題" },
+        { "id": "c", "text": "應該把 freeTieClip() 整個函式刪除，改成一長串寫死的 if/else" },
+        { "id": "d", "text": "應該把 for 迴圈搬到另一個檔案，但邏輯完全不變" }
+      ],
+      "answer": "a",
+      "explanation": "抽出底層的走訪/查找函式後，freeTieClip() 讀起來會變成「找出符合資格的商品，套用免費贈品規則」這種一目了然的業務語句，跟陣列 index 完全脫鉤。",
+      "verify": { "manual": "概念題：情境分析，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-8-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "同一層服務同一目的",
+      "docs": "",
+      "story": "",
+      "prompt": "某個抽象層裡放了 addItem(cart, item)、removeItem(cart, id)、sendPromotionEmail(cart) 三個函式，理由是「它們都跟 cart 有關」，所以放在同一層。這樣分層合適嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不合適——addItem、removeItem 是操作 cart 這個資料結構本身的基本操作，sendPromotionEmail 卻是完全不同目的（對外部世界發送 email）的動作；同一層的函式應該服務同一個目的，才能讓讀者橫向掃過這一層時用一致的心智模型理解，不用在「操作資料」和「發送信件」之間反覆切換" },
+        { "id": "b", "text": "合適，只要函式的參數都跟 cart 有關，放在同一層就沒有問題" },
+        { "id": "c", "text": "合適，因為三個函式的第一個參數型別一致，型別一致就代表可以放在同一層" },
+        { "id": "d", "text": "不合適，但原因是這一層的函式數量太少，應該再多加幾個函式進來湊數" }
+      ],
+      "answer": "a",
+      "explanation": "「目的一致」比「參數型別一致」重要得多：sendPromotionEmail 該搬到互動層或另一個專責寄信的層級，讓 cart 基本操作層維持單一目的。",
+      "verify": { "manual": "概念題：以具體混雜職責的分層情境取代抽象原則敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-8-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "規劃 cart 基本操作層",
+      "docs": "",
+      "story": "",
+      "prompt": "給定 cart 操作散落在各處的程式，請規劃一組「cart 基本操作層」的函式清單，下列哪個規劃正確？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "addItem(cart, name, price)、removeItemByName(cart, name)、setFieldByName(cart, name, field, value)、calcTotal(cart)——這些函式只認識 cart 這個資料結構本身，不理解任何商業規則、也不碰 DOM" },
+        { "id": "b", "text": "sendPromotionEmail(cart)、renderCartToDOM(cart)——因為它們也跟 cart 有關，所以也放進基本操作層" },
+        { "id": "c", "text": "只需要一個萬用函式 doEverything(cart)，涵蓋所有情境越簡潔越好" },
+        { "id": "d", "text": "不需要事先規劃，程式碼寫到哪裡就放到哪裡即可" }
+      ],
+      "answer": "a",
+      "explanation": "基本操作層的判準是「只懂 cart 這個資料形狀」——寄信、渲染 DOM 屬於更高層或完全不同層的職責，不應該混進最底層的資料操作裡。",
+      "verify": { "manual": "概念題：程式實作型改寫成選擇題，答案給出正確的函式簽名清單，無需執行驗證。" }
+    }
+  ]
+}

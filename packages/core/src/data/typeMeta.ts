@@ -5,4 +5,5 @@ export const TYPE_META: Record<QuestionType, { icon: IconName; label: string }> 
   'find-bug': { icon: 'bug', label: '抓蟲' },
   'same-or-not': { icon: 'search', label: '改壞了嗎' },
   'fill-in': { icon: 'pencil', label: '動手填空' },
+  concept: { icon: 'lightbulb', label: '概念題' },
 }

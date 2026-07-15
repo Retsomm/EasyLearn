@@ -1,0 +1,170 @@
+{
+  "id": "fp-17",
+  "title": "協調時間線",
+  "questions": [
+    {
+      "id": "fp-17-q1",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "race condition",
+      "docs": "",
+      "story": "",
+      "prompt": "什麼是 race condition？用「兩個 ajax 回應順序不定」的例子說明。",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "race condition 是指多條時間線的執行結果，會因為它們實際完成的先後順序不同而得到不同結果；例如同時發出 cost_ajax 和 shipping_ajax 兩個請求，如果程式假設「cost 一定比 shipping 先回來」，但實際網路狀況可能讓 shipping 先回來，依賴這個假設寫的程式碼就會出錯——結果變成「跟誰先跑完」賽跑出來的，而不是確定的" },
+        { "id": "b", "text": "race condition 是指程式執行速度太慢，跟順序完全無關" },
+        { "id": "c", "text": "race condition 只會發生在多執行緒的程式語言裡，JavaScript 不會有這個問題" },
+        { "id": "d", "text": "race condition 是指兩個請求的網址寫錯，導致其中一個失敗" }
+      ],
+      "answer": "a",
+      "explanation": "race condition 的本質就是「結果依賴不保證的執行順序」——只要程式碼的正確性偷偷假設了某種先後順序，就埋下了 race condition 的種子。",
+      "verify": { "manual": "概念題：定義題，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-17-q2",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "實作 Cut",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "實作 Cut(num, callback)：等 num 條時間線都完成後才執行一次 callback。這段程式會印出什麼？",
+      "code": "function Cut(num, callback) {\n  var numFinished = 0;\n  return function () {\n    numFinished++;\n    if (numFinished === num) callback();\n  };\n}\n\nvar log = [];\nvar done = Cut(2, function () { log.push('both done'); });\nlog.push('before A');\ndone();\nlog.push('before B');\ndone();\nconsole.log(log.join(', '));",
+      "options": [
+        { "id": "a", "text": "before A, before B, both done" },
+        { "id": "b", "text": "both done, before A, before B" },
+        { "id": "c", "text": "before A, both done, before B, both done" },
+        { "id": "d", "text": "before A, before B" }
+      ],
+      "answer": "a",
+      "explanation": "Cut 回傳的函式每被呼叫一次就把 numFinished 加一，只有累積到第 num 次（這裡是第 2 次）才真正觸發 callback，所以「both done」一定會在兩次 done() 都被呼叫之後才出現，且只出現一次。",
+      "verify": {
+        "checks": [
+          { "code": "function Cut(num, callback) {\n  var numFinished = 0;\n  return function () { numFinished++; if (numFinished === num) callback(); };\n}\nvar log = [];\nvar done = Cut(2, function () { log.push('both done'); });\nlog.push('before A');\ndone();\nlog.push('before B');\ndone();\nconsole.log(log.join(', '));", "expected": "before A, before B, both done" }
+        ]
+      }
+    },
+    {
+      "id": "fp-17-q3",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "用 Cut 彙整兩個平行請求",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
+      "story": "",
+      "prompt": "用 Cut() 改寫：cost_ajax() 與 shipping_ajax() 平行發出，不管誰先回來，兩者都完成後才彙整結果。這段程式會印出什麼？",
+      "code": "function Cut(num, callback) {\n  var numFinished = 0;\n  var results = {};\n  return function (key, value) {\n    results[key] = value;\n    numFinished++;\n    if (numFinished === num) callback(results);\n  };\n}\n\nvar onDone = Cut(2, function (results) {\n  console.log('total:', results.cost + results.shipping);\n});\n\n// 模擬 shipping 先回來，cost 後回來\nsetTimeout(function () { onDone('shipping', 5); }, 5);\nsetTimeout(function () { onDone('cost', 20); }, 15);",
+      "options": [
+        { "id": "a", "text": "total: 25" },
+        { "id": "b", "text": "total: NaN" },
+        { "id": "c", "text": "total: 5" },
+        { "id": "d", "text": "程式不會有任何輸出，因為兩個請求順序不對" }
+      ],
+      "answer": "a",
+      "explanation": "無論 shipping 或 cost 誰先回來，Cut 都只在累積滿 2 次呼叫後才觸發 callback，並把兩次呼叫各自帶來的 key/value 收進同一份 results，所以彙整結果不受回應順序影響，永遠是 5 + 20 = 25。",
+      "verify": {
+        "checks": [
+          { "code": "function Cut(num, callback) {\n  var numFinished = 0;\n  var results = {};\n  return function (key, value) { results[key] = value; numFinished++; if (numFinished === num) callback(results); };\n}\nvar onDone = Cut(2, function (results) { console.log('total:', results.cost + results.shipping); });\nsetTimeout(function () { onDone('shipping', 5); }, 5);\nsetTimeout(function () { onDone('cost', 20); }, 15);", "expected": "total: 25" }
+        ]
+      }
+    },
+    {
+      "id": "fp-17-q4",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "實作 JustOnce",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/rest_parameters",
+      "story": "",
+      "prompt": "實作 JustOnce(action)：不管被呼叫幾次，action 只會執行第一次。這段程式會印出什麼？",
+      "code": "function JustOnce(action) {\n  var alreadyCalled = false;\n  return function (...args) {\n    if (!alreadyCalled) {\n      alreadyCalled = true;\n      return action(...args);\n    }\n  };\n}\n\nvar log = [];\nvar submitOnce = JustOnce(function (name) { log.push('submit ' + name); });\nsubmitOnce('order1');\nsubmitOnce('order1');\nsubmitOnce('order1');\nconsole.log(log.join(', '));",
+      "options": [
+        { "id": "a", "text": "submit order1" },
+        { "id": "b", "text": "submit order1, submit order1, submit order1" },
+        { "id": "c", "text": "（空字串，什麼都沒印）" },
+        { "id": "d", "text": "會拋出例外，因為 submitOnce 只能被呼叫一次，第二次呼叫就會出錯" }
+      ],
+      "answer": "a",
+      "explanation": "第一次呼叫時 alreadyCalled 還是 false，於是真正執行 action 並把它設成 true；之後不管再呼叫幾次，if (!alreadyCalled) 都不成立，action 不會再被執行——這正是防止「使用者連點提交鈕造成重複下單」的標準手法。",
+      "verify": {
+        "checks": [
+          { "code": "function JustOnce(action) {\n  var alreadyCalled = false;\n  return function (...args) { if (!alreadyCalled) { alreadyCalled = true; return action(...args); } };\n}\nvar log = [];\nvar submitOnce = JustOnce(function (name) { log.push('submit ' + name); });\nsubmitOnce('order1');\nsubmitOnce('order1');\nsubmitOnce('order1');\nconsole.log(log.join(', '));", "expected": "submit order1" }
+        ]
+      }
+    },
+    {
+      "id": "fp-17-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "顯性 vs 隱性的時間模型",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊寫的 submitOrder() 沒有任何機制防止被重複呼叫，只靠工程師「口頭約定只呼叫一次」來確保安全；後來改用 JustOnce(submitOrder) 包裝，不管呼叫幾次，內部真正的送出邏輯只會執行一次。這個改變說明了「隱性時間模型」變成「顯性時間模型」的什麼意思？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "原本「這個動作只能發生一次」只存在於工程師的假設裡，程式碼本身完全沒有強制執行這件事（隱性）；用 JustOnce 包裝後，「最多執行一次」這個規則被寫進程式結構本身、可以被檢視與信任，不再只是靠人記得（顯性）——Cut、Queue、JustOnce 都是把某種原本隱性的時間假設，變成程式碼裡明確保證的規則" },
+        { "id": "b", "text": "隱性與顯性時間模型只是同一件事的兩種說法，改用 JustOnce 前後沒有任何實質差異" },
+        { "id": "c", "text": "JustOnce 讓 submitOrder 從同步函式變成非同步函式，這就是所謂的顯性時間模型" },
+        { "id": "d", "text": "這個改變只跟程式執行效能有關，跟時間模型的顯性隱性無關" }
+      ],
+      "answer": "a",
+      "explanation": "把「什麼時候發生、發生幾次」從工程師的假設，變成程式碼裡明確、可測試的規則，正是這一整章並行原語共同的精神：Queue 讓順序變顯性、Cut 讓彙整時機變顯性、JustOnce 讓「只發生一次」變顯性。",
+      "verify": { "manual": "概念題：以具體 submitOrder 重複呼叫情境取代抽象定位比較，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-17-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "冪等",
+      "docs": "",
+      "story": "",
+      "prompt": "deleteUser(id) 執行一次會刪除使用者，執行第二次時會因為使用者已經不存在而噴錯；setUserStatus(id, 'inactive') 不管執行一次還是十次，結果都是這個使用者的狀態變成 inactive。哪一個是冪等（idempotent）的？這帶來什麼好處？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "setUserStatus 是冪等的——重複執行跟只執行一次的最終效果完全相同；在時間線交錯、網路重送這類不確定情境下，很難保證一個動作恰好只被觸發一次，冪等的動作就算意外被多執行了幾次，結果也不會壞掉，deleteUser 這種非冪等的動作則需要額外的保護機制" },
+        { "id": "b", "text": "deleteUser 是冪等的，因為它每次執行都確實刪除了資料，行為看起來很一致" },
+        { "id": "c", "text": "兩者都是冪等的，只要函式沒有回傳值就算是冪等" },
+        { "id": "d", "text": "冪等只是「執行速度快」的另一種說法，跟重複執行的結果無關" }
+      ],
+      "answer": "a",
+      "explanation": "與其想辦法保證「這個動作絕對只會被觸發一次」，不如讓動作本身設計成冪等——重複執行也不會出錯，這是應付不確定時序的另一種思路，跟 JustOnce 互補而非取代。",
+      "verify": { "manual": "概念題：以具體 deleteUser／setUserStatus 對比取代抽象定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-17-q7",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "平行請求彙整結果的原生做法",
+      "docs": "",
+      "story": "",
+      "prompt": "平行執行兩個非同步請求再彙整結果，若不用書中的 Cut()，現代 JavaScript 對應的原生做法是？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "setTimeout" },
+        { "id": "b", "text": "Promise.all" },
+        { "id": "c", "text": "for await" },
+        { "id": "d", "text": "Array.map" }
+      ],
+      "answer": "b",
+      "explanation": "Promise.all 就是 JavaScript 語言內建、行為上跟 Cut(2, callback) 等效的工具：等傳入的所有 Promise 都完成（resolve）後，才把所有結果一次彙整交出來。",
+      "verify": { "manual": "概念題：定義題，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-17-q8",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "情境分析：結帳流程的三種風險",
+      "docs": "",
+      "story": "",
+      "prompt": "分析「多次點擊 + 平行請求 + 順序不定」三種情況下，你設計的結帳流程分別會發生什麼事？如何各個擊破？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "多次點擊：使用者連點提交鈕可能觸發多次下單，用 JustOnce 包住送出訂單的動作來防堵；平行請求：計算運費與稅金若各自發出獨立的非同步請求，太早彙總會漏掉還沒回來的那筆，用 Cut 或 Promise.all 等兩者都完成再彙整；順序不定：兩個請求誰先回來不保證，彙總邏輯不能假設固定順序，必須用 key 對應各自的值（而不是依賴回呼觸發的先後順序）來組合最終結果" },
+        { "id": "b", "text": "三種情況都不需要特別處理，正常寫同步程式碼呼叫就好" },
+        { "id": "c", "text": "只要把所有請求都改成同步（阻塞）呼叫，三個問題就會自動消失" },
+        { "id": "d", "text": "三種情況都應該用同一個全域旗標變數手動控制，不需要額外的並行原語" }
+      ],
+      "answer": "a",
+      "explanation": "這題把整章學到的三個並行原語對應回同一個真實情境：JustOnce 對付「重複觸發」，Cut／Promise.all 對付「平行彙整」，而彙整邏輯本身要對「順序不定」保持中立，不能偷偷假設誰先誰後。",
+      "verify": { "manual": "概念題：情境分析，無可執行程式碼。" }
+    }
+  ]
+}

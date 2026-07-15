@@ -1,0 +1,132 @@
+{
+  "id": "fp-11",
+  "title": "First-Class Functions（二）：回傳函式",
+  "questions": [
+    {
+      "id": "fp-11-q1",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "函式工廠解決重複問題",
+      "docs": "",
+      "story": "",
+      "prompt": "wrapLogging(f)（讓任何函式出錯時自動記 log）和 wrapCaching(f)（讓任何函式的結果自動被快取）這兩個函式的內部骨架幾乎一樣：都是「回傳一個新函式，這個新函式呼叫原本的 f，並在外面包一層額外邏輯」。這種「寫一個函式、回傳另一個客製化函式」的做法，解決了什麼問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "如果沒有函式工廠，每次要幫一個函式加上記 log 或加上快取，都得手動重複寫一次「包一層 try/catch」或「包一層檢查快取」的樣板程式碼；函式工廠把這段共同的框架邏輯抽出來寫一次，只留下「呼叫時要用哪個 f」這個差異當參數，就能產生一整批客製化的函式，不必每次重複貼上同樣的框架" },
+        { "id": "b", "text": "函式工廠是專門用來產生 class 實例的設計模式，跟重複程式碼無關" },
+        { "id": "c", "text": "函式工廠只能用來建立物件，沒辦法用來建立函式" },
+        { "id": "d", "text": "函式工廠會讓程式明顯變慢，通常應該避免使用" }
+      ],
+      "answer": "a",
+      "explanation": "函式工廠是高階函式「回傳函式」這一半的典型應用：共同的骨架寫一次，差異的部分靠參數帶入，產出一整批行為一致又各自客製化的函式。",
+      "verify": { "manual": "概念題：以具體 wrapLogging／wrapCaching 對比取代抽象重複問題敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-11-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "wrapLogging：出錯時記 log 再拋出",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/try...catch",
+      "story": "",
+      "prompt": "wrapLogging(f) 回傳一個「執行 f、出錯時先記 log 再照樣拋出例外」的新函式。這段程式會印出什麼？",
+      "code": "function wrapLogging(f) {\n  return function (...args) {\n    try {\n      return f(...args);\n    } catch (e) {\n      console.log('logged error:', e.message);\n      throw e;\n    }\n  };\n}\n\nconst risky = wrapLogging(function (x) {\n  if (x < 0) throw new Error('bad');\n  return x + 1;\n});\n\ntry {\n  console.log(risky(2));\n  console.log(risky(-5));\n} catch (e) {\n  console.log('caught outside:', e.message);\n}",
+      "options": [
+        { "id": "a", "text": "3\nlogged error: bad\ncaught outside: bad" },
+        { "id": "b", "text": "3\ncaught outside: bad" },
+        { "id": "c", "text": "3\n-4" },
+        { "id": "d", "text": "程式會直接崩潰，沒有任何輸出" }
+      ],
+      "answer": "a",
+      "explanation": "risky(2) 正常回傳 3。risky(-5) 觸發例外，wrapLogging 內的 catch 先印出 log，再用 throw e 把例外重新拋出，於是外層的 try/catch 接住它、印出 caught outside。",
+      "verify": {
+        "checks": [
+          { "code": "function wrapLogging(f) {\n  return function (...args) {\n    try {\n      return f(...args);\n    } catch (e) {\n      console.log('logged error:', e.message);\n      throw e;\n    }\n  };\n}\nconst risky = wrapLogging(function (x) {\n  if (x < 0) throw new Error('bad');\n  return x + 1;\n});\ntry {\n  console.log(risky(2));\n  console.log(risky(-5));\n} catch (e) {\n  console.log('caught outside:', e.message);\n}", "expected": "3\nlogged error: bad\ncaught outside: bad" }
+        ]
+      }
+    },
+    {
+      "id": "fp-11-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "wrapArrayCopyOnWrite 共通模式",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/rest_parameters",
+      "story": "",
+      "prompt": "wrapArrayCopyOnWrite(f) 用共通模式包出 copy-on-write 函式：複製陣列 → 執行 f 修改副本 → 回傳副本。這段程式會印出什麼？",
+      "code": "function wrapArrayCopyOnWrite(f) {\n  return function (array, ...args) {\n    var copy = array.slice();\n    f(copy, ...args);\n    return copy;\n  };\n}\n\nconst push = wrapArrayCopyOnWrite(function (arr, val) {\n  arr.push(val);\n});\n\nconst original = [1, 2, 3];\nconst result = push(original, 4);\nconsole.log(original);\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3 ]\n[ 1, 2, 3, 4 ]" },
+        { "id": "b", "text": "[ 1, 2, 3, 4 ]\n[ 1, 2, 3, 4 ]" },
+        { "id": "c", "text": "[ 1, 2, 3 ]\n[ 1, 2, 3 ]" },
+        { "id": "d", "text": "會拋出例外，因為 push 不能傳進高階函式" }
+      ],
+      "answer": "a",
+      "explanation": "wrapArrayCopyOnWrite 把「複製 → 讓 f 直接改副本 → 回傳副本」這套共通流程封裝起來，f 本身（這裡是 arr.push(val)）完全不用擔心不可變的問題，可以放心直接修改傳進來的 arr，因為那已經是複製品。",
+      "verify": {
+        "checks": [
+          { "code": "function wrapArrayCopyOnWrite(f) {\n  return function (array, ...args) {\n    var copy = array.slice();\n    f(copy, ...args);\n    return copy;\n  };\n}\nconst push = wrapArrayCopyOnWrite(function (arr, val) { arr.push(val); });\nconst original = [1, 2, 3];\nconst result = push(original, 4);\nconsole.log(original);\nconsole.log(result);", "expected": "[ 1, 2, 3 ]\n[ 1, 2, 3, 4 ]" }
+        ]
+      }
+    },
+    {
+      "id": "fp-11-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "傳入函式 vs 回傳函式",
+      "docs": "",
+      "story": "",
+      "prompt": "情境一：你已經有固定的走訪流程 array.map(...)，只是每次呼叫要套用的轉換邏輯不同。情境二：你要對十幾個函式都加上「自動記 log」的功能，每個函式都要各自產生一份綁定了自己名稱的記錄邏輯。這兩種情境分別比較適合用「傳入函式」還是「回傳函式」？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "情境一適合「傳入函式」（把轉換邏輯當參數交給 map，map 本身的流程不變）；情境二適合「回傳函式」（用一個函式工廠，根據每個函式各自的名稱產生客製化的記錄包裝函式）——流程固定、邏輯多變用前者，框架固定、要產生多個客製化版本用後者" },
+        { "id": "b", "text": "兩種情境都該用「傳入函式」，「回傳函式」只是理論上的寫法，實務很少用到" },
+        { "id": "c", "text": "兩種情境都該用「回傳函式」，「傳入函式」這種用法已經過時" },
+        { "id": "d", "text": "情境一該用「回傳函式」、情境二該用「傳入函式」，跟描述剛好相反" }
+      ],
+      "answer": "a",
+      "explanation": "簡單分野：流程固定、邏輯多變 → 傳入函式（如 map）；框架固定、要產生多個客製化版本 → 回傳函式（函式工廠）。wrapLogging、wrapArrayCopyOnWrite 都是後者的例子。",
+      "verify": { "manual": "概念題：以兩種具體情境對比取代抽象比較，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-11-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "closure 讓內層函式存取外層變數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "makeAdder(n) 回傳一個內層函式，內層函式能存取 n 是因為 closure（閉包）。這段程式會印出什麼？",
+      "code": "function makeAdder(n) {\n  return function (x) {\n    return n + x;\n  };\n}\n\nconst add5 = makeAdder(5);\nconst add10 = makeAdder(10);\nconsole.log(add5(3));\nconsole.log(add10(3));",
+      "options": [
+        { "id": "a", "text": "8\n13" },
+        { "id": "b", "text": "3\n3" },
+        { "id": "c", "text": "8\n8" },
+        { "id": "d", "text": "會拋出例外，因為 n 在內層函式裡是 undefined" }
+      ],
+      "answer": "a",
+      "explanation": "add5 和 add10 各自的內層函式都透過 closure 記住了自己被建立時的 n（5 或 10），彼此互不干擾，所以 add5(3) 是 8、add10(3) 是 13。內層函式能存取 n，靠的是 closure，不是全域變數、this 綁定或 hoisting。",
+      "verify": {
+        "checks": [
+          { "code": "function makeAdder(n) {\n  return function (x) { return n + x; };\n}\nconst add5 = makeAdder(5);\nconst add10 = makeAdder(10);\nconsole.log(add5(3));\nconsole.log(add10(3));", "expected": "8\n13" }
+        ]
+      }
+    },
+    {
+      "id": "fp-11-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "情境分析：自動加上錯誤處理",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊常忘記幫新函式加上錯誤處理，你會如何用高階函式建立「自動加上錯誤處理」的機制？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "寫一個像 wrapLogging 的高階函式，把「加上錯誤處理」這個框架邏輯集中定義一次；要求所有新函式一律先用這個高階函式包一層再匯出（可以搭配程式碼慣例或 lint 規則落實），錯誤處理就不會因為個別工程師忘了手動加 try/catch 而漏掉" },
+        { "id": "b", "text": "開會口頭提醒大家不要忘記，不需要任何程式碼層面的機制" },
+        { "id": "c", "text": "把錯誤處理規則寫進 README，靠自律遵守即可" },
+        { "id": "d", "text": "高階函式無法解決這種團隊協作層面的問題" }
+      ],
+      "answer": "a",
+      "explanation": "把「容易被遺忘的紀律」變成「經過一層函式強制套用的機制」，是高階函式在團隊協作上的實際價值：靠結構而不是靠記性來保證一致性。",
+      "verify": { "manual": "概念題：情境分析，無可執行程式碼。" }
+    }
+  ]
+}

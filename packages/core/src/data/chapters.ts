@@ -28,6 +28,25 @@ import react8 from './questions/react-8-sharing-state.json'
 import react9 from './questions/react-9-preserving-state.json'
 import react10 from './questions/react-10-reducer-context.json'
 import react11 from './questions/react-11-refs.json'
+import fp1 from './questions/fp-1-welcome.json'
+import fp2 from './questions/fp-2-overview.json'
+import fp3 from './questions/fp-3-actions-calculations-data.json'
+import fp4 from './questions/fp-4-extract-calculations.json'
+import fp5 from './questions/fp-5-improve-actions.json'
+import fp6 from './questions/fp-6-copy-on-write.json'
+import fp7 from './questions/fp-7-defensive-copying.json'
+import fp8 from './questions/fp-8-stratified-design-1.json'
+import fp9 from './questions/fp-9-stratified-design-2.json'
+import fp10 from './questions/fp-10-first-class-functions-1.json'
+import fp11 from './questions/fp-11-first-class-functions-2.json'
+import fp12 from './questions/fp-12-array-tools.json'
+import fp13 from './questions/fp-13-chaining.json'
+import fp14 from './questions/fp-14-nested-data.json'
+import fp15 from './questions/fp-15-timeline-diagrams.json'
+import fp16 from './questions/fp-16-sharing-resources.json'
+import fp17 from './questions/fp-17-coordinating-timelines.json'
+import fp18 from './questions/fp-18-reactive-onion.json'
+import fp19 from './questions/fp-19-road-ahead.json'
 import type { Chapter, Level, Question, WrongEntry, WrongEntryMeta } from '../types'
 
 // 題目 JSON 的 type 欄位在匯入時只會被推斷成 string，用 as 收斂回字面量聯合型別
@@ -53,6 +72,15 @@ export const chapters: Chapter[] = [
     levels: [react1, react2, react3, react4, react5, react6, react7, react8, react9, react10, react11].map(
       asLevel,
     ),
+  },
+  {
+    id: 'fp',
+    title: '函數式思考（Grokking Simplicity）',
+    icon: 'book-open',
+    levels: [
+      fp1, fp2, fp3, fp4, fp5, fp6, fp7, fp8, fp9, fp10,
+      fp11, fp12, fp13, fp14, fp15, fp16, fp17, fp18, fp19,
+    ].map(asLevel),
   },
 ]
 

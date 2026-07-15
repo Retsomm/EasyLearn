@@ -1,0 +1,151 @@
+{
+  "id": "fp-14",
+  "title": "處理巢狀資料的函數式工具",
+  "questions": [
+    {
+      "id": "fp-14-q1",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "實作 update",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/assign",
+      "story": "",
+      "prompt": "update(object, key, modify) 回傳 key 對應值被 modify 處理過的新物件（copy-on-write）。這段程式會印出什麼？",
+      "code": "function update(object, key, modify) {\n  var value = object[key];\n  var newValue = modify(value);\n  var newObject = Object.assign({}, object);\n  newObject[key] = newValue;\n  return newObject;\n}\n\nvar item = { name: 'shirt', price: 20 };\nvar result = update(item, 'price', (p) => p + 5);\nconsole.log(item);\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "{ name: 'shirt', price: 20 }\n{ name: 'shirt', price: 25 }" },
+        { "id": "b", "text": "{ name: 'shirt', price: 25 }\n{ name: 'shirt', price: 25 }" },
+        { "id": "c", "text": "{ name: 'shirt', price: 20 }\n{ name: 'shirt', price: 20 }" },
+        { "id": "d", "text": "25" }
+      ],
+      "answer": "a",
+      "explanation": "update 用 Object.assign({}, object) 先淺拷貝出新物件，只在複製品上改動 key 對應的值，原本的 item 完全沒被動到，這正是巢狀資料版本的 copy-on-write。",
+      "verify": {
+        "checks": [
+          { "code": "function update(object, key, modify) {\n  var value = object[key];\n  var newValue = modify(value);\n  var newObject = Object.assign({}, object);\n  newObject[key] = newValue;\n  return newObject;\n}\nvar item = { name: 'shirt', price: 20 };\nvar result = update(item, 'price', (p) => p + 5);\nconsole.log(item);\nconsole.log(result);", "expected": "{ name: 'shirt', price: 20 }\n{ name: 'shirt', price: 25 }" }
+        ]
+      }
+    },
+    {
+      "id": "fp-14-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "用 update 重構重複的欄位函式",
+      "docs": "",
+      "story": "",
+      "prompt": "incrementField(item, field)、decrementField(item, field) 這類重複函式，哪一種重構方式正確地用 update() 統一起來？",
+      "code": "function incrementField(item, field) {\n  var newItem = Object.assign({}, item);\n  newItem[field] = newItem[field] + 1;\n  return newItem;\n}\nfunction decrementField(item, field) {\n  var newItem = Object.assign({}, item);\n  newItem[field] = newItem[field] - 1;\n  return newItem;\n}",
+      "options": [
+        { "id": "a", "text": "incrementField(item, field) 改寫成 update(item, field, (v) => v + 1)；decrementField(item, field) 改寫成 update(item, field, (v) => v - 1)——兩者共用的「複製物件、換掉一個欄位」邏輯只留在 update 裡一份，各自只保留「怎麼改這個值」的差異" },
+        { "id": "b", "text": "把兩個函式合併成 incrementOrDecrementField(item, field, direction)，內部用 if/else 判斷方向，但複製物件的邏輯依然各寫一次" },
+        { "id": "c", "text": "保留兩個函式不變，只是把它們都改成 async 函式" },
+        { "id": "d", "text": "刪掉 decrementField，只留 incrementField，要遞減時呼叫兩次 increment 再手動處理" }
+      ],
+      "answer": "a",
+      "explanation": "update 已經把「複製 → 換掉一個欄位 → 回傳新物件」這個共通骨架封裝好了，incrementField 和 decrementField 只需要把各自的差異（+1 或 -1）當成 modify 函式傳進去即可。",
+      "verify": { "manual": "概念題：程式實作型改寫成選擇題，正解程式碼已於選項給出，無需執行驗證。" }
+    },
+    {
+      "id": "fp-14-q3",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "實作 update2 處理兩層巢狀",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/assign",
+      "story": "",
+      "prompt": "update2(object, key1, key2, modify) 處理兩層巢狀。這段程式會印出什麼？",
+      "code": "function update(object, key, modify) {\n  var value = object[key];\n  var newValue = modify(value);\n  var newObject = Object.assign({}, object);\n  newObject[key] = newValue;\n  return newObject;\n}\nfunction update2(object, key1, key2, modify) {\n  return update(object, key1, (value1) => update(value1, key2, modify));\n}\n\nvar item = { name: 'shirt', options: { price: 20 } };\nvar result = update2(item, 'options', 'price', (p) => p + 5);\nconsole.log(item);\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "{ name: 'shirt', options: { price: 20 } }\n{ name: 'shirt', options: { price: 25 } }" },
+        { "id": "b", "text": "{ name: 'shirt', options: { price: 25 } }\n{ name: 'shirt', options: { price: 25 } }" },
+        { "id": "c", "text": "{ name: 'shirt', options: { price: 20 } }\n{ name: 'shirt', options: { price: 20 } }" },
+        { "id": "d", "text": "會拋出例外，因為 update2 不能巢狀呼叫 update" }
+      ],
+      "answer": "a",
+      "explanation": "update2 就是把 update 呼叫兩次、一層包一層：外層 update 負責複製最外層物件、換掉 options；內層 update 負責複製 options、換掉 price。每一層都各自淺拷貝，原始的 item 完全沒被動到。",
+      "verify": {
+        "checks": [
+          { "code": "function update(object, key, modify) {\n  var value = object[key];\n  var newValue = modify(value);\n  var newObject = Object.assign({}, object);\n  newObject[key] = newValue;\n  return newObject;\n}\nfunction update2(object, key1, key2, modify) {\n  return update(object, key1, (value1) => update(value1, key2, modify));\n}\nvar item = { name: 'shirt', options: { price: 20 } };\nvar result = update2(item, 'options', 'price', (p) => p + 5);\nconsole.log(item);\nconsole.log(result);", "expected": "{ name: 'shirt', options: { price: 20 } }\n{ name: 'shirt', options: { price: 25 } }" }
+        ]
+      }
+    },
+    {
+      "id": "fp-14-q4",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "遞迴版 nestedUpdate",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/assign",
+      "story": "",
+      "prompt": "遞迴版 nestedUpdate(object, keys, modify) 處理任意深度的巢狀路徑。這段程式會印出什麼？",
+      "code": "function update(object, key, modify) {\n  var value = object[key];\n  var newValue = modify(value);\n  var newObject = Object.assign({}, object);\n  newObject[key] = newValue;\n  return newObject;\n}\nfunction nestedUpdate(object, keys, modify) {\n  if (keys.length === 0) return modify(object);\n  var key1 = keys[0];\n  var restOfKeys = keys.slice(1);\n  return update(object, key1, (value1) => nestedUpdate(value1, restOfKeys, modify));\n}\n\nvar cart = { shirt: { options: { color: 'blue', price: 20 } } };\nvar result = nestedUpdate(cart, ['shirt', 'options', 'price'], (p) => p + 5);\nconsole.log(cart);\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "{ shirt: { options: { color: 'blue', price: 20 } } }\n{ shirt: { options: { color: 'blue', price: 25 } } }" },
+        { "id": "b", "text": "{ shirt: { options: { color: 'blue', price: 25 } } }\n{ shirt: { options: { color: 'blue', price: 25 } } }" },
+        { "id": "c", "text": "{ price: 25 }" },
+        { "id": "d", "text": "會無限遞迴，因為 keys 永遠不會變成空陣列" }
+      ],
+      "answer": "a",
+      "explanation": "keys 每次遞迴都用 slice(1) 少一個元素，逐步往「keys.length === 0」這個基本情況前進；沿路每一層都呼叫 update 各自淺拷貝，最終只有 price 這個值被改動，其餘層級的物件全部是新複製品，但值沒變。cart 本身則完全沒被動到。",
+      "verify": {
+        "checks": [
+          { "code": "function update(object, key, modify) {\n  var value = object[key];\n  var newValue = modify(value);\n  var newObject = Object.assign({}, object);\n  newObject[key] = newValue;\n  return newObject;\n}\nfunction nestedUpdate(object, keys, modify) {\n  if (keys.length === 0) return modify(object);\n  var key1 = keys[0];\n  var restOfKeys = keys.slice(1);\n  return update(object, key1, (value1) => nestedUpdate(value1, restOfKeys, modify));\n}\nvar cart = { shirt: { options: { color: 'blue', price: 20 } } };\nvar result = nestedUpdate(cart, ['shirt', 'options', 'price'], (p) => p + 5);\nconsole.log(cart);\nconsole.log(result);", "expected": "{ shirt: { options: { color: 'blue', price: 20 } } }\n{ shirt: { options: { color: 'blue', price: 25 } } }" }
+        ]
+      }
+    },
+    {
+      "id": "fp-14-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "遞迴的三個安全守則",
+      "docs": "",
+      "story": "",
+      "prompt": "這段程式碼會無限遞迴、把呼叫堆疊塞爆：\nfunction badNestedUpdate(object, keys, modify) {\n  var key1 = keys[0];\n  var restOfKeys = keys.slice(1);\n  return update(object, key1, function (value1) {\n    return badNestedUpdate(value1, restOfKeys, modify);\n  });\n}\n對照正確版本會多一行 if (keys.length === 0) return modify(object);，這段程式碼缺了遞迴的哪個安全守則？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "缺了「基本情況（base case）」——沒有檢查 keys 是不是已經空了就直接停止遞迴，所以就算 restOfKeys 每次都用 slice(1) 縮短，程式還是會不斷往下呼叫，永遠碰不到終止條件，最終讓呼叫堆疊爆掉" },
+        { "id": "b", "text": "缺了「遞迴呼叫」，因為程式碼裡完全沒有呼叫 badNestedUpdate 自己" },
+        { "id": "c", "text": "缺了「往基本情況前進」，因為 keys 的長度從頭到尾都沒有改變" },
+        { "id": "d", "text": "這段程式碼完全沒有問題，不會發生無限遞迴" }
+      ],
+      "answer": "a",
+      "explanation": "遞迴要安全，必須同時具備：基本情況（停止條件）、遞迴呼叫、以及每次呼叫都往基本情況靠近。這段程式碼有遞迴呼叫、也有讓 keys 變短，唯獨少了「keys 變空時要停下來」這個基本情況，所以會不斷遞迴到 keys 已經是空陣列、key1 變成 undefined 也還在繼續呼叫。",
+      "verify": { "manual": "概念題：以具體缺陷程式碼取代抽象守則背誦，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-14-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "深層路徑的理解負擔",
+      "docs": "",
+      "story": "",
+      "prompt": "呼叫端要改 shirt 的顏色，得寫成 nestedUpdate(cart, ['shirt', 'options', 'color'], f)，必須知道路徑裡每一層的確切名稱與順序。如果之後把 options 這層拿掉、color 直接放在 shirt 底下，所有寫死這條路徑的呼叫端都要跟著改。怎麼解決這個問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "用抽象屏障包一層有意義名稱的函式，例如 setShirtColor(cart, color)，內部才去呼叫 nestedUpdate(cart, ['shirt', 'options', 'color'], ...)；呼叫端只需要知道「這個操作叫什麼名字」，不用知道底層巢狀了幾層、每層叫什麼名字，未來路徑改變時只需要修改這一個函式內部" },
+        { "id": "b", "text": "沒有任何解法，深層巢狀路徑的維護負擔是無法避免的，只能請呼叫端多加小心" },
+        { "id": "c", "text": "應該把所有巢狀路徑都寫死成字串常數，例如 'shirt.options.color'，這樣就不會有維護問題" },
+        { "id": "d", "text": "應該禁止使用巢狀資料結構，把所有資料都改成扁平的單層物件" }
+      ],
+      "answer": "a",
+      "explanation": "nestedUpdate 本身解決的是「怎麼安全地改」，但呼叫端還是得知道路徑；再包一層語意化的函式，才能把「這條路徑實際長什麼樣子」的知識封進抽象屏障之下，未來路徑改變時，只需要修改 setShirtColor 這一個函式，呼叫端完全不用動。",
+      "verify": { "manual": "概念題：以具體路徑變動情境取代抽象理解負擔討論，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-14-q7",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "nestedUpdate 的基本情況",
+      "docs": "",
+      "story": "",
+      "prompt": "nestedUpdate(obj, [], f) 的基本情況應該回傳什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "obj" },
+        { "id": "b", "text": "f(obj)" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "拋出錯誤" }
+      ],
+      "answer": "b",
+      "explanation": "keys 是空陣列代表「路徑已經走完，obj 就是要修改的目標值本身」，所以基本情況要把 modify 函式套用在 obj 上並回傳，也就是 f(obj)，而不是原封不動回傳 obj。",
+      "verify": { "manual": "概念題：對照 Q4 nestedUpdate 的實作，keys.length === 0 時回傳 modify(object)，無需額外執行驗證。" }
+    }
+  ]
+}
