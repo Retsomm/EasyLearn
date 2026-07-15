@@ -11,7 +11,7 @@ import { transformSync } from 'esbuild'
 const PROJECT_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const QUESTIONS_DIR = join(PROJECT_ROOT, '../../packages/core/src/data/questions')
 const REQUIRED_FIELDS = ['id', 'type', 'difficulty', 'topic', 'docs', 'story', 'prompt', 'code', 'options', 'answer', 'explanation', 'verify']
-const VALID_TYPES = ['predict-output', 'find-bug', 'same-or-not', 'fill-in']
+const VALID_TYPES = ['predict-output', 'find-bug', 'same-or-not', 'fill-in', 'concept']
 const ALLOWED_DOC_HOSTS = ['developer.mozilla.org', 'react.dev']
 
 let pass = 0
@@ -57,12 +57,16 @@ for (const file of readdirSync(QUESTIONS_DIR).filter((f) => f.endsWith('.json'))
     }
     check(VALID_TYPES.includes(q.type), `${tag}: 未知題型 ${q.type}`)
     check(q.options.some((o) => o.id === q.answer), `${tag}: answer "${q.answer}" 不在選項中`)
-    // 知識依據限定官方文件
-    try {
-      const host = new URL(q.docs).hostname
-      check(ALLOWED_DOC_HOSTS.some((h) => host.endsWith(h)), `${tag}: docs 來源 ${host} 不在允許清單（MDN / react.dev）`)
-    } catch {
-      check(false, `${tag}: docs 不是合法網址`)
+    // 知識依據限定官方文件；concept 題型考的是書中設計思考，沒有對應的 MDN/react.dev 頁面，docs 允許留空
+    if (q.type === 'concept') {
+      check(q.docs === '', `${tag}: concept 題型的 docs 應留空（沒有對應官方文件）`)
+    } else {
+      try {
+        const host = new URL(q.docs).hostname
+        check(ALLOWED_DOC_HOSTS.some((h) => host.endsWith(h)), `${tag}: docs 來源 ${host} 不在允許清單（MDN / react.dev）`)
+      } catch {
+        check(false, `${tag}: docs 不是合法網址`)
+      }
     }
     // fill-in 題必須有空格標記
     if (q.type === 'fill-in') {

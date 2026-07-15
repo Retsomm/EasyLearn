@@ -31,7 +31,7 @@ export type IconName =
   | 'logout'
   | 'trash'
 
-export type QuestionType = 'predict-output' | 'find-bug' | 'same-or-not' | 'fill-in'
+export type QuestionType = 'predict-output' | 'find-bug' | 'same-or-not' | 'fill-in' | 'concept'
 
 export interface QuestionOption {
   id: string

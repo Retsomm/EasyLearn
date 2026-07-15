@@ -1,0 +1,124 @@
+{
+  "id": "fp-10",
+  "title": "First-Class Functions（一）",
+  "questions": [
+    {
+      "id": "fp-10-q1",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "first-class 的意義",
+      "docs": "",
+      "story": "",
+      "prompt": "你可以把一個函式指派給變數、當作參數傳給另一個函式、放進陣列裡。但你不能把 if 這個關鍵字本身指派給一個變數、或把 + 這個運算子當參數傳給另一個函式。這個差異說明了什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "函式在 JavaScript 裡是 first-class（一等公民）——可以像資料一樣被儲存、傳遞、當作回傳值；但 if、+ 這類語法結構不是 first-class，它們只能寫在固定的語法位置上，沒辦法被當成一般的值操作" },
+        { "id": "b", "text": "這代表 if 和 + 其實效能比函式差，所以語言設計者刻意限制它們的用法" },
+        { "id": "c", "text": "這代表函式在 JavaScript 裡是特殊物件，跟一般的值完全不同、不能互相比較" },
+        { "id": "d", "text": "這個差異只在瀏覽器環境成立，Node.js 環境裡 if 也可以被當成變數傳遞" }
+      ],
+      "answer": "a",
+      "explanation": "「函式是 first-class」是 Part 2 一切技巧的地基：正因為函式可以被當資料傳來傳去，才能有高階函式、函式工廠這些抽象手法；+、if 這類語法結構做不到這件事。",
+      "verify": { "manual": "概念題：以具體語法對比取代抽象定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-10-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "隱含參數壞味道與修法",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊裡有三個函式：setPriceByName(cart, name, price)、setQuantityByName(cart, name, qty)、setShippingByName(cart, name, value)。這三個函式名稱有什麼共同的壞味道？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "函式名稱裡的 Price、Quantity、Shipping 其實是「要修改哪個欄位」這個資訊，卻被寫死在函式名稱裡而不是當成參數；這是「函式名稱中的隱含參數」壞味道——本來可以是一個參數的差異，被迫拆成好幾個相似的函式各自命名一次" },
+        { "id": "b", "text": "沒有任何壞味道，函式名稱清楚描述了它做什麼，是良好的命名方式" },
+        { "id": "c", "text": "壞味道在於函式名稱太長，應該縮寫成 setP、setQ、setS 之類的縮寫" },
+        { "id": "d", "text": "壞味道在於函式都用了 ByName 這個字尾，只要拿掉 ByName 就能解決問題" }
+      ],
+      "answer": "a",
+      "explanation": "「顯性化」是把原本寫死在函式名稱裡的差異，變成一個可以傳入的參數（例如 setFieldByName(cart, name, field, value)），讓三個相似函式合併成一個更通用的函式。",
+      "verify": { "manual": "概念題：以具體三個相似函式取代抽象重構手法定義，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-10-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "合併 setXxxByName 系列函式",
+      "docs": "",
+      "story": "",
+      "prompt": "setPriceByName、setQuantityByName、setShippingByName 這三個高度相似的函式，哪一種重構正確地合併成一個 setFieldByName？",
+      "code": "function setPriceByName(cart, name, price) { /* ... */ }\nfunction setQuantityByName(cart, name, quantity) { /* ... */ }\nfunction setShippingByName(cart, name, shipping) { /* ... */ }",
+      "options": [
+        { "id": "a", "text": "function setFieldByName(cart, name, field, value) { var i = cart.findIndex(item => item.name === name); var copy = cart.slice(); copy[i] = { ...copy[i], [field]: value }; return copy; }——呼叫端改成 setFieldByName(cart, \"shirt\", \"price\", 13)，一個函式取代三個重複的函式" },
+        { "id": "b", "text": "把三個函式合併成 setAllFields(cart, name, price, quantity, shipping)，強迫每次呼叫都要傳齊所有欄位" },
+        { "id": "c", "text": "保留三個函式不變，只是讓它們共用同一個變數名稱" },
+        { "id": "d", "text": "用一個全域變數紀錄目前要改哪個欄位，三個函式都改成讀這個全域變數" }
+      ],
+      "answer": "a",
+      "explanation": "把「欄位名」從函式名稱搬進參數列，是本章最核心的重構：三個重複的函式合而為一，未來要加新欄位也不用再新增一個相似函式。",
+      "verify": { "manual": "概念題：程式實作型改寫成選擇題，正解程式碼已於選項給出，無需執行驗證。" }
+    },
+    {
+      "id": "fp-10-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "高階函式的能力",
+      "docs": "",
+      "story": "",
+      "prompt": "myArray.map(function (x) { return x * 2; }) 這行程式裡，map 完全不知道要怎麼「乘以 2」，這個邏輯是呼叫端用參數傳進去的；但如果自己寫一個 function doubleAll(array) { return array.map(function (x) { return x * 2; }); }，doubleAll 就只能做「乘以 2」這一件事。map 和 doubleAll 的差異說明了高階函式的什麼能力？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "map 是高階函式（接受函式當參數），它能把「要走訪陣列」這個固定的流程，跟「每個元素要怎麼被轉換」這個可變的邏輯分開；doubleAll 把兩者寫死在一起，只能做一件事——高階函式讓同一段控制流程可以套用在無限多種不同的具體邏輯上，這是只能操作資料的一般函式做不到的" },
+        { "id": "b", "text": "map 跟 doubleAll 其實完全等價，只是寫法不同，沒有能力上的差異" },
+        { "id": "c", "text": "doubleAll 的效能一定比 map 快，因為少了一層函式呼叫" },
+        { "id": "d", "text": "高階函式的意思是這個函式的參數數量比一般函式多" }
+      ],
+      "answer": "a",
+      "explanation": "map、filter、withLogging 都是高階函式：它們自己不知道要處理什麼具體邏輯，那份邏輯由呼叫端以函式的形式傳進來，實現了「流程」與「內容」的分離，doubleAll 則把兩者焊死在一起，失去了這種彈性。",
+      "verify": { "manual": "概念題：以 map 與 doubleAll 的具體對比取代抽象定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-10-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "replace body with callback：withLogging",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/try...catch",
+      "story": "",
+      "prompt": "withLogging(f) 用「把程式碼包成函式再傳入」的手法，讓任何邏輯都被 try/catch 包住。這段程式會印出什麼？",
+      "code": "function withLogging(f) {\n  return function (...args) {\n    try {\n      return f(...args);\n    } catch (e) {\n      console.log('Error:', e.message);\n    }\n  };\n}\n\nconst risky = withLogging(function (x) {\n  if (x < 0) throw new Error('negative!');\n  return x * 2;\n});\n\nconsole.log(risky(5));\nconsole.log(risky(-1));",
+      "options": [
+        { "id": "a", "text": "10\nError: negative!\nundefined" },
+        { "id": "b", "text": "10\n-2\nundefined" },
+        { "id": "c", "text": "程式會直接拋出未捕捉的例外並中斷" },
+        { "id": "d", "text": "10\nundefined" }
+      ],
+      "answer": "a",
+      "explanation": "risky(5) 正常執行回傳 10；risky(-1) 觸發 throw，被 withLogging 包住的 try/catch 攔截、印出 Error: negative!，catch 區塊沒有 return，所以 risky(-1) 本身回傳 undefined，外層 console.log 再印一次 undefined。",
+      "verify": {
+        "checks": [
+          { "code": "function withLogging(f) {\n  return function (...args) {\n    try {\n      return f(...args);\n    } catch (e) {\n      console.log('Error:', e.message);\n    }\n  };\n}\nconst risky = withLogging(function (x) {\n  if (x < 0) throw new Error('negative!');\n  return x * 2;\n});\nconsole.log(risky(5));\nconsole.log(risky(-1));", "expected": "10\nError: negative!\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "fp-10-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "字串欄位名與抽象屏障",
+      "docs": "",
+      "story": "",
+      "prompt": "setFieldByName(cart, name, field, value) 裡的 field 參數是一個字串（例如 'price'），對應到 cart 裡某個商品物件的屬性名稱。有人擔心「把欄位名字串化傳進去」等於讓呼叫端知道了物件內部長什麼樣子，破壞了抽象屏障。這個擔心合理嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不完全合理——欄位名（如 'price'、'quantity'）本來就是這個資料結構對外公開、預期會被使用的 API 詞彙，不是內部隱藏的實作細節；只要搭配欄位名的合法性檢查，用字串表示欄位名是務實且合理的做法，不算真的戳破抽象屏障" },
+        { "id": "b", "text": "完全合理，只要出現字串欄位名就一定破壞了抽象屏障，應該一律禁止" },
+        { "id": "c", "text": "不合理，因為 JavaScript 的物件根本沒有「欄位」這個概念，這個問題不存在" },
+        { "id": "d", "text": "合理，所以正確做法是把所有欄位名都改成用數字索引代替字串" }
+      ],
+      "answer": "a",
+      "explanation": "抽象屏障要保護的是「實作細節」，欄位名字串是公開介面詞彙的一部分，不是實作細節；務實地加上邊界檢查（例如驗證欄位名是否存在），就足夠安全。",
+      "verify": { "manual": "概念題：以具體 field 參數疑慮取代對作者立場的直接背誦，無可執行程式碼。" }
+    }
+  ]
+}

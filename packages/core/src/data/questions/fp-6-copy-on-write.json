@@ -1,0 +1,128 @@
+{
+  "id": "fp-6",
+  "title": "在可變語言中保持不可變：Copy-on-Write",
+  "questions": [
+    {
+      "id": "fp-6-q1",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "copy-on-write 三步驟",
+      "docs": "",
+      "story": "",
+      "prompt": "下面這個 add_element_last 忘記做其中一步，導致呼叫端拿到的「新陣列」其實跟傳進來的原陣列是同一份參照：\nfunction add_element_last(array, elem) {\n  array.push(elem);\n  return array;\n}\n對照 copy-on-write「複製 → 修改複製品 → 回傳複製品」的標準三步驟，這段程式碼漏了哪一步？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "漏了第一步「複製」——沒有先用 array.slice() 複製出一份新陣列，就直接在傳進來的原陣列上呼叫 push，結果修改的其實是呼叫端手上那份原始資料，而不是一份獨立的複製品" },
+        { "id": "b", "text": "漏了第二步「修改複製品」，因為 push 這個方法不算是一種修改" },
+        { "id": "c", "text": "漏了第三步「回傳複製品」，因為 return array 沒有回傳任何東西" },
+        { "id": "d", "text": "三個步驟都齊全，這段程式碼完全正確、沒有問題" }
+      ],
+      "answer": "a",
+      "explanation": "copy-on-write 的關鍵永遠是「先複製，再動手」：這段程式碼直接在參數 array 上 push，等於繞過了複製這一步，原陣列跟著被改掉，呼叫端如果還留著舊的參照，會發現它也被動過了。",
+      "verify": { "manual": "概念題：以除錯具體程式碼取代抽象步驟背誦，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-6-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "copy-on-write：陣列尾端新增元素",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/slice",
+      "story": "",
+      "prompt": "用 copy-on-write 實作的 add_element_last(array, elem) 不能修改原陣列。這段程式會印出什麼？",
+      "code": "function add_element_last(array, elem) {\n  var newArray = array.slice();\n  newArray.push(elem);\n  return newArray;\n}\n\nvar original = [1, 2, 3];\nvar result = add_element_last(original, 4);\nconsole.log(original);\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3 ]\n[ 1, 2, 3, 4 ]" },
+        { "id": "b", "text": "[ 1, 2, 3, 4 ]\n[ 1, 2, 3, 4 ]" },
+        { "id": "c", "text": "[ 1, 2, 3 ]\n[ 1, 2, 3 ]" },
+        { "id": "d", "text": "會拋出例外，因為陣列不能被複製" }
+      ],
+      "answer": "a",
+      "explanation": "array.slice() 先淺拷貝出一份新陣列，push 只動到這份複製品；原本的 original 完全沒被碰過，所以兩次印出的結果不同，這就是 copy-on-write 的效果。",
+      "verify": {
+        "checks": [
+          { "code": "function add_element_last(array, elem) {\n  var newArray = array.slice();\n  newArray.push(elem);\n  return newArray;\n}\nvar original = [1, 2, 3];\nvar result = add_element_last(original, 4);\nconsole.log(original);\nconsole.log(result);", "expected": "[ 1, 2, 3 ]\n[ 1, 2, 3, 4 ]" }
+        ]
+      }
+    },
+    {
+      "id": "fp-6-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "copy-on-write：移除區間元素",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/splice",
+      "story": "",
+      "prompt": "removeItems(array, idx, count) 用 copy-on-write 移除指定區間的元素。這段程式會印出什麼？",
+      "code": "function removeItems(array, idx, count) {\n  var copy = array.slice();\n  copy.splice(idx, count);\n  return copy;\n}\n\nvar original = [1, 2, 3, 4, 5];\nvar result = removeItems(original, 1, 2);\nconsole.log(original);\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3, 4, 5 ]\n[ 1, 4, 5 ]" },
+        { "id": "b", "text": "[ 1, 4, 5 ]\n[ 1, 4, 5 ]" },
+        { "id": "c", "text": "[ 1, 2, 3, 4, 5 ]\n[ 1, 2, 3, 4, 5 ]" },
+        { "id": "d", "text": "[ 1, 4, 5 ]\n[ 1, 2, 3, 4, 5 ]" }
+      ],
+      "answer": "a",
+      "explanation": "splice 是會直接修改陣列本身的方法，所以第一步一定要先 slice() 出一份複製品，splice 只作用在複製品上；原陣列維持 [1,2,3,4,5] 不變，複製品移除了 idx=1 起的 2 個元素後變成 [1,4,5]。",
+      "verify": {
+        "checks": [
+          { "code": "function removeItems(array, idx, count) {\n  var copy = array.slice();\n  copy.splice(idx, count);\n  return copy;\n}\nvar original = [1, 2, 3, 4, 5];\nvar result = removeItems(original, 1, 2);\nconsole.log(original);\nconsole.log(result);", "expected": "[ 1, 2, 3, 4, 5 ]\n[ 1, 4, 5 ]" }
+        ]
+      }
+    },
+    {
+      "id": "fp-6-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "讀取變成 Calculation",
+      "docs": "",
+      "story": "",
+      "prompt": "如果 cart 被當成不可變資料看待（永遠不會被直接改動，只會被換成新版本），下面這個函式：\nfunction getTotal(cart) {\n  return cart.reduce((sum, item) => sum + item.price, 0);\n}\n不管呼叫幾次、什麼時候呼叫，只要傳入的 cart 沒被換成新版本，結果就一定一樣。這說明了什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "只要資料被當成不可變，「讀」永遠不會改變任何狀態、也不依賴呼叫時機——getTotal 可以放心在任何地方、任何時候被呼叫，都不用擔心副作用；只有「把 cart 換成新版本」這件事才需要被當成需要控制的動作" },
+        { "id": "b", "text": "這代表 getTotal 其實是一個 Action，因為它讀取了外部傳入的 cart 物件" },
+        { "id": "c", "text": "這代表 reduce 這個陣列方法本身自帶副作用" },
+        { "id": "d", "text": "這個結論只在 cart 是空陣列時才成立，非空陣列時結果會不一樣" }
+      ],
+      "answer": "a",
+      "explanation": "這是不可變資料帶來的紅利：只要資料本身不會被偷偷改掉，「讀」就永遠是純函式的行為，可以放心地在任何地方呼叫、快取、重用，不用擔心副作用——真正需要小心的只有「換成新版本」這個動作本身。",
+      "verify": { "manual": "概念題：以具體 getTotal 函式取代抽象讀寫分野說明，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-6-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "結構共享",
+      "docs": "",
+      "story": "",
+      "prompt": "cart = { items: [...], user: { name: '小美' } }。用 update(cart, 'items', f) 只換掉 items 那一份，user 這個物件完全沒被碰過。新舊兩份 cart 裡的 user 欄位，實際上是？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "指向同一個 user 物件（同一份記憶體參照）——因為 user 完全沒被修改，淺拷貝只複製最外層的容器，沒被動到的子物件直接沿用舊的參照；這就是結構共享，既安全（user 本身沒被真的改到）又省成本（不用把整棵樹深拷貝一次）" },
+        { "id": "b", "text": "新舊兩份 cart 裡的 user 是兩個完全獨立的複製品，即使內容一模一樣" },
+        { "id": "c", "text": "新的 cart 裡的 user 會變成 undefined，因為呼叫時只指定要換 items" },
+        { "id": "d", "text": "這種寫法會導致新舊兩份 cart 的 user 互相污染，是不安全的做法" }
+      ],
+      "answer": "a",
+      "explanation": "淺拷貝＋不可變的約定，讓「沒被動到的部分」可以安全地被新舊版本共用——user 沒被 update 觸碰過，新舊 cart 大可以放心共用同一個 user 物件，這正是結構共享兼顧安全與效率的原因。",
+      "verify": { "manual": "概念題：以具體巢狀更新情境取代抽象定義，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-6-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "同時讀寫的函式怎麼處理",
+      "docs": "",
+      "story": "",
+      "prompt": "一個函式同時「讀取並寫入」同一筆資料（例如 array.shift()，會回傳被移除的元素同時修改原陣列），copy-on-write 的處理策略是？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "直接禁用這類函式，強制改用其他寫法" },
+        { "id": "b", "text": "拆成一個只讀取的函式與一個只寫入（回傳新副本）的函式，或是讓函式回傳兩個值（例如 { removed, newArray }），把「讀出來的值」和「修改後的新版本」分開表達，各自維持單一職責" },
+        { "id": "c", "text": "深拷貝整個物件，確保絕對安全" },
+        { "id": "d", "text": "加上鎖（lock），確保同一時間只有一個呼叫者能執行" }
+      ],
+      "answer": "b",
+      "explanation": "array.shift() 這種「又讀又寫」的原生方法，在 copy-on-write 的世界裡最乾淨的處理方式是拆成兩個關注點各自獨立的操作，或用一個結構化的回傳值同時交代「拿到了什麼」與「新的狀態長什麼樣子」。",
+      "verify": { "manual": "概念題：對照書中對讀寫合一函式的處理原則，無可執行程式碼。" }
+    }
+  ]
+}

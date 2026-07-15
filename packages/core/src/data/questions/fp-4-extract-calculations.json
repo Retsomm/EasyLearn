@@ -1,0 +1,120 @@
+{
+  "id": "fp-4",
+  "title": "從 Actions 中萃取 Calculations",
+  "questions": [
+    {
+      "id": "fp-4-q1",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "隱性輸入與隱性輸出",
+      "docs": "",
+      "story": "",
+      "prompt": "看這個函式：\nfunction applyDiscount() {\n  cart = cart.map(function (item) {\n    item.price *= discountRate;\n    return item;\n  });\n}\ncart 和 discountRate 都不是參數，而是直接讀取外部的變數；函式執行完也沒有 return，而是直接改掉了外部的 cart。這兩種現象分別叫做什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "讀取外部的 cart、discountRate（沒有透過參數傳入）是隱性輸入；直接修改外部的 cart（沒有透過回傳值傳出）是隱性輸出——兩者都是沒有寫在函式簽名裡、卻實際影響或被影響的部分" },
+        { "id": "b", "text": "這兩種現象都叫做隱性輸出，跟輸入無關" },
+        { "id": "c", "text": "讀取外部變數叫做副作用，修改外部變數叫做純函式" },
+        { "id": "d", "text": "這兩種現象在 JavaScript 裡的語法是不合法的，執行時會直接報錯" }
+      ],
+      "answer": "a",
+      "explanation": "隱性輸入輸出的共同點是「沒有寫在函式簽名裡，卻實際影響或被影響」：applyDiscount 光看參數列（完全沒有參數）看不出它依賴 cart 和 discountRate，也看不出它會把結果寫回 cart，這正是它難以測試的原因。",
+      "verify": { "manual": "概念題：以具體函式取代抽象定義列舉，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-4-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "把隱性變顯性",
+      "docs": "",
+      "story": "",
+      "prompt": "延續上一題的 applyDiscount()，下列哪一個修改版本正確地把隱性輸入輸出都改成顯性？",
+      "code": "function applyDiscount() {\n  cart = cart.map(function (item) {\n    item.price *= discountRate;\n    return item;\n  });\n}",
+      "options": [
+        { "id": "a", "text": "function applyDiscount(cart, discountRate) { return cart.map(function (item) { return { ...item, price: item.price * discountRate }; }); }——cart 和 discountRate 都透過參數傳入，結果透過 return 傳出，呼叫端自己決定要不要把回傳值指派回原本的 cart 變數" },
+        { "id": "b", "text": "保留讀寫外部變數的寫法，只是把函式名稱加上 Explicit 字尾" },
+        { "id": "c", "text": "把 cart 和 discountRate 都改成寫死在函式內部的常數，不再從外部讀取" },
+        { "id": "d", "text": "用 globalThis.cart 取代 cart，讓讀取的寫法看起來更明確" }
+      ],
+      "answer": "a",
+      "explanation": "「參數化」處理隱性輸入、「回傳值化」處理隱性輸出：改寫後的 applyDiscount 完全不碰任何外部變數，呼叫端要不要把結果存回 cart 是呼叫端自己的決定，函式本身變成純粹的輸入輸出對應。",
+      "verify": { "manual": "概念題：程式實作型改寫成選擇題，正解程式碼已於選項給出，無需執行驗證。" }
+    },
+    {
+      "id": "fp-4-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "萃取購物車總額計算",
+      "docs": "",
+      "story": "",
+      "prompt": "下列這段程式把「計算」跟「更新全域狀態」混在一起。哪一個重構方向正確地把計算從 Action 中萃取出來？",
+      "code": "var shopping_cart_total = 0;\nfunction calc_total() {\n  shopping_cart_total = 0;\n  for (var i = 0; i < shopping_cart.length; i++)\n    shopping_cart_total += shopping_cart[i].price;\n}",
+      "options": [
+        { "id": "a", "text": "把 for 迴圈改成遞迴寫法，但依然直接修改 shopping_cart_total 全域變數——只是換了迴圈語法，本質還是 Action" },
+        { "id": "b", "text": "寫一個 calc_total(cart) 函式，用 reduce 把傳入的 cart 陣列加總後 return 出去；呼叫端再自行決定要不要把結果存進 shopping_cart_total，這樣輸入輸出都變顯性，calc_total 本身變成可獨立測試的 Calculation" },
+        { "id": "c", "text": "保留原本讀寫全域變數的寫法，只是把函式改名成 calc_total_pure" },
+        { "id": "d", "text": "把 shopping_cart_total 改存進 sessionStorage，其餘邏輯完全不變" }
+      ],
+      "answer": "b",
+      "explanation": "正確重構是：function calc_total(cart) { return cart.reduce((sum, item) => sum + item.price, 0); }。呼叫端再寫 shopping_cart_total = calc_total(shopping_cart)。萃取後的 calc_total 不讀也不寫任何全域變數，是純粹的輸入輸出對應。",
+      "verify": { "manual": "概念題：程式實作型改寫成選擇題，正解已於 explanation 給出對照程式碼，無需執行驗證。" }
+    },
+    {
+      "id": "fp-4-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "萃取後的可測試性與可重用性",
+      "docs": "",
+      "story": "",
+      "prompt": "延續前面 applyDiscount 的例子：萃取成顯性參數/回傳值的版本後，你要怎麼幫它寫測試？跟原本讀寫全域變數的版本比起來，差在哪裡？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "萃取後只需要呼叫 applyDiscount([{ price: 100 }], 0.9)，直接斷言回傳值是不是 [{ price: 90 }]，完全不用先設定好全域的 cart 和 discountRate、也不用擔心不同測試之間互相污染彼此的全域狀態；原本的版本一定要先準備好特定的全域環境才能測" },
+        { "id": "b", "text": "兩種寫法的測試方式完全一樣，差別只在函式名稱不同" },
+        { "id": "c", "text": "萃取後反而更難測試，因為呼叫時要多打幾個參數進去" },
+        { "id": "d", "text": "萃取後函式會自動變成非同步，測試因此需要改用 await" }
+      ],
+      "answer": "a",
+      "explanation": "測試一個 Calculation 只需要「給輸入、斷言輸出」；因為它不綁定任何特定的呼叫情境，同一個函式也能被結帳頁、訂單摘要、後端 API 各自重複呼叫，這正是可測試性與可重用性同時提升的來源。",
+      "verify": { "manual": "概念題：以具體測試寫法對比取代抽象效益說明，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-4-q5",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "只讀不寫的函式分類",
+      "docs": "",
+      "story": "",
+      "prompt": "看這個函式：\nfunction isEligibleForFreeShipping(cart) {\n  return cart.total > freeShippingThreshold;\n}\n它讀取了外部變數 freeShippingThreshold，但完全沒有修改任何東西。它屬於哪一類？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "Calculation——相同的 cart 和相同的 freeShippingThreshold 永遠得到相同結果，沒有副作用；但它帶有「隱性輸入」這個壞味道，之後應該把 freeShippingThreshold 也改成參數傳入，讓它更容易被獨立測試" },
+        { "id": "b", "text": "Action，因為它讀取了外部狀態，光是讀取就已經算副作用" },
+        { "id": "c", "text": "Data，因為它處理的是購物車相關的資訊" },
+        { "id": "d", "text": "視 freeShippingThreshold 的型別而定，數字就是 Calculation、物件就是 Action" }
+      ],
+      "answer": "a",
+      "explanation": "本書把「副作用（寫）」跟「依賴外部狀態（讀）」分開看：只讀不寫的函式沒有副作用，仍然是 Calculation，只是多了一個沒寫進參數列的隱性輸入，這是後續該修的壞味道，而不是直接判定成 Action。",
+      "verify": { "manual": "概念題：以具體只讀函式取代抽象界定敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-4-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "情境分析：免運費圖示",
+      "docs": "",
+      "story": "",
+      "prompt": "MegaMart 的「免運費圖示」功能：為什麼直接在 calc_cart_total() 裡塞 DOM 更新會讓程式難以測試？該怎麼拆？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "直接在 calc_cart_total() 裡呼叫 DOM API（例如更新圖示的 style.display）會讓這個函式同時擔負「計算」與「畫面更新」兩件事，變成 Action：無法脫離瀏覽器環境測試，也無法只驗證金額與門檻計算對不對。應該拆成一個純 Calculation 負責算出總額與是否達到免運門檻並回傳結果，再由另一個專責 DOM 的函式讀取這個結果去更新畫面" },
+        { "id": "b", "text": "不用拆，DOM 更新寫在計算函式裡效能比較好，實務上不會有測試上的問題" },
+        { "id": "c", "text": "應該把 DOM 更新邏輯整個搬進資料庫層去處理" },
+        { "id": "d", "text": "只要把整個函式改成 async 函式，測試困難的問題就會自動解決" }
+      ],
+      "answer": "a",
+      "explanation": "拆開之後，calc_cart_total(cart) 只回傳 { total, freeShippingReached } 這類資料，可以直接寫單元測試；DOM 更新則變成一個薄薄的 Action，只做「讀取這個結果、切換圖示顯示」，兩者職責清楚分離。",
+      "verify": { "manual": "概念題：情境分析，無可執行程式碼。" }
+    }
+  ]
+}

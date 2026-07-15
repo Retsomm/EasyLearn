@@ -1,0 +1,101 @@
+{
+  "id": "fp-7",
+  "title": "與不可信任的程式碼共處：Defensive Copying",
+  "questions": [
+    {
+      "id": "fp-7-q1",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "defensive copying 兩條規則",
+      "docs": "",
+      "story": "",
+      "prompt": "你要呼叫一個第三方函式庫的 sortItems(cart)：這個函式庫的原始碼你看不到，也不確定它會不會偷偷修改傳進去的 cart。用 defensive copying 安全地呼叫它，該在哪些時間點做深拷貝？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "呼叫 sortItems 之前，先把 cart 深拷貝一份再傳進去（避免它把你手上的原始 cart 改掉）；拿到 sortItems 的回傳值之後，也要再深拷貝一份才存起來或往下用（避免這個函式庫之後又偷偷改動它回傳給你的那份資料）——資料「進」安全區跟「出」安全區都各拷貝一次" },
+        { "id": "b", "text": "只要在呼叫前拷貝一次就夠了，回傳值不需要再拷貝" },
+        { "id": "c", "text": "只要在拿到回傳值後拷貝一次就夠了，呼叫前不需要拷貝" },
+        { "id": "d", "text": "完全不需要拷貝，只要呼叫前用 Object.freeze 凍結 cart 就足夠安全" }
+      ],
+      "answer": "a",
+      "explanation": "「進」與「出」都要拷貝，是因為不信任的程式庫可能在拿到資料之後修改它，也可能把它自己那份資料交給你之後繼續改動；雙向拷貝才能保證你手上的資料完全不被外部影響。",
+      "verify": { "manual": "概念題：以具體第三方函式庫情境取代抽象規則背誦，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-7-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "copy-on-write 與 defensive copying 的使用時機",
+      "docs": "",
+      "story": "",
+      "prompt": "專案裡有兩種情境：① 呼叫自己團隊寫的、大家都遵守「不改參數、只回傳新資料」約定的內部函式；② 呼叫一個從 npm 裝的第三方函式庫，不確定它會不會修改傳入的參數。這兩種情境分別該用 copy-on-write 還是 defensive copying？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "① 用 copy-on-write 就夠了（大家都遵守約定，淺拷貝＋不可變的默契足以保證安全）；② 要用 defensive copying（不能信任第三方函式庫會不會偷偷修改資料，只有付出深拷貝的成本才能真正隔離風險）" },
+        { "id": "b", "text": "兩種情境都應該用 copy-on-write，defensive copying 只是理論，實務上不需要真的用" },
+        { "id": "c", "text": "兩種情境都應該用 defensive copying，反正深拷貝比較安全，成本可以完全忽略" },
+        { "id": "d", "text": "① 該用 defensive copying、② 該用 copy-on-write，跟情境描述剛好相反" }
+      ],
+      "answer": "a",
+      "explanation": "選擇哪一種拷貝策略，取決於「這段邊界的另一端可不可信任」：可信任就用便宜的淺拷貝＋約定；不可信任（尤其是看不到原始碼的第三方套件）就要付出深拷貝的成本換取真正的隔離。",
+      "verify": { "manual": "概念題：以內部函式 vs 第三方套件的具體對比取代抽象比較，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-7-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "包裝會直接修改資料的 legacy 函式",
+      "docs": "",
+      "story": "",
+      "prompt": "legacy 函式 black_friday_promotion(cart) 會直接修改傳入的 cart。哪一種包裝方式正確地用 defensive copying 隔離它？",
+      "code": "function black_friday_promotion(cart) {\n  cart.forEach(item => { item.price *= 0.7; });\n  return cart; // 直接修改傳入的 cart\n}",
+      "options": [
+        { "id": "a", "text": "function safe_black_friday_promotion(cart) { var copyIn = deepCopy(cart); var result = black_friday_promotion(copyIn); return deepCopy(result); }——進入安全區前先深拷貝一份交給不受信任的函式去改，離開時再深拷貝一次結果，確保呼叫端原本的 cart 完全沒被動到" },
+        { "id": "b", "text": "直接呼叫 black_friday_promotion(cart)，只要回傳值看起來正確就沒問題" },
+        { "id": "c", "text": "呼叫前用 Object.freeze(cart) 凍結它，指望 legacy 函式自然改不動" },
+        { "id": "d", "text": "把 cart 轉成 JSON 字串再傳進去，函式看不懂字串自然不會出錯" }
+      ],
+      "answer": "a",
+      "explanation": "包一層 safe_ 函式，進出各做一次深拷貝，就能讓呼叫端手上的原始 cart 保持乾淨，不受這個會直接 mutate 參數的 legacy 函式影響。",
+      "verify": { "manual": "概念題：程式實作型改寫成選擇題，正解程式碼已於選項給出，無需執行驗證。" }
+    },
+    {
+      "id": "fp-7-q4",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "defensive copying 使用的拷貝方式",
+      "docs": "",
+      "story": "",
+      "prompt": "defensive copying 使用的是？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "淺拷貝" },
+        { "id": "b", "text": "深拷貝" },
+        { "id": "c", "text": "結構共享" },
+        { "id": "d", "text": "不拷貝，只加註解提醒" }
+      ],
+      "answer": "b",
+      "explanation": "因為面對的是不受信任、可能任意修改的程式碼，只有把每一層都複製一份的深拷貝，才能保證共享的內層物件不會被偷偷改動。",
+      "verify": { "manual": "概念題：定義題，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-7-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "深拷貝的成本與取捨",
+      "docs": "",
+      "story": "",
+      "prompt": "為什麼深拷貝比淺拷貝昂貴？什麼情況下才值得用？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "深拷貝要遞迴走訪整個資料結構、逐層複製，資料越大、巢狀越深，成本越高；只有在真的要跨越「信任邊界」（面對可能任意修改資料的外部或 legacy 程式碼）時才值得付出這個成本，內部程式碼之間用淺拷貝加上不可變約定（copy-on-write）就足夠" },
+        { "id": "b", "text": "深拷貝其實比淺拷貝便宜，因為省去了指標操作" },
+        { "id": "c", "text": "深拷貝的成本只在陣列上才明顯，物件完全不受影響" },
+        { "id": "d", "text": "深拷貝的成本跟資料大小、巢狀深度完全無關" }
+      ],
+      "answer": "a",
+      "explanation": "深拷貝的代價會隨資料規模線性甚至更快成長，所以是「不得已才用」的工具：只在真正需要隔離不受信任程式碼的邊界上使用，其餘地方交給便宜很多的 copy-on-write。",
+      "verify": { "manual": "概念題：對照書中拷貝成本的討論，無可執行程式碼。" }
+    }
+  ]
+}

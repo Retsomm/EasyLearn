@@ -45,7 +45,7 @@ const QuestionCard = ({
       </div>
 
       <p className="question-prompt">{question.prompt}</p>
-      <CodeBlock code={question.code} />
+      {question.code && <CodeBlock code={question.code} />}
 
       <div className="options">
         {options.map((opt) => {

@@ -1,0 +1,170 @@
+{
+  "id": "fp-16",
+  "title": "在時間線之間共享資源",
+  "questions": [
+    {
+      "id": "fp-16-q1",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "並行原語",
+      "docs": "",
+      "story": "",
+      "prompt": "JavaScript 語言本身沒有提供「多個時間線同時要用同一份資源時，強制排隊、一次只放行一個」這種機制（不像某些語言有內建的 mutex/lock）。書中的 Queue、Cut、JustOnce 都是用一般的函式和資料結構「手工」組出來、達到類似效果的工具。這類工具屬於什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "並行原語（concurrency primitive）——能安全協調多條時間線存取共享資源的基礎機制；JavaScript 沒有語言內建的等效工具，只能像 Queue、Cut、JustOnce 這樣自己動手組合出來" },
+        { "id": "b", "text": "這些工具屬於 JavaScript 內建的 Web API，不需要自己動手實作" },
+        { "id": "c", "text": "這些工具屬於物件導向設計模式，跟時間線協調完全無關" },
+        { "id": "d", "text": "這些工具只是效能優化技巧，跟共享資源的安全性無關" }
+      ],
+      "answer": "a",
+      "explanation": "Queue、Cut、JustOnce 都是自己動手打造的並行原語——JavaScript 語言本身沒有直接提供，但透過函式與資料結構組合，一樣能達到協調多條時間線的效果。",
+      "verify": { "manual": "概念題：以具體工具舉例取代抽象定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-16-q2",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "Queue 如何保證資源一次只被一條時間線使用",
+      "docs": "",
+      "story": "",
+      "prompt": "有兩個幾乎同時被 push 進 Queue 的任務 A、B，都要更新同一份共享的 DOM。A 開始執行、還沒呼叫 done() 之前，任務 B 會發生什麼事？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "B 只會被放進等待佇列裡，Queue 不會讓它開始執行，一直到 A 呼叫 done()、把 working 旗標重設為 false，Queue 才會把 B 從佇列裡取出來開始跑——任何時候最多只有一個任務在動用共享資源，避免了兩個任務同時讀寫同一份 DOM" },
+        { "id": "b", "text": "B 會立刻跟 A 同時開始執行，Queue 只是把兩者的結果收集起來排序" },
+        { "id": "c", "text": "B 會直接被丟棄，因為 Queue 不允許在前一個任務完成前收到新任務" },
+        { "id": "d", "text": "Queue 對 A、B 的執行時機完全沒有影響，跟不用 Queue 時的行為一樣" }
+      ],
+      "answer": "a",
+      "explanation": "Queue 的核心是「working 旗標＋done callback」：working 為 true 時擋住下一個工作啟動，直到目前工作呼叫 done 才放行，天然把並行的請求序列化成一個接一個執行。",
+      "verify": { "manual": "概念題：以具體兩任務排隊情境取代抽象運作原理敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-16-q3",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "實作基本 Queue",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
+      "story": "",
+      "prompt": "實作一個基本的 Queue：push 任務進來後依序執行，每次只跑一個，做完才跑下一個。這段程式最後會印出什麼？",
+      "code": "function Queue() {\n  var queueItems = [];\n  var working = false;\n  function runNext() {\n    if (working || queueItems.length === 0) return;\n    working = true;\n    var task = queueItems.shift();\n    task(function () {\n      working = false;\n      runNext();\n    });\n  }\n  return {\n    push: function (task) {\n      queueItems.push(task);\n      runNext();\n    },\n  };\n}\n\nvar log = [];\nvar q = Queue();\nq.push(function (done) {\n  log.push('task1 start');\n  setTimeout(function () { log.push('task1 done'); done(); }, 10);\n});\nq.push(function (done) {\n  log.push('task2 start');\n  setTimeout(function () { log.push('task2 done'); done(); }, 10);\n});\n\nsetTimeout(function () {\n  console.log(log.join(', '));\n}, 100);",
+      "options": [
+        { "id": "a", "text": "task1 start, task1 done, task2 start, task2 done" },
+        { "id": "b", "text": "task1 start, task2 start, task1 done, task2 done" },
+        { "id": "c", "text": "task2 start, task2 done, task1 start, task1 done" },
+        { "id": "d", "text": "task1 start, task2 start, task2 done, task1 done" }
+      ],
+      "answer": "a",
+      "explanation": "task2 雖然幾乎同時被 push 進來，但因為 working 已經是 true（task1 正在跑），task2 只能乖乖待在佇列裡，直到 task1 呼叫 done() 把 working 重設為 false，才輪到 task2 開始，兩個任務完全不會交錯執行。",
+      "verify": {
+        "checks": [
+          { "code": "function Queue() {\n  var queueItems = [];\n  var working = false;\n  function runNext() {\n    if (working || queueItems.length === 0) return;\n    working = true;\n    var task = queueItems.shift();\n    task(function () { working = false; runNext(); });\n  }\n  return { push: function (task) { queueItems.push(task); runNext(); } };\n}\nvar log = [];\nvar q = Queue();\nq.push(function (done) { log.push('task1 start'); setTimeout(function () { log.push('task1 done'); done(); }, 10); });\nq.push(function (done) { log.push('task2 start'); setTimeout(function () { log.push('task2 done'); done(); }, 10); });\nsetTimeout(function () { console.log(log.join(', ')); }, 100);", "expected": "task1 start, task1 done, task2 start, task2 done" }
+        ]
+      }
+    },
+    {
+      "id": "fp-16-q4",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "泛化成可重用的 Queue(worker)",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
+      "story": "",
+      "prompt": "把 Queue 泛化成 Queue(worker)，讓 worker 由呼叫端決定、push 只傳資料項目。這段程式最後會印出什麼？",
+      "code": "function Queue(worker) {\n  var queueItems = [];\n  var working = false;\n  function runNext() {\n    if (working || queueItems.length === 0) return;\n    working = true;\n    var item = queueItems.shift();\n    worker(item, function () {\n      working = false;\n      runNext();\n    });\n  }\n  return {\n    push: function (item) {\n      queueItems.push(item);\n      runNext();\n    },\n  };\n}\n\nvar log = [];\nvar q = Queue(function (item, done) {\n  log.push('start ' + item);\n  setTimeout(function () {\n    log.push('done ' + item);\n    done();\n  }, 10);\n});\nq.push('A');\nq.push('B');\nq.push('C');\n\nsetTimeout(function () {\n  console.log(log.join(', '));\n}, 100);",
+      "options": [
+        { "id": "a", "text": "start A, done A, start B, done B, start C, done C" },
+        { "id": "b", "text": "start A, start B, start C, done A, done B, done C" },
+        { "id": "c", "text": "start A, done A, start C, done C, start B, done B" },
+        { "id": "d", "text": "start A, start B, done A, start C, done B, done C" }
+      ],
+      "answer": "a",
+      "explanation": "泛化之後 push 只負責丟資料進佇列，實際要做什麼交給建立 Queue 時傳入的 worker 決定；佇列本身依然保證同一時間只有一個 item 在被 worker 處理，A、B、C 依序完整跑完才輪到下一個。",
+      "verify": {
+        "checks": [
+          { "code": "function Queue(worker) {\n  var queueItems = [];\n  var working = false;\n  function runNext() {\n    if (working || queueItems.length === 0) return;\n    working = true;\n    var item = queueItems.shift();\n    worker(item, function () { working = false; runNext(); });\n  }\n  return { push: function (item) { queueItems.push(item); runNext(); } };\n}\nvar log = [];\nvar q = Queue(function (item, done) { log.push('start ' + item); setTimeout(function () { log.push('done ' + item); done(); }, 10); });\nq.push('A');\nq.push('B');\nq.push('C');\nsetTimeout(function () { console.log(log.join(', ')); }, 100);", "expected": "start A, done A, start B, done B, start C, done C" }
+        ]
+      }
+    },
+    {
+      "id": "fp-16-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "skip queue 的適用情境",
+      "docs": "",
+      "story": "",
+      "prompt": "自動儲存草稿功能：使用者連續打字，每次都想儲存目前內容，但只在乎「使用者停下來那一刻」的最終內容，中途版本存不存都無所謂。用 skip queue 處理這種需求，行為會是？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "每次有新的儲存請求進來，只要前一個請求還在佇列裡排隊、還沒真正開始處理，就直接把它丟掉、換成最新這一筆；佇列裡永遠最多只保留一筆等待中的請求，確保實際被存起來的一定是最新的內容，中途版本可以放心被跳過" },
+        { "id": "b", "text": "skip queue 會把所有儲存請求都依序完整處理過一遍，一個都不會少" },
+        { "id": "c", "text": "skip queue 會優先處理最舊的請求，越晚送出的請求反而要排到最後面" },
+        { "id": "d", "text": "skip queue 只是把儲存請求全部平行送出，跟一般不用佇列的做法沒有差別" }
+      ],
+      "answer": "a",
+      "explanation": "skip queue 犧牲的是「每一筆都會被處理」，換來「永遠只處理最新狀態、不會被過期資料塞住」，跟一般 Queue「每筆都不漏」的目標正好相反，很適合自動儲存這種只在乎最終結果的情境。",
+      "verify": { "manual": "概念題：以具體自動儲存情境取代抽象定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-16-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "實作 DroppingQueue",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
+      "story": "",
+      "prompt": "DroppingQueue(max, worker)：佇列超過 max 筆等待中任務時丟棄最舊的任務。這段程式最後會印出什麼？",
+      "code": "function DroppingQueue(max, worker) {\n  var queueItems = [];\n  var working = false;\n  function runNext() {\n    if (working || queueItems.length === 0) return;\n    working = true;\n    var item = queueItems.shift();\n    worker(item, function () {\n      working = false;\n      runNext();\n    });\n  }\n  return {\n    push: function (item) {\n      queueItems.push(item);\n      if (queueItems.length > max) {\n        var dropped = queueItems.shift();\n        log.push('drop ' + dropped);\n      }\n      runNext();\n    },\n  };\n}\n\nvar log = [];\nvar q = DroppingQueue(2, function (item, done) {\n  log.push('start ' + item);\n  setTimeout(function () {\n    log.push('done ' + item);\n    done();\n  }, 10);\n});\n\nq.push('A');\nq.push('B');\nq.push('C');\nq.push('D');\n\nsetTimeout(function () {\n  console.log(log.join(', '));\n}, 100);",
+      "options": [
+        { "id": "a", "text": "start A, drop B, done A, start C, done C, start D, done D" },
+        { "id": "b", "text": "start A, start B, start C, start D, done A, done B, done C, done D" },
+        { "id": "c", "text": "start A, done A, start B, done B, start C, done C, start D, done D" },
+        { "id": "d", "text": "drop A, drop B, start C, done C, start D, done D" }
+      ],
+      "answer": "a",
+      "explanation": "A 一 push 進來就立刻被取出開始執行（佇列裡沒有等待項目）；B、C 依序進入等待佇列（2 筆，未超過上限 2）；D push 進來後等待佇列變成 3 筆、超過 max=2，於是丟棄佇列裡最舊的等待項目 B；A 做完之後接著跑 C，再跑 D，B 從頭到尾都沒被處理過。",
+      "verify": {
+        "checks": [
+          { "code": "function DroppingQueue(max, worker) {\n  var queueItems = [];\n  var working = false;\n  function runNext() {\n    if (working || queueItems.length === 0) return;\n    working = true;\n    var item = queueItems.shift();\n    worker(item, function () { working = false; runNext(); });\n  }\n  return { push: function (item) { queueItems.push(item); if (queueItems.length > max) { var dropped = queueItems.shift(); log.push('drop ' + dropped); } runNext(); } };\n}\nvar log = [];\nvar q = DroppingQueue(2, function (item, done) { log.push('start ' + item); setTimeout(function () { log.push('done ' + item); done(); }, 10); });\nq.push('A');\nq.push('B');\nq.push('C');\nq.push('D');\nsetTimeout(function () { console.log(log.join(', ')); }, 100);", "expected": "start A, drop B, done A, start C, done C, start D, done D" }
+        ]
+      }
+    },
+    {
+      "id": "fp-16-q7",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "購物車 DOM 更新排隊解決什麼問題",
+      "docs": "",
+      "story": "",
+      "prompt": "購物車 DOM 更新用 Queue 排隊後，解決的是哪一種時間線問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "動作太慢" },
+        { "id": "b", "text": "不同時間線對共享資源（DOM／全域 cart）的交錯寫入" },
+        { "id": "c", "text": "記憶體洩漏" },
+        { "id": "d", "text": "callback hell" }
+      ],
+      "answer": "b",
+      "explanation": "Queue 解決的從來不是效能問題，而是「多條時間線同時搶著讀寫同一份共享資源」導致結果不確定的問題；把更新動作排隊序列化，就能保證每次更新都在乾淨、確定的狀態上進行。",
+      "verify": { "manual": "概念題：定義題，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-16-q8",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "情境分析：自動儲存功能",
+      "docs": "",
+      "story": "",
+      "prompt": "前端有個「自動儲存」功能，使用者連續輸入會發出多個儲存請求且可能亂序完成。你會用哪種 queue？為什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "適合用 skip queue（或把 DroppingQueue 的上限設為 1）：使用者連續輸入時，只需要保留最後一次的內容去儲存，中間輸入到一半的舊版本沒有保留的必要；用 skip queue 可以避免舊的儲存請求排隊塞爆，也避免舊請求晚回來反而覆蓋掉新請求已經存好的結果" },
+        { "id": "b", "text": "應該用一般的 Queue，把每一次輸入都依序完整儲存一次，一筆都不能少" },
+        { "id": "c", "text": "不需要用任何佇列，讓所有儲存請求同時發送最有效率" },
+        { "id": "d", "text": "應該改用同步方式阻塞使用者輸入，直到上一次儲存完成才能繼續打字" }
+      ],
+      "answer": "a",
+      "explanation": "自動儲存的本質是「只在乎最新狀態」，跟一般 Queue「每筆都不能漏」的假設不同，skip queue／DroppingQueue(1, ...) 正是為這種情境量身打造的並行原語。",
+      "verify": { "manual": "概念題：情境分析，無可執行程式碼。" }
+    }
+  ]
+}

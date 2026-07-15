@@ -1,0 +1,101 @@
+{
+  "id": "fp-5",
+  "title": "改善 Actions 的設計",
+  "questions": [
+    {
+      "id": "fp-5-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "縮小隱性輸入輸出的價值",
+      "docs": "",
+      "story": "",
+      "prompt": "有兩個版本的 add_item_to_cart，都還沒被完全轉成 Calculation、仍然是 Action：\n版本一：function add_item_to_cart(name, price) { shopping_cart = add_item(shopping_cart, name, price); calc_cart_total(); render(); saveToDb(); }\n版本二：function add_item_to_cart(cart, name, price) { return add_item(cart, name, price); } // 呼叫端自己決定要不要 render/saveDb\n版本二明顯比版本一容易理解，也比較不容易意外造成錯誤。這說明了什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "即使函式還沒有完全變成 Calculation，減少它牽涉的隱性輸入輸出，也能讓「這個函式會被什麼狀態影響、又會觸發什麼後果」變得清楚許多——版本二一眼就能看出它只處理 cart 的新增邏輯，不會意外觸發畫面更新或寫資料庫" },
+        { "id": "b", "text": "沒有意義，兩個版本都還是 Action，效果完全一樣" },
+        { "id": "c", "text": "只有把函式改成非同步時，減少隱性輸入輸出才有意義" },
+        { "id": "d", "text": "版本二其實比較難懂，因為函式簽名多了一個參數" }
+      ],
+      "answer": "a",
+      "explanation": "把 Action 徹底變成 Calculation 不一定總是可行，但先縮小它牽涉的隱性狀態（版本二不再自己觸發 render、saveDb），能讓這個 Action 的「影響半徑」變得明確可讀，也是邁向完全萃取的中繼站。",
+      "verify": { "manual": "概念題：以兩版函式的對比取代抽象漸進式改善說明，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-5-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "全域變數改成參數傳入",
+      "docs": "",
+      "story": "",
+      "prompt": "下列函式直接讀寫全域變數 shopping_cart。哪一個重構正確地把它改成參數傳入、結果傳出？",
+      "code": "function add_item_to_cart(name, price) {\n  shopping_cart = add_item(shopping_cart, name, price);\n  calc_cart_total();\n}",
+      "options": [
+        { "id": "a", "text": "function add_item_to_cart(cart, name, price) { var newCart = add_item(cart, name, price); var total = calc_total(newCart); return { cart: newCart, total }; }——呼叫端自行決定要不要把回傳值指派回 shopping_cart / 畫面上的總額" },
+        { "id": "b", "text": "保留全域變數讀寫，只是把函式名稱加上 New 字尾" },
+        { "id": "c", "text": "把 shopping_cart 改成存進 window.shopping_cart，其餘邏輯完全不變" },
+        { "id": "d", "text": "用字串組出變數名稱再用 eval() 動態賦值" }
+      ],
+      "answer": "a",
+      "explanation": "cart 從參數傳入、新的 cart 與總額從回傳值送出，這個函式就不再依賴也不再修改任何全域狀態，呼叫端可以自由選擇要不要更新畫面或全域狀態，測試時也能直接斷言回傳值。",
+      "verify": { "manual": "概念題：程式實作型改寫成選擇題，正解程式碼已於選項與 explanation 給出，無需執行驗證。" }
+    },
+    {
+      "id": "fp-5-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "依照使用情境拆分函式",
+      "docs": "",
+      "story": "",
+      "prompt": "add_item_to_cart 原本一次只能加一件商品。現在需求變成也要支援「一次加入一整批商品」。下列哪一種拆分方式，正確示範了「依照使用情境拆分函式」？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "保留一個共用的核心函式 add_one_item_to_cart(cart, item)，再針對兩種情境分別寫薄薄的入口函式：add_item_to_cart(cart, item) 直接呼叫核心函式；add_items_to_cart(cart, items) 對每個 item 各呼叫一次核心函式——兩種情境各自只依賴自己需要的入口，不用被迫一起改動或觸發不相關的副作用" },
+        { "id": "b", "text": "把「一次加一件」和「一次加一批」的邏輯全部寫進同一個函式，用參數型別在裡面判斷該做哪一種" },
+        { "id": "c", "text": "複製貼上一份幾乎一樣的邏輯給批次情境專用，兩份程式碼各自獨立維護、互不相關" },
+        { "id": "d", "text": "兩種情境應該共用同一支函式，強制批次情境每次呼叫也只能傳一件商品" }
+      ],
+      "answer": "a",
+      "explanation": "拆出共用的核心邏輯、再依情境包一層薄薄的入口，是「依照使用情境拆分函式」的標準做法：新情境（批次加入）可以直接組合既有的核心函式，不需要複製貼上，也不會被迫承擔另一個情境不需要的邏輯。",
+      "verify": { "manual": "概念題：以具體批次加入需求取代抽象拆分函式說明，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-5-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "函式名稱中的隱含參數",
+      "docs": "",
+      "story": "",
+      "prompt": "函式名稱中出現「隱含參數（implicit argument in function name）」是什麼壞味道？例如 setPriceByName、setQuantityByName。",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "函式名稱裡藏著一個其實應該當成參數的欄位名（By Name 裡的「Price」「Quantity」），代表這群函式本質上是同一個操作、只是欄位不同，卻被硬拆成多個相似函式、造成重複程式碼；修法是把欄位名字串化變成一個參數，合併成單一函式" },
+        { "id": "b", "text": "這種命名方式沒有任何問題，是良好的自我文件化命名" },
+        { "id": "c", "text": "代表這個函式一定隱藏著執行期錯誤" },
+        { "id": "d", "text": "代表這個函式應該被改寫成 class 的建構子" }
+      ],
+      "answer": "a",
+      "explanation": "setPriceByName、setQuantityByName、setShippingByName 這類函式高度相似，差別只在「改哪個欄位」——這個差異應該變成參數（field），合併成一個 setFieldByName(cart, name, field, value)，這正是 Ch10 要做的重構。",
+      "verify": { "manual": "概念題：對照書中命名壞味道的說明，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-5-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "情境分析：cart 操作與商業規則分開放",
+      "docs": "",
+      "story": "",
+      "prompt": "cart 相關函式和 business rule 相關函式為什麼應該分開放？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "cart 相關函式（新增/移除商品、計算總額等）是可以脫離「這是哪種商店、有什麼優惠」這個情境重用的通用資料操作；商業規則（例如買三送一、生日折扣）則會隨行銷需求頻繁變動。分開放能讓穩定的底層操作不被常變動的規則拖著一起改，兩者的重用性與變動頻率本來就不同" },
+        { "id": "b", "text": "因為 cart 函式一定要放在前端，商業規則函式一定要放在後端，物理上必須分開" },
+        { "id": "c", "text": "沒有特別理由，合在一起維護其實比較方便" },
+        { "id": "d", "text": "因為 JavaScript 的模組系統強制要求檔案要這樣切分" }
+      ],
+      "answer": "a",
+      "explanation": "這正是分層設計（Ch8-9）的預告：底層的 cart 操作應該穩定、少變動；商業規則建立在底層之上，可以隨業務需求快速調整，不會牽動底下的基礎操作。",
+      "verify": { "manual": "概念題：情境分析，無可執行程式碼。" }
+    }
+  ]
+}
