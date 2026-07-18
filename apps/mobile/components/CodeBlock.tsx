@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { colors, fonts } from '@/constants/theme';
 
@@ -45,7 +45,11 @@ const highlight = (code: string): ReactNode[] => {
 export default function CodeBlock({ code, scroll = true }: CodeBlockProps) {
   if (!code) return null;
   if (!scroll) {
-    return <Text style={[styles.wrap, styles.code]}>{highlight(code)}</Text>;
+    return (
+      <View style={styles.wrap}>
+        <Text style={styles.code}>{highlight(code)}</Text>
+      </View>
+    );
   }
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.wrap}>

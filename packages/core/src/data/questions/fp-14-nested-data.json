@@ -97,16 +97,16 @@
       "topic": "遞迴的三個安全守則",
       "docs": "",
       "story": "",
-      "prompt": "這段程式碼會無限遞迴、把呼叫堆疊塞爆。對照正確版本會多一行 if (keys.length === 0) return modify(object);，這段程式碼缺了遞迴的哪個安全守則？",
+      "prompt": "這段程式碼在 keys 用完之後不會正常停止，而是會拋出 TypeError（嘗試存取 undefined 的屬性）。對照正確版本會多一行 if (keys.length === 0) return modify(object);，這段程式碼缺了遞迴的哪個安全守則？",
       "code": "function badNestedUpdate(object, keys, modify) {\n  var key1 = keys[0];\n  var restOfKeys = keys.slice(1);\n  return update(object, key1, function (value1) {\n    return badNestedUpdate(value1, restOfKeys, modify);\n  });\n}",
       "options": [
-        { "id": "a", "text": "缺了「基本情況（base case）」——沒有檢查 keys 是不是已經空了就直接停止遞迴，所以就算 restOfKeys 每次都用 slice(1) 縮短，程式還是會不斷往下呼叫，永遠碰不到終止條件，最終讓呼叫堆疊爆掉" },
+        { "id": "a", "text": "缺了「基本情況（base case）」——沒有檢查 keys 是不是已經空了就直接停止遞迴。keys 用 slice(1) 縮短到空陣列後就不會再變短，之後每次呼叫的 key1 都是 undefined，object 也跟著逐步變成 undefined，最終在 update 內部執行 object[key] 時因為 object 已經是 undefined 而拋出 TypeError" },
         { "id": "b", "text": "缺了「遞迴呼叫」，因為程式碼裡完全沒有呼叫 badNestedUpdate 自己" },
         { "id": "c", "text": "缺了「往基本情況前進」，因為 keys 的長度從頭到尾都沒有改變" },
-        { "id": "d", "text": "這段程式碼完全沒有問題，不會發生無限遞迴" }
+        { "id": "d", "text": "這段程式碼完全沒有問題，執行起來不會有任何錯誤" }
       ],
       "answer": "a",
-      "explanation": "遞迴要安全，必須同時具備：基本情況（停止條件）、遞迴呼叫、以及每次呼叫都往基本情況靠近。這段程式碼有遞迴呼叫、也有讓 keys 變短，唯獨少了「keys 變空時要停下來」這個基本情況，所以會不斷遞迴到 keys 已經是空陣列、key1 變成 undefined 也還在繼續呼叫。",
+      "explanation": "遞迴要安全，必須同時具備：基本情況（停止條件）、遞迴呼叫、以及每次呼叫都往基本情況靠近。這段程式碼有遞迴呼叫、也有讓 keys 變短，唯獨少了「keys 變空時要停下來」這個基本情況：keys 變成空陣列後不會再繼續縮短，但呼叫仍然沒有停止，object 逐步變成 undefined，最終在 update 裡存取 object[key] 時因為 object 是 undefined 而拋出 TypeError，並不是傳統認知中「呼叫堆疊塞爆」那種無限遞迴。",
       "verify": { "manual": "概念題：以具體缺陷程式碼取代抽象守則背誦，無可執行程式碼。" }
     },
     {

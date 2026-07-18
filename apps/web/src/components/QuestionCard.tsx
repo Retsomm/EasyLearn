@@ -55,16 +55,27 @@ const QuestionCard = ({
             else if (opt.id === selected) cls += ' is-wrong'
             else cls += ' is-dimmed'
           }
+          const selectOption = () => {
+            if (!answered) onSelect(opt.id)
+          }
           return (
-            <button
+            <div
               key={opt.id}
+              role="button"
+              tabIndex={0}
+              aria-disabled={answered}
               className={cls}
-              disabled={answered}
-              onClick={() => onSelect(opt.id)}
+              onClick={selectOption}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  if (e.key === ' ') e.preventDefault()
+                  selectOption()
+                }
+              }}
             >
               {opt.code && <CodeBlock code={opt.code} />}
               {opt.text}
-            </button>
+            </div>
           )
         })}
       </div>
