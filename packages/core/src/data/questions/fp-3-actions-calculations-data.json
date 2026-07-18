@@ -9,8 +9,8 @@
       "topic": "三者的定義與範例",
       "docs": "",
       "story": "",
-      "prompt": "看以下三行程式：\n① const price = 100;\n② function addTax(price) { return price * 1.05; }\n③ fetch('/api/order', { method: 'POST', body: cart });\n下列哪一組分類正確？",
-      "code": "",
+      "prompt": "看以下三行程式，下列哪一組分類正確？",
+      "code": "① const price = 100;\n② function addTax(price) { return price * 1.05; }\n③ fetch('/api/order', { method: 'POST', body: cart });",
       "options": [
         { "id": "a", "text": "① 是 Data（單純的事實紀錄，本身不執行任何邏輯）；② 是 Calculation（輸入到輸出的純運算，沒有依賴或影響任何外部狀態）；③ 是 Action（呼叫時機、次數都會影響外部世界，發出真正的網路請求）" },
         { "id": "b", "text": "① 是 Action，因為它是一個賦值敘述；② 是 Data，因為它回傳一個數字；③ 是 Calculation，因為它是一個函式呼叫" },
@@ -47,8 +47,8 @@
       "topic": "Action 會傳染",
       "docs": "",
       "story": "",
-      "prompt": "下面這個函式呼叫了 sendReceipt()（一個會實際寄信的 Action）：\nfunction finalizeOrder(order) {\n  var total = calcTotal(order);\n  sendReceipt(order, total);\n  return total;\n}\n如果你想幫 finalizeOrder 寫單元測試、又不想真的觸發寄信服務，你會遇到什麼困難？這說明了「Action 會傳染」的什麼意思？",
-      "code": "",
+      "prompt": "下面這個函式呼叫了 sendReceipt()（一個會實際寄信的 Action）。如果你想幫 finalizeOrder 寫單元測試、又不想真的觸發寄信服務，你會遇到什麼困難？這說明了「Action 會傳染」的什麼意思？",
+      "code": "function finalizeOrder(order) {\n  var total = calcTotal(order);\n  sendReceipt(order, total);\n  return total;\n}",
       "options": [
         { "id": "a", "text": "只要 finalizeOrder 內部呼叫了 sendReceipt，測試 finalizeOrder 就無法避開這個副作用（除非額外做 mock），因為 finalizeOrder 的整體行為已經跟 sendReceipt 的呼叫時機、次數綁在一起——這就是「Action 會傳染」：呼叫了 Action 的函式，自己也變成難以脫離副作用單獨驗證的 Action" },
         { "id": "b", "text": "完全不會遇到任何困難，因為 calcTotal 是純函式，所以整個 finalizeOrder 也自動變成純函式" },
@@ -85,8 +85,8 @@
       "topic": "Data > Calculation > Action 的偏好順序",
       "docs": "",
       "story": "",
-      "prompt": "三種寫法都能得到「打完折的金額」：\n① const price = 90;（直接寫死數字）\n② function calcDiscounted(price) { return price * 0.9; }\n③ function applyDiscountAndSave(cart) { cart.total *= 0.9; saveToDb(cart); }\n如果要幫這三種寫法各寫一份測試，哪一種最容易、哪一種最難？這說明了為什麼要偏好 Data > Calculation > Action？",
-      "code": "",
+      "prompt": "三種寫法都能得到「打完折的金額」。如果要幫這三種寫法各寫一份測試，哪一種最容易、哪一種最難？這說明了為什麼要偏好 Data > Calculation > Action？",
+      "code": "① const price = 90; // 直接寫死數字\n② function calcDiscounted(price) { return price * 0.9; }\n③ function applyDiscountAndSave(cart) { cart.total *= 0.9; saveToDb(cart); }",
       "options": [
         { "id": "a", "text": "① 最容易（本身就是靜態值，不用執行任何東西就能檢視對不對）；② 次之（純函式，給定輸入直接斷言輸出即可）；③ 最難（要準備假的資料庫、還要驗證外部系統真的被呼叫過）——這正是為什麼能用前者解決就不要升級到後者，測試與推理的難度依序遞增" },
         { "id": "b", "text": "三者的測試難度完全一樣，跟屬於 Data、Calculation 還是 Action 沒有關係" },

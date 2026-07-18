@@ -181,7 +181,7 @@
         { "id": "d", "text": "console.log(i) 應該寫成 console.log(i())" }
       ],
       "answer": "a",
-      "explanation": "var 是整個函式共用一份，不會因為進了迴圈的 { } 就分身——三個箭頭函式的 closure 抓的都是同一個 i，等迴圈跑完，i 已經變成 3，三個函式印出的自然都是 3。改成 let 之後，每一圈的 i 都是全新、獨立的一份，closure 各抓各的，才會印出 0、1、2。這是「closure 抓的是變數不是值」（上一章教過）遇上 var 沒有區塊作用域的組合技，AI 產的迴圈程式碼常常因為用了 var 而中招。",
+      "explanation": "var 是整個函式共用一份，不會因為進了迴圈的 { } 就分身——三個箭頭函式的 closure 抓的都是同一個 i，等迴圈跑完，i 已經變成 3，三個函式印出的自然都是 3。改成 let 之後，每一圈的 i 都是全新、獨立的一份，closure 各抓各的，才會印出 0、1、2。這是「closure 抓的是變數不是值」遇上 var 沒有區塊作用域的組合技，AI 產的迴圈程式碼常常因為用了 var 而中招。",
       "verify": {
         "checks": [
           { "code": "const fns = [];\nfor (var i = 0; i < 3; i++) {\n  fns.push(() => console.log(i));\n}\nfns[0](); fns[1](); fns[2]();", "expected": "3\n3\n3" },
@@ -228,7 +228,7 @@
         { "id": "d", "text": "i < 3 應該寫成 i <= 3" }
       ],
       "answer": "a",
-      "explanation": "let（包括 for 括號裡那個）是區塊作用域，for (let i ...) 的 i 只活在這個迴圈的大括號範圍內，出了迴圈就被回收，外面完全看不到——這跟 jsb-1 教過的「if 裡的 let 出了大括號就消失」是同一條規則。如果真的需要迴圈跑完後的值，得在迴圈外先宣告一個變數（例如 let lastI），迴圈裡面同步更新它。用 var 則不會有這個限制，因為 var 沒有區塊作用域，但這也是 var 常常惹麻煩的原因（上一題剛示範過）。",
+      "explanation": "let（包括 for 括號裡那個）是區塊作用域，for (let i ...) 的 i 只活在這個迴圈的大括號範圍內，出了迴圈就被回收，外面完全看不到——這跟「if 裡用 let 宣告的變數，出了大括號就消失」是同一條規則。如果真的需要迴圈跑完後的值，得在迴圈外先宣告一個變數（例如 let lastI），迴圈裡面同步更新它。用 var 則不會有這個限制，因為 var 沒有區塊作用域，但這也是 var 常常惹麻煩的原因。",
       "verify": {
         "checks": [
           { "code": "for (let i = 0; i < 3; i++) {\n}\nconsole.log(i);", "expectError": "i is not defined" },

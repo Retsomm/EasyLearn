@@ -111,7 +111,7 @@
         { "id": "d", "text": "版本二會報錯，JSON 不能這樣用" }
       ],
       "answer": "a",
-      "explanation": "展開 {...s1} 只複製「第一層」——裡面的 user 還是同一個物件（淺拷貝），改 c1.user 等於改到本尊。JSON.stringify 把整棵樹印成字串再 parse 回來，每一層都是全新的（深拷貝）。第一章的參照陷阱在巢狀資料裡更兇。另外現代 JS 有更正規的 structuredClone()，不過 JSON 寫法在舊程式裡到處都是，要看得懂。",
+      "explanation": "展開 {...s1} 只複製「第一層」——裡面的 user 還是同一個物件（淺拷貝），改 c1.user 等於改到本尊。JSON.stringify 把整棵樹印成字串再 parse 回來，每一層都是全新的（深拷貝）。物件互相共用參照的陷阱，在巢狀資料裡更兇。另外現代 JS 有更正規的 structuredClone()，不過 JSON 寫法在舊程式裡到處都是，要看得懂。",
       "verify": {
         "checks": [
           { "code": "const s1 = { user: { name: \"小美\" } };\nconst c1 = { ...s1 };\nc1.user.name = \"小華\";\nconsole.log(s1.user.name);\nconst s2 = { user: { name: \"小美\" } };\nconst c2 = JSON.parse(JSON.stringify(s2));\nc2.user.name = \"小王\";\nconsole.log(s2.user.name);", "expected": "小華\n小美" }

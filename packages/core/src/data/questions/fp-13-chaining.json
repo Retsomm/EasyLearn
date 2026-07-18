@@ -9,8 +9,8 @@
       "topic": "鏈式呼叫的可讀性",
       "docs": "",
       "story": "",
-      "prompt": "比較兩種寫法，都是「找出下單次數超過 5 次的顧客 email，取前 3 名」：\n版本一：customers.filter(c => c.orders.length > 5).map(c => c.email).slice(0, 3)\n版本二：const frequentBuyers = customers.filter(c => c.orders.length > 5); const emails = frequentBuyers.map(c => c.email); const top3 = emails.slice(0, 3);\n步驟只有 3 步時兩者都好讀；如果串連的步驟變成 6、7 步呢？",
-      "code": "",
+      "prompt": "比較兩種寫法，都是「找出下單次數超過 5 次的顧客 email，取前 3 名」。步驟只有 3 步時兩者都好讀；如果串連的步驟變成 6、7 步呢？",
+      "code": "// 版本一\ncustomers.filter(c => c.orders.length > 5).map(c => c.email).slice(0, 3);\n\n// 版本二\nconst frequentBuyers = customers.filter(c => c.orders.length > 5);\nconst emails = frequentBuyers.map(c => c.email);\nconst top3 = emails.slice(0, 3);",
       "options": [
         { "id": "a", "text": "步驟一多，版本一那種一路串到底的寫法會讓人很難一眼看出「這一步做完之後，資料變成了什麼形狀」；版本二把每個中間結果存進有意義名稱的變數，等於用變數名稱標註了每一步的產出，步驟越多，這種寫法的可讀性優勢越明顯" },
         { "id": "b", "text": "不管幾個步驟，版本一永遠比版本二好讀，因為程式碼行數比較少" },

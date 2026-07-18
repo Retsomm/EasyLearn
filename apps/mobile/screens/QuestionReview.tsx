@@ -55,6 +55,7 @@ export default function QuestionReview({ question, saved, onToggleSave, meta }: 
           const isAnswer = opt.id === question.answer;
           return (
             <View key={opt.id} style={[styles.optionBtn, isAnswer ? styles.optionCorrect : styles.optionDimmed]}>
+              {opt.code && <CodeBlock code={opt.code} scroll={false} />}
               <Text style={[styles.optionText, isAnswer && styles.optionTextCorrect]}>{opt.text}</Text>
             </View>
           );

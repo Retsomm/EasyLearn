@@ -9,8 +9,8 @@
       "topic": "copy-on-write 三步驟",
       "docs": "",
       "story": "",
-      "prompt": "下面這個 add_element_last 忘記做其中一步，導致呼叫端拿到的「新陣列」其實跟傳進來的原陣列是同一份參照：\nfunction add_element_last(array, elem) {\n  array.push(elem);\n  return array;\n}\n對照 copy-on-write「複製 → 修改複製品 → 回傳複製品」的標準三步驟，這段程式碼漏了哪一步？",
-      "code": "",
+      "prompt": "下面這個 add_element_last 忘記做其中一步，導致呼叫端拿到的「新陣列」其實跟傳進來的原陣列是同一份參照。對照 copy-on-write「複製 → 修改複製品 → 回傳複製品」的標準三步驟，這段程式碼漏了哪一步？",
+      "code": "function add_element_last(array, elem) {\n  array.push(elem);\n  return array;\n}",
       "options": [
         { "id": "a", "text": "漏了第一步「複製」——沒有先用 array.slice() 複製出一份新陣列，就直接在傳進來的原陣列上呼叫 push，結果修改的其實是呼叫端手上那份原始資料，而不是一份獨立的複製品" },
         { "id": "b", "text": "漏了第二步「修改複製品」，因為 push 這個方法不算是一種修改" },
@@ -74,8 +74,8 @@
       "topic": "讀取變成 Calculation",
       "docs": "",
       "story": "",
-      "prompt": "如果 cart 被當成不可變資料看待（永遠不會被直接改動，只會被換成新版本），下面這個函式：\nfunction getTotal(cart) {\n  return cart.reduce((sum, item) => sum + item.price, 0);\n}\n不管呼叫幾次、什麼時候呼叫，只要傳入的 cart 沒被換成新版本，結果就一定一樣。這說明了什麼？",
-      "code": "",
+      "prompt": "如果 cart 被當成不可變資料看待（永遠不會被直接改動，只會被換成新版本），下面這個函式不管呼叫幾次、什麼時候呼叫，只要傳入的 cart 沒被換成新版本，結果就一定一樣。這說明了什麼？",
+      "code": "function getTotal(cart) {\n  return cart.reduce((sum, item) => sum + item.price, 0);\n}",
       "options": [
         { "id": "a", "text": "只要資料被當成不可變，「讀」永遠不會改變任何狀態、也不依賴呼叫時機——getTotal 可以放心在任何地方、任何時候被呼叫，都不用擔心副作用；只有「把 cart 換成新版本」這件事才需要被當成需要控制的動作" },
         { "id": "b", "text": "這代表 getTotal 其實是一個 Action，因為它讀取了外部傳入的 cart 物件" },

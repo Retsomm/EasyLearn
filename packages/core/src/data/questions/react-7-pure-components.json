@@ -178,7 +178,7 @@
         { "id": "d", "text": "title 應該用 state 存，不能用 props" }
       ],
       "answer": "a",
-      "explanation": "渲染函式的工作是「算出這次要顯示的畫面」，回傳 JSX 就該結束了；直接動全域的 document 物件是在跟瀏覽器這個外部系統打交道，React 沒辦法保證這行程式碼跑幾次、什麼時候跑（StrictMode 開發模式會跑兩次），標題就可能被設定成奇怪的中間狀態。正確做法是用 useEffect 把這個副作用包起來，讓它在渲染完成、畫面真的貼到畫面上之後才執行一次——這正是 react-4 教過的 Effect 機制要解決的問題：副作用要跟渲染分開。",
+      "explanation": "渲染函式的工作是「算出這次要顯示的畫面」，回傳 JSX 就該結束了；直接動全域的 document 物件是在跟瀏覽器這個外部系統打交道，React 沒辦法保證這行程式碼跑幾次、什麼時候跑（StrictMode 開發模式會跑兩次），標題就可能被設定成奇怪的中間狀態。正確做法是用 useEffect 把這個副作用包起來，讓它在渲染完成、畫面真的貼到畫面上之後才執行一次——這正是 Effect 機制要解決的問題：副作用要跟渲染分開。",
       "verify": {
         "checks": [],
         "manual": "document 在 Node 環境不存在，需要瀏覽器 DOM 才能觀察；原則依 react.dev synchronizing-with-effects（渲染以外的世界互動屬於副作用，該放進 Effect）"
@@ -268,7 +268,7 @@
         { "id": "d", "text": "版本二會報錯，useEffect 裡不能呼叫 fetch" }
       ],
       "answer": "a",
-      "explanation": "跟 q8 的 document.title 是同一類問題：發網路請求是跟外部世界（伺服器）打交道，屬於副作用，不該混進「算畫面」的過程。版本一每次渲染都順手發一次請求，元件被重繪多少次就打多少次 API，完全失控；版本二用 useEffect 把它包起來，React 畫完面才執行，還能用依賴陣列 [id] 決定「id 沒變就不用重打」。呼應這兩章的主題：keeping-components-pure 講渲染要純，Effect 就是官方指定「副作用該去的地方」。",
+      "explanation": "跟 q8 的 document.title 是同一類問題：發網路請求是跟外部世界（伺服器）打交道，屬於副作用，不該混進「算畫面」的過程。版本一每次渲染都順手發一次請求，元件被重繪多少次就打多少次 API，完全失控；版本二用 useEffect 把它包起來，React 畫完面才執行，還能用依賴陣列 [id] 決定「id 沒變就不用重打」。呼應同一個主題：渲染要純，Effect 就是官方指定「副作用該去的地方」。",
       "verify": {
         "checks": [],
         "manual": "需要瀏覽器/Node fetch 環境與多輪渲染觀察請求次數；機制依 react.dev keeping-components-pure 與 synchronizing-with-effects"

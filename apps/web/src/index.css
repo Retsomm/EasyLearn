@@ -937,9 +937,19 @@ button {
   transition: border-color 0.15s;
   font-family: inherit;
   word-break: break-all;
+  cursor: pointer;
 }
 
-.option-btn:not(:disabled):hover {
+.option-btn .code-block {
+  margin: 0 0 8px;
+  text-align: left;
+}
+
+.option-btn[aria-disabled='true'] {
+  cursor: default;
+}
+
+.option-btn:not([aria-disabled='true']):hover {
   border-color: var(--primary);
 }
 

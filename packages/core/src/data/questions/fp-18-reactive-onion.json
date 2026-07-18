@@ -121,7 +121,7 @@
         { "id": "d", "text": "React 的 state 是同步的，ValueCell 是非同步的，兩者機制完全相反" }
       ],
       "answer": "a",
-      "explanation": "這正是反應式架構在前端框架裡最直接的體現：從 setState 到 signals，核心想法都是「訂閱狀態變化、自動觸發依賴它的更新」，跟本章 ValueCell／FormulaCell 的設計脈絡一致。",
+      "explanation": "這正是反應式架構在前端框架裡最直接的體現：從 setState 到 signals，核心想法都是「訂閱狀態變化、自動觸發依賴它的更新」，跟前面 ValueCell／FormulaCell 那種「訂閱後自動觸發」的設計脈絡一致。",
       "verify": { "manual": "概念題：情境分析，無可執行程式碼。" }
     }
   ]

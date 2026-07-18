@@ -18,7 +18,7 @@
         { "id": "d", "text": "會報錯，JSX 裡不能做運算" }
       ],
       "answer": "a",
-      "explanation": "JSX 的大括號是「開一扇窗回到 JavaScript」：裡面放的是真的程式，level + 1 會被算成 4。任何合法的 JS 算式都能放——變數、函式呼叫、三元運算子。第二章讀懂的那些 JS，就是要在這扇窗裡用的。",
+      "explanation": "JSX 的大括號是「開一扇窗回到 JavaScript」：裡面放的是真的程式，level + 1 會被算成 4。任何合法的 JS 算式都能放——變數、函式呼叫、三元運算子，平常寫的那些 JS 語法，就是要在這扇窗裡用的。",
       "verify": {
         "checks": [
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Badge() {\n  const level = 3;\n  return <span>Lv.{level + 1}</span>;\n}\nconsole.log(renderToStaticMarkup(<Badge />));", "expected": "<span>Lv.4</span>" }
@@ -112,7 +112,7 @@
         { "id": "d", "text": "{\"name\"}" }
       ],
       "answer": "a",
-      "explanation": "JSX 插變數用單純的大括號 {name}。選項 b 的 ${name} 是樣板字串的語法（第一章學過的），只在反引號字串裡有效，在 JSX 裡會被當純文字印出「${name}」；選項 c 直接印出 name 三個字母；選項 d 印出帶引號的字串內容 name。兩套插值語法別搞混：反引號配 ${}，JSX 配 {}。",
+      "explanation": "JSX 插變數用單純的大括號 {name}。選項 b 的 ${name} 是樣板字串（template literal）的語法，只在反引號字串裡有效，在 JSX 裡會被當純文字印出「${name}」；選項 c 直接印出 name 三個字母；選項 d 印出帶引號的字串內容 name。兩套插值語法別搞混：反引號配 ${}，JSX 配 {}。",
       "verify": {
         "checks": [
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Welcome({ name }) {\n  return <h1>歡迎，{name}！</h1>;\n}\nconsole.log(renderToStaticMarkup(<Welcome name=\"小美\" />));", "expected": "<h1>歡迎，小美！</h1>" }

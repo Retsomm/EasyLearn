@@ -64,7 +64,7 @@
         { "id": "d", "text": "A 行要用 Math.round 才對" }
       ],
       "answer": "a",
-      "explanation": "toFixed 的本職是「格式化給人看」，所以回傳字串 \"19.99\"——接著 \"19.99\" + 5 就黏成 \"19.995\"（第一章的字串加法陷阱穿了新衣服）。要繼續算數學就先轉回來：Number(rounded) + 5。原則：toFixed 放在「最後要顯示」的那一刻，中間運算全程用數字。",
+      "explanation": "toFixed 的本職是「格式化給人看」，所以回傳字串 \"19.99\"——接著 \"19.99\" + 5 就黏成 \"19.995\"（又是字串加法把數字黏成文字的老陷阱換了個樣子）。要繼續算數學就先轉回來：Number(rounded) + 5。原則：toFixed 放在「最後要顯示」的那一刻，中間運算全程用數字。",
       "verify": {
         "checks": [
           { "code": "const price = 19.987;\nconst rounded = price.toFixed(2);\nconst total = rounded + 5;\nconsole.log(total);", "expected": "19.995" },

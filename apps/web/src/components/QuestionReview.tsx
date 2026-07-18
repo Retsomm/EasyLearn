@@ -38,7 +38,7 @@ const QuestionReview = ({ question, saved, onToggleSave, meta }: QuestionReviewP
       )}
 
       <p className="question-prompt">{question.prompt}</p>
-      <CodeBlock code={question.code} />
+      {question.code && <CodeBlock code={question.code} />}
 
       <div className="options">
         {question.options.map((opt) => (
@@ -46,6 +46,7 @@ const QuestionReview = ({ question, saved, onToggleSave, meta }: QuestionReviewP
             key={opt.id}
             className={`option-btn is-static ${opt.id === question.answer ? 'is-correct' : 'is-dimmed'}`}
           >
+            {opt.code && <CodeBlock code={opt.code} />}
             {opt.text}
           </div>
         ))}

@@ -74,6 +74,7 @@ export default function QuestionCard({
                 answered && !isAnswer && !isPicked && styles.optionDimmed,
               ]}
             >
+              {opt.code && <CodeBlock code={opt.code} scroll={false} />}
               <Text
                 style={[
                   styles.optionText,
