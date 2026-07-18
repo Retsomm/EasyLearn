@@ -5,6 +5,9 @@ import { colors, fonts } from '@/constants/theme';
 
 interface CodeBlockProps {
   code: string;
+  // 選項按鈕（Pressable）內部不能放 ScrollView，iOS 上 touchable 會搶走捲動手勢，
+  // 這種情境改用 scroll={false} 讓長行直接換行，不強制水平捲動
+  scroll?: boolean;
 }
 
 // 對照 apps/web CodeBlock.tsx 的輕量語法上色：註解、字串、關鍵字、數字（同一份 regex）
@@ -39,8 +42,11 @@ const highlight = (code: string): ReactNode[] => {
   return last < code.length ? [...parts, code.slice(last)] : parts;
 };
 
-export default function CodeBlock({ code }: CodeBlockProps) {
+export default function CodeBlock({ code, scroll = true }: CodeBlockProps) {
   if (!code) return null;
+  if (!scroll) {
+    return <Text style={[styles.wrap, styles.code]}>{highlight(code)}</Text>;
+  }
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.wrap}>
       <Text style={styles.code}>{highlight(code)}</Text>

@@ -62,6 +62,7 @@ const QuestionCard = ({
               disabled={answered}
               onClick={() => onSelect(opt.id)}
             >
+              {opt.code && <CodeBlock code={opt.code} />}
               {opt.text}
             </button>
           )

@@ -97,8 +97,8 @@
       "topic": "遞迴的三個安全守則",
       "docs": "",
       "story": "",
-      "prompt": "這段程式碼會無限遞迴、把呼叫堆疊塞爆：\nfunction badNestedUpdate(object, keys, modify) {\n  var key1 = keys[0];\n  var restOfKeys = keys.slice(1);\n  return update(object, key1, function (value1) {\n    return badNestedUpdate(value1, restOfKeys, modify);\n  });\n}\n對照正確版本會多一行 if (keys.length === 0) return modify(object);，這段程式碼缺了遞迴的哪個安全守則？",
-      "code": "",
+      "prompt": "這段程式碼會無限遞迴、把呼叫堆疊塞爆。對照正確版本會多一行 if (keys.length === 0) return modify(object);，這段程式碼缺了遞迴的哪個安全守則？",
+      "code": "function badNestedUpdate(object, keys, modify) {\n  var key1 = keys[0];\n  var restOfKeys = keys.slice(1);\n  return update(object, key1, function (value1) {\n    return badNestedUpdate(value1, restOfKeys, modify);\n  });\n}",
       "options": [
         { "id": "a", "text": "缺了「基本情況（base case）」——沒有檢查 keys 是不是已經空了就直接停止遞迴，所以就算 restOfKeys 每次都用 slice(1) 縮短，程式還是會不斷往下呼叫，永遠碰不到終止條件，最終讓呼叫堆疊爆掉" },
         { "id": "b", "text": "缺了「遞迴呼叫」，因為程式碼裡完全沒有呼叫 badNestedUpdate 自己" },

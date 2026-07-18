@@ -9,8 +9,8 @@
       "topic": "隱性輸入與隱性輸出",
       "docs": "",
       "story": "",
-      "prompt": "看這個函式：\nfunction applyDiscount() {\n  cart = cart.map(function (item) {\n    item.price *= discountRate;\n    return item;\n  });\n}\ncart 和 discountRate 都不是參數，而是直接讀取外部的變數；函式執行完也沒有 return，而是直接改掉了外部的 cart。這兩種現象分別叫做什麼？",
-      "code": "",
+      "prompt": "看這個函式：cart 和 discountRate 都不是參數，而是直接讀取外部的變數；函式執行完也沒有 return，而是直接改掉了外部的 cart。這兩種現象分別叫做什麼？",
+      "code": "function applyDiscount() {\n  cart = cart.map(function (item) {\n    item.price *= discountRate;\n    return item;\n  });\n}",
       "options": [
         { "id": "a", "text": "讀取外部的 cart、discountRate（沒有透過參數傳入）是隱性輸入；直接修改外部的 cart（沒有透過回傳值傳出）是隱性輸出——兩者都是沒有寫在函式簽名裡、卻實際影響或被影響的部分" },
         { "id": "b", "text": "這兩種現象都叫做隱性輸出，跟輸入無關" },
@@ -31,7 +31,7 @@
       "prompt": "延續上一題的 applyDiscount()，下列哪一個修改版本正確地把隱性輸入輸出都改成顯性？",
       "code": "function applyDiscount() {\n  cart = cart.map(function (item) {\n    item.price *= discountRate;\n    return item;\n  });\n}",
       "options": [
-        { "id": "a", "text": "function applyDiscount(cart, discountRate) { return cart.map(function (item) { return { ...item, price: item.price * discountRate }; }); }——cart 和 discountRate 都透過參數傳入，結果透過 return 傳出，呼叫端自己決定要不要把回傳值指派回原本的 cart 變數" },
+        { "id": "a", "text": "cart 和 discountRate 都透過參數傳入，結果透過 return 傳出，呼叫端自己決定要不要把回傳值指派回原本的 cart 變數", "code": "function applyDiscount(cart, discountRate) {\n  return cart.map(function (item) {\n    return { ...item, price: item.price * discountRate };\n  });\n}" },
         { "id": "b", "text": "保留讀寫外部變數的寫法，只是把函式名稱加上 Explicit 字尾" },
         { "id": "c", "text": "把 cart 和 discountRate 都改成寫死在函式內部的常數，不再從外部讀取" },
         { "id": "d", "text": "用 globalThis.cart 取代 cart，讓讀取的寫法看起來更明確" }
@@ -56,7 +56,7 @@
         { "id": "d", "text": "把 shopping_cart_total 改存進 sessionStorage，其餘邏輯完全不變" }
       ],
       "answer": "b",
-      "explanation": "正確重構是：function calc_total(cart) { return cart.reduce((sum, item) => sum + item.price, 0); }。呼叫端再寫 shopping_cart_total = calc_total(shopping_cart)。萃取後的 calc_total 不讀也不寫任何全域變數，是純粹的輸入輸出對應。",
+      "explanation": "正確重構後的 calc_total(cart) 用 reduce 把傳入的 cart 陣列加總後直接 return，呼叫端再自行決定要不要把結果存進 shopping_cart_total。萃取後的 calc_total 不讀也不寫任何全域變數，是純粹的輸入輸出對應。",
       "verify": { "manual": "概念題：程式實作型改寫成選擇題，正解已於 explanation 給出對照程式碼，無需執行驗證。" }
     },
     {
@@ -85,8 +85,8 @@
       "topic": "只讀不寫的函式分類",
       "docs": "",
       "story": "",
-      "prompt": "看這個函式：\nfunction isEligibleForFreeShipping(cart) {\n  return cart.total > freeShippingThreshold;\n}\n它讀取了外部變數 freeShippingThreshold，但完全沒有修改任何東西。它屬於哪一類？",
-      "code": "",
+      "prompt": "看這個函式：它讀取了外部變數 freeShippingThreshold，但完全沒有修改任何東西。它屬於哪一類？",
+      "code": "function isEligibleForFreeShipping(cart) {\n  return cart.total > freeShippingThreshold;\n}",
       "options": [
         { "id": "a", "text": "Calculation——相同的 cart 和相同的 freeShippingThreshold 永遠得到相同結果，沒有副作用；但它帶有「隱性輸入」這個壞味道，之後應該把 freeShippingThreshold 也改成參數傳入，讓它更容易被獨立測試" },
         { "id": "b", "text": "Action，因為它讀取了外部狀態，光是讀取就已經算副作用" },

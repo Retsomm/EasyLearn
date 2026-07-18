@@ -939,6 +939,11 @@ button {
   word-break: break-all;
 }
 
+.option-btn .code-block {
+  margin: 0 0 8px;
+  text-align: left;
+}
+
 .option-btn:not(:disabled):hover {
   border-color: var(--primary);
 }

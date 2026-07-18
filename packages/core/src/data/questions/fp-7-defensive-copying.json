@@ -50,7 +50,7 @@
       "prompt": "legacy 函式 black_friday_promotion(cart) 會直接修改傳入的 cart。哪一種包裝方式正確地用 defensive copying 隔離它？",
       "code": "function black_friday_promotion(cart) {\n  cart.forEach(item => { item.price *= 0.7; });\n  return cart; // 直接修改傳入的 cart\n}",
       "options": [
-        { "id": "a", "text": "function safe_black_friday_promotion(cart) { var copyIn = deepCopy(cart); var result = black_friday_promotion(copyIn); return deepCopy(result); }——進入安全區前先深拷貝一份交給不受信任的函式去改，離開時再深拷貝一次結果，確保呼叫端原本的 cart 完全沒被動到" },
+        { "id": "a", "text": "進入安全區前先深拷貝一份交給不受信任的函式去改，離開時再深拷貝一次結果，確保呼叫端原本的 cart 完全沒被動到", "code": "function safe_black_friday_promotion(cart) {\n  var copyIn = deepCopy(cart);\n  var result = black_friday_promotion(copyIn);\n  return deepCopy(result);\n}" },
         { "id": "b", "text": "直接呼叫 black_friday_promotion(cart)，只要回傳值看起來正確就沒問題" },
         { "id": "c", "text": "呼叫前用 Object.freeze(cart) 凍結它，指望 legacy 函式自然改不動" },
         { "id": "d", "text": "把 cart 轉成 JSON 字串再傳進去，函式看不懂字串自然不會出錯" }

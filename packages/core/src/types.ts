@@ -36,6 +36,7 @@ export type QuestionType = 'predict-output' | 'find-bug' | 'same-or-not' | 'fill
 export interface QuestionOption {
   id: string
   text: string
+  code?: string
 }
 
 export interface Question {

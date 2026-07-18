@@ -9,8 +9,8 @@
       "topic": "縮小隱性輸入輸出的價值",
       "docs": "",
       "story": "",
-      "prompt": "有兩個版本的 add_item_to_cart，都還沒被完全轉成 Calculation、仍然是 Action：\n版本一：function add_item_to_cart(name, price) { shopping_cart = add_item(shopping_cart, name, price); calc_cart_total(); render(); saveToDb(); }\n版本二：function add_item_to_cart(cart, name, price) { return add_item(cart, name, price); } // 呼叫端自己決定要不要 render/saveDb\n版本二明顯比版本一容易理解，也比較不容易意外造成錯誤。這說明了什麼？",
-      "code": "",
+      "prompt": "有兩個版本的 add_item_to_cart，都還沒被完全轉成 Calculation、仍然是 Action。版本二明顯比版本一容易理解，也比較不容易意外造成錯誤。這說明了什麼？",
+      "code": "// 版本一\nfunction add_item_to_cart(name, price) {\n  shopping_cart = add_item(shopping_cart, name, price);\n  calc_cart_total();\n  render();\n  saveToDb();\n}\n\n// 版本二\nfunction add_item_to_cart(cart, name, price) {\n  return add_item(cart, name, price);\n} // 呼叫端自己決定要不要 render/saveDb",
       "options": [
         { "id": "a", "text": "即使函式還沒有完全變成 Calculation，減少它牽涉的隱性輸入輸出，也能讓「這個函式會被什麼狀態影響、又會觸發什麼後果」變得清楚許多——版本二一眼就能看出它只處理 cart 的新增邏輯，不會意外觸發畫面更新或寫資料庫" },
         { "id": "b", "text": "沒有意義，兩個版本都還是 Action，效果完全一樣" },
@@ -31,7 +31,7 @@
       "prompt": "下列函式直接讀寫全域變數 shopping_cart。哪一個重構正確地把它改成參數傳入、結果傳出？",
       "code": "function add_item_to_cart(name, price) {\n  shopping_cart = add_item(shopping_cart, name, price);\n  calc_cart_total();\n}",
       "options": [
-        { "id": "a", "text": "function add_item_to_cart(cart, name, price) { var newCart = add_item(cart, name, price); var total = calc_total(newCart); return { cart: newCart, total }; }——呼叫端自行決定要不要把回傳值指派回 shopping_cart / 畫面上的總額" },
+        { "id": "a", "text": "呼叫端自行決定要不要把回傳值指派回 shopping_cart / 畫面上的總額", "code": "function add_item_to_cart(cart, name, price) {\n  var newCart = add_item(cart, name, price);\n  var total = calc_total(newCart);\n  return { cart: newCart, total };\n}" },
         { "id": "b", "text": "保留全域變數讀寫，只是把函式名稱加上 New 字尾" },
         { "id": "c", "text": "把 shopping_cart 改成存進 window.shopping_cart，其餘邏輯完全不變" },
         { "id": "d", "text": "用字串組出變數名稱再用 eval() 動態賦值" }

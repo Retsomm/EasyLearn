@@ -50,7 +50,7 @@
       "prompt": "setPriceByName、setQuantityByName、setShippingByName 這三個高度相似的函式，哪一種重構正確地合併成一個 setFieldByName？",
       "code": "function setPriceByName(cart, name, price) { /* ... */ }\nfunction setQuantityByName(cart, name, quantity) { /* ... */ }\nfunction setShippingByName(cart, name, shipping) { /* ... */ }",
       "options": [
-        { "id": "a", "text": "function setFieldByName(cart, name, field, value) { var i = cart.findIndex(item => item.name === name); var copy = cart.slice(); copy[i] = { ...copy[i], [field]: value }; return copy; }——呼叫端改成 setFieldByName(cart, \"shirt\", \"price\", 13)，一個函式取代三個重複的函式" },
+        { "id": "a", "text": "呼叫端改成 setFieldByName(cart, \"shirt\", \"price\", 13)，一個函式取代三個重複的函式", "code": "function setFieldByName(cart, name, field, value) {\n  var i = cart.findIndex(item => item.name === name);\n  var copy = cart.slice();\n  copy[i] = { ...copy[i], [field]: value };\n  return copy;\n}" },
         { "id": "b", "text": "把三個函式合併成 setAllFields(cart, name, price, quantity, shipping)，強迫每次呼叫都要傳齊所有欄位" },
         { "id": "c", "text": "保留三個函式不變，只是讓它們共用同一個變數名稱" },
         { "id": "d", "text": "用一個全域變數紀錄目前要改哪個欄位，三個函式都改成讀這個全域變數" }
@@ -66,8 +66,8 @@
       "topic": "高階函式的能力",
       "docs": "",
       "story": "",
-      "prompt": "myArray.map(function (x) { return x * 2; }) 這行程式裡，map 完全不知道要怎麼「乘以 2」，這個邏輯是呼叫端用參數傳進去的；但如果自己寫一個 function doubleAll(array) { return array.map(function (x) { return x * 2; }); }，doubleAll 就只能做「乘以 2」這一件事。map 和 doubleAll 的差異說明了高階函式的什麼能力？",
-      "code": "",
+      "prompt": "map 完全不知道要怎麼「乘以 2」，這個邏輯是呼叫端用參數傳進去的；但如果自己寫一個 doubleAll，它就只能做「乘以 2」這一件事。map 和 doubleAll 的差異說明了高階函式的什麼能力？",
+      "code": "myArray.map(function (x) { return x * 2; });\n\n// 自己寫一個只能做這一件事的函式\nfunction doubleAll(array) {\n  return array.map(function (x) { return x * 2; });\n}",
       "options": [
         { "id": "a", "text": "map 是高階函式（接受函式當參數），它能把「要走訪陣列」這個固定的流程，跟「每個元素要怎麼被轉換」這個可變的邏輯分開；doubleAll 把兩者寫死在一起，只能做一件事——高階函式讓同一段控制流程可以套用在無限多種不同的具體邏輯上，這是只能操作資料的一般函式做不到的" },
         { "id": "b", "text": "map 跟 doubleAll 其實完全等價，只是寫法不同，沒有能力上的差異" },

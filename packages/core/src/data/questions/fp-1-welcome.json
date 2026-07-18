@@ -9,8 +9,8 @@
       "topic": "本書對 FP 的定義",
       "docs": "",
       "story": "",
-      "prompt": "同樣是「新用戶註冊後寄送歡迎信」，有兩種寫法：\n版本一：function onSignup(user) { sendWelcomeEmail(user); logAnalytics(user); saveToDb(user); } // 判斷內容、寄信、記錄全部寫在一起\n版本二：function buildWelcomeEmail(user) { return { to: user.email, subject: '歡迎加入' }; } // 只負責算出信件內容，不寄信\n         function onSignup(user) { var email = buildWelcomeEmail(user); sendEmail(email); saveToDb(user); }\n根據這兩種寫法的差異，哪一個最符合本書對「函數式程式設計」的核心主張？",
-      "code": "",
+      "prompt": "同樣是「新用戶註冊後寄送歡迎信」，有兩種寫法，根據這兩種寫法的差異，哪一個最符合本書對「函數式程式設計」的核心主張？",
+      "code": "// 版本一\nfunction onSignup(user) {\n  sendWelcomeEmail(user);\n  logAnalytics(user);\n  saveToDb(user);\n} // 判斷內容、寄信、記錄全部寫在一起\n\n// 版本二\nfunction buildWelcomeEmail(user) {\n  return { to: user.email, subject: '歡迎加入' };\n} // 只負責算出信件內容，不寄信\nfunction onSignup(user) {\n  var email = buildWelcomeEmail(user);\n  sendEmail(email);\n  saveToDb(user);\n}",
       "options": [
         { "id": "a", "text": "版本二把「決定信件內容」這種可以獨立驗證、不需要真的寄信就能檢查對不對的部分，跟「寄信」這種一定會發生副作用的動作分開；FP 的重點不是把 sendEmail 也消滅掉，而是把可以獨立出來的邏輯跟不可避免的副作用分辨清楚，讓副作用的範圍縮到最小" },
         { "id": "b", "text": "版本一比較符合 FP，因為所有邏輯集中在同一個函式裡，程式碼比較短" },
