@@ -175,7 +175,7 @@
         { "id": "d", "text": "版本一會報錯，input 不能同時給 value 跟 onChange" }
       ],
       "answer": "a",
-      "explanation": "value + onChange 讓 React 成為輸入框的「唯一真相來源」——這正是本章「單一資料源」精神在表單上的實踐：要跟別的元件共享這個輸入值、要清空、要驗證，隨時能靠 state 做到，這叫受控元件。defaultValue 只給 DOM 一個起始值，打字之後的內容活在 DOM 自己的記憶裡，React 對它視而不見，這叫非受控元件，除非搭配 ref 才能讀到目前的值。多數需要「跟其他 UI 同步」的表單都該選受控。",
+      "explanation": "value + onChange 讓 React 成為輸入框的「唯一真相來源」——這正是「單一資料源」精神在表單上的實踐：要跟別的元件共享這個輸入值、要清空、要驗證，隨時能靠 state 做到，這叫受控元件。defaultValue 只給 DOM 一個起始值，打字之後的內容活在 DOM 自己的記憶裡，React 對它視而不見，這叫非受控元件，除非搭配 ref 才能讀到目前的值。多數需要「跟其他 UI 同步」的表單都該選受控。",
       "verify": {
         "checks": [],
         "manual": "需要打字互動觀察 state 是否隨按鍵更新；概念依 react.dev reference/react-dom/components/input 的 controlled vs uncontrolled 說明"
@@ -265,7 +265,7 @@
         { "id": "d", "text": "MainContent 會拿到錯誤的 menuOpen 值" }
       ],
       "answer": "a",
-      "explanation": "本章前面在教「怎麼把 state 往上搬」，但上提是有代價的手術，不是預設動作：只要沒有第二個元件需要用到，就不需要共享，留在原地最單純。硬把只有一個消費者的 state 上提，除了多一層 props 傳遞的麻煩，父層重繪的範圍也跟著變大——不相干的兄弟元件被迫陪著重新渲染（呼應 react-9 會細講的渲染範圍問題）。判斷準則很簡單：這份資料「有超過一個元件需要看到／改到它」嗎？沒有就別搬家，q7 的 lifting state up 是解法，不是每個 state 都要做的手續。",
+      "explanation": "把 state 往上搬（lifting state up）是有代價的手術，不是預設動作：只要沒有第二個元件需要用到，就不需要共享，留在原地最單純。硬把只有一個消費者的 state 上提，除了多一層 props 傳遞的麻煩，父層重繪的範圍也跟著變大——不相干的兄弟元件被迫陪著重新渲染。判斷準則很簡單：這份資料「有超過一個元件需要看到／改到它」嗎？沒有就別搬家，上提是解法，不是每個 state 都要做的手續。",
       "verify": {
         "checks": [],
         "manual": "重繪範圍變大屬於效能／渲染行為，無法用單次執行輸出驗證；原則依 react.dev sharing-state-between-components 的『何時該共享』精神"

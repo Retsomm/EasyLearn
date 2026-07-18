@@ -18,7 +18,7 @@
         { "id": "d", "text": "會報錯" }
       ],
       "answer": "a",
-      "explanation": "class 是「物件的製造模具」：new Pet(\"皮皮\") 開一個新物件，constructor 立刻執行，把名字掛到 this 上。之後呼叫 p.speak()，this 就是 p 本人（第二章 this 關卡的規則：誰的方法誰呼叫）。讀懂 class 很重要——AI 和很多函式庫的程式碼都長這樣。",
+      "explanation": "class 是「物件的製造模具」：new Pet(\"皮皮\") 開一個新物件，constructor 立刻執行，把名字掛到 this 上。之後呼叫 p.speak()，this 就是 p 本人（誰呼叫這個方法，this 就是誰）。讀懂 class 很重要——AI 和很多函式庫的程式碼都長這樣。",
       "verify": {
         "checks": [
           { "code": "class Pet {\n  constructor(name) {\n    this.name = name;\n  }\n  speak() {\n    return `${this.name}：啾啾`;\n  }\n}\nconst p = new Pet(\"皮皮\");\nconsole.log(p.speak());", "expected": "皮皮：啾啾" }
@@ -79,7 +79,7 @@
       "topic": "class 與 closure 工廠是同一件事的兩種寫法",
       "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes",
       "story": "",
-      "prompt": "一個用 class、一個用 closure 工廠（第二章的老朋友）。兩段印出來一樣嗎？",
+      "prompt": "一個用 class、一個用 closure 工廠。兩段印出來一樣嗎？",
       "code": "// 版本一\nclass Counter {\n  count = 0;\n  add() { return ++this.count; }\n}\nconst a = new Counter();\nconst b = new Counter();\na.add(); a.add();\nconsole.log(a.add(), b.add());\n\n// 版本二\nfunction makeCounter() {\n  let count = 0;\n  return { add: () => ++count };\n}\nconst c = makeCounter();\nconst d = makeCounter();\nc.add(); c.add();\nconsole.log(c.add(), d.add());",
       "options": [
         { "id": "a", "text": "一樣，都印 3 1" },
@@ -180,7 +180,7 @@
         { "id": "d", "text": "w.show() 也會失敗，因為 private 欄位連 class 內部都不能用" }
       ],
       "answer": "a",
-      "explanation": "開頭加 # 的欄位是真正的 private：只有這個 class 的方法內部（像 show()）能碰它，class 外部就算是同一個檔案也完全存取不到。這不只是「約定俗成不要動」，而是語言層級硬性擋住——在 class 外面寫 w.#balance，連程式都解析不過去，直接是 SyntaxError（Private field '#balance' must be declared in an enclosing class）。這跟第五章其他關卡教的「用 closure 做私有狀態」是同一個目的，但 class 語法把它變成內建功能。",
+      "explanation": "開頭加 # 的欄位是真正的 private：只有這個 class 的方法內部（像 show()）能碰它，class 外部就算是同一個檔案也完全存取不到。這不只是「約定俗成不要動」，而是語言層級硬性擋住——在 class 外面寫 w.#balance，連程式都解析不過去，直接是 SyntaxError（Private field '#balance' must be declared in an enclosing class）。這跟用 closure 做私有狀態是同一個目的，但 class 語法把它變成內建功能。",
       "verify": {
         "checks": [
           { "code": "class Wallet {\n  #balance = 100;\n  show() {\n    return this.#balance;\n  }\n}\nconst w = new Wallet();\nconsole.log(w.show());", "expected": "100" },

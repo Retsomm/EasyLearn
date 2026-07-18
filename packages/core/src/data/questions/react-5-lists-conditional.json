@@ -41,7 +41,7 @@
         { "id": "d", "text": "<li>{items}</li>" }
       ],
       "answer": "a",
-      "explanation": "「資料陣列 → 元素陣列」就是 map 的工作，React 會把回傳的陣列攤開渲染；key 讓 React 認得每一項（列表必備）。選項 b 的 forEach 不回傳東西，畫面會是空的 <ul>（第一章的老坑在 React 重演）；選項 c 的 for 是陳述式，不能塞進 JSX 大括號；選項 d 把整個陣列塞進一個 <li>，字全部黏在一起。",
+      "explanation": "「資料陣列 → 元素陣列」就是 map 的工作，React 會把回傳的陣列攤開渲染；key 讓 React 認得每一項（列表必備）。選項 b 的 forEach 不回傳東西，畫面會是空的 <ul>（forEach 不回傳值的老坑，在 React 重演）；選項 c 的 for 是陳述式，不能塞進 JSX 大括號；選項 d 把整個陣列塞進一個 <li>，字全部黏在一起。",
       "verify": {
         "checks": [
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction TodoList({ items }) {\n  return <ul>{items.map((it) => <li key={it}>{it}</li>)}</ul>;\n}\nconsole.log(renderToStaticMarkup(<TodoList items={[\"買菜\", \"寫程式\"]} />));", "expected": "<ul><li>買菜</li><li>寫程式</li></ul>" }
@@ -134,7 +134,7 @@
         { "id": "d", "text": "會報錯，JSX 裡不能串兩個方法" }
       ],
       "answer": "a",
-      "explanation": "鏈式呼叫從左讀到右：filter 先淘汰沒庫存的滑鼠，map 再把活下來的變成 <li>。大括號裡只要是表達式，串多長都合法。「先 filter 再 map」是列表渲染的高頻組合，第一章陣列關卡的招式在這裡全部派上用場——JS 練得穩，React 就只是換個舞台。",
+      "explanation": "鏈式呼叫從左讀到右：filter 先淘汰沒庫存的滑鼠，map 再把活下來的變成 <li>。大括號裡只要是表達式，串多長都合法。「先 filter 再 map」是列表渲染的高頻組合，陣列方法的招式在這裡全部派上用場——JS 練得穩，React 就只是換個舞台。",
       "verify": {
         "checks": [
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nconst products = [\n  { id: 1, name: \"鍵盤\", stock: 3 },\n  { id: 2, name: \"滑鼠\", stock: 0 },\n  { id: 3, name: \"螢幕\", stock: 5 },\n];\nfunction Shelf() {\n  return (\n    <ul>\n      {products\n        .filter((p) => p.stock > 0)\n        .map((p) => <li key={p.id}>{p.name}</li>)}\n    </ul>\n  );\n}\nconsole.log(renderToStaticMarkup(<Shelf />));", "expected": "<ul><li>鍵盤</li><li>螢幕</li></ul>" }

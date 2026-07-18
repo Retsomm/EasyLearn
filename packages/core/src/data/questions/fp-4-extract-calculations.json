@@ -94,7 +94,7 @@
         { "id": "d", "text": "視 freeShippingThreshold 的型別而定，數字就是 Calculation、物件就是 Action" }
       ],
       "answer": "a",
-      "explanation": "本書把「副作用（寫）」跟「依賴外部狀態（讀）」分開看：只讀不寫的函式沒有副作用，仍然是 Calculation，只是多了一個沒寫進參數列的隱性輸入，這是後續該修的壞味道，而不是直接判定成 Action。",
+      "explanation": "「副作用（寫）」跟「依賴外部狀態（讀）」要分開看：只讀不寫的函式沒有副作用，仍然是 Calculation，只是多了一個沒寫進參數列的隱性輸入，這是後續該修的壞味道，而不是直接判定成 Action。",
       "verify": { "manual": "概念題：以具體只讀函式取代抽象界定敘述，無可執行程式碼。" }
     },
     {

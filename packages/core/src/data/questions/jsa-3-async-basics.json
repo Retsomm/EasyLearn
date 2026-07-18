@@ -88,7 +88,7 @@
         { "id": "d", "text": "一樣，都印 undefined" }
       ],
       "answer": "b",
-      "explanation": "then 鏈是接力賽：上一棒 return 什麼，下一棒就收到什麼。版本二加了大括號卻沒寫 return，等於上一棒空手交棒，下一棒收到 undefined。第一章見過的「大括號吃掉回傳值」陷阱，在 Promise 鏈裡殺傷力更大，因為錯誤會沿著鏈往下傳很遠才被發現。",
+      "explanation": "then 鏈是接力賽：上一棒 return 什麼，下一棒就收到什麼。版本二加了大括號卻沒寫 return，等於上一棒空手交棒，下一棒收到 undefined。「箭頭函式加了大括號卻忘記寫 return」這個陷阱，在 Promise 鏈裡殺傷力更大，因為錯誤會沿著鏈往下傳很遠才被發現。",
       "verify": {
         "checks": [
           { "code": "Promise.resolve(10)\n  .then((n) => n * 2)\n  .then((n) => console.log(n));", "expected": "20" },

@@ -111,7 +111,7 @@
         { "id": "d", "text": "score = points;" }
       ],
       "answer": "a",
-      "explanation": "add 和 total 都背著同一個 score（closure），直接 score += points 就能累加。選項 b 的 this.score 是在物件身上另開一個欄位，跟 closure 裡的 score 是兩個世界；選項 d 每次「覆蓋」而不是累加，只會剩 5——第一章那個 = 與 += 的坑又來了。外面完全碰不到 score，這就是最輕量的「私有變數」。",
+      "explanation": "add 和 total 都背著同一個 score（closure），直接 score += points 就能累加。選項 b 的 this.score 是在物件身上另開一個欄位，跟 closure 裡的 score 是兩個世界；選項 d 每次「覆蓋」而不是累加，只會剩 5——這是「= 會蓋掉舊值、+= 才會累加」的經典陷阱。外面完全碰不到 score，這就是最輕量的「私有變數」。",
       "verify": {
         "checks": [
           { "code": "function createGame() {\n  let score = 0;\n  return {\n    add(points) { score += points; },\n    total() { return score; },\n  };\n}\nconst g = createGame();\ng.add(10);\ng.add(5);\nconsole.log(g.total());", "expected": "15" }

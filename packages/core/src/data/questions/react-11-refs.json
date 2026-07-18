@@ -106,7 +106,7 @@
         { "id": "d", "text": "先印 DOM 節點，effect 裡印 null" }
       ],
       "answer": "a",
-      "explanation": "時間軸是關鍵：渲染途中畫面根本還沒生出來，current 當然是 null（初始值）；React 把 DOM 掛好之後才填入 current，而 useEffect 剛好跑在那之後（react-4 學過的時序），所以 effect 裡拿得到節點。「Cannot read properties of null (reading 'focus')」十之八九就是在渲染途中偷用了 ref。",
+      "explanation": "時間軸是關鍵：渲染途中畫面根本還沒生出來，current 當然是 null（初始值）；React 把 DOM 掛好之後才填入 current，而 useEffect 剛好跑在那之後（React 會先把畫面畫出來，才輪到 effect 執行的時序），所以 effect 裡拿得到節點。「Cannot read properties of null (reading 'focus')」十之八九就是在渲染途中偷用了 ref。",
       "verify": {
         "checks": [],
         "manual": "需要瀏覽器掛載流程；時序依 react.dev manipulating-the-dom-with-refs（commit 後才填入 current）"
@@ -128,7 +128,7 @@
         { "id": "d", "text": "localStorage —— 存久一點比較保險" }
       ],
       "answer": "a",
-      "explanation": "用刪去法收尾這一章：let 活不過重繪（q3），id 會弄丟、interval 再也清不掉；useState 能存，但改 id 會觸發一次毫無意義的重繪，還可能連鎖觸發 effect；localStorage 是跨「關閉網頁」的持久化，跟這需求無關。「跨重繪存活＋不影響畫面」的資料，useRef 是量身訂做的答案——這也是它在真實程式裡最常見的用法。",
+      "explanation": "用刪去法一一排除：let 活不過重繪（q3），id 會弄丟、interval 再也清不掉；useState 能存，但改 id 會觸發一次毫無意義的重繪，還可能連鎖觸發 effect；localStorage 是跨「關閉網頁」的持久化，跟這需求無關。「跨重繪存活＋不影響畫面」的資料，useRef 是量身訂做的答案——這也是它在真實程式裡最常見的用法。",
       "verify": {
         "checks": [],
         "manual": "屬設計選擇題，無單一執行輸出；判準依 react.dev referencing-values-with-refs 的使用時機"
@@ -194,7 +194,7 @@
         { "id": "d", "text": "會報錯，useRef 不能搭配 useEffect 使用" }
       ],
       "answer": "a",
-      "explanation": "這是「記住上一輪值」的經典寫法：render 階段讀到的 prevRef.current 永遠是「effect 尚未來得及更新前」的舊值，effect 本身要等瀏覽器畫完畫面才跑（react-4 學過的時序），跑完才把 ref 更新成這一輪的 value，留給下一次渲染去讀。所以每次渲染畫面上看到的「上一次」，其實就是名副其實的上一輪的值，不會提前更新成當下這輪。",
+      "explanation": "這是「記住上一輪值」的經典寫法：render 階段讀到的 prevRef.current 永遠是「effect 尚未來得及更新前」的舊值，effect 本身要等瀏覽器畫完畫面才跑（React 會先把畫面畫出來，才輪到 effect 執行的時序），跑完才把 ref 更新成這一輪的 value，留給下一次渲染去讀。所以每次渲染畫面上看到的「上一次」，其實就是名副其實的上一輪的值，不會提前更新成當下這輪。",
       "verify": {
         "checks": [],
         "manual": "需要多輪渲染與 effect 時序才能觀察；機制依 react.dev referencing-values-with-refs（ref 跨渲染存活＋effect 在畫面呈現之後才執行）"

@@ -174,7 +174,7 @@
         { "id": "d", "text": "會報錯，同一個自訂 hook 不能被兩個元件使用" }
       ],
       "answer": "a",
-      "explanation": "自訂 hook 的本質是「把重複的邏輯抽出來」，不是「把 state 抽出來共用」。useToggle() 裡的 useState 依然是跟著呼叫它的那個元件實例走的（react-8 教過：state 是元件私有的記憶）——SwitchA 呼叫一次就在自己身上長出一份 on，SwitchB 呼叫一次又長出另一份，兩份完全獨立、互不相干。想要兩個元件真的同步同一份 state，答案永遠是 react-8 的解法：狀態上移到共同父層，用 props 往下傳，不是靠共用一個自訂 hook。",
+      "explanation": "自訂 hook 的本質是「把重複的邏輯抽出來」，不是「把 state 抽出來共用」。useToggle() 裡的 useState 依然是跟著呼叫它的那個元件實例走的（state 是元件私有的記憶）——SwitchA 呼叫一次就在自己身上長出一份 on，SwitchB 呼叫一次又長出另一份，兩份完全獨立、互不相干。想要兩個元件真的同步同一份 state，答案永遠是把狀態上移到共同父層、用 props 往下傳，不是靠共用一個自訂 hook。",
       "verify": {
         "checks": [],
         "manual": "需要各自點擊觀察是否連動；renderToStaticMarkup 只能做一次性渲染，也不會觸發 useState 更新；答案依 react.dev reusing-logic-with-custom-hooks（自訂 hook 共享的是邏輯而非 state 本身）"

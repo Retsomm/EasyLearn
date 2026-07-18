@@ -229,7 +229,7 @@
         { "id": "d", "text": "時間到：null" }
       ],
       "answer": "a",
-      "explanation": "setTimeout 呼叫 callback 時，是由計時器系統來呼叫這個函式，前面沒有「誰的方法」這件事，this 不再指向 timer，而是由執行環境決定：在 Node.js 裡，計時器系統會把 this 綁成內部的 Timeout 物件；在瀏覽器裡則通常是 window／globalThis。不管哪一種，這個 this 都跟 timer 物件無關，所以 this.label 一律是 undefined。想保留 timer，要嘛把 callback 換成箭頭函式（沿用 start 的 this，jsa-1-q5 教過的救星），要嘛先把 this 存進變數（常見寫法 const self = this）。",
+      "explanation": "setTimeout 呼叫 callback 時，是由計時器系統來呼叫這個函式，前面沒有「誰的方法」這件事，this 不再指向 timer，而是由執行環境決定：在 Node.js 裡，計時器系統會把 this 綁成內部的 Timeout 物件；在瀏覽器裡則通常是 window／globalThis。不管哪一種，這個 this 都跟 timer 物件無關，所以 this.label 一律是 undefined。想保留 timer，要嘛把 callback 換成箭頭函式（箭頭函式沒有自己的 this，會沿用 start 的 this），要嘛先把 this 存進變數（常見寫法 const self = this）。",
       "verify": {
         "checks": [
           { "code": "const timer = {\n  label: \"計時器A\",\n  start() {\n    setTimeout(function () {\n      console.log(\"時間到：\" + this.label);\n    }, 10);\n  },\n};\ntimer.start();", "expected": "時間到：undefined" }

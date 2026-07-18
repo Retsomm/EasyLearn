@@ -75,7 +75,7 @@
         { "id": "d", "text": "代表這個函式應該被改寫成 class 的建構子" }
       ],
       "answer": "a",
-      "explanation": "setPriceByName、setQuantityByName、setShippingByName 這類函式高度相似，差別只在「改哪個欄位」——這個差異應該變成參數（field），合併成一個 setFieldByName(cart, name, field, value)，這正是 Ch10 要做的重構。",
+      "explanation": "setPriceByName、setQuantityByName、setShippingByName 這類函式高度相似，差別只在「改哪個欄位」——這個差異應該變成參數（field），合併成一個 setFieldByName(cart, name, field, value)，這正是把隱含參數顯性化、消除重複函式的重構方向。",
       "verify": { "manual": "概念題：對照書中命名壞味道的說明，無可執行程式碼。" }
     },
     {
@@ -94,7 +94,7 @@
         { "id": "d", "text": "因為 JavaScript 的模組系統強制要求檔案要這樣切分" }
       ],
       "answer": "a",
-      "explanation": "這正是分層設計（Ch8-9）的預告：底層的 cart 操作應該穩定、少變動；商業規則建立在底層之上，可以隨業務需求快速調整，不會牽動底下的基礎操作。",
+      "explanation": "這正是分層設計的核心精神：底層的 cart 操作應該穩定、少變動；商業規則建立在底層之上，可以隨業務需求快速調整，不會牽動底下的基礎操作。",
       "verify": { "manual": "概念題：情境分析，無可執行程式碼。" }
     }
   ]

@@ -18,7 +18,7 @@
         { "id": "d", "text": "哈囉，訪客 和 哈囉，訪客" }
       ],
       "answer": "a",
-      "explanation": "props 就是「呼叫元件時傳進來的參數物件」，{ name = \"訪客\" } 是第一章學過的解構＋預設值，原封不動搬到 React 來用。沒傳 name 就補上訪客。你在 JS 章練的每一招，到 React 都是日常。",
+      "explanation": "props 就是「呼叫元件時傳進來的參數物件」，{ name = \"訪客\" } 就是 JS 的解構＋預設值語法，原封不動搬到 React 來用。沒傳 name 就補上訪客。JS 練過的每一招，到 React 都是日常。",
       "verify": {
         "checks": [
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Greet({ name = \"訪客\" }) {\n  return <p>哈囉，{name}</p>;\n}\nfunction App() {\n  return (\n    <div>\n      <Greet />\n      <Greet name=\"阿明\" />\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<div><p>哈囉，訪客</p><p>哈囉，阿明</p></div>" }
@@ -41,7 +41,7 @@
         { "id": "d", "text": "沒有 bug，510 是對的" }
       ],
       "answer": "a",
-      "explanation": "引號傳的 props 永遠是字串——\"5\" + 10 就黏出 \"510\"（第一章的字串加法陷阱在 React 重演）。數字、布林、變數都要走大括號：points={5}。畫面出現黏在一起的怪數字，第一件事就是查 props 是不是被引號傳成了字串。",
+      "explanation": "引號傳的 props 永遠是字串——\"5\" + 10 就黏出 \"510\"（字串加法把數字黏成文字的陷阱，在 React 重演）。數字、布林、變數都要走大括號：points={5}。畫面出現黏在一起的怪數字，第一件事就是查 props 是不是被引號傳成了字串。",
       "verify": {
         "checks": [
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Score({ points }) {\n  return <p>總分：{points + 10}</p>;\n}\nconsole.log(renderToStaticMarkup(<Score points=\"5\" />));", "expected": "<p>總分：510</p>" },
@@ -111,7 +111,7 @@
         { "id": "d", "text": "[text]" }
       ],
       "answer": "a",
-      "explanation": "React 把所有 props 打包成一個物件塞給元件的第一個參數，{ text } 就地解構拿出來（第一章物件關卡的參數解構，在 React 是每天寫的標準姿勢）。選項 c 的 props 能收到東西，但函式裡就得寫 props.text——而題目裡直接用了 text，會報 text is not defined。",
+      "explanation": "React 把所有 props 打包成一個物件塞給元件的第一個參數，{ text } 就地解構拿出來（物件解構語法，在 React 是每天寫的標準姿勢）。選項 c 的 props 能收到東西，但函式裡就得寫 props.text——而題目裡直接用了 text，會報 text is not defined。",
       "verify": {
         "checks": [
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Title({ text }) {\n  return <h1>{text}</h1>;\n}\nconsole.log(renderToStaticMarkup(<Title text=\"嗨\" />));", "expected": "<h1>嗨</h1>" }
@@ -274,7 +274,7 @@
         { "id": "d", "text": "title 要寫成 this.title 才抓得到值" }
       ],
       "answer": "a",
-      "explanation": "props 沒傳，對應的參數就是貨真價實的 undefined，不會自動變成空字串或任何預設值。字串相加時 JS 會把 undefined 轉型成文字 \"undefined\" 接上去，於是畫面出現這個詭異的英文字——這跟第一章「字串 + undefined」的坑是同一個原理，只是換了個舞台在 React 重演。修法呼應 react-2-q1：用解構預設值 { title = \"\" } 擋掉，或是呼叫端記得補齊 title。",
+      "explanation": "props 沒傳，對應的參數就是貨真價實的 undefined，不會自動變成空字串或任何預設值。字串相加時 JS 會把 undefined 轉型成文字 \"undefined\" 接上去，於是畫面出現這個詭異的英文字——這跟「字串 + undefined」的坑是同一個原理，只是換了個舞台在 React 重演。修法呼應 react-2-q1：用解構預設值 { title = \"\" } 擋掉，或是呼叫端記得補齊 title。",
       "verify": {
         "checks": [
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Avatar({ title }) {\n  return <img alt={\"頭像：\" + title} src=\"/a.png\" />;\n}\nfunction App() {\n  return <Avatar />;\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<link rel=\"preload\" as=\"image\" href=\"/a.png\"/><img alt=\"頭像：undefined\" src=\"/a.png\"/>" },
