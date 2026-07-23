@@ -124,7 +124,7 @@ export const useProgress = () => {
   // 每答一題就更新錯題本：答錯 → 記入／重置錯題紀錄；答對 → 這題若在錯題本裡就直接移出
   // 同時累計每日／分科作答統計，供學習數據頁使用
   const answerQuestion = (questionId: string, correct: boolean, chapterId?: string) => {
-    setProgress((p) => applyAnswer(p, questionId, correct, chapterId))
+    setProgress((p) => ({ ...applyAnswer(p, questionId, correct, chapterId), streak: bumpStreak(p.streak) }))
 
     if (isSignedIn) {
       postJson('/api/progress/answer', { questionId, correct, chapterId, today: todayStr() })
