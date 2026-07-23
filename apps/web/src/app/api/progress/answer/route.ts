@@ -2,7 +2,7 @@ import type { Prisma } from '@prisma/client'
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { isValidDateStr } from '@/lib/progressLogic'
+import { bumpStreakServer, isValidDateStr } from '@/lib/progressLogic'
 import { loadFullProgress } from '@/lib/progressStore'
 
 export const dynamic = 'force-dynamic'
@@ -34,38 +34,60 @@ export const POST = async (request: Request) => {
 
   const existing = await prisma.wrongEntry.findUnique({ where: { userId_questionId: { userId, questionId } } })
 
-  // 先算出「這次要寫入哪些操作」（計算），跟下面實際執行交易（動作）分開：
-  // 每個分支各自算出自己的 0 或 1 筆寫入，最後展開組成同一份交易清單
-  const wrongEntryWrites: Prisma.PrismaPromise<unknown>[] = correct
-    ? existing
-      ? [prisma.wrongEntry.delete({ where: { userId_questionId: { userId, questionId } } })]
-      : []
-    : [
-        prisma.wrongEntry.upsert({
-          where: { userId_questionId: { userId, questionId } },
-          update: { count: { increment: 1 }, lastWrong: today, box: 1 },
-          create: { userId, questionId, count: 1, lastWrong: today, box: 1 },
-        }),
-      ]
-
-  const dailyStatWrite = prisma.dailyStat.upsert({
-    where: { userId_date: { userId, date: today } },
-    update: { total: { increment: 1 }, correct: { increment: correct ? 1 : 0 } },
-    create: { userId, date: today, total: 1, correct: correct ? 1 : 0 },
-  })
-
-  const chapterStatWrites: Prisma.PrismaPromise<unknown>[] = chapterId
-    ? [
-        prisma.chapterStat.upsert({
-          where: { userId_chapterId: { userId, chapterId } },
-          update: { total: { increment: 1 }, correct: { increment: correct ? 1 : 0 } },
-          create: { userId, chapterId, total: 1, correct: correct ? 1 : 0 },
-        }),
-      ]
-    : []
-
   try {
-    await prisma.$transaction([...wrongEntryWrites, dailyStatWrite, ...chapterStatWrites])
+    await prisma.$transaction(async (tx) => {
+      // upsert 確保第一次登入、資料庫還沒有這個使用者列的請求不會炸掉；同時在同一交易內
+      // 讀出目前的 streak 狀態——streak 綁在「每答一題」而非「答完整關」上，因為只有這支
+      // API 保證每一題都會呼叫到，答完整關才觸發的 finish-level/finish-review 容易被
+      // 中途離開（切走分頁、背景化）打斷，導致當天明明有作答卻沒推進連續天數
+      const user = await tx.user.upsert({ where: { id: userId }, create: { id: userId }, update: {} })
+      const streak = bumpStreakServer({ count: user.streakCount, last: user.streakLast }, today)
+
+      // 先算出「這次要寫入哪些操作」（計算），跟下面實際執行交易（動作）分開：
+      // 每個分支各自算出自己的 0 或 1 筆寫入，最後展開組成同一份交易清單
+      const wrongEntryWrites: Prisma.PrismaPromise<unknown>[] = correct
+        ? existing
+          ? [tx.wrongEntry.delete({ where: { userId_questionId: { userId, questionId } } })]
+          : []
+        : [
+            tx.wrongEntry.upsert({
+              where: { userId_questionId: { userId, questionId } },
+              update: { count: { increment: 1 }, lastWrong: today, box: 1 },
+              create: { userId, questionId, count: 1, lastWrong: today, box: 1 },
+            }),
+          ]
+
+      const streakWrites: Prisma.PrismaPromise<unknown>[] =
+        streak.last === user.streakLast
+          ? []
+          : [
+              tx.user.update({
+                where: { id: userId },
+                data: { streakCount: streak.count, streakLast: streak.last },
+              }),
+            ]
+
+      const chapterStatWrites: Prisma.PrismaPromise<unknown>[] = chapterId
+        ? [
+            tx.chapterStat.upsert({
+              where: { userId_chapterId: { userId, chapterId } },
+              update: { total: { increment: 1 }, correct: { increment: correct ? 1 : 0 } },
+              create: { userId, chapterId, total: 1, correct: correct ? 1 : 0 },
+            }),
+          ]
+        : []
+
+      await Promise.all([
+        ...wrongEntryWrites,
+        ...streakWrites,
+        tx.dailyStat.upsert({
+          where: { userId_date: { userId, date: today } },
+          update: { total: { increment: 1 }, correct: { increment: correct ? 1 : 0 } },
+          create: { userId, date: today, total: 1, correct: correct ? 1 : 0 },
+        }),
+        ...chapterStatWrites,
+      ])
+    })
   } catch (err) {
     console.error('[progress/answer] transaction failed', userId, err)
     return NextResponse.json({ error: 'update failed' }, { status: 500 })
