@@ -82,7 +82,7 @@
       "options": [
         {
           "id": "a",
-          "text": "不合法，會在 console 印出警告：useEffect 預期傳入的函式，如果有回傳值，那個回傳值必須是『清理函式』（或什麼都不回傳）；async 函式不管內部邏輯是什麼，呼叫後永遠回傳一個 Promise，React 會把這個 Promise 誤認為是清理函式，導致清理機制失效並印出警告。正確寫法是在 effect 內部另外定義一個 async 函式、立刻呼叫它，effect 本體自己保持同步、不回傳 Promise"
+          "text": "不合法，會在 console 印出警告：useEffect 預期傳入的函式，如果有回傳值，那個回傳值必須是『清理函式』（或什麼都不回傳）；async 函式不管內部邏輯是什麼，呼叫後永遠回傳一個 Promise，React 會把這個 Promise 誤認為是清理函式，導致清理機制失效並印出警告。正確寫法是在 effect 內部另外定義一個 async 函式、立刻呼叫它，effect 本體自己保持同步、不回傳 Promise；但這只解決了『回傳值型別對不上』的問題，還不足以避免競態：userId 若在請求完成前又變了、或元件已經卸載，先前送出的舊請求仍可能晚於新請求才 resolve，用過期結果覆寫最新 state。正確寫法還要搭配一個 ignore 旗標或 AbortController——cleanup 時把 ignore 設為 true（或呼叫 abort()），async 函式收到結果、要 setUser 之前先檢查這個旗標，確認自己不是過期請求才更新狀態"
         },
         {
           "id": "b",
@@ -98,10 +98,10 @@
         }
       ],
       "answer": "a",
-      "explanation": "這是前面既有 react 章節談過『元件函式不能是 async』（因為 React 預期同步拿到 element）背後同一套原理的延伸：useEffect 的回傳值有特定意義（清理函式），async 函式的回傳值永遠是 Promise，兩者的『契約』對不上。正確的寫法是 effect 內部包一層立即呼叫的 async 函式（IIFE）或另外定義的具名 async 函式，effect 本身仍然同步執行、且不回傳那個 Promise。",
+      "explanation": "這是前面既有 react 章節談過『元件函式不能是 async』（因為 React 預期同步拿到 element）背後同一套原理的延伸：useEffect 的回傳值有特定意義（清理函式），async 函式的回傳值永遠是 Promise，兩者的『契約』對不上。正確的寫法是 effect 內部包一層立即呼叫的 async 函式（IIFE）或另外定義的具名 async 函式，effect 本身仍然同步執行、且不回傳那個 Promise。但這只解決了『回傳值不能是 Promise』的問題，不代表資料一定會正確更新——依賴變化或元件卸載後，先前送出的請求仍可能晚點才 resolve，若不做任何防範，就會用過期資料覆寫掉當下最新的 state，甚至對已卸載的元件呼叫 setState。標準做法是在 cleanup 函式裡設定一個 ignore 旗標（或呼叫 AbortController 的 abort()），async 函式在 resolve 之後、呼叫 setState 之前先檢查這個旗標，確認自己不是過期的請求才更新狀態。",
       "verify": {
         "checks": [],
-        "manual": "useEffect 的回傳值型別檢查與警告需要真實開發環境才能觀察 console 輸出，無法用 node -e 直接捕捉此類 React 內部警告。"
+        "manual": "useEffect 的回傳值型別檢查與警告、以及依賴變化或卸載後的競態行為，都需要真實開發環境搭配多輪非同步時序才能觀察，無法用 node -e 直接捕捉此類 React 內部警告與競態時序。"
       }
     },
     {
