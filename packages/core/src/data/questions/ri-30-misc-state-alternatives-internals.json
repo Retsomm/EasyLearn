@@ -1,0 +1,418 @@
+{
+  "id": "ri-30",
+  "title": "React 進階探索：狀態管理替代方案與底層機制",
+  "questions": [
+    {
+      "id": "ri-30-q1",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "MobX：用「可觀察物件」自動追蹤依賴，跟 Redux 的顯式 dispatch 是不同哲學",
+      "docs": "",
+      "story": "",
+      "prompt": "MobX 是另一套常見的狀態管理方案，跟 Redux 相比，核心設計哲學有什麼根本差異？",
+      "code": "// MobX：直接修改可觀察物件，UI 自動反應\nclass CartStore {\n  items = [];\n  addItem(item) {\n    this.items.push(item); // 看起來像直接修改，但物件是「可觀察」的\n  }\n}\n\n// Redux：透過 dispatch 一個 action，reducer 算出新 state\nstore.dispatch({ type: \"ADD_ITEM\", item });",
+      "options": [
+        {
+          "id": "a",
+          "text": "MobX 用『可觀察物件（observable）』自動追蹤『誰讀取了這份資料』，資料一變，所有讀取過它的地方自動重新計算／重繪，寫法上看起來像直接修改物件（底層靠 Proxy 或類似機制攔截讀寫）；Redux 走的是前面 ri-4 章節談過的明確路徑——所有變更都要透過 dispatch 一個 action、由純函式 reducer 算出全新的不可變 state，變更軌跡明確、可預測、方便時間旅行除錯，但樣板程式碼相對較多。兩者是『自動化程度 vs 明確可預測性』這組取捨的不同選擇"
+        },
+        {
+          "id": "b",
+          "text": "MobX 與 Redux 在設計理念與底層實作上完全相同，只是套件名稱不同"
+        },
+        {
+          "id": "c",
+          "text": "MobX 只能用於 Vue 專案，無法搭配 React 使用"
+        },
+        {
+          "id": "d",
+          "text": "Redux 底層其實是用可觀察物件實作的，跟 MobX 的機制一模一樣"
+        }
+      ],
+      "answer": "a",
+      "explanation": "MobX 的自動依賴追蹤讓程式碼寫起來更接近直覺的物件導向風格，樣板程式碼少；Redux 的顯式 action/reducer 流程犧牲了一些簡潔，換取變更路徑完全可追蹤、可預測、方便像 Redux DevTools 那樣做時間旅行除錯。這組取捨沒有絕對優劣，是團隊在『開發便利性』與『可預測性、除錯工具支援』之間的選擇。",
+      "verify": {
+        "checks": [],
+        "manual": "MobX 未安裝於本專案，可觀察物件的自動追蹤機制需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-30-q2",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "diffing 演算法的兩條核心捷徑：不同型別直接重建、同型別用 key 比對子元素",
+      "docs": "",
+      "story": "",
+      "prompt": "完整、精確地比較兩棵樹的最小差異，是電腦科學裡一個計算量很高的問題（理論上是 O(n³) 等級）。React 的 diffing 演算法為了實用，刻意採用了哪些簡化捷徑，把複雜度降到接近 O(n)？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "①不同型別的元素，直接假設整棵子樹完全不同、砍掉重建，不嘗試比對內部細節（前面 ri-11 章節已驗證這個行為）；②同一層的子元素列表，透過 key 屬性明確標記『這是同一個』，不用進行昂貴的全域最佳比對演算法，直接依 key 對應找出增刪移動——這兩條捷徑犧牲了『理論上最精確的最小差異』，換取『實務上大多數 UI 更新場景都夠用、而且執行速度快得多』的結果"
+        },
+        {
+          "id": "b",
+          "text": "React 的 diffing 演算法完全不做任何簡化，每次都執行理論上最精確、複雜度最高的完整比對"
+        },
+        {
+          "id": "c",
+          "text": "React 的 diffing 演算法只比較元素的文字內容，完全忽略元素的型別與屬性"
+        },
+        {
+          "id": "d",
+          "text": "diffing 演算法的複雜度與樹的大小完全無關，任何規模的更新耗時都相同"
+        }
+      ],
+      "answer": "a",
+      "explanation": "React 官方文件明確承認這套演算法是「啟發式（heuristic）」的，不追求理論上最精確的最小差異，而是根據「大多數真實 UI 場景符合的假設」（同型別元素通常結構相似、清單元素通常有穩定身份）簡化計算，把複雜度從理論上限的 O(n³) 降到接近 O(n)，這是效能與精確度之間刻意的工程取捨。",
+      "verify": {
+        "checks": [],
+        "manual": "diffing 演算法複雜度屬理論分析與內部實作細節，需要原始碼層級理解，無法用可執行片段驗證。"
+      }
+    },
+    {
+      "id": "ri-30-q3",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "diffing 演算法遵守的具體規則：兩條捷徑各自對應到什麼開發者可觀察的行為",
+      "docs": "",
+      "story": "",
+      "prompt": "把上一題談的兩條 diffing 捷徑，翻譯成開發者實際會觀察到的行為，下列哪個描述正確？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "①同一位置前後兩次渲染的元素型別不同 → 整個子樹（包含其中的 state）被砍掉重建，這正是前面 ri-11 章節實測過的行為；②陣列渲染時，React 依 key 判斷哪些元素是『同一個』（對應到 state 是否保留）、哪些是新增或刪除的，而不是單純依陣列索引位置比對——這也是為什麼前面 ri-13 章節談過『用索引當 key』在清單插入項目時會造成 state 錯位的根本原因"
+        },
+        {
+          "id": "b",
+          "text": "diffing 演算法只在使用者手動點擊『重新整理』按鈕時才會執行一次"
+        },
+        {
+          "id": "c",
+          "text": "diffing 演算法的比對結果永遠跟開發者寫的程式碼順序無關，純粹依渲染時間先後決定"
+        },
+        {
+          "id": "d",
+          "text": "型別不同的元素，diffing 演算法會嘗試盡可能重用舊節點的屬性，只更新真正不同的部分"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這題把抽象的演算法描述，跟本次多個章節已經用真實程式碼驗證過的具體現象串起來：型別比對捷徑對應到 ri-11 章節驗證過的『同位置換型別就整個重建』；key 比對捷徑對應到 ri-13 章節談過的『index-as-key 導致 state 錯位』。理解演算法背後的簡化假設，能幫助解釋這些表面上看似「規則細節」的現象，其實都源自同一套底層設計。",
+      "verify": {
+        "checks": [],
+        "manual": "diffing 具體規則的可觀察行為已在其他章節以真實程式碼驗證，此處為概念串接說明，無需重複驗證。"
+      }
+    },
+    {
+      "id": "ri-30-q4",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "render props 不一定要叫做 render，這只是社群慣例名稱，不是語法要求",
+      "docs": "",
+      "story": "",
+      "prompt": "render props 模式（元件接收一個函式當 prop，由呼叫端決定怎麼渲染）裡，那個函式型別的 prop 是不是一定要命名成 render？",
+      "code": "// 不叫 render，叫 children，一樣是 render props 模式\nfunction MouseTracker({ children }) {\n  const [pos] = useState({ x: 0, y: 0 });\n  return children(pos);\n}\n\n<MouseTracker>\n  {(pos) => <p>{pos.x}, {pos.y}</p>}\n</MouseTracker>",
+      "options": [
+        {
+          "id": "a",
+          "text": "不需要：render props 這個模式的本質是『把一個回傳 JSX 的函式當成 prop 傳入』，至於這個 prop 叫什麼名字（render、children、renderItem...）純粹是命名選擇，不影響這個模式本身是否成立；用 children 這個特殊 prop 承載這個函式（如範例所示）也是很常見的變形寫法，稱作『function as children』"
+        },
+        {
+          "id": "b",
+          "text": "必須命名成 render，這是 React 語法層級強制要求的保留字，命名成其他名稱會導致元件無法正常運作"
+        },
+        {
+          "id": "c",
+          "text": "只有命名成 render 的版本才算 render props，命名成 children 的屬於完全不同、不相關的模式"
+        },
+        {
+          "id": "d",
+          "text": "這個函式型 prop 只能命名成小寫開頭，大寫開頭會被誤判成元件"
+        }
+      ],
+      "answer": "a",
+      "explanation": "「render props」這個名字本身，某種程度上是歷史命名慣例（早期範例常用一個叫 render 的 prop 示範這個模式）留下的稱呼，不是語法上的強制要求。這個模式的核心特徵——把一個回傳 JSX 的函式當 prop 傳入，由呼叫端掌控渲染邏輯——不因為 prop 叫什麼名字而改變，用 children 這個特殊 prop 傳遞同樣的函式，一樣是同一個模式的變形應用。",
+      "verify": {
+        "checks": [],
+        "manual": "屬命名慣例與模式定義的釐清題，無可執行程式碼佐證。"
+      }
+    },
+    {
+      "id": "ri-30-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "render props 搭配 React.memo 的子元件時，常見的效能陷阱：每次渲染都是新的函式參考",
+      "docs": "",
+      "story": "",
+      "prompt": "MouseTracker 這個用 render props 模式設計的元件，外面包了 React.memo，理論上希望呼叫端傳入同樣的內容時能跳過重繪。但呼叫端每次渲染都直接寫一個行內箭頭函式當 children，會發生什麼事？",
+      "code": "const MouseTracker = React.memo(function MouseTracker({ children }) {\n  const [pos] = useState({ x: 0, y: 0 });\n  return children(pos);\n});\n\nfunction App() {\n  const [tick, setTick] = useState(0);\n  return (\n    <MouseTracker>\n      {(pos) => <p>{pos.x}, {pos.y}</p>} {/* 每次渲染都是新的函式參考 */}\n    </MouseTracker>\n  );\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "memo 的效果完全發揮不出來：這個行內箭頭函式在每次 App 重繪時都會重新建立，等於每次都是一個全新的函式參考，React.memo 淺層比較 children 這個 prop 時，永遠判定『變了』——這是本次章節反覆出現的『memo 淺層比較 + 參考型別每次都是新的』這個根本陷阱，在 render props 模式下的又一個具體案例，跟前面 ri-14 章節談的行內物件 style prop 是同一個問題，只是這裡換成了行內函式"
+        },
+        {
+          "id": "b",
+          "text": "memo 會自動忽略函式型別的 props，只比較其餘的 props，因此完全不受影響"
+        },
+        {
+          "id": "c",
+          "text": "這種情境下 memo 反而能正確跳過重繪，因為函式的『內容』（實作邏輯）沒有改變"
+        },
+        {
+          "id": "d",
+          "text": "程式會拋出例外，render props 不能跟 React.memo 一起使用"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是「render props 加上 pure component（memo）的典型問題」：render props 模式天生依賴『每次渲染傳入一個函式』，如果這個函式是行內建立的，就會踩到跟前面章節反覆出現的同一個陷阱——memo 的淺層比較看的是參考，不是內容或行為是否相同。解法一樣是用 useCallback 包住這個函式，讓它在依賴不變時保持穩定參考，memo 才能真正判斷『沒變、可以跳過』。",
+      "verify": {
+        "checks": [],
+        "manual": "render props 搭配 memo 的重繪陷阱需要多輪真實渲染搭配渲染次數計數才能觀察，無法用單次 node 執行驗證。"
+      }
+    },
+    {
+      "id": "ri-30-q6",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "什麼時候真正需要用 ref：跳脫宣告式資料流、直接命令式操作 DOM 或外部系統",
+      "docs": "",
+      "story": "",
+      "prompt": "把本次多個章節談過的 ref 使用情境收斂成一條判斷準則：什麼時候該考慮用 ref，而不是繼續用 props/state 這套宣告式的資料流解決？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "當需求本質上是『命令式』操作，沒辦法自然地表達成『state 對應到某種畫面』時：例如聚焦某個輸入框、捲動到某個位置、量測 DOM 元素的實際尺寸、控制一段媒體播放（play/pause）、整合不是用 React 寫的第三方函式庫或 Web Components（前面 ri-29 章節談過）。這些情境的共通點是『需要直接、命令式地對一個具體的 DOM 節點或外部系統下指令』，而不是『畫面該顯示成什麼樣子』這種宣告式的問題，用 state／props 硬套反而彆扭，ref 是這類需求的正確工具"
+        },
+        {
+          "id": "b",
+          "text": "任何情境都應該優先使用 ref，state 與 props 只是備用方案"
+        },
+        {
+          "id": "c",
+          "text": "只有畫面上會顯示出來的資料才適合用 ref 儲存"
+        },
+        {
+          "id": "d",
+          "text": "ref 只能用在 class component，函式元件的任何情境都不需要使用 ref"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是把本次章節裡多次出現的 ref 使用案例（聚焦輸入框、量測尺寸、Web Components 整合、useImperativeHandle 暴露方法）收斂出的一條通用判斷準則：ref 適合『跳出宣告式資料流、需要直接對某個東西下命令』的情境，這跟 state／props 描述『畫面該長什麼樣』的宣告式思維是互補、而非互斥的兩種工具，官方文件明確建議只有在真的需要『跳脫 React 的渲染資料流』時才使用 ref。",
+      "verify": {
+        "checks": [],
+        "manual": "屬判斷準則的綜合說明題，具體案例已在其他章節分別驗證，此處為原則性收斂，無需重複可執行驗證。"
+      }
+    },
+    {
+      "id": "ri-30-q7",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Concurrent Rendering：讓渲染工作可以被中斷、依優先權排程，不是「同時執行多個渲染」",
+      "docs": "",
+      "story": "",
+      "prompt": "「並行渲染（Concurrent Rendering）」這個名字容易讓人誤會成「React 可以同時渲染多棵樹」。它實際指的是什麼？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "並行渲染指的是 React（依賴前面 ri-11 章節談過的 Fiber 架構）有能力『開始』渲染一次更新、但在渲染過程中如果有更緊急的更新插進來（例如使用者輸入），可以先暫停手上這次渲染、優先處理緊急的更新，稍後再繼續或捨棄先前那次未完成的渲染——重點是『可中斷、可依優先權插隊』，不是真的有多個渲染同時平行執行；useTransition／useDeferredValue（前面 ri-8、ri-25 章節談過）都是建立在這個能力之上的具體 API"
+        },
+        {
+          "id": "b",
+          "text": "並行渲染指的是 React 真的用多執行緒同時渲染多棵獨立的元件樹，JavaScript 單執行緒的限制已經被完全突破"
+        },
+        {
+          "id": "c",
+          "text": "並行渲染只是一個行銷用詞，React 18 的渲染機制跟之前的版本完全沒有任何差異"
+        },
+        {
+          "id": "d",
+          "text": "並行渲染指的是可以同時連接多個不同的資料庫來源渲染同一個元件"
+        }
+      ],
+      "answer": "a",
+      "explanation": "「並行（concurrent）」在這裡強調的是「可中斷、可被打斷插隊」的能力，不是傳統意義上的多執行緒平行運算——JavaScript 依然是單執行緒，React 做的是把渲染工作拆成小單位（Fiber），讓排程器能在單位之間插入更緊急的工作，這正是 useTransition、useDeferredValue 這些 API 得以存在的底層基礎。",
+      "verify": {
+        "checks": [],
+        "manual": "並行渲染的排程與插隊機制屬 React 內部架構，需要原始碼層級理解，無法用可執行片段驗證。"
+      }
+    },
+    {
+      "id": "ri-30-q8",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "async mode（實驗性舊稱）跟後來正式定名的 concurrent mode／並行特性，是同一個能力演進過程中的不同階段稱呼",
+      "docs": "",
+      "story": "",
+      "prompt": "React 團隊在正式定名「並行渲染（Concurrent Rendering）」之前，這個功能曾經有一個實驗性階段被稱為「async mode」。這兩個名稱之間是什麼關係？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "是同一組底層能力（可中斷、依優先權排程的渲染）在不同開發階段的稱呼：早期實驗性版本用 async mode 這個名字，強調『非同步、不阻塞』這個特性；後來 React 團隊發現『async』這個詞容易讓開發者誤以為跟 async/await、Promise 這些非同步 JavaScript 概念直接相關，於是正式定名時改用『concurrent（並行）』這個更精確反映『可中斷、可插隊排程』本質的名稱——這不是兩個獨立的功能，是同一個能力隨著開發與命名逐漸成熟的過程"
+        },
+        {
+          "id": "b",
+          "text": "async mode 與 concurrent mode 是兩個完全獨立、互不相關的功能，各自解決不同的問題"
+        },
+        {
+          "id": "c",
+          "text": "async mode 至今仍是官方現行名稱，concurrent mode 才是已經被棄用的舊稱呼"
+        },
+        {
+          "id": "d",
+          "text": "两者的差異在於 async mode 只能用於伺服器端，concurrent mode 只能用於瀏覽器端"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是 React 官方重新命名的一個具體案例：技術能力（可中斷渲染、優先權排程）在開發過程中保持一致，命名則隨著團隊對『怎麼稱呼才不會誤導開發者』的思考而調整。「async」容易被誤解成非同步 I/O 相關的概念，「concurrent」更貼近『多個優先權不同的工作互相插隊』這個實際機制，不是功能本身有什麼根本改變。",
+      "verify": {
+        "checks": [],
+        "manual": "屬命名歷史脈絡的說明題，無可執行程式碼佐證。"
+      }
+    },
+    {
+      "id": "ri-30-q9",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "整合第三方 UI 函式庫（如 Bootstrap）到 React：透過對應的 React 封裝套件，或手動引入 CSS＋自行管理互動邏輯",
+      "docs": "",
+      "story": "",
+      "prompt": "想在 React 專案裡使用 Bootstrap 的元件（如 Modal、Dropdown），Bootstrap 原生是用 jQuery／原生 JS 操作 DOM 實作互動邏輯的。直接照搬 Bootstrap 官方文件的 HTML＋JS 寫法到 React 專案，會有什麼問題？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "Bootstrap 原生的互動邏輯（如 Modal 開關）習慣直接操作 DOM（新增/移除 class、監聽原生事件），這跟 React『畫面內容該由 state 決定，不該被外部直接改動 DOM』的心智模型（前面 ri-28 章節談過）互相衝突，容易讓 React 內部認知與真實 DOM 產生分歧；更穩妥的做法是改用 react-bootstrap 或 reactstrap 這類專門把 Bootstrap 元件重新包裝成『state 驅動』React 元件的套件，或者只引入 Bootstrap 的 CSS 樣式、互動邏輯完全交給 React state 自己管理，不使用 Bootstrap 原生的 JS 部分"
+        },
+        {
+          "id": "b",
+          "text": "完全沒有任何問題，Bootstrap 的 JS 互動邏輯與 React 的渲染機制完全相容，可以直接照搬使用"
+        },
+        {
+          "id": "c",
+          "text": "Bootstrap 從技術上無法在任何 React 專案裡使用，兩者互不相容"
+        },
+        {
+          "id": "d",
+          "text": "只需要引入 Bootstrap 的 JavaScript 檔案，完全不需要考慮 React 的渲染機制"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這題把前面 ri-28 章節談過『不要繞過 React 直接操作 DOM』的原則，應用到「整合原生操作 DOM 的第三方 UI 函式庫」這個常見的實務情境：直接混用兩種對 DOM『所有權』的假設不同的系統，容易造成狀態不同步；React 生態系普遍的解法是使用專門的 React 封裝套件，讓元件的顯示與互動邏輯統一交由 React state 驅動，只借用原始函式庫的樣式（CSS）。",
+      "verify": {
+        "checks": [],
+        "manual": "第三方 UI 函式庫整合行為需要真實瀏覽器環境觀察 DOM 操作衝突，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-30-q10",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "使用者重新整理頁面後，Context 裡的登入狀態預設會消失，需要額外的持久化機制才能恢復",
+      "docs": "https://react.dev/learn/passing-data-deeply-with-context",
+      "story": "",
+      "prompt": "認證資訊用 Context 管理，初始值直接寫死 isLoggedIn: false。使用者登入後，重新整理整個瀏覽器頁面（不是單純 SPA 內的畫面切換），Context 裡的狀態會發生什麼事？",
+      "code": "const AuthContext = createContext({ isLoggedIn: false });\n\nfunction AuthProvider({ children }) {\n  const [auth, setAuth] = useState({ isLoggedIn: false }); // 每次都是全新初始值\n  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "登入狀態會消失、回到 isLoggedIn: false：整頁重新整理，代表整個 JavaScript 執行環境（包含所有 React 元件與它們的 state、Context）都會被完全重新初始化，Context 本身不具備任何跨越『頁面重新載入』的持久化能力；想讓使用者重新整理頁面後依然維持登入狀態，得額外把認證資訊存進 localStorage／cookie 這類真正能跨頁面重新整理存活的儲存機制，AuthProvider 初始化時再從那裡讀回來，而不是單純依賴 useState 的初始值"
+        },
+        {
+          "id": "b",
+          "text": "登入狀態會自動保留，Context 本身內建跨頁面重新整理的持久化能力"
+        },
+        {
+          "id": "c",
+          "text": "登入狀態會保留，但只在使用者使用同一個瀏覽器分頁時才有效"
+        },
+        {
+          "id": "d",
+          "text": "程式會拋出例外，Context 不支援儲存跟認證相關的資料"
+        }
+      ],
+      "answer": "a",
+      "explanation": "Context（跟 useState／useReducer 一樣）只是「這次 JavaScript 執行環境存活期間」的記憶體狀態，整頁重新整理等同於整個應用程式重新啟動一次，這份記憶體會完全消失。要讓登入狀態撐過重新整理，一定要额外仰賴瀏覽器提供的、真正能跨越頁面重載的儲存機制（localStorage、cookie、sessionStorage），這是 Context 完全不涉及、需要開發者自己補上的一層。",
+      "verify": {
+        "checks": [
+          {
+            "jsx": "import { createContext, useState, useContext } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nconst AuthContext = createContext({ isLoggedIn: false });\nfunction AuthProvider({ children }) {\n  const [auth] = useState({ isLoggedIn: false });\n  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;\n}\nfunction Status() {\n  const auth = useContext(AuthContext);\n  return <p>{String(auth.isLoggedIn)}</p>;\n}\nconsole.log(renderToStaticMarkup(<AuthProvider><Status /></AuthProvider>));",
+            "expected": "<p>false</p>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ri-30-q11",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "新版 JSX transform：不用再手動 import React 才能使用 JSX",
+      "docs": "",
+      "story": "",
+      "prompt": "舊版 JSX transform 要求每個用到 JSX 語法的檔案，都必須手動 import React from \"react\"（即使程式碼裡完全沒有直接寫 React.xxx），否則會報錯。新版 JSX transform 帶來了什麼改變？",
+      "code": "// 舊版 transform：JSX 被轉譯成 React.createElement(...)，所以檔案裡必須有 React 這個變數\nimport React from \"react\";\nfunction Greeting() { return <h1>Hi</h1>; }\n\n// 新版 transform：JSX 被轉譯成從 react/jsx-runtime 匯入的 jsx(...) 函式呼叫\n// 不再需要手動 import React\nfunction Greeting() { return <h1>Hi</h1>; }",
+      "options": [
+        {
+          "id": "a",
+          "text": "新版 transform 把 JSX 轉譯成呼叫一個從 react/jsx-runtime 這個模組自動匯入的 jsx()／jsxs() 函式，這個匯入是建置工具自動加上的，不需要開發者手動在每個檔案頂部寫 import React；這消除了『明明沒有直接用到 React 這個變數名稱，卻被要求一定要 import 它』這種容易讓新手困惑的樣板要求，同時新版 transform 產生的程式碼在某些情境下體積也略小、效能略好"
+        },
+        {
+          "id": "b",
+          "text": "新版 transform 完全移除了建置階段的轉譯步驟，JSX 語法變成瀏覽器原生支援"
+        },
+        {
+          "id": "c",
+          "text": "新版 transform 要求所有元件都必須改寫成 class component，函式元件不再受支援"
+        },
+        {
+          "id": "d",
+          "text": "新版與舊版 transform 產生的最終程式碼完全相同，只是改變了原始碼裡 import 語句的寫法"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是 React 17 引入的一項建置工具層面的改進：轉譯目標從『必須存在一個叫 React 的變數』（因為轉譯結果直接呼叫 React.createElement）改成『自動從 react/jsx-runtime 匯入專用的轉譯函式』，開發者不再需要為了滿足這個技術限制、手動加上看似多餘的 import。這個改變純粹發生在建置工具層級，JSX 本身依然需要轉譯，不是瀏覽器原生支援。",
+      "verify": {
+        "checks": [],
+        "manual": "新舊 JSX transform 的差異屬建置工具轉譯機制，需要比對實際轉譯輸出才能驗證，無法用單一執行片段完整展示。"
+      }
+    },
+    {
+      "id": "ri-30-q12",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "新舊 JSX transform 是建置工具層級的內部差異，一般業務程式碼寫法完全不受影響",
+      "docs": "",
+      "story": "",
+      "prompt": "專案從舊版 JSX transform 切換到新版，除了可以拿掉不必要的 import React 語句，日常撰寫元件、Hooks、props 傳遞的程式碼寫法本身，需要跟著改變嗎？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "不需要：新舊 transform 的差異純粹發生在『JSX 語法轉譯成什麼樣的底層函式呼叫』這個建置工具層級，元件怎麼寫、Hooks 怎麼呼叫、props 怎麼傳遞，這些日常撰寫程式碼會用到的語法完全不受影響；唯一實際的改變只有『不再需要手動 import React 才能使用 JSX』這一點，其餘程式碼可以維持原樣，這也是為什麼這項改動能以相對平滑的方式推廣到既有專案"
+        },
+        {
+          "id": "b",
+          "text": "需要，切換到新版 transform 之後，所有的 Hooks 呼叫方式都必須重新改寫"
+        },
+        {
+          "id": "c",
+          "text": "需要，新版 transform 要求把所有函式元件改寫成 class component"
+        },
+        {
+          "id": "d",
+          "text": "需要，新版 transform 底下 props 的傳遞方式從物件改成陣列"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這題強調新版 JSX transform 是一個「建置工具內部實作」層級的改動，刻意設計成對開發者日常撰寫程式碼的方式影響降到最低——這也是它能被順利、廣泛採用而不需要大規模重構既有程式碼的原因，跟 Hooks 怎麼呼叫、元件怎麼定義、props 怎麼傳遞完全無關。",
+      "verify": {
+        "checks": [],
+        "manual": "屬建置工具轉譯機制與應用程式碼撰寫方式的釐清題，無可執行程式碼佐證。"
+      }
+    }
+  ]
+}

@@ -30,7 +30,7 @@ export const viewport: Viewport = {
 const RootLayout = ({ children }: { children: ReactNode }) => {
   return (
     <ClerkProvider afterSignOutUrl="/">
-      <html lang="zh-TW">
+      <html lang="zh-TW" suppressHydrationWarning>
         <head>
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

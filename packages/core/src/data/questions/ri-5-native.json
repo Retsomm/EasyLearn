@@ -1,0 +1,182 @@
+{
+  "id": "ri-5",
+  "title": "React Native 基礎概念",
+  "questions": [
+    {
+      "id": "ri-5-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "沒有 DOM，畫面的最基本組成單位換成 View／Text",
+      "docs": "",
+      "story": "",
+      "prompt": "網頁版 React 用 <div>、<span> 這些 HTML 標籤當容器與文字載體。React Native 沒有瀏覽器、沒有 DOM，該怎麼改寫同一個卡片元件？",
+      "code": "// Web\nfunction Card() {\n  return (\n    <div className=\"card\">\n      <span>Hello</span>\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "用 View 當容器、Text 包住文字內容", "code": "function Card() {\n  return (\n    <View style={styles.card}>\n      <Text>Hello</Text>\n    </View>\n  );\n}" },
+        { "id": "b", "text": "直接沿用 div、span，RN 底層會自動轉譯成原生元件", "code": "function Card() {\n  return (\n    <div>\n      <span>Hello</span>\n    </div>\n  );\n}" },
+        { "id": "c", "text": "用 Container 和 Label 這兩個內建元件", "code": "function Card() {\n  return (\n    <Container>\n      <Label>Hello</Label>\n    </Container>\n  );\n}" },
+        { "id": "d", "text": "文字可以直接寫在最外層元件裡，不需要額外包一層", "code": "function Card() {\n  return <View style={styles.card}>Hello</View>;\n}" }
+      ],
+      "answer": "a",
+      "explanation": "React Native 沒有瀏覽器 DOM，View/Text/Image 這些是 RN 提供、實際對應到 iOS/Android 原生 UI 元件的「host components」，跟 Web 版的 div/span/img 是完全不同的底層實作。特別容易搞混的一點是：RN 裡任何文字內容都「必須」包在 <Text> 裡才能顯示，不像 HTML 允許文字節點直接飄在容器裡；選項 d 這種寫法在 RN 會直接報錯或無法正確渲染文字。",
+      "verify": {
+        "checks": [],
+        "manual": "React Native 未安裝於本專案，host components 的渲染行為需要真實 RN 執行環境才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-5-q2",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "沒有 CSS 檔案，樣式用 JavaScript 物件描述",
+      "docs": "",
+      "story": "",
+      "prompt": "React Native 沒有 CSS 檔案、沒有 className，元件的樣式該怎麼寫？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "用 JavaScript 物件描述樣式屬性（駝峰式命名，例如 backgroundColor 而不是 background-color），通常搭配 StyleSheet.create() 包裝、再透過 style prop 套用到元件上" },
+        { "id": "b", "text": "用 className 對應到一份獨立的 .css 檔案，跟 Web 開發完全一樣" },
+        { "id": "c", "text": "用行內字串描述樣式，語法跟 HTML 的 style=\"color: red;\" 完全相同" },
+        { "id": "d", "text": "RN 元件不能自訂樣式，只能使用作業系統預設外觀" }
+      ],
+      "answer": "a",
+      "explanation": "RN 的樣式是純 JavaScript 物件（屬性名稱採駝峰式，因為它們本質上是 JS 物件的 key，不是 CSS 語法），StyleSheet.create() 把這些物件包裝起來（好處包括：及早發現拼字錯誤的屬性名稱、效能上可以只序列化一次）。沒有真正的 CSS 檔案、也沒有 className 這個概念，跨元件共用樣式要靠匯出、匯入 JS 物件本身。",
+      "verify": {
+        "checks": [],
+        "manual": "React Native 未安裝於本專案，StyleSheet 的實際渲染效果需要真實 RN 執行環境才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-5-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "flexDirection 預設值跟 Web CSS 相反",
+      "docs": "",
+      "story": "",
+      "prompt": "在網頁 CSS 裡，一個設了 display:flex 的容器，子元素預設會「水平排列」。把這個直覺原封不動帶到 React Native 的 View，會遇到什麼常見的意外？",
+      "code": "// Web：預設子元素水平排列（flex-direction 預設是 row）\n<div style={{ display: \"flex\" }}>\n  <div>A</div>\n  <div>B</div>\n</div>\n\n// React Native：View 預設也吃 flex 版面模型\n<View>\n  <Text>A</Text>\n  <Text>B</Text>\n</View>",
+      "options": [
+        { "id": "a", "text": "RN 的 View 預設 flexDirection 是 column（垂直排列），跟 Web CSS flexbox 預設的 row 正好相反；照搬 Web 的直覺、以為子元素會自動水平排成一列，實際上會看到 A 和 B 是上下疊放，需要自己顯式加上 style={{ flexDirection: 'row' }} 才能讓它們水平並排" },
+        { "id": "b", "text": "完全一樣，RN 的 flex 版面模型跟 Web CSS flexbox 的預設值完全相同" },
+        { "id": "c", "text": "RN 根本不支援 flex 版面，排版只能用絕對定位座標" },
+        { "id": "d", "text": "RN 會把子元素隨機排列，每次重新渲染的順序都不固定" }
+      ],
+      "answer": "a",
+      "explanation": "這是 Web React 開發者轉 RN 最常踩的坑之一：RN 的版面引擎（Yoga）雖然實作的是同一套 flexbox 規格，但把預設的 flexDirection 訂為 column，理由是行動裝置畫面上「一排一排往下疊」的版面遠比「並排」常見。凡是需要子元素水平排列的地方（例如一排按鈕），都得自己明確加上 flexDirection: 'row'，不能沿用 Web 的預設直覺。",
+      "verify": {
+        "checks": [],
+        "manual": "React Native 的 Yoga 版面引擎未安裝於本專案，flex 預設值的實際渲染效果需要真實 RN 執行環境才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-5-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "平台專屬程式碼：.ios.js／.android.js 與 Platform.select",
+      "docs": "",
+      "story": "",
+      "prompt": "某個元件在 iOS 和 Android 需要不同的實作細節（例如陰影效果的寫法完全不同）。RN 提供哪種慣例，讓 bundler 自動依執行平台選出對應的程式碼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "用 Platform.select({ ios: ..., android: ... }) 依平台切換某個屬性值，或者把整個檔案拆成 Button.ios.tsx / Button.android.tsx 兩份，import 時只寫 './Button'，Metro bundler 會依照實際執行的平台自動挑選對應的檔案打包進去" },
+        { "id": "b", "text": "用瀏覽器的 User-Agent 字串判斷平台，寫法跟 Web 開發完全一樣" },
+        { "id": "c", "text": "RN 不支援平台差異化，所有平台都必須共用完全相同的程式碼與樣式" },
+        { "id": "d", "text": "在 App 啟動時跳出對話框，讓使用者自己手動選擇目前是哪個平台" }
+      ],
+      "answer": "a",
+      "explanation": "RN 沒有瀏覽器、沒有 User-Agent 這回事，平台判斷是建置期（bundler）或執行期（Platform 模組）的機制：檔名帶 .ios / .android 後綴時，Metro bundler 在打包當下就只挑對應平台的那份檔案；Platform.select 則是執行期依 Platform.OS 動態切換某個值，兩種手法可以視情境搭配使用，是 RN 處理跨平台差異的標準做法。",
+      "verify": {
+        "checks": [],
+        "manual": "Metro bundler／Platform 模組未安裝於本專案，平台檔案選擇邏輯需要真實 RN 建置環境才能驗證，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-5-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "Remote JS Debugging 讓 JS 跑在電腦的 V8，不是手機的引擎",
+      "docs": "",
+      "story": "",
+      "prompt": "早期 RN 常見的除錯方式是開啟「Debug JS Remotely」，讓 JS 程式碼實際上在電腦的 Chrome 分頁裡執行、透過連線把結果傳回手機顯示畫面。這種除錯方式最大的陷阱是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "JS 程式碼實際上是跑在 Chrome 的 V8 引擎，而不是手機上真正會用到的 JS engine（例如 Hermes）；某些跟效能、執行時序（timing）相關的 bug，因為兩種引擎的執行速度與行為細節不同，在 Chrome 除錯模式下可能重現不出來、或表現完全不一樣，等於在除錯一個『跟正式環境不完全一致』的執行環境" },
+        { "id": "b", "text": "完全沒有陷阱，Chrome 除錯模式下的行為保證跟手機上執行時一模一樣" },
+        { "id": "c", "text": "這種除錯方式只能檢查樣式問題，完全無法除錯任何 JavaScript 邏輯" },
+        { "id": "d", "text": "這種除錯方式會讓正式上架後的 App 持續連著 Chrome，造成資安漏洞" }
+      ],
+      "answer": "a",
+      "explanation": "「在哪裡執行」跟「在哪裡除錯」如果不是同一個引擎，觀察到的行為就可能失真——這正是 Remote JS Debugging 最為人詬病的地方，也是後來 RN 社群逐漸轉向 Flipper、Hermes debugger 這類「直接連進手機上實際執行的引擎」除錯工具的原因，避免因為除錯環境跟正式執行環境不一致而追錯方向。",
+      "verify": {
+        "checks": [],
+        "manual": "React Native 除錯工具鏈未安裝於本專案，不同 JS 引擎間的行為差異需要真實裝置與除錯環境才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-5-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "RN 元件測試：核心哲學跟 Web 版共通，只是換一套查詢對象",
+      "docs": "",
+      "story": "",
+      "prompt": "想測試一個 RN 元件「按下按鈕後畫面文字改變」，該怎麼做，跟 Web React 的測試方式有什麼共通或不同？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "概念上跟 Web 版 React Testing Library 完全一致（render 元件、查詢畫面元素、模擬使用者互動、斷言渲染結果），只是改用對應 RN host components（View/Text/TouchableOpacity 等）的版本，並搭配 Jest 的 RN 專用設定處理原生模組的 mock；『測行為、不測實作細節』這個核心哲學完全共通" },
+        { "id": "b", "text": "RN 元件完全無法用自動化測試，只能靠人工在實機上反覆點擊確認" },
+        { "id": "c", "text": "RN 測試必須連接一台實體 iOS/Android 裝置才能執行，CI 環境上完全跑不起來" },
+        { "id": "d", "text": "RN 沒有對應的測試工具，只能直接呼叫元件方法、手動比對回傳的物件內容" }
+      ],
+      "answer": "a",
+      "explanation": "「像使用者一樣測試」這個原則不因平台是 Web 還是 RN 而改變，差別只在於查詢的目標元件不同（Web 找 button/input，RN 找 TouchableOpacity/TextInput 這類觸控元件），以及需要額外設定去 mock 原生模組（相機、定位等），核心的渲染、互動、斷言流程是共通的方法論，也都能在 CI（無實體裝置）上執行。",
+      "verify": {
+        "checks": [],
+        "manual": "React Native Testing Library 未安裝於本專案，且需要真實測試環境才能觀察渲染與互動行為，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-5-q7",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "console.log 輸出位置：Metro 終端機是預設查看處",
+      "docs": "",
+      "story": "",
+      "prompt": "在 RN 元件裡呼叫 console.log('debug')，這段輸出預設會顯示在哪裡？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "預設會顯示在 Metro bundler 啟動時開啟的終端機視窗（Metro 的日誌輸出），這是 RN 開發時最常見的 log 查看位置；如果連上了 Chrome/Flipper 這類除錯工具，也可以在對應的 Console 面板看到同樣的訊息，但『原生層級』的日誌（如 Xcode 的 Console、Android 的 Logcat）預設不會直接顯示 JS 端的 console.log，除非額外設定橋接" },
+        { "id": "b", "text": "只會出現在 Xcode 的原生 Console，Metro 終端機完全不會顯示任何 JS 端的 log" },
+        { "id": "c", "text": "RN 完全不支援 console.log，必須改用 alert() 才能除錯" },
+        { "id": "d", "text": "只有連上實體裝置才會印出 log，模擬器上呼叫 console.log 完全沒有反應" }
+      ],
+      "answer": "a",
+      "explanation": "Metro（RN 的 JS bundler）在開發模式下會保持一個 WebSocket 連線，把 JS 端的 console 輸出即時轉送到啟動它的終端機視窗，這是最直接、不需要額外工具的查看方式。想要更完整的除錯體驗（互動式 console、網路請求檢查）才需要額外連上 Flipper 或瀏覽器除錯工具，跟原生層級的系統日誌（Logcat／Xcode Console）是彼此獨立的兩層。",
+      "verify": {
+        "checks": [],
+        "manual": "Metro bundler 的日誌輸出行為需要真實 RN 開發環境才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-5-q8",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "React、React DOM、React Native 共用 reconciler，渲染器不同",
+      "docs": "",
+      "story": "",
+      "prompt": "有人說「React Native 就是把 React 的元件語法拿來、換一套渲染引擎」，這句話精確嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "大致精確：React、React DOM、React Native 共用同一套「reconciler」核心演算法（決定要更新哪些節點、怎麼比對前後兩棵樹），差異在於『渲染器（renderer）』——React DOM 把最終結果畫成瀏覽器的 DOM 節點，React Native 則是畫成 iOS/Android 的原生 UI 元件；寫法上共用 JSX、元件、Hooks 這套語言層級的東西，但最終『畫到哪裡去』完全是不同的渲染目標" },
+        { "id": "b", "text": "不精確，React Native 內部完全是另一套獨立語言，跟 React 的 JSX 語法只是長得像" },
+        { "id": "c", "text": "不精確，React Native 其實是把手機瀏覽器內嵌進 App 裡執行網頁版 React" },
+        { "id": "d", "text": "精確，但這代表 React Native 寫出來的 App 效能跟網頁完全一樣，沒有任何原生優勢" }
+      ],
+      "answer": "a",
+      "explanation": "React 的架構刻意把「決定什麼該變」（reconciler）跟「怎麼把變化畫出來」（renderer）分開，這正是 React、React DOM、React Native 能共用同一套心智模型（元件、props、state、Hooks）的原因。React DOM 的 renderer 操作瀏覽器 DOM API；React Native 的 renderer 透過橋接呼叫原生 UI 元件的建立與更新——渲染目標從瀏覽器換成手機系統原生元件，效能特性跟操作的是真正的原生 UI（不是內嵌瀏覽器），跟網頁版有本質上的不同。",
+      "verify": {
+        "checks": [],
+        "manual": "reconciler／renderer 分層架構屬 React 內部設計，需要原始碼層級的理解，無法用 node 直接驗證。"
+      }
+    }
+  ]
+}

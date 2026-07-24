@@ -96,6 +96,25 @@
       "answer": "a",
       "explanation": "這正是分層設計的核心精神：底層的 cart 操作應該穩定、少變動；商業規則建立在底層之上，可以隨業務需求快速調整，不會牽動底下的基礎操作。",
       "verify": { "manual": "概念題：情境分析，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-5-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "判斷一個 Action 能不能被完全轉成 Calculation：問它牽涉的 I/O 是必要的還是順便的",
+      "docs": "",
+      "story": "",
+      "prompt": "add_item_to_cart 這個函式做了兩件事：①計算新的購物車內容 ②把新內容存進資料庫。哪一部分有機會被轉成純 Calculation，哪一部分永遠沒辦法？",
+      "code": "function add_item_to_cart(name, price) {\n  shopping_cart = add_item(shopping_cart, name, price); // ① 計算\n  saveToDb(shopping_cart); // ② 寫入資料庫\n}",
+      "options": [
+        { "id": "a", "text": "①（計算新的購物車內容）完全有機會轉成 Calculation：這一步只是根據輸入算出新資料，不需要真的碰資料庫或畫面；②（寫入資料庫）永遠沒辦法變成 Calculation，因為「把資料真的存進資料庫」這件事本身就是對外部世界產生實際效果，這是 Action 的定義性特徵，不會因為重構手法高明就消失——重構的目標是把 ① 從 ② 裡分離出來，而不是奢望把 ② 也變不見" },
+        { "id": "b", "text": "兩者都能完全轉成 Calculation，只要重構手法夠好" },
+        { "id": "c", "text": "①沒辦法轉成 Calculation，②可以，因為資料庫查詢也是一種運算" },
+        { "id": "d", "text": "兩者都永遠是 Action，沒有任何部分可以被拆出來" }
+      ],
+      "answer": "a",
+      "explanation": "重構 Action 的目標從來不是消滅所有副作用，而是把「可以獨立算出來的部分」跟「真正無法迴避的外部效果」分開。這裡計算新購物車內容可以完全獨立驗證，但寫入資料庫這個動作本身，不管包裝得多漂亮，終究是一個 Action。",
+      "verify": { "manual": "概念題：以具體函式拆解取代抽象改善原則，無可執行程式碼。" }
     }
   ]
 }

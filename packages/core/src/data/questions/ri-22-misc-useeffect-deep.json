@@ -1,0 +1,198 @@
+{
+  "id": "ri-22",
+  "title": "React 進階探索：useEffect 深入",
+  "questions": [
+    {
+      "id": "ri-22-q1",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "依賴陣列裡的每一項都用 Object.is 比較，任何一項變了就重新執行 effect",
+      "docs": "https://react.dev/reference/react/useEffect#specifying-reactive-dependencies",
+      "story": "",
+      "prompt": "這個 effect 的依賴陣列有兩個值：userId 跟 filters（一個物件）。父層重繪時 userId 沒變，但 filters 是每次都重新建立的行內物件字面值。effect 會不會重新執行？",
+      "code": "function Profile({ userId }) {\n  const filters = { active: true }; // 每次渲染都是新物件\n\n  useEffect(() => {\n    console.log(\"fetch profile\", userId, filters);\n  }, [userId, filters]);\n\n  return <p>{userId}</p>;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "會重新執行：React 對依賴陣列裡的『每一項』分別用 Object.is 做參考比較，只要任何一項在前後兩次渲染間參考不同，就會重新執行 effect；filters 是行內物件字面值，每次渲染都建立一個內容相同、但參考不同的新物件，依賴比較判定『變了』，即使 userId 沒變、filters 的實際內容也沒變，effect 依然會重新執行——這跟前面 ri-14 章節 memo 陷阱、ri-21 章節 Context value 陷阱是同一個『參考不穩定』的根本原因"
+        },
+        {
+          "id": "b",
+          "text": "不會重新執行，只要 userId 沒變，effect 就會跳過，不管 filters 是否為新物件"
+        },
+        {
+          "id": "c",
+          "text": "會重新執行，但只有在 userId 真的改變時才會，filters 完全不影響是否重新執行的判斷"
+        },
+        {
+          "id": "d",
+          "text": "程式會拋出例外，依賴陣列不能包含物件型別的值"
+        }
+      ],
+      "answer": "a",
+      "explanation": "依賴陣列比較是「逐項參考比較」，不是把整個陣列當一個值比較，也不是深層比較物件內容。物件、陣列、函式這類參考型別放進依賴陣列前，如果沒有想辦法讓它在不需要的時候保持穩定參考（useMemo、把它移到元件外部宣告、或者拆解成只放真正的原始值如 filters.active），effect 就容易比預期更頻繁地重新執行。",
+      "verify": {
+        "checks": [],
+        "manual": "依賴陣列比較觸發 effect 重新執行需要多輪真實渲染才能觀察，無法用單次 node 執行驗證。"
+      }
+    },
+    {
+      "id": "ri-22-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "每次 effect 重新執行前，React 會先呼叫上一次的清理函式",
+      "docs": "",
+      "story": "",
+      "prompt": "一個聊天室元件依 roomId 連線；roomId 從 \"general\" 換成 \"random\" 時，React 呼叫這個 effect 的順序是什麼？",
+      "code": "useEffect(() => {\n  const connection = createConnection(roomId);\n  connection.connect();\n  return () => connection.disconnect(); // 清理函式\n}, [roomId]);",
+      "options": [
+        {
+          "id": "a",
+          "text": "roomId 改變、effect 需要重新執行時，React 會先呼叫『上一次』effect 回傳的清理函式（用舊的 roomId=\"general\" 斷開連線），接著才執行『這一次』新的 effect 本體（用新的 roomId=\"random\" 建立新連線）；這個『先清理、再重新設置』的順序，正是確保不會有兩個 roomId 的連線同時活著、造成資源洩漏的關鍵設計"
+        },
+        {
+          "id": "b",
+          "text": "React 會先執行新的 effect 本體建立新連線，之後才呼叫舊的清理函式斷開舊連線，兩個連線會短暫同時存在"
+        },
+        {
+          "id": "c",
+          "text": "清理函式只會在元件卸載（從畫面上完全移除）時執行一次，依賴變化重新執行 effect 不會觸發清理函式"
+        },
+        {
+          "id": "d",
+          "text": "React 會跳過清理函式，直接把新的 roomId 傳給舊的連線物件，不會重新建立連線"
+        }
+      ],
+      "answer": "a",
+      "explanation": "清理函式的呼叫時機有兩種情境：元件卸載時（呼應前面既有 react 章節談過），以及『依賴陣列裡的值變化、effect 即將重新執行』時——後者容易被忽略，但正是避免資源洩漏（舊連線沒斷、新連線又開）的關鍵機制。順序永遠是「先清理舊的，才設置新的」，不會讓兩份資源同時存在。",
+      "verify": {
+        "checks": [],
+        "manual": "effect 清理與重新執行的順序需要多輪真實渲染與外部連線觀察才能驗證，無法用單次 node 執行完整驗證。"
+      }
+    },
+    {
+      "id": "ri-22-q3",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "useEffect 的函式本身不能是 async，回傳 Promise 會被 React 忽略甚至警告",
+      "docs": "",
+      "story": "",
+      "prompt": "想在 useEffect 裡直接用 async/await 抓資料，把整個 effect 函式宣告成 async，這樣寫合法嗎？",
+      "code": "// 容易犯的錯誤寫法\nuseEffect(async () => {\n  const res = await fetch(`/api/user/${userId}`);\n  setUser(await res.json());\n}, [userId]);",
+      "options": [
+        {
+          "id": "a",
+          "text": "不合法，會在 console 印出警告：useEffect 預期傳入的函式，如果有回傳值，那個回傳值必須是『清理函式』（或什麼都不回傳）；async 函式不管內部邏輯是什麼，呼叫後永遠回傳一個 Promise，React 會把這個 Promise 誤認為是清理函式，導致清理機制失效並印出警告。正確寫法是在 effect 內部另外定義一個 async 函式、立刻呼叫它，effect 本體自己保持同步、不回傳 Promise"
+        },
+        {
+          "id": "b",
+          "text": "合法，React 會自動 await 這個 effect 函式回傳的 Promise，等非同步邏輯完成才繼續"
+        },
+        {
+          "id": "c",
+          "text": "合法，但只有在 React 18 之後的版本才支援，舊版會直接拋出例外"
+        },
+        {
+          "id": "d",
+          "text": "不合法，但原因是 useEffect 完全不能處理任何非同步邏輯，即使不宣告成 async 也無法在裡面呼叫 fetch"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是前面既有 react 章節談過『元件函式不能是 async』（因為 React 預期同步拿到 element）背後同一套原理的延伸：useEffect 的回傳值有特定意義（清理函式），async 函式的回傳值永遠是 Promise，兩者的『契約』對不上。正確的寫法是 effect 內部包一層立即呼叫的 async 函式（IIFE）或另外定義的具名 async 函式，effect 本身仍然同步執行、且不回傳那個 Promise。",
+      "verify": {
+        "checks": [],
+        "manual": "useEffect 的回傳值型別檢查與警告需要真實開發環境才能觀察 console 輸出，無法用 node -e 直接捕捉此類 React 內部警告。"
+      }
+    },
+    {
+      "id": "ri-22-q4",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "一個元件可以有多個 useEffect，各自處理獨立的關注點",
+      "docs": "",
+      "story": "",
+      "prompt": "一個元件需要「依 roomId 連線聊天室」跟「依 documentTitle 更新網頁標籤標題」這兩件互不相關的副作用。該把它們塞進同一個 useEffect，還是拆成兩個？",
+      "code": "function ChatRoom({ roomId, title }) {\n  useEffect(() => {\n    document.title = title;\n  }, [title]);\n\n  useEffect(() => {\n    const connection = createConnection(roomId);\n    connection.connect();\n    return () => connection.disconnect();\n  }, [roomId]);\n\n  return <p>{title}</p>;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "拆成兩個獨立的 useEffect：每個 effect 應該只對應『一件』彼此獨立的同步邏輯，各自宣告自己真正需要的依賴陣列；把不相關的邏輯硬塞進同一個 effect，會導致依賴陣列變得又臭又長、也讓『這個 effect 到底是為了處理什麼』變得模糊——一個元件裡出現多個 useEffect 是完全正常且推薦的做法，不是程式碼寫得不夠精簡的象徵"
+        },
+        {
+          "id": "b",
+          "text": "必須合併成同一個 useEffect，一個元件只能呼叫一次 useEffect"
+        },
+        {
+          "id": "c",
+          "text": "拆成兩個會導致執行順序無法預測，必須合併才能保證標題先更新、連線後建立"
+        },
+        {
+          "id": "d",
+          "text": "合併成一個效能比較好，因為只需要走一次依賴陣列比較"
+        }
+      ],
+      "answer": "a",
+      "explanation": "『依關注點拆分 effect』是官方文件明確建議的實踐：拆開的 effect 各自維護自己精確的依賴陣列，不會因為合併而互相牽連（例如 title 變了卻不小心也重新連線一次）。多個 useEffect 在同一個元件裡依宣告順序依序執行，順序是可預測的，不需要為了『順序保證』刻意合併。",
+      "verify": {
+        "checks": [],
+        "manual": "多個 useEffect 各自獨立執行的順序與依賴隔離，需要真實渲染與副作用觀察才能驗證，無法用單次 node 執行完整驗證。"
+      }
+    },
+    {
+      "id": "ri-22-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "useEffect 造成無窮迴圈的經典成因：effect 內部更新了自己依賴陣列裡的 state，且沒有條件把關",
+      "docs": "",
+      "story": "",
+      "prompt": "這個元件一渲染，瀏覽器就開始不斷閃爍、CPU 佔用飆高。問題出在哪？",
+      "code": "function Counter() {\n  const [count, setCount] = useState(0);\n\n  useEffect(() => {\n    setCount(count + 1); // 在 effect 裡更新了依賴陣列裡的 count 本身\n  }, [count]); // count 變 → effect 重新執行 → 又更新 count → 無限循環\n\n  return <p>{count}</p>;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "這個 effect 的依賴陣列裡有 count，但 effect 內部又呼叫 setCount 更新了 count 本身：count 變化 → 觸發 effect 重新執行 → effect 又把 count 改變 → 再次觸發 effect……形成一個沒有終止條件的無窮迴圈，這是 useEffect 最常見、也最容易在重構時不小心引入的錯誤模式之一；修法通常是重新檢視這個更新到底需不需要放進 effect（很多時候這種『依賴自己又改自己』的邏輯，可以直接在事件處理器裡處理，根本不需要 effect）"
+        },
+        {
+          "id": "b",
+          "text": "沒有任何問題，這是計數器每秒自動遞增的正常實作方式"
+        },
+        {
+          "id": "c",
+          "text": "問題出在依賴陣列是空陣列 []，應該改成不給依賴陣列"
+        },
+        {
+          "id": "d",
+          "text": "問題出在 setCount 的呼叫方式，應該改用 setCount(prev => prev + 1) 才能避免無窮迴圈"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是 useEffect 無窮迴圈最典型的成因：依賴陣列裡的值，被 effect 自己的邏輯又改了一次，形成『改變觸發自己、自己又觸發改變』的循環。選項 d 提到的函式式更新（prev => prev + 1）能避免『閉包捕捉到過期值』這個不同的問題，但不能解決這裡『effect 依賴自己又改自己』這個更根本的迴圈成因——真正的修法是重新思考這段邏輯該不該放進 effect，而不是換一種呼叫 setCount 的寫法。",
+      "verify": {
+        "checks": [],
+        "manual": "無窮迴圈需要真實渲染週期反覆觸發才能觀察，執行 node -e 會直接卡死或耗盡呼叫堆疊，不適合自動化驗證，需人工審核。"
+      }
+    },
+    {
+      "id": "ri-22-q6",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "依賴陣列的三種寫法決定 effect 的執行頻率：不給、空陣列、有值",
+      "docs": "",
+      "story": "",
+      "prompt": "useEffect 的第二個參數（依賴陣列）有三種寫法：整個省略、給一個空陣列 []、給一個有值的陣列 [count]。這三種寫法分別讓 effect 在什麼時機重新執行？",
+      "code": "useEffect(() => { console.log(\"A\"); }); // 沒有依賴陣列\nuseEffect(() => { console.log(\"B\"); }, []); // 空依賴陣列\nuseEffect(() => { console.log(\"C\"); }, [count]); // 依賴 count",
+      "options": [
+        { "id": "a", "text": "A：完全沒給依賴陣列，代表『每一次渲染完成後都要重新執行』，沒有任何省略的判斷；B：空陣列代表『依賴清單裡沒有任何值會變』，所以只在元件第一次掛載後執行一次，之後不管重繪幾次都不會再執行；C：只有當 count 在前後兩次渲染間真的改變時才重新執行——三者是『每次都跑』、『只跑一次』、『依條件跑』這三種不同的頻率設定，不是隨意的語法選擇" },
+        { "id": "b", "text": "三種寫法完全等價，效果沒有任何差異，只是語法風格不同" },
+        { "id": "c", "text": "省略依賴陣列代表『只在掛載時執行一次』，空陣列代表『每次渲染都執行』，兩者剛好相反於一般認知" },
+        { "id": "d", "text": "只有給依賴陣列的寫法（如 C）才合法，A、B 兩種寫法都會導致程式拋出例外" }
+      ],
+      "answer": "a",
+      "explanation": "依賴陣列的三種寫法對應三種明確的執行頻率語意：省略＝每次渲染後都執行（最少見、通常代表忘記加依賴陣列）；空陣列＝只在掛載時執行一次（最常見於「訂閱外部資源、只需要設置一次」的情境）；有值的陣列＝依那些值是否改變決定要不要重新執行。三者都是合法語法，選錯只會導致執行頻率不符預期，不會直接拋出例外。",
+      "verify": {
+        "checks": [],
+        "manual": "三種依賴陣列寫法的執行頻率差異需要多輪真實渲染才能觀察，無法用單次 node 執行驗證。"
+      }
+    }
+  ]
+}

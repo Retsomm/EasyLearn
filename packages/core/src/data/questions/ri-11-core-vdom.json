@@ -1,0 +1,162 @@
+{
+  "id": "ri-11",
+  "title": "Core React：Virtual DOM 與渲染機制",
+  "questions": [
+    {
+      "id": "ri-11-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Virtual DOM：先在記憶體裡算好差異，再一次套用到真實 DOM",
+      "docs": "",
+      "story": "",
+      "prompt": "一份清單裡只有第 3 項的文字變了，其餘 99 項完全沒變。React 為什麼不是直接把整個清單的真實 DOM 全部砍掉重建，而是只更新第 3 項？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "React 在記憶體裡維護一份輕量的 Virtual DOM（用普通 JS 物件描述畫面），每次 state 改變時，會先在記憶體裡算出新舊兩份 Virtual DOM 的差異（diff），再把差異部分對應到真實 DOM 上做最小幅度的更新；直接操作真實 DOM（重排、重繪）比操作記憶體中的普通物件昂貴得多，只更新真正變化的部分能大幅減少不必要的瀏覽器工作量" },
+        { "id": "b", "text": "React 每次都會把整個畫面的真實 DOM 完全砍掉重建，Virtual DOM 只是行銷術語，沒有實質作用" },
+        { "id": "c", "text": "Virtual DOM 是瀏覽器原生提供的 API，React 只是呼叫瀏覽器內建的差異比對功能" },
+        { "id": "d", "text": "Virtual DOM 只在 React Native 環境使用，網頁版 React 不會用到這個機制" }
+      ],
+      "answer": "a",
+      "explanation": "「操作記憶體中的物件」遠比「操作真實 DOM」便宜，這是 Virtual DOM 存在的根本理由。React 靠比較新舊兩棵 Virtual DOM 樹（reconciliation），精準算出「哪些節點真的需要變」，再只把這些必要的變更套用到真實 DOM，避免了『整個畫面重新產生』這種昂貴又沒必要的操作。",
+      "verify": { "checks": [], "manual": "屬渲染機制的概念說明題，無可執行程式碼佐證內部差異比對演算法。" }
+    },
+    {
+      "id": "ri-11-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Virtual DOM 的運作三步驟：渲染、比較、提交",
+      "docs": "",
+      "story": "",
+      "prompt": "state 改變後，React 從『使用者看到畫面變化』回推，大致經過哪幾個階段？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "①渲染階段：呼叫元件函式，算出一棵新的 Virtual DOM 樹；②比較階段（diffing）：把這棵新樹跟上一次渲染留下的舊樹逐層比對，找出真正變化的部分；③提交階段（commit）：只把比對出來的差異套用到真實 DOM 上，並執行對應的副作用（如 useEffect）。這三個階段合稱 reconciliation（協調）" },
+        { "id": "b", "text": "React 只有一個階段：state 一改就立刻同步、逐一直接操作真實 DOM，中間沒有任何比較步驟" },
+        { "id": "c", "text": "React 會把整個瀏覽器分頁重新整理一次，才能反映 state 的變化" },
+        { "id": "d", "text": "這三個階段的順序是隨機的，每次執行都可能不一樣" }
+      ],
+      "answer": "a",
+      "explanation": "把「渲染」（算出新樹）、「比較」（跟舊樹 diff）、「提交」（真正動手改 DOM）拆成三個階段，是理解 React 內部運作、也是理解 useEffect（提交後才執行）跟 useLayoutEffect（提交後、瀏覽器繪製前）為什麼會有時序差異的基礎。三個階段的順序是固定的，不是隨機的。",
+      "verify": { "checks": [], "manual": "屬 React 內部渲染流程的說明題，需要原始碼層級理解，無法用單一可執行片段驗證。" }
+    },
+    {
+      "id": "ri-11-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Shadow DOM 解決樣式封裝問題，Virtual DOM 解決渲染效能問題——兩者目標不同",
+      "docs": "",
+      "story": "",
+      "prompt": "有人把 Shadow DOM（瀏覽器原生的 Web Components 標準之一）跟 Virtual DOM（React 的渲染機制）搞混，覺得兩者是同一種技術的不同稱呼。這樣理解正確嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不正確：Shadow DOM 是瀏覽器原生標準，目的是讓自訂元素擁有『封裝的』DOM 子樹與樣式（外部 CSS 選擇器打不進去，內部樣式也不會外洩），解決的是樣式與 DOM 結構的封裝隔離問題；Virtual DOM 是 React（與其他框架）自己在應用層實作的機制，目的是用記憶體中的物件比對減少真實 DOM 操作，解決的是渲染效能問題——兩者的目標、實作層級完全不同，只是名字都有『DOM』與『某種抽象層』的意味" },
+        { "id": "b", "text": "正確，Shadow DOM 與 Virtual DOM 是同一項瀏覽器標準技術的兩種不同稱呼" },
+        { "id": "c", "text": "不正確，因為 Shadow DOM 是 React 專屬技術，其他框架不能使用" },
+        { "id": "d", "text": "不正確，因為 Virtual DOM 是瀏覽器原生提供的標準 API" }
+      ],
+      "answer": "a",
+      "explanation": "這是一組經典的名詞混淆：Shadow DOM 是瀏覽器規範，解決樣式／DOM 封裝隔離（例如 <video> 內建的播放控制列，內部結構外部 CSS 動不了，就是靠 Shadow DOM）；Virtual DOM 是應用層框架的渲染最佳化手法，跟瀏覽器標準無關，是 React 等框架自己實作、自己維護的一份記憶體資料結構。",
+      "verify": { "checks": [], "manual": "屬兩個不同技術名詞的釐清題，無可執行程式碼。" }
+    },
+    {
+      "id": "ri-11-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "React Fiber：讓渲染工作可以被拆分、暫停、依優先權排程",
+      "docs": "",
+      "story": "",
+      "prompt": "React 16 引入的 Fiber 架構，想解決舊版 reconciler（React 15 及更早）的什麼限制？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "舊版 reconciler 一旦開始比對整棵樹，就必須同步、一次性地跑完，中途無法暫停，遇到很深或很大的元件樹時，可能長時間佔用主執行緒，讓使用者的輸入、動畫這些更緊急的事情被卡住；Fiber 把渲染工作拆成一個個可以被中斷、之後再恢復的小單位（fiber 節點），讓 React 有能力依優先權排程——緊急的更新可以插隊，不那麼緊急的可以先暫停" },
+        { "id": "b", "text": "Fiber 純粹是把程式碼從 JavaScript 重寫成另一種程式語言，跟渲染排程無關" },
+        { "id": "c", "text": "Fiber 的唯一目的是縮小打包後的檔案體積" },
+        { "id": "d", "text": "Fiber 讓 React 不再需要 Virtual DOM，改成直接操作真實 DOM" }
+      ],
+      "answer": "a",
+      "explanation": "Fiber 是 React 16 重寫的核心演算法，把原本『一口氣同步跑完』的協調過程，改造成可以被拆分成小單位、可中斷、可依優先權排程恢復的架構。這是後來 Concurrent Rendering、useTransition、Suspense 這些「讓緊急更新插隊、不緊急更新可以暫緩」的功能得以實現的地基，不是單純的效能微調或語言重寫。",
+      "verify": { "checks": [], "manual": "React Fiber 屬內部演算法架構，需要原始碼層級理解，無法用可執行程式碼片段驗證。" }
+    },
+    {
+      "id": "ri-11-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "reconciliation 依 type 判斷是否重用既有節點或整個重建",
+      "docs": "https://react.dev/learn/preserving-and-resetting-state",
+      "story": "",
+      "prompt": "同一個位置，前後兩次渲染分別放了 <UserCard /> 跟 <div>，元素型別完全不同。React 的 reconciliation 演算法會嘗試「保留舊節點、只更新差異部分」，還是「直接整個銷毀重建」？",
+      "code": "// 第一次渲染\n<UserCard name=\"Alice\" />\n\n// 第二次渲染（同一個位置，型別換了）\n<div>Alice</div>",
+      "options": [
+        { "id": "a", "text": "直接整個銷毀重建：reconciliation 演算法的一條核心捷徑規則是『比較同一位置前後兩次渲染的元素型別（type），型別不同就直接判定整棵子樹都不能重用』，不會嘗試比對兩者內部的細節差異；UserCard 元件（連同它內部可能持有的 state）會被完全卸載，換上的 div 是全新建立的節點" },
+        { "id": "b", "text": "React 會嘗試把 UserCard 內部的欄位一一比對，找出可以沿用到 div 上的部分" },
+        { "id": "c", "text": "React 會拋出例外，同一個位置前後兩次渲染的元素型別必須完全一致" },
+        { "id": "d", "text": "型別不同時 React 會自動選擇效能較好的那一種，忽略程式碼實際寫的內容" }
+      ],
+      "answer": "a",
+      "explanation": "這是一條刻意的效能捷徑：與其耗費算力去比對兩個完全不同型別的元素有沒有任何可以沿用的部分，React 直接假設『型別不同＝完全不相關』，整棵子樹砍掉重建。這也解釋了既有 react-9 章節談到的「同位置換了不同型別就會重建、state 全部消失」這個現象背後的真正機制。",
+      "verify": { "checks": [], "manual": "reconciliation 的節點重用判斷需要多輪真實渲染才能觀察，無法用單次 node 執行驗證。" }
+    },
+    {
+      "id": "ri-11-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "React.lazy 搭配 named export：目前只支援 default export",
+      "docs": "",
+      "story": "",
+      "prompt": "想用 React.lazy 動態載入一個用 named export（不是 default export）匯出的元件，下面這樣寫可以正常運作嗎？",
+      "code": "// MyComponent.js\nexport function MyComponent() { return <p>Hi</p>; }\n\n// 想動態載入\nconst LazyMyComponent = React.lazy(() => import(\"./MyComponent\"));",
+      "options": [
+        { "id": "a", "text": "不行：React.lazy() 要求傳入的函式回傳的 Promise，其 resolve 值必須是一個帶有 default 欄位的模組物件（{ default: Component }）；直接對一個只有 named export 的模組呼叫 import()，resolve 出來的物件裡沒有 default 欄位，React.lazy 找不到要渲染的元件。常見解法是在 import() 的 Promise 鏈裡手動轉接，例如 .then(module => ({ default: module.MyComponent }))" },
+        { "id": "b", "text": "可以，React.lazy 會自動掃描模組裡所有的 named export，任選一個當作要渲染的元件" },
+        { "id": "c", "text": "可以，但只有在 TypeScript 專案裡才支援 named export 搭配 lazy" },
+        { "id": "d", "text": "不行，React.lazy 這個 API 已經完全被棄用，必須改用其他方式做程式碼分割" }
+      ],
+      "answer": "a",
+      "explanation": "這是 React.lazy 一個具體、常被問到的限制：它認的是 { default: Component } 這個固定形狀，不會自動去猜測、掃描模組裡有哪些 named export。想動態載入 named export 的元件，得自己在 import() 之後用 .then() 手動組出一個帶 default 欄位的物件，橋接兩種匯出方式的落差。",
+      "verify": { "checks": [], "manual": "React.lazy 搭配動態 import() 需要真實模組載入環境（瀏覽器或建置工具的 code splitting）才能觀察，無法用 node -e 直接驗證。" }
+    },
+    {
+      "id": "ri-11-q7",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "className vs class：JSX 是 JavaScript 表達式，class 是保留字",
+      "docs": "https://react.dev/learn/writing-markup-with-jsx",
+      "story": "",
+      "prompt": "在 JSX 裡想幫一個 div 加上 CSS class，寫成 <div class=\"card\">，會發生什麼事？",
+      "code": "function Card() {\n  return <div class=\"card\">Hi</div>;\n}",
+      "options": [
+        { "id": "a", "text": "這段程式碼在轉譯或執行期通常仍然可以動（React 只是印出警告，不會直接中斷），但這是不建議的寫法：JSX 最終會被轉譯成 JavaScript 的 React.createElement 呼叫，而 class 是 JavaScript 語言本身的保留字（用來宣告類別），為了避免衝突，JSX 統一改用 className 這個屬性名稱對應到 HTML 的 class；渲染到最終 HTML 時，className 才會被轉換回瀏覽器認得的 class" },
+        { "id": "b", "text": "程式一定會在建置階段直接拋出語法錯誤，完全無法通過編譯" },
+        { "id": "c", "text": "class 屬性會被正常渲染成 HTML，且是官方建議的標準寫法，className 才是已淘汰的舊寫法" },
+        { "id": "d", "text": "class 屬性在 JSX 裡會被自動忽略，畫面上完全不會套用任何樣式" }
+      ],
+      "answer": "a",
+      "explanation": "class 在 JavaScript 裡是保留字（ES6 class 語法），JSX 本質上是 JavaScript 表達式，如果直接允許 class 當屬性名稱，會跟語言本身的關鍵字衝突，所以官方選擇用 className 這個不會衝突的名稱，對應到最終渲染出的 HTML class 屬性。實務上直接寫 class 屬性通常還是能被 React 接受並印出警告，但這不是官方建議、也不保證未來版本行為一致。",
+      "verify": { "checks": [], "manual": "class 屬性在不同 React 版本下的容錯行為可能不同，且會印出開發模式警告，不適合做嚴格的自動化字串比對，需人工審核。" }
+    },
+    {
+      "id": "ri-11-q8",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "fragments 讓元件不必為了「回傳多個節點」多包一層無意義的 div",
+      "docs": "",
+      "story": "",
+      "prompt": "一個元件想回傳兩個平行的 <td> 元素（用在表格列裡），但 React 元件的 return 只能有一個根節點，直接 return 兩個 <td> 會報錯。多包一層 <div> 又會破壞表格必須是 tr 直接包 td 的 HTML 語意結構。該怎麼解決？",
+      "code": "function Columns() {\n  return (\n    <>\n      <td>Hello</td>\n      <td>World</td>\n    </>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "用 Fragment（簡寫 <>...</>，或完整寫法 <React.Fragment>）當作根節點：Fragment 讓多個子節點可以被『邏輯上分組』成單一個 return 值，滿足 React 元件『只能回傳一個根節點』的語法要求，但完全不會在最終渲染出的 HTML 裡多產生任何真實節點，因此不會破壞表格 tr/td 這種對巢狀結構有嚴格要求的語意" },
+        { "id": "b", "text": "多包一層 div，即使因此破壞了表格的 HTML 語意結構也沒關係" },
+        { "id": "c", "text": "把兩個 td 分別放進兩個獨立的陣列裡各自 return" },
+        { "id": "d", "text": "React 元件本來就可以直接 return 多個根節點，不需要任何額外處理" }
+      ],
+      "answer": "a",
+      "explanation": "Fragment 存在的理由，正是解決「元件必須回傳單一根節點」跟「有些 HTML 結構（表格、清單）對巢狀關係有嚴格語意要求，不能隨便多包一層容器」這兩個限制的衝突。它是純邏輯分組工具，完全不出現在最終渲染結果裡，是簡寫語法 <>...</> 沒辦法帶 key 屬性時，才需要退回完整寫法 <React.Fragment key={...}>（前面 ri-7 章節已示範過的情境）。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Columns() {\n  return (\n    <>\n      <td>Hello</td>\n      <td>World</td>\n    </>\n  );\n}\nfunction Row() {\n  return <tr><Columns /></tr>;\n}\nconsole.log(renderToStaticMarkup(<table><tbody><Row /></tbody></table>));", "expected": "<table><tbody><tr><td>Hello</td><td>World</td></tr></tbody></table>" }
+        ]
+      }
+    }
+  ]
+}

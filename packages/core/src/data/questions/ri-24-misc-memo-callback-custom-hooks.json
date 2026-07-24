@@ -1,0 +1,214 @@
+{
+  "id": "ri-24",
+  "title": "React 進階探索：useMemo、useCallback 與自訂 Hook",
+  "questions": [
+    {
+      "id": "ri-24-q1",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "useMemo：記憶化一個昂貴計算的結果，依賴沒變就重用舊值",
+      "docs": "https://react.dev/reference/react/useMemo",
+      "story": "",
+      "prompt": "getFilteredList 是一個昂貴的篩選運算。用 useMemo 包住它，items 沒變、只有 unrelatedState 變化觸發重繪時，這段昂貴運算會重新執行嗎？",
+      "code": "let callCount = 0;\nfunction getFilteredList(items) {\n  callCount++;\n  return items.filter((i) => i.active);\n}\n\nfunction List({ items }) {\n  const filtered = useMemo(() => getFilteredList(items), [items]);\n  return <ul>{filtered.map((i) => <li key={i.id}>{i.name}</li>)}</ul>;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "不會重新執行：useMemo(calculateFn, deps) 只有在依賴陣列（這裡是 [items]）裡的值真的改變時，才會重新呼叫 calculateFn；items 沒變的情況下，即使這個元件因為其他原因重新渲染，useMemo 都會直接回傳上一次快取的結果，不會再呼叫一次 getFilteredList，callCount 也不會增加"
+        },
+        {
+          "id": "b",
+          "text": "每次元件重繪都會重新執行，useMemo 只是把計算結果多印出一份 log，不影響實際執行次數"
+        },
+        {
+          "id": "c",
+          "text": "只有第一次渲染會執行，之後不管 items 是否改變都不會再執行"
+        },
+        {
+          "id": "d",
+          "text": "useMemo 只能包住回傳數字或字串的計算，不能用在回傳陣列的函式上"
+        }
+      ],
+      "answer": "a",
+      "explanation": "useMemo 的記憶化跟 useEffect 的依賴陣列比較是同一套機制（逐項參考比較），差別在於 useMemo 是『在渲染過程中』同步算出並快取一個值，而不是渲染完成後才執行的副作用。這讓「昂貴但輸入沒變就該重用」的計算，不會因為元件因其他不相干原因重繪而被迫重新計算一次。",
+      "verify": {
+        "checks": [],
+        "manual": "useMemo 的記憶化行為需要多輪真實渲染搭配呼叫次數計數才能觀察，無法用單次 node 執行驗證。"
+      }
+    },
+    {
+      "id": "ri-24-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "useMemo 記憶化的是「值」，本身不會阻止子元件重繪，要搭配 memo 才有效果",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊在父層用 useMemo 包住傳給子元件的一個物件 prop，以為這樣就能讓子元件跳過不必要的重繪，結果子元件還是每次都跟著父層一起重繪。問題出在哪？",
+      "code": "function Parent() {\n  const [tick, setTick] = useState(0);\n  const config = useMemo(() => ({ max: 100 }), []); // 物件參考穩定了\n\n  return (\n    <div>\n      <button onClick={() => setTick(t => t + 1)}>tick</button>\n      <Child config={config} /> {/* Child 沒有包 memo */}\n    </div>\n  );\n}\nfunction Child({ config }) {\n  console.log(\"Child 渲染了\");\n  return <p>{config.max}</p>;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "useMemo 只解決了『config 這個物件本身的參考是否穩定』這個問題，但 Child 元件本身沒有用 React.memo 包起來，代表它『不管 props 有沒有變，父層重繪它就跟著重繪』；useMemo 讓 config 的參考在父層重繪之間保持穩定，是為了讓『搭配 memo 的子元件』能正確判斷『props 沒變、可以跳過重繪』，如果子元件本身沒包 memo，穩定的 props 參考完全派不上用場，兩者必須搭配使用才有效果"
+        },
+        {
+          "id": "b",
+          "text": "useMemo 本身有 bug，無法讓物件參考在渲染之間保持穩定"
+        },
+        {
+          "id": "c",
+          "text": "問題出在依賴陣列給了空陣列，應該把 tick 也放進依賴陣列裡"
+        },
+        {
+          "id": "d",
+          "text": "Child 元件重繪是正常現象，跟 useMemo 或 memo 完全無關，任何子元件都無法避免跟著父層重繪"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是一個常見的誤解：useMemo 只負責『讓某個值的參考保持穩定』，它本身不會、也沒辦法讓任何子元件跳過重繪——真正決定『props 沒變就跳過重繪』的是子元件外面包的 React.memo。兩者是互補的一對工具：memo 負責『比較 props、決定要不要跳過』，useMemo（或 useCallback）負責『確保比較的對象參考穩定』，只用其中一個通常達不到預期效果。",
+      "verify": {
+        "checks": [],
+        "manual": "子元件是否跳過重繪需要多輪真實渲染搭配 memo 包裝與否的對照觀察，無法用單次 node 執行驗證。"
+      }
+    },
+    {
+      "id": "ri-24-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "useCallback 是「記憶化一個函式」，等同於對函式呼叫 useMemo",
+      "docs": "",
+      "story": "",
+      "prompt": "useCallback(fn, deps) 跟 useMemo(() => fn, deps) 這兩種寫法，效果一樣嗎？",
+      "code": "const handleClick1 = useCallback(() => {\n  console.log(\"clicked\");\n}, []);\n\nconst handleClick2 = useMemo(() => {\n  return () => console.log(\"clicked\");\n}, []);",
+      "options": [
+        {
+          "id": "a",
+          "text": "效果一樣：useCallback(fn, deps) 本質上就是 useMemo(() => fn, deps) 的語法糖——兩者都是『依賴沒變就回傳上一次的那個值』，差別只在於 useMemo 記憶化的是『呼叫一個函式後算出的結果』，useCallback 記憶化的是『函式本身這個值』，讓函式在依賴不變的渲染之間保持同一個參考，通常搭配 memo 包裝的子元件、或需要函式參考穩定的依賴陣列（如 useEffect 的依賴）一起使用"
+        },
+        {
+          "id": "b",
+          "text": "完全不一樣，useCallback 只能用在事件處理器，useMemo 只能用在計算結果"
+        },
+        {
+          "id": "c",
+          "text": "useCallback 每次渲染都會回傳一個全新的函式，跟依賴陣列無關"
+        },
+        {
+          "id": "d",
+          "text": "useMemo 不能用來記憶化函式，只能記憶化基本型別的值"
+        }
+      ],
+      "answer": "a",
+      "explanation": "useCallback 常被誤解成一個獨立、特別的機制，但它其實就是 useMemo 針對『記憶化函式』這個常見情境的語法糖，兩者的依賴比較規則完全相同。理解這一點，能幫助判斷『這裡該用哪一個』——記憶化計算結果用 useMemo，記憶化函式參考本身（讓它能安全放進其他 Hook 的依賴陣列、或傳給 memo 包裝的子元件）用 useCallback。",
+      "verify": {
+        "checks": [],
+        "manual": "useCallback 與 useMemo 記憶化函式的等價行為需要多輪真實渲染比對參考是否相同，無法用單次 node 執行驗證。"
+      }
+    },
+    {
+      "id": "ri-24-q4",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "自訂 Hook：把可重用的邏輯抽成一個以 use 開頭的函式，本身也遵守 Hooks 規則",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊在三個不同元件裡都寫了幾乎一樣的邏輯：追蹤瀏覽器目前是否連線（online/offline），只是各自元件裡的變數名稱不同。該怎麼消除這種重複？",
+      "code": "function useOnlineStatus() {\n  const [isOnline, setIsOnline] = useState(navigator.onLine);\n  useEffect(() => {\n    function handleOnline() { setIsOnline(true); }\n    function handleOffline() { setIsOnline(false); }\n    window.addEventListener(\"online\", handleOnline);\n    window.addEventListener(\"offline\", handleOffline);\n    return () => {\n      window.removeEventListener(\"online\", handleOnline);\n      window.removeEventListener(\"offline\", handleOffline);\n    };\n  }, []);\n  return isOnline;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "把重複的邏輯抽成一個自訂 Hook（依慣例以 use 開頭命名，這裡是 useOnlineStatus），內部照樣呼叫其他內建 Hooks（useState、useEffect）；自訂 Hook 本質上就是一個『把幾個 Hooks 呼叫包裝起來、重新導出一份簡化介面』的普通函式，本身也必須遵守 Hooks 的呼叫規則（不能放進條件式），這是消除跨元件重複邏輯最直接的做法，比複製貼上同一段邏輯到三個元件更容易維護"
+        },
+        {
+          "id": "b",
+          "text": "自訂 Hook 只是把邏輯包成一個物件，內部不能再呼叫 useState 或 useEffect 這些內建 Hooks"
+        },
+        {
+          "id": "c",
+          "text": "自訂 Hook 必須用 class 語法定義，不能是一般函式"
+        },
+        {
+          "id": "d",
+          "text": "這種情境應該改用 HOC 才能消除重複，自訂 Hook 無法處理『追蹤瀏覽器連線狀態』這類副作用邏輯"
+        }
+      ],
+      "answer": "a",
+      "explanation": "自訂 Hook 是 Hooks 機制裡「邏輯重用」這個核心價值最直接的體現：把一段包含 state、effect 的邏輯抽成一個函式，函式名稱以 use 開頭（這個命名慣例讓 linter 能正確套用 Hooks 檢查規則），任何元件呼叫它就能拿到同一份邏輯的獨立副本（不同元件呼叫同一個自訂 Hook，各自的 state 是獨立的，不會共享）。",
+      "verify": {
+        "checks": [],
+        "manual": "自訂 Hook 的邏輯共用效果需要多個真實元件實例分別掛載並觀察狀態獨立性，無法用單次 node 執行完整驗證。"
+      }
+    },
+    {
+      "id": "ri-24-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "同一個自訂 Hook 被兩個元件分別呼叫，各自的 state 是獨立的，不會共享",
+      "docs": "https://react.dev/learn/reusing-logic-with-custom-hooks#custom-hooks-let-you-share-stateful-logic-not-state-itself",
+      "story": "",
+      "prompt": "useCounter 這個自訂 Hook 內部用 useState 管理一個計數。ComponentA 跟 ComponentB 各自呼叫了一次 useCounter()。ComponentA 把自己的計數加到 5，ComponentB 的計數會不會也變成 5？",
+      "code": "function useCounter() {\n  const [count, setCount] = useState(0);\n  const increment = () => setCount((c) => c + 1);\n  return { count, increment };\n}\n\nfunction ComponentA() {\n  const { count, increment } = useCounter();\n  return <button onClick={increment}>A: {count}</button>;\n}\nfunction ComponentB() {\n  const { count } = useCounter();\n  return <p>B: {count}</p>;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "不會：自訂 Hook 分享的是『邏輯』（同一段 useState/useEffect 的寫法），不是『狀態』本身——每個呼叫 useCounter() 的元件，都會各自建立一份完全獨立的 count state，彼此互不影響；ComponentA 把自己的計數加到 5，只會影響 ComponentA 內部這一份 state，ComponentB 的 count 仍然是它自己獨立的初始值 0，除非兩者刻意透過 Context 或提升 state 等機制共享同一份資料來源"
+        },
+        {
+          "id": "b",
+          "text": "會，因為兩個元件呼叫的是同一個 useCounter 函式，所以會共用同一份 count 狀態"
+        },
+        {
+          "id": "c",
+          "text": "會，但只有在兩個元件同時掛載在畫面上時才會共享狀態"
+        },
+        {
+          "id": "d",
+          "text": "不會，但原因是自訂 Hook 每次呼叫都必須傳入不同的初始值，才能保持獨立"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是自訂 Hook 官方文件明確強調、也是最容易被誤解的一點：「共用邏輯，不是共用狀態」。每次呼叫一個自訂 Hook，內部的 useState／useEffect 呼叫都會在『呼叫它的那個元件』的渲染上下文裡各自建立獨立的一份，就像把同一段程式碼複製貼上到每個元件內部一樣，只是換成呼叫一個函式的形式表達，多個呼叫者之間預設完全不會互相影響。",
+      "verify": {
+        "checks": [
+          {
+            "jsx": "import { useState } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nfunction useCounter() {\n  const [count] = useState(0);\n  return count;\n}\nfunction ComponentA() {\n  const count = useCounter();\n  return <p>A: {count}</p>;\n}\nfunction ComponentB() {\n  const count = useCounter();\n  return <p>B: {count}</p>;\n}\nconsole.log(renderToStaticMarkup(<div><ComponentA /><ComponentB /></div>));",
+            "expected": "<div><p>A: 0</p><p>B: 0</p></div>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ri-24-q6",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "useDebugValue：讓自訂 Hook 在 React DevTools 裡顯示一段易懂的除錯標籤",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊寫了一個自訂 Hook useOnlineStatus，在 React DevTools 的元件樹裡，只會看到它底層用到的 useState、useEffect 這些內建 Hook 的原始名稱，看不出『這是連線狀態』這個語意。useDebugValue 能怎麼幫上忙？",
+      "code": "function useOnlineStatus() {\n  const [isOnline, setIsOnline] = useState(true);\n  useDebugValue(isOnline ? \"在線\" : \"離線\"); // 只在 DevTools 顯示，不影響實際渲染或邏輯\n  // ...\n  return isOnline;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "useDebugValue(value) 讓這個自訂 Hook 在 React DevTools 檢查元件樹時，額外顯示一段開發者自訂的標籤（這裡是『在線』或『離線』），純粹是除錯輔助用途，完全不影響元件實際的渲染結果或運作邏輯；這在自訂 Hook 內部邏輯較複雜、光看內建 Hook 名稱看不出語意的情況下，能讓除錯時更快理解目前狀態"
+        },
+        {
+          "id": "b",
+          "text": "useDebugValue 會把傳入的值顯示在使用者實際看到的畫面上，等同於一般的渲染內容"
+        },
+        {
+          "id": "c",
+          "text": "useDebugValue 只能在正式環境（production build）生效，開發模式下完全沒有作用"
+        },
+        {
+          "id": "d",
+          "text": "useDebugValue 是用來設定這個 Hook 的預設值，如果呼叫端沒有傳入任何參數就會使用它"
+        }
+      ],
+      "answer": "a",
+      "explanation": "useDebugValue 是一個純粹為了「開發體驗」設計的 Hook，只影響 React DevTools 裡顯示的除錯資訊，跟畫面渲染、應用程式邏輯完全無關；它主要的價值在於自己寫的、給其他開發者（或未來的自己）共用的自訂 Hook 函式庫，讓除錯時能一眼看出這個 Hook 目前的狀態語意，而不用自己在腦中翻譯內建 Hook 的原始數值。",
+      "verify": {
+        "checks": [],
+        "manual": "useDebugValue 只在 React DevTools 檢視時顯示，需要真實瀏覽器擴充功能環境才能觀察，無法用 node 直接驗證。"
+      }
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "id": "ri-15",
+  "title": "Core React：JSX 語法細節",
+  "questions": [
+    {
+      "id": "ri-15-q1",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "React v16 起支援自訂 DOM 屬性直接透傳",
+      "docs": "https://react.dev/reference/react-dom/components/common",
+      "story": "",
+      "prompt": "想在 DOM 節點上加一個給自動化測試工具讀取用的自訂屬性 mycustomattribute（不是 data-* 或 aria-* 開頭），React 16 之後的版本會怎麼處理？",
+      "code": "function Widget() {\n  return <div mycustomattribute=\"123\">內容</div>;\n}\n\nconsole.log(renderToStaticMarkup(<Widget />));",
+      "options": [
+        { "id": "a", "text": "<div mycustomattribute=\"123\">內容</div>：React 16 起放寬了限制，任何寫成全小寫的自訂屬性都會被直接透傳到最終 DOM 上，不再要求一定要用 data-* 前綴；React 15 及更早的版本會把它濾掉，這是版本間一個實質的行為差異，不只是文件描述上的調整" },
+        { "id": "b", "text": "這個屬性會在任何 React 版本都被完全過濾掉，只有 data-* 開頭的屬性才能透傳" },
+        { "id": "c", "text": "程式會拋出例外，自訂屬性名稱只能是駝峰式，不能是全小寫" },
+        { "id": "d", "text": "React 會自動幫這個屬性加上 data- 前綴再輸出" }
+      ],
+      "answer": "a",
+      "explanation": "React 16 之前，未知的 DOM 屬性只有 data-*、aria-* 這兩種前綴會被保留，其餘一律濾掉；React 16 起放寬規則，只要屬性名稱是全小寫（符合 HTML 屬性慣例），就會被直接透傳到 DOM 上，不再限定前綴，這也是為什麼前一個小節裡 isPrimary（駝峰式）被濾掉、但改成全小寫 isprimary 就會被保留的原因。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Widget() {\n  return <div mycustomattribute=\"123\">內容</div>;\n}\nconsole.log(renderToStaticMarkup(<Widget />));", "expected": "<div mycustomattribute=\"123\">內容</div>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-15-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "JSX 大括號裡可以放任意 JS 表達式，包含 map 這種迴圈方法",
+      "docs": "https://react.dev/learn/rendering-lists",
+      "story": "",
+      "prompt": "JSX 語法本身沒有內建 for 迴圈標籤，想在畫面上重複渲染一份清單，該怎麼在 JSX 裡「迴圈」？",
+      "code": "function List() {\n  const fruits = [\"蘋果\", \"香蕉\", \"橘子\"];\n  return (\n    <ul>\n      {fruits.map((fruit) => <li key={fruit}>{fruit}</li>)}\n    </ul>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "在大括號裡使用陣列的 map() 方法：JSX 沒有專屬的迴圈語法，但大括號本來就能放任意 JavaScript 表達式，而 map() 剛好是『把陣列的每一項轉換成一個新值（這裡是轉換成一個 JSX 元素）』的表達式，回傳的元素陣列會被 React 依序渲染出來；不能直接在 JSX 裡寫 for 迴圈語句，因為 for 是陳述式（statement）不是表達式，不能放進大括號裡回傳值" },
+        { "id": "b", "text": "JSX 支援專屬的 <for> 標籤，直接寫 <for each={fruits}>...</for> 就能迴圈渲染" },
+        { "id": "c", "text": "必須先把整個陣列轉成字串，才能在 JSX 裡顯示出來" },
+        { "id": "d", "text": "React 不支援任何形式的陣列迴圈渲染，只能一個個手動寫死每一項" }
+      ],
+      "answer": "a",
+      "explanation": "這條規則背後的原因很單純：JSX 大括號裡只能放「表達式」（有回傳值的東西），for、if 這類「陳述式」語法不能直接放進去。map() 剛好是回傳新陣列的表達式，天生適合拿來做「陣列轉 JSX 元素陣列」這件事，這也是為什麼 React 生態裡用 map 做清單渲染是壓倒性的主流寫法，而不是額外設計一個 for 標籤。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction List() {\n  const fruits = [\"蘋果\", \"香蕉\", \"橘子\"];\n  return (\n    <ul>\n      {fruits.map((fruit) => <li key={fruit}>{fruit}</li>)}\n    </ul>\n  );\n}\nconsole.log(renderToStaticMarkup(<List />));", "expected": "<ul><li>蘋果</li><li>香蕉</li><li>橘子</li></ul>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-15-q3",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "屬性值想放變數，要用大括號而不是繼續套雙引號",
+      "docs": "https://react.dev/learn/writing-markup-with-jsx",
+      "story": "",
+      "prompt": "想把一個變數的值當作 img 的 src 屬性，下面兩種寫法哪一種正確？",
+      "code": "const avatarUrl = \"/avatar.png\";\n\n// 寫法一\n<img src=\"{avatarUrl}\" />\n\n// 寫法二\n<img src={avatarUrl} />",
+      "options": [
+        { "id": "a", "text": "寫法二才正確：屬性值想放一個 JavaScript 表達式（變數、函式呼叫、運算式），要用大括號 {}，不能包在雙引號裡；寫法一的 src=\"{avatarUrl}\" 會被當成字面上的字串 \"{avatarUrl}\"（連同大括號本身都是文字），瀏覽器會真的去請求一個叫做「{avatarUrl}」的檔案，而不是變數 avatarUrl 的實際值" },
+        { "id": "b", "text": "寫法一才正確，雙引號裡的大括號會被 JSX 自動識別成變數" },
+        { "id": "c", "text": "兩種寫法效果完全相同，都能正確取得 avatarUrl 變數的值" },
+        { "id": "d", "text": "兩種寫法都會拋出語法錯誤，屬性值不能是變數" }
+      ],
+      "answer": "a",
+      "explanation": "JSX 屬性值的語法規則很直接：雙引號包住的是字面字串常量；大括號包住的才是要被求值的 JavaScript 表達式。這組規則很容易在剛學 JSX 時搞混，把兩種語法疊在一起用（寫法一）是最常見的新手錯誤，結果會是把大括號本身也當成純文字的一部分，而不是觸發變數求值。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nconst avatarUrl = \"/avatar.png\";\nfunction App() {\n  return <img src={avatarUrl} />;\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<link rel=\"preload\" as=\"image\" href=\"/avatar.png\"/><img src=\"/avatar.png\"/>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-15-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "PropTypes 的陣列元素型別驗證：arrayOf 搭配 shape",
+      "docs": "",
+      "story": "",
+      "prompt": "想驗證一個 prop 是「一份陣列，且陣列裡每個元素都是帶有 id（數字）與 name（字串）欄位的物件」，PropTypes 該怎麼宣告？",
+      "code": "UserList.propTypes = {\n  users: PropTypes.arrayOf(\n    PropTypes.shape({\n      id: PropTypes.number.isRequired,\n      name: PropTypes.string.isRequired,\n    })\n  ),\n};",
+      "options": [
+        { "id": "a", "text": "PropTypes.arrayOf(...) 驗證『這是一個陣列，且陣列裡每一項都符合括號裡指定的型別』；搭配 PropTypes.shape({...}) 進一步指定『每一項必須是物件，且物件內部這些欄位分別要符合對應的型別』，兩者組合起來就能驗證『帶有特定形狀的物件陣列』這種巢狀結構，比單純寫 PropTypes.array（只驗證是不是陣列，不管內部元素長什麼樣）精確得多" },
+        { "id": "b", "text": "PropTypes.arrayOf 只能驗證陣列長度，不能驗證陣列裡元素的型別" },
+        { "id": "c", "text": "PropTypes.shape 只能用在最外層的 props 物件，不能巢狀用在陣列元素裡" },
+        { "id": "d", "text": "這種寫法只在 TypeScript 專案裡才有效，純 JavaScript 專案的 PropTypes 不支援巢狀驗證" }
+      ],
+      "answer": "a",
+      "explanation": "arrayOf 與 shape 是 PropTypes 兩個可以組合巢狀使用的驗證子：arrayOf 描述『陣列＋元素型別』，shape 描述『物件＋各欄位型別』，兩者疊起來就能表達出「一份符合特定結構的物件清單」這種常見的資料形狀，比單純用 array 或 object 精確很多，這也是 PropTypes 執行期驗證能做到的合理深度（雖然仍然只在開發模式印警告，不阻斷渲染）。",
+      "verify": { "checks": [], "manual": "PropTypes 未安裝於本專案，巢狀驗證邏輯需要真實套件執行才能觀察，無法用 node 直接驗證。" }
+    },
+    {
+      "id": "ri-15-q5",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "依條件動態組合 className 字串",
+      "docs": "",
+      "story": "",
+      "prompt": "一個按鈕在 isActive 為 true 時要多加一個 active 樣式類別。下面這樣寫，isActive=true 時最終的 className 會是什麼？",
+      "code": "function Tab({ isActive, label }) {\n  const className = \"tab\" + (isActive ? \" tab-active\" : \"\");\n  return <button className={className}>{label}</button>;\n}\n\nconsole.log(renderToStaticMarkup(<Tab isActive={true} label=\"首頁\" />));",
+      "options": [
+        { "id": "a", "text": "<button class=\"tab tab-active\">首頁</button>：用字串拼接（或模板字串）搭配三元運算子，依 isActive 的值決定要不要附加額外的 class 名稱，是條件式套用 CSS 類別最直接的手法；專案規模變大、條件變多時，通常會改用 classnames／clsx 這類小工具函式庫來組合多個條件類別，避免手動字串拼接容易漏掉空格或打錯字" },
+        { "id": "b", "text": "<button class=\"tab\">首頁</button>，三元運算子在 JSX 屬性值計算時不會生效" },
+        { "id": "c", "text": "<button class=\"tabtab-active\">首頁</button>，字串拼接會漏掉必要的空格" },
+        { "id": "d", "text": "程式會拋出例外，className 屬性不能用字串拼接的方式組合" }
+      ],
+      "answer": "a",
+      "explanation": "className 屬性本質上只是一個普通的字串，任何能算出字串的 JavaScript 表達式（拼接、模板字串、三元運算子）都能用來動態組合它。這裡刻意在 \" tab-active\" 前面留了空格，是因為多個 CSS class 名稱之間需要空格分隔——這種手動處理空格的細節，正是後來 classnames／clsx 這類工具函式庫想幫忙簡化掉的部分。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Tab({ isActive, label }) {\n  const className = \"tab\" + (isActive ? \" tab-active\" : \"\");\n  return <button className={className}>{label}</button>;\n}\nconsole.log(renderToStaticMarkup(<Tab isActive={true} label=\"首頁\" />));", "expected": "<button class=\"tab tab-active\">首頁</button>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-15-q6",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "React（核心概念）與 ReactDOM（渲染到瀏覽器）是兩個獨立套件",
+      "docs": "",
+      "story": "",
+      "prompt": "一個新專案的 package.json 裡，react 跟 react-dom 是各自獨立列出的兩個依賴套件，版本號也可能不完全一樣。這反映了什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "react 套件包含元件、Hooks、Context 這些核心、平台無關的概念；react-dom 是專門負責『把這些概念渲染到瀏覽器 DOM』的橋接套件，兩者是分開發布、各自有獨立版號的套件（前面 ri-13 章節已詳細解釋過這個架構分離的理由），這也是為什麼 React Native 專案裡看不到 react-dom，而是改用 react-native 這個對應原生渲染目標的套件" },
+        { "id": "b", "text": "react 與 react-dom 其實是同一個套件，只是分別發布了兩份一模一樣的程式碼" },
+        { "id": "c", "text": "react-dom 是給後端 Node.js 伺服器用的套件，跟瀏覽器渲染完全無關" },
+        { "id": "d", "text": "只有其中一個套件是必要依賴，另一個可以隨意移除而不影響任何功能" }
+      ],
+      "answer": "a",
+      "explanation": "這題呼應前面 ri-13 章節談過的架構分離：react 是核心、react-dom／react-native／react-test-renderer 是各自對應不同渲染目標的橋接層。實務上這兩個套件通常需要保持相容的版本範圍一起升級，但它們確實是各自獨立發布、可以有不同版號的套件，不是同一份程式碼的重複發布。",
+      "verify": { "checks": [], "manual": "屬套件架構與版本管理慣例的說明題，無可執行程式碼。" }
+    },
+    {
+      "id": "ri-15-q7",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "label 元素要用 htmlFor 而不是 for（for 是 JS 保留字延伸出的慣例）",
+      "docs": "https://react.dev/reference/react-dom/components/common",
+      "story": "",
+      "prompt": "想讓 <label> 跟某個 <input> 建立關聯（點擊文字就能聚焦到輸入框），原生 HTML 用 for 屬性，React 裡該怎麼寫？",
+      "code": "function Field() {\n  return (\n    <div>\n      <label htmlFor=\"email\">電子郵件</label>\n      <input id=\"email\" />\n    </div>\n  );\n}\n\nconsole.log(renderToStaticMarkup(<Field />));",
+      "options": [
+        { "id": "a", "text": "用 htmlFor 而不是 for：這跟 className／class 的理由完全一樣——for 在 JavaScript 裡是保留字（for 迴圈），JSX 的屬性名稱最終要對應成 JavaScript 物件的 key，為了避免關鍵字衝突，React 選擇用 htmlFor 這個不會衝突的替代名稱，渲染到最終 HTML 時才轉換回瀏覽器認得的 for 屬性" },
+        { "id": "b", "text": "直接寫 for=\"email\" 就能正常運作，React 對這個屬性沒有特殊處理" },
+        { "id": "c", "text": "label 元素在 React 裡完全不支援與 input 建立關聯" },
+        { "id": "d", "text": "htmlFor 屬性只在 TypeScript 專案裡有效，一般 JavaScript 專案要用 for" }
+      ],
+      "answer": "a",
+      "explanation": "className／htmlFor 是同一類問題的兩個具體案例：HTML 原生屬性名稱剛好撞上 JavaScript 語言保留字（class、for），JSX 因此統一改用不會衝突的替代名稱，渲染到最終 HTML 時再轉換回瀏覽器認得的屬性名稱。這組轉換規則值得記住，因為它們是最容易在剛接觸 JSX 時，因為沿用原生 HTML 屬性名稱直覺而寫錯的地方。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Field() {\n  return (\n    <div>\n      <label htmlFor=\"email\">電子郵件</label>\n      <input id=\"email\" />\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<Field />));", "expected": "<div><label for=\"email\">電子郵件</label><input id=\"email\"/></div>" }
+        ]
+      }
+    }
+  ]
+}

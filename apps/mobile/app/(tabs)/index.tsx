@@ -8,7 +8,7 @@ import { useProgress } from '@/context/ProgressContext';
 import Home from '@/screens/Home';
 import ChapterMap from '@/screens/ChapterMap';
 import Quiz from '@/screens/Quiz';
-import { chapters, getLevel, MIXED_SIZE, sampleQuestions, shuffle, type Question } from '@easylearn/core';
+import { chapters, getLevel, LEVEL_SIZE, MIXED_SIZE, sampleFixedQuestions, type Question } from '@easylearn/core';
 
 type ViewState =
   | { name: 'home' }
@@ -36,12 +36,12 @@ export default function HomeScreen() {
   const startLevel = (levelId: string) => {
     const level = getLevel(levelId);
     if (!level) return;
-    setView({ name: 'quiz', levelId, questions: sampleQuestions(level.questions) });
+    setView({ name: 'quiz', levelId, questions: sampleFixedQuestions(level.questions, LEVEL_SIZE) });
   };
 
   const startMixedPractice = () => {
     const pool = chapters.flatMap((ch) => ch.levels.flatMap((l) => l.questions));
-    const picked = shuffle(pool).slice(0, MIXED_SIZE).sort((a, b) => a.difficulty - b.difficulty);
+    const picked = sampleFixedQuestions(pool, MIXED_SIZE);
     setView({ name: 'mixed', questions: picked });
   };
 

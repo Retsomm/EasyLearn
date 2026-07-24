@@ -1,0 +1,132 @@
+{
+  "id": "ri-16",
+  "title": "Core React：樣式與實用小工具",
+  "questions": [
+    {
+      "id": "ri-16-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "合併多個行內樣式物件：用展開運算子疊加，後面的覆蓋前面的",
+      "docs": "https://react.dev/reference/react-dom/components/common#the-style-prop",
+      "story": "",
+      "prompt": "一個按鈕要疊加「基礎樣式」跟「依 isDanger 決定的樣式」兩組行內樣式物件。下面這樣合併，isDanger=true 時最終的 style 屬性會是什麼？",
+      "code": "const baseStyle = { padding: 8, borderRadius: 4 };\nconst dangerStyle = { backgroundColor: \"red\", borderRadius: 0 };\n\nfunction DangerButton({ isDanger }) {\n  const style = { ...baseStyle, ...(isDanger ? dangerStyle : {}) };\n  return <button style={style}>刪除</button>;\n}\n\nconsole.log(renderToStaticMarkup(<DangerButton isDanger={true} />));",
+      "options": [
+        { "id": "a", "text": "<button style=\"padding:8px;border-radius:0;background-color:red\">刪除</button>：用展開運算子把多個樣式物件依序疊加成一個新物件，後面展開的物件裡如果有跟前面同名的 key（這裡是 borderRadius），會覆蓋掉前面的值；沒有重複的 key（如 padding、backgroundColor）則各自保留，這是合併多組樣式最常見、也最直覺的手法" },
+        { "id": "b", "text": "borderRadius 會同時保留兩個值，最終渲染出 border-radius:4px;0px 這種不合法的 CSS" },
+        { "id": "c", "text": "程式會拋出例外，同一個物件裡不能對同一個 key 展開兩次不同的值" },
+        { "id": "d", "text": "後面展開的 dangerStyle 完全不會生效，物件合併永遠以第一次展開的值為準" }
+      ],
+      "answer": "a",
+      "explanation": "這是 JavaScript 物件展開運算子本身的行為，不是 React 特有的規則：{ ...a, ...b } 依序把 a、b 的屬性複製到新物件上，b 裡跟 a 重複的 key 會覆蓋掉 a 的值——「後面的贏」。這個規則讓「基礎樣式 + 條件覆蓋樣式」這種疊加模式寫起來很直覺，也是很多 UI 元件庫內部合併使用者傳入樣式與元件預設樣式的常見手法。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nconst baseStyle = { padding: 8, borderRadius: 4 };\nconst dangerStyle = { backgroundColor: \"red\", borderRadius: 0 };\nfunction DangerButton({ isDanger }) {\n  const style = { ...baseStyle, ...(isDanger ? dangerStyle : {}) };\n  return <button style={style}>刪除</button>;\n}\nconsole.log(renderToStaticMarkup(<DangerButton isDanger={true} />));", "expected": "<button style=\"padding:8px;border-radius:0;background-color:red\">刪除</button>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-16-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "監聽瀏覽器視窗尺寸變化，要在 useEffect 裡訂閱／清理 resize 事件",
+      "docs": "",
+      "story": "",
+      "prompt": "想讓一個元件依「目前瀏覽器視窗寬度」決定要顯示手機版還是桌面版排版，寬度隨使用者拖曳視窗即時變化時，畫面也要跟著切換。該怎麼設計？",
+      "code": "function ResponsiveLayout() {\n  const [width, setWidth] = useState(window.innerWidth);\n\n  useEffect(() => {\n    function handleResize() {\n      setWidth(window.innerWidth);\n    }\n    window.addEventListener(\"resize\", handleResize);\n    return () => window.removeEventListener(\"resize\", handleResize);\n  }, []);\n\n  return width < 768 ? <MobileLayout /> : <DesktopLayout />;\n}",
+      "options": [
+        { "id": "a", "text": "在 useEffect 裡訂閱瀏覽器原生的 resize 事件，事件觸發時呼叫 setWidth 更新 state，state 變了自然觸發重繪、重新判斷該顯示哪種排版；useEffect 的清理函式（return 的那個函式）裡要記得呼叫 removeEventListener，在元件卸載時解除訂閱，否則元件即使已經從畫面上消失，這個事件監聽器仍然殘留在記憶體裡持續執行，造成記憶體洩漏" },
+        { "id": "b", "text": "React 會自動監聽視窗尺寸變化，不需要手動訂閱任何事件" },
+        { "id": "c", "text": "resize 事件只能在 class component 的 componentDidMount 裡訂閱，函式元件無法達到同樣效果" },
+        { "id": "d", "text": "不需要清理函式，React 會在元件卸載時自動移除所有透過 addEventListener 註冊的監聽器" }
+      ],
+      "answer": "a",
+      "explanation": "瀏覽器原生事件（resize、scroll 等）不是 React 事件系統的一部分，需要自己用 addEventListener 訂閱；useEffect 的清理函式正是為了讓這類「訂閱外部資源」的操作在元件卸載時能對應解除，React 不會自動幫你清理透過原生 API 註冊的監聽器，忘記寫清理函式是很常見、也很容易被忽略的記憶體洩漏來源。",
+      "verify": { "checks": [], "manual": "resize 事件與視窗尺寸變化需要真實瀏覽器環境才能觸發與觀察，無法用 node 直接驗證。" }
+    },
+    {
+      "id": "ri-16-q3",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "在 JSX 裡顯示格式化過的 JSON，用 JSON.stringify 搭配縮排參數",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify",
+      "story": "",
+      "prompt": "除錯時想在畫面上顯示一個物件的完整內容、並且帶有縮排方便閱讀（而不是擠成一行）。下面這樣寫，畫面上 <pre> 裡會顯示什麼？",
+      "code": "function DebugPanel({ data }) {\n  return <pre>{JSON.stringify(data, null, 2)}</pre>;\n}\n\nconsole.log(JSON.stringify({ name: \"Amy\", age: 20 }, null, 2));",
+      "options": [
+        { "id": "a", "text": "JSON.stringify(value, replacer, space) 的第三個參數 space 傳入數字時，代表每一層縮排要用幾個空格；這裡傳 2，代表輸出的 JSON 字串每加深一層巢狀結構就多縮排兩格，並在每個欄位之間換行，比預設擠成一行的輸出更適合人眼閱讀——這是原生 JavaScript API 本來就有的功能，不需要額外套件；搭配 <pre> 標籤顯示，是因為 <pre> 會保留字串裡的換行與空格，一般文字標籤會把這些空白字元擠掉" },
+        { "id": "b", "text": "JSON.stringify 只能輸出擠在一行的字串，沒有任何格式化縮排的選項" },
+        { "id": "c", "text": "第三個參數 2 代表『只顯示物件的前兩個欄位』，其餘欄位會被省略" },
+        { "id": "d", "text": "這段程式碼會拋出例外，JSON.stringify 最多只能接受兩個參數" }
+      ],
+      "answer": "a",
+      "explanation": "JSON.stringify 的第三個參數（space）是原生 API 內建的縮排格式化選項，可以是數字（代表空格數）或字串（例如 \"\\t\" 代表用 tab 縮排）。這在除錯面板、印出 API 回應內容這類場景很常用；搭配 <pre> 標籤是因為一般的 HTML 標籤會把連續空白與換行收合成一個空格，只有 <pre> 會照原樣保留這些格式，兩者合起來才能真正顯示出『看起來有縮排』的 JSON。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(JSON.stringify({ name: \"Amy\", age: 20 }, null, 2));", "expected": "{\n  \"name\": \"Amy\",\n  \"age\": 20\n}" }
+        ]
+      }
+    },
+    {
+      "id": "ri-16-q4",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "props 唯讀是刻意設計，不是限制，想改要透過父層",
+      "docs": "",
+      "story": "",
+      "prompt": "新人想在 Greeting 元件內部直接執行 props.name = \"新名字\" 來改變顯示內容，發現完全沒有作用（甚至嚴格模式下會報錯）。這是 React 的限制還是刻意設計？",
+      "code": "function Greeting(props) {\n  props.name = \"新名字\"; // 嘗試直接修改 prop\n  return <p>{props.name}</p>;\n}",
+      "options": [
+        { "id": "a", "text": "這是刻意設計：props 被設計成『唯讀』，接收 props 的元件不能直接修改它——這個限制讓資料流向保持單向、可預測（一份資料永遠能追溯到某個明確的來源往下傳），如果任何子元件都能隨意回頭改動父層傳下來的資料，追蹤『這個值到底被誰改的』會變得跟前面 ri-4 章節談過的 MVW 雙向綁定困境一樣難以除錯；真的需要改變顯示內容，該做的是讓父層透過重新渲染傳入新的 props 值，或者這份資料本來就該是這個元件自己的 state" },
+        { "id": "b", "text": "這是 React 目前版本的技術限制，未來版本預計會開放讓子元件直接修改 props" },
+        { "id": "c", "text": "props.name = ... 這種寫法其實有效，只是需要呼叫一個額外的 forceUpdate 才能反映到畫面上" },
+        { "id": "d", "text": "只有函式元件不能修改 props，class component 可以直接修改 this.props" }
+      ],
+      "answer": "a",
+      "explanation": "props 唯讀不是技術限制而是刻意的架構設計，目的是維持單向資料流的可預測性——這跟 state（元件自己能改的部分）恰好形成互補的一組規則（呼應 ri-9 章節談過的 state vs props 區分）。想讓畫面因為某個操作而改變，正確的路徑永遠是「觸發 state 更新」或「請父層重新傳入新的 props」，不存在讓子元件直接回頭修改 props 的合法方式，class component 也不例外。",
+      "verify": { "checks": [], "manual": "props 唯讀限制屬 React 架構設計原則，直接修改在嚴格模式下的行為需要真實開發環境觀察警告，此處著重原理說明。" }
+    },
+    {
+      "id": "ri-16-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "頁面載入後自動聚焦輸入框：用 ref 搭配 useEffect",
+      "docs": "",
+      "story": "",
+      "prompt": "想讓搜尋頁一打開，輸入框就自動聚焦、游標閃爍等待使用者輸入，不用使用者自己點一下。該怎麼設計？",
+      "code": "function SearchPage() {\n  const inputRef = useRef(null);\n\n  useEffect(() => {\n    inputRef.current.focus();\n  }, []);\n\n  return <input ref={inputRef} placeholder=\"搜尋...\" />;\n}",
+      "options": [
+        { "id": "a", "text": "用 ref 抓到這個 input 的真實 DOM 節點，在 useEffect（依賴陣列給空陣列，代表只在元件掛載後執行一次）裡呼叫 inputRef.current.focus()；這正是既有 react-11 章節談過的『ref 抓 DOM 節點』三大正當用途之一（聚焦、捲動、量尺寸），而且必須放在 useEffect 裡而不是渲染過程中直接呼叫，因為渲染當下 DOM 節點可能還沒真正掛載完成，current 可能還是 null" },
+        { "id": "b", "text": "直接在元件函式的最上層呼叫 inputRef.current.focus()，不需要包在 useEffect 裡" },
+        { "id": "c", "text": "React 元件掛載時會自動聚焦第一個 input 元素，不需要任何額外程式碼" },
+        { "id": "d", "text": "只能用 autoFocus 這個 HTML 原生屬性達成，ref 搭配 useEffect 的寫法完全無效" }
+      ],
+      "answer": "a",
+      "explanation": "這題呼應既有 react-11 章節對「渲染途中 ref.current 還是 null」的討論：DOM 節點要等到 commit 階段真正掛載完成才存在，useEffect 保證在那之後才執行，是呼叫 .focus() 安全的時間點。值得補充的是，HTML 原生也有 autoFocus 屬性可以達到類似效果（選項 d 提到的），兩者並非互斥，但 ref+useEffect 的寫法在需要更複雜的聚焦邏輯（例如依條件決定要不要聚焦）時更有彈性。",
+      "verify": { "checks": [], "manual": "焦點狀態需要真實瀏覽器 DOM 與使用者可視互動才能觀察，無法用 node -e 或 renderToStaticMarkup 驗證（伺服器端渲染沒有真實焦點概念）。" }
+    },
+    {
+      "id": "ri-16-q6",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "在瀏覽器 console 查詢目前執行的 React 版本",
+      "docs": "https://react.dev/reference/react/version",
+      "story": "",
+      "prompt": "想確認目前執行環境載入的是哪一個版本的 React（排查『某個新 API 在這個版本能不能用』這類問題時很常見），該怎麼查？",
+      "code": "console.log(React.version);",
+      "options": [
+        { "id": "a", "text": "React 套件本身匯出一個 version 屬性（字串，例如 \"19.2.0\"），直接 console.log(React.version) 就能在瀏覽器開發者工具的 Console 面板裡看到目前實際載入的版本號；這在排查『某個 Hook 或 API 是不是這個版本還沒支援』這類問題時，是最直接的第一步" },
+        { "id": "b", "text": "React 套件沒有提供任何查詢版本號的方式，只能去看 package.json 或 node_modules 資料夾裡的檔案" },
+        { "id": "c", "text": "只能透過 React DevTools 擴充功能查詢版本，React 套件本身完全不暴露這項資訊" },
+        { "id": "d", "text": "React.version 只在開發模式建置下才存在，正式環境的生產模式建置會把這個屬性移除" }
+      ],
+      "answer": "a",
+      "explanation": "React.version 是套件本身暴露的一個簡單字串屬性，任何載入了 react 套件的執行環境（瀏覽器 console、Node.js 腳本）都能直接讀取，是排查版本相關問題最快速的方式，不需要額外安裝任何工具、也不受開發/生產模式影響。",
+      "verify": {
+        "checks": [
+          { "jsx": "import React from 'react'\nconsole.log(typeof React.version)", "expected": "string" }
+        ]
+      }
+    }
+  ]
+}

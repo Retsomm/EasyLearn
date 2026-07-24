@@ -1,5 +1,5 @@
 import Icon from '@/components/Icons'
-import { chapters, type IconName, type Progress } from '@easylearn/core'
+import { chapters, LEVEL_SIZE, type IconName, type Progress } from '@easylearn/core'
 
 interface ChapterMapProps {
   chapterId: string | null
@@ -25,14 +25,11 @@ const ChapterMap = ({ chapterId, progress, onStartLevel, onBack }: ChapterMapPro
 
       {chapter.levels.map((level, i) => {
         const record = progress.completedLevels[level.id]
-        const prevDone = i === 0 || progress.completedLevels[chapter.levels[i - 1].id]
-        const locked = !prevDone
-        const statusIcon: IconName = locked ? 'lock' : record ? 'check-circle' : 'play'
+        const statusIcon: IconName = record ? 'check-circle' : 'play'
         return (
           <button
             key={level.id}
-            className={`level-row ${locked ? 'level-locked' : ''} ${record ? 'level-done' : ''}`}
-            disabled={locked}
+            className={`level-row ${record ? 'level-done' : ''}`}
             onClick={() => onStartLevel(level.id)}
           >
             <span className={`level-icon status-${statusIcon}`}>
@@ -44,9 +41,7 @@ const ChapterMap = ({ chapterId, progress, onStartLevel, onBack }: ChapterMapPro
             <span className="level-record">
               {record
                 ? `最佳 ${record.best}/${record.total}`
-                : locked
-                  ? '完成上一關解鎖'
-                  : `共 ${level.questions.length} 題`}
+                : `共 ${Math.min(LEVEL_SIZE, level.questions.length)} 題`}
             </span>
           </button>
         )

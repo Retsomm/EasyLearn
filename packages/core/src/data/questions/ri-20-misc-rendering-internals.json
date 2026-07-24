@@ -1,0 +1,210 @@
+{
+  "id": "ri-20",
+  "title": "React 進階探索：渲染內部機制",
+  "questions": [
+    {
+      "id": "ri-20-q1",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "捕獲階段事件：onClickCapture 讓外層先於內層收到事件",
+      "docs": "",
+      "story": "",
+      "prompt": "瀏覽器事件正常是「冒泡」（由內往外，子元素先收到再往父層傳）。想讓外層容器搶先在子元素處理事件『之前』先攔截一次（例如記錄所有點擊的埋點邏輯），該用哪組事件？",
+      "code": "function Analytics({ children }) {\n  return (\n    <div onClickCapture={() => console.log(\"外層先記錄一次\")}>\n      {children}\n    </div>\n  );\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "用 Capture 字尾的事件（如 onClickCapture 對應一般的 onClick）：DOM 事件其實有兩個階段，先是由外往內的『捕獲階段』，事件真正到達目標元素後才開始由內往外的『冒泡階段』；React 一般常用的 onClick 等監聽的是冒泡階段，onClickCapture 這組則是監聽捕獲階段，讓外層容器能在子元素的一般事件處理器執行之前，就先攔截到這個事件"
+        },
+        {
+          "id": "b",
+          "text": "onClickCapture 與 onClick 完全等價，只是命名習慣不同，沒有任何執行順序差異"
+        },
+        {
+          "id": "c",
+          "text": "捕獲階段事件只存在於原生 DOM API，React 的合成事件系統完全不支援"
+        },
+        {
+          "id": "d",
+          "text": "onClickCapture 只能綁定在最外層的根節點，不能綁在任意巢狀的 div 上"
+        }
+      ],
+      "answer": "a",
+      "explanation": "捕獲／冒泡是瀏覽器事件模型的兩個階段，React 的合成事件系統完整支援兩者：一般的 onClick 對應冒泡階段（由內往外，這也是為什麼子元素的 stopPropagation 能擋掉父層的 onClick）；Capture 字尾的事件則對應捕獲階段（由外往內），適合『不管子層怎麼處理，外層都要優先攔截一次』的埋點、全域監控這類需求。",
+      "verify": {
+        "checks": [],
+        "manual": "捕獲/冒泡事件順序需要真實瀏覽器點擊互動才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-20-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "螢幕更新的三個階段：觸發、渲染、提交",
+      "docs": "",
+      "story": "",
+      "prompt": "使用者點擊按鈕觸發 setState，到畫面真正顯示新內容，React 內部依序經過哪些階段？（呼應前面 ri-11 章節談過的 reconciliation 三步驟，這裡從『觸發』的角度重新描述）",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "①觸發（Trigger）：某個事件（使用者互動、資料到達）呼叫了 state 的 setter，排定一次更新；②渲染（Render）：React 呼叫元件函式，算出新的 Virtual DOM 樹；③提交（Commit）：React 把渲染階段算出的差異實際套用到真實 DOM 上，畫面才真正改變。這三個階段合起來，就是『使用者操作 → 畫面反映』這整條路徑背後的完整流程"
+        },
+        {
+          "id": "b",
+          "text": "React 只有『提交』這一個階段，觸發跟渲染其實是同一件事，沒有先後之分"
+        },
+        {
+          "id": "c",
+          "text": "這三個階段的順序不固定，每次更新可能以不同順序執行"
+        },
+        {
+          "id": "d",
+          "text": "『提交』階段永遠發生在『觸發』階段之前，React 會預先猜測使用者接下來的操作"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是 React 官方文件對「畫面如何更新」的標準敘事框架：觸發（有什麼事件促使更新）、渲染（算出新樹）、提交（真正改 DOM）。理解這個順序，是理解 useEffect（提交完成後才執行）、useLayoutEffect（提交後、瀏覽器真正繪製前）這些時機差異的基礎，順序是固定的，不會因為情境不同而改變。",
+      "verify": {
+        "checks": [],
+        "manual": "屬 React 渲染流程的說明題，需要原始碼層級理解，無法用可執行片段驗證。"
+      }
+    },
+    {
+      "id": "ri-20-q3",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "在元件函式內部定義另一個元件，會導致內部元件每次渲染都是「全新的」，state 被重置",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊在 ParentForm 元件內部（不是外部）定義了一個 InnerField 子元件，用來包裝輸入框邏輯。使用者打字打到一半，ParentForm 因為別的原因重繪，結果輸入框裡的內容整個消失、又跳出一次奇怪的『重新掛載』行為。問題出在哪？",
+      "code": "function ParentForm() {\n  // 錯誤示範：在元件函式內部定義另一個元件\n  function InnerField() {\n    const [text, setText] = useState(\"\");\n    return <input value={text} onChange={(e) => setText(e.target.value)} />;\n  }\n\n  const [tick, setTick] = useState(0);\n  return (\n    <div>\n      <button onClick={() => setTick((t) => t + 1)}>觸發父層重繪</button>\n      <InnerField />\n    </div>\n  );\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "InnerField 是在 ParentForm 函式『內部』定義的：每次 ParentForm 重新渲染，都會重新執行這段函式定義，等於每次都產生一個『全新的函式』；React 用 type（元件函式本身的參考）判斷『這是不是同一個元件』，即使名字都叫 InnerField，每次渲染產生的都是不同的函式參考，React 因此判定『型別變了』，整個 InnerField 連同它自己的 state 一起被卸載重建——正確做法是把 InnerField 定義移到 ParentForm 外部，讓它在整個模組生命週期內只被定義一次"
+        },
+        {
+          "id": "b",
+          "text": "沒有任何問題，在元件內部定義子元件是官方建議的最佳實踐"
+        },
+        {
+          "id": "c",
+          "text": "問題出在 InnerField 沒有接收任何 props，跟它定義的位置無關"
+        },
+        {
+          "id": "d",
+          "text": "問題出在 useState 不能在巢狀定義的元件裡使用"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是「reconciliation 依 type 判斷是否重用節點」（前面 ri-11 章節談過）在一個具體、很容易在真實專案裡發生的踩坑情境：判斷型別是否相同看的是函式本身的參考，不是名字字串是否一樣。在元件內部定義子元件，等於每次渲染都製造一個新函式、新型別，子元件連同它的 state 因此每次都被當成全新的重新掛載——這是 React 官方文件明確警告過的反模式，也是新手很容易不小心犯的錯誤。",
+      "verify": {
+        "checks": [],
+        "manual": "元件重新掛載造成的 state 重置需要多輪真實渲染與輸入互動才能觀察，無法用單次 node 執行驗證。"
+      }
+    },
+    {
+      "id": "ri-20-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "key 不是只有陣列渲染才能用，任何想強制重建元件的場合都能用",
+      "docs": "https://react.dev/learn/preserving-and-resetting-state#option-2-resetting-state-with-a-key",
+      "story": "",
+      "prompt": "一個表單元件想要在使用者切換「編輯對象」時，強制整個表單的 state（包含所有輸入框內容）重置成全新狀態，而不是沿用舊資料殘留的痕跡。即使這裡只有一個表單元件，不是陣列渲染，也能用 key 達成這個效果嗎？",
+      "code": "// 只有一個元件，不是陣列渲染，但依然可以用 key\n<EditForm key={selectedUserId} userId={selectedUserId} />",
+      "options": [
+        {
+          "id": "a",
+          "text": "可以：key 的作用範圍不限於陣列渲染，任何位置的元素只要 key 值在前後兩次渲染之間改變，React 都會把它當成『不同的元素』，強制卸載舊的、掛載一個全新的實例（state 全部重置）；這裡把 key 設成 selectedUserId，使用者一切換編輯對象，key 就跟著變，表單元件會整個重新掛載，不會殘留上一個使用者的輸入痕跡"
+        },
+        {
+          "id": "b",
+          "text": "不行，key 屬性只有在 .map() 陣列渲染的情境下才會被 React 讀取，單一元件上設定 key 完全沒有作用"
+        },
+        {
+          "id": "c",
+          "text": "可以，但這樣做會讓 EditForm 收到兩次 userId 這個 prop，畫面上會出現重複的表單"
+        },
+        {
+          "id": "d",
+          "text": "不行，key 只能是字串型別，不能傳入像 selectedUserId 這種可能是數字的值"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是「用 key 強制重置 state」這個技巧的典型應用（前面 react-9 章節已經深入談過這個機制）：key 的本質是「元素身份的標記」，不管是陣列裡的一項還是單獨一個元素都適用。刻意在 key 裡放一個「代表目前是哪個資料實例」的值，就能巧妙地讓 React 在這個值改變時把整個子樹當成全新元素處理，比自己手動寫邏輯清空每個欄位的 state 更簡潔可靠。",
+      "verify": {
+        "checks": [],
+        "manual": "key 值變化觸發的重新掛載需要多輪真實渲染才能觀察 state 重置效果，無法用單次 node 執行驗證。"
+      }
+    },
+    {
+      "id": "ri-20-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "寫 reducer 的準則：純函式、不可變更新、依 action.type 分派",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊要把一段散落各處的 setState 邏輯，改寫成 useReducer 搭配一個 reducer 函式。寫 reducer 時該遵守哪些準則？",
+      "code": "function tasksReducer(tasks, action) {\n  switch (action.type) {\n    case \"added\":\n      return [...tasks, { id: action.id, text: action.text, done: false }];\n    case \"changed\":\n      return tasks.map((t) => (t.id === action.task.id ? action.task : t));\n    case \"deleted\":\n      return tasks.filter((t) => t.id !== action.id);\n    default:\n      throw new Error(\"Unknown action: \" + action.type);\n  }\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "reducer 必須是純函式：同樣的 (state, action) 輸入，永遠得到同樣的輸出，不能有副作用（不能發 API 請求、不能直接修改傳入的 state，要用展開運算子／filter／map 產生新陣列或新物件）；依照 action.type 用 switch 分派到不同的處理邏輯，每個分支各自回傳一份完整的新 state；遇到不認得的 action.type，通常明確拋出錯誤而不是靜默忽略，方便及早發現拼字錯誤或漏處理的 action 類型"
+        },
+        {
+          "id": "b",
+          "text": "reducer 可以自由呼叫 API、直接修改傳入的 state 物件，不受任何額外限制"
+        },
+        {
+          "id": "c",
+          "text": "reducer 只能處理一種 action.type，處理多種類型必須拆成多個 reducer 各自獨立呼叫"
+        },
+        {
+          "id": "d",
+          "text": "reducer 遇到不認得的 action.type 時，必須回傳 null 才是正確寫法"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這組準則其實跟 Redux 的 reducer 要求完全一致（本次新增的 ri-4 章節已細談過）：純函式、不可變更新、依 action.type 分派。useReducer 是 React 內建、規模較小的版本，共享同一套設計哲學；遇到不認得的 action.type 拋出錯誤而非靜默忽略，能在開發階段就及早暴露拼字錯誤或忘記處理的分支，是值得遵守的防禦性寫法。",
+      "verify": {
+        "checks": [],
+        "manual": "reducer 準則屬設計慣例說明，實際執行需要搭配 useReducer 的完整互動情境，無法用單一片段完整驗證。"
+      }
+    },
+    {
+      "id": "ri-20-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "ReactJS 背後運作總覽：JSX → Virtual DOM → Fiber → Reconciliation → Commit",
+      "docs": "",
+      "story": "",
+      "prompt": "把前面各章節談過的機制串起來：從開發者寫下一段 JSX，到使用者眼睛看到畫面更新，整條路徑大致經過哪些環節？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "①JSX 在建置階段被轉譯成 React.createElement 呼叫（前面 ri-9 章節）；②執行後產生輕量的 Virtual DOM 元素樹（同上）；③state 變動時，React 用 Fiber 架構（前面 ri-11 章節）把渲染工作組織成可中斷、可依優先權排程的單位；④reconciliation 比對新舊 Virtual DOM 樹算出差異（同上）；⑤commit 階段把差異實際套用到真實 DOM，使用者才真正看到畫面變化——這是一條有明確先後順序、環環相扣的流程，不是各自獨立無關的機制"
+        },
+        {
+          "id": "b",
+          "text": "這些環節彼此完全獨立，沒有先後順序，React 可以任意跳過其中幾個步驟"
+        },
+        {
+          "id": "c",
+          "text": "JSX 會直接、即時地操作真實 DOM，中間不經過任何 Virtual DOM 或 Fiber 相關的處理"
+        },
+        {
+          "id": "d",
+          "text": "這整條流程只在開發模式下發生，正式環境的生產模式建置會完全跳過"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這題是把本次新增的多個 Core React 章節內容串成一條完整故事線：JSX 語法糖、Virtual DOM 資料結構、Fiber 排程架構、reconciliation 比對演算法、commit 實際更新 DOM——每一環都建立在前一環之上，共同構成「開發者寫 JSX」到「使用者看到畫面」這條路徑，這條流程在開發與生產模式下都會發生，只是生產模式拿掉了額外的開發期檢查（前面 ri-14 章節談過），核心流程本身不變。",
+      "verify": {
+        "checks": [],
+        "manual": "屬 React 整體渲染流程的總覽說明題，需要原始碼層級理解跨多個環節，無法用單一可執行片段驗證。"
+      }
+    }
+  ]
+}

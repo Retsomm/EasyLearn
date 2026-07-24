@@ -1,0 +1,144 @@
+{
+  "id": "ri-7",
+  "title": "React 進階探索：SSR 與渲染陷阱",
+  "questions": [
+    {
+      "id": "ri-7-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "JSX 自動逃逸文字內容，防止注入攻擊",
+      "docs": "https://react.dev/learn/writing-markup-with-jsx",
+      "story": "",
+      "prompt": "留言區把使用者輸入的文字直接放進 JSX 裡顯示。如果使用者刻意輸入一段像是 <img src=x onerror=alert(1)> 的內容想觸發 XSS，這段程式碼渲染出的 HTML 實際上會是什麼？",
+      "code": "function Comment({ text }) {\n  return <p>{text}</p>;\n}\n\nconsole.log(renderToStaticMarkup(<Comment text={\"<img src=x onerror=alert(1)>\"} />));",
+      "options": [
+        { "id": "a", "text": "<p>&lt;img src=x onerror=alert(1)&gt;</p> —— JSX 把 {text} 這種放進大括號的內容一律當成純文字處理，渲染前會把 <、> 這類會被瀏覽器解讀成標籤的字元自動轉成 HTML 實體，瀏覽器收到的是『看起來像標籤，其實是一串逃脫過的純文字』，不會真的建立一個 img 節點，onerror 也就沒有機會被觸發" },
+        { "id": "b", "text": "<p><img src=x onerror=alert(1)></p> —— JSX 會把字串內容直接當成 HTML 解析並插入，這段程式碼確實有 XSS 風險" },
+        { "id": "c", "text": "程式會直接拋出例外，JSX 不允許在大括號裡放置任何包含尖括號的字串" },
+        { "id": "d", "text": "畫面上什麼都不會顯示，JSX 會靜默丟棄含有特殊字元的內容" }
+      ],
+      "answer": "a",
+      "explanation": "React 對「放進 JSX 大括號的值」預設一律當成文字內容處理，渲染前會逃逸掉 <、>、& 這些對 HTML 有特殊意義的字元。這正是 React 天生對抗 XSS 的機制：除非你刻意繞過這層保護（例如使用 dangerouslySetInnerHTML，光是名字就在提醒你這麼做很危險），否則使用者輸入的內容永遠只會被當成文字顯示，不會被瀏覽器誤判成真正的標籤去執行。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Comment({ text }) {\n  return <p>{text}</p>;\n}\nconsole.log(renderToStaticMarkup(<Comment text={\"<img src=x onerror=alert(1)>\"} />));", "expected": "<p>&lt;img src=x onerror=alert(1)&gt;</p>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-7-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "Keyed Fragment：不必多包一層 div 也能帶 key",
+      "docs": "https://react.dev/reference/react/Fragment",
+      "story": "",
+      "prompt": "在陣列渲染裡，每個項目除了自己的內容外還想帶一個 key，但不想多包一層沒有語意的 div（會破壞 dl/dt/dd 這種必須緊鄰的語意結構）。下面這樣寫，最終渲染出的 HTML 裡會不會出現額外的包裝節點？",
+      "code": "function Glossary({ items }) {\n  return (\n    <dl>\n      {items.map((item) => (\n        <React.Fragment key={item.id}>\n          <dt>{item.term}</dt>\n          <dd>{item.description}</dd>\n        </React.Fragment>\n      ))}\n    </dl>\n  );\n}\n\nconsole.log(renderToStaticMarkup(<Glossary items={[{ id: 1, term: \"A\", description: \"Apple\" }]} />));",
+      "options": [
+        { "id": "a", "text": "不會：<React.Fragment key={...}> 是唯一支援帶 key 屬性的 Fragment 寫法（簡寫的 <>...</> 語法不能傳任何屬性，包括 key），渲染結果完全不會多出一層包裝元素，dt/dd 會直接變成 dl 的子節點，同時 React 也拿到了必要的 key 來追蹤陣列裡的每一項" },
+        { "id": "b", "text": "會，React.Fragment 渲染出來還是會變成一個 div 節點" },
+        { "id": "c", "text": "不會多包裝元素，但因為沒有真正的 DOM 節點，React 也就沒辦法讀到 key，等於白寫了" },
+        { "id": "d", "text": "會多一層 <React.Fragment> 標籤直接出現在最終的 HTML 裡" }
+      ],
+      "answer": "a",
+      "explanation": "Fragment（不管是完整寫法 <React.Fragment> 還是簡寫 <>）在渲染結果裡完全不會產生任何 DOM 節點，純粹是「幫子元素分組」用的邏輯容器；但簡寫語法犧牲了傳遞屬性的能力，需要帶 key（陣列渲染的必要條件）時，必須改回完整的 <React.Fragment key={...}> 寫法。key 是 React 內部用來追蹤元素身份的機制，跟這個節點會不會出現在最終 HTML 裡是兩件事，即使 Fragment 本身「消失」，key 依然對 React 的協調（reconciliation）演算法生效。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Glossary({ items }) {\n  return (\n    <dl>\n      {items.map((item) => (\n        <React.Fragment key={item.id}>\n          <dt>{item.term}</dt>\n          <dd>{item.description}</dd>\n        </React.Fragment>\n      ))}\n    </dl>\n  );\n}\nimport React from 'react'\nconsole.log(renderToStaticMarkup(<Glossary items={[{ id: 1, term: \"A\", description: \"Apple\" }]} />));", "expected": "<dl><dt>A</dt><dd>Apple</dd></dl>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-7-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "伺服器端渲染階段不會執行任何 Effect",
+      "docs": "https://react.dev/reference/react/useLayoutEffect",
+      "story": "",
+      "prompt": "這個元件同時用了 useEffect 跟 useLayoutEffect，各自都會印出一段文字。用 renderToStaticMarkup 在伺服器端渲染它，這兩行 log 會被印出來嗎？",
+      "code": "function Widget() {\n  useEffect(() => { console.log(\"useEffect ran\"); });\n  useLayoutEffect(() => { console.log(\"useLayoutEffect ran\"); });\n  return <p>hi</p>;\n}\n\nconsole.log(renderToStaticMarkup(<Widget />));\nconsole.log(\"done\");",
+      "options": [
+        { "id": "a", "text": "都不會印出來：伺服器端渲染只負責把元件『渲染成一段靜態 HTML 字串』，完全沒有真實的 DOM、沒有瀏覽器的繪製流程；useEffect 與 useLayoutEffect 本質上都是綁在『瀏覽器完成繪製之後（或之前）』這個時間點觸發的，SSR 階段連這個時間點都不存在，所以兩者都不會執行，只有 renderToStaticMarkup 回傳的 HTML 字串與 \"done\" 會被印出來" },
+        { "id": "b", "text": "只有 useLayoutEffect 會印出來，因為它是同步執行的，不需要等待瀏覽器繪製" },
+        { "id": "c", "text": "只有 useEffect 會印出來，因為它是非同步、不會阻塞渲染" },
+        { "id": "d", "text": "兩者都會印出來，只是印出的先後順序不同" }
+      ],
+      "answer": "a",
+      "explanation": "useEffect 和 useLayoutEffect 差別只在於「相對瀏覽器繪製的時機」（繪製之後 vs 之前），但兩者共同的前提都是「存在一次真正的瀏覽器繪製」。伺服器端渲染的產出只是一段字串，沒有真實 DOM、也沒有繪製這回事，這兩種 Effect 因此都不會被呼叫——這也是為什麼「拿資料」這種需要在 SSR 階段就先準備好的邏輯，不能指望寫在 useEffect 裡，要嘛在伺服器端用其他方式預先取好資料，要嘛等到用戶端 hydrate 之後才觸發。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { useEffect, useLayoutEffect } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nfunction Widget() {\n  useEffect(() => { console.log(\"useEffect ran\"); });\n  useLayoutEffect(() => { console.log(\"useLayoutEffect ran\"); });\n  return <p>hi</p>;\n}\nconsole.log(renderToStaticMarkup(<Widget />));\nconsole.log(\"done\");", "expected": "<p>hi</p>\ndone" }
+        ]
+      }
+    },
+    {
+      "id": "ri-7-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "同步 SSR 底下，Suspense 內的 lazy 元件永遠顯示 fallback",
+      "docs": "https://react.dev/reference/react/Suspense",
+      "story": "",
+      "prompt": "LazyWidget 用 React.lazy 動態載入，外層包了 Suspense、fallback 顯示 \"loading...\"。用 renderToStaticMarkup 渲染這棵樹，最後印出的是 fallback 內容，還是 lazy 元件真正要顯示的內容？",
+      "code": "const LazyWidget = lazy(() => Promise.resolve({ default: () => <p>loaded</p> }));\n\nfunction App() {\n  return (\n    <Suspense fallback={<p>loading...</p>}>\n      <LazyWidget />\n    </Suspense>\n  );\n}\n\nconsole.log(renderToStaticMarkup(<App />));",
+      "options": [
+        { "id": "a", "text": "印出 <p>loading...</p>：renderToStaticMarkup 是同步、一次性把整棵樹渲染完成的舊版 API，沒辦法『暫停』等待 lazy 元件背後的 Promise resolve；只要 Suspense 底下還有尚未 resolve 的非同步資源，這種同步渲染永遠只能拿到 fallback 內容，真正的內容要等到瀏覽器端 hydrate、Promise 真正 resolve 之後才會顯示出來" },
+        { "id": "b", "text": "印出 <p>loaded</p>：因為這裡的 Promise.resolve() 沒有非同步延遲，會立刻同步完成" },
+        { "id": "c", "text": "程式會直接拋出例外，Suspense 不能跟 renderToStaticMarkup 一起使用" },
+        { "id": "d", "text": "兩者都會印出，先顯示 loading... 過一小段時間後自動替換成 loaded" }
+      ],
+      "answer": "a",
+      "explanation": "即使 Promise 本身「立刻」resolve，JavaScript 的 Promise 一定是非同步微任務（microtask），不會在呼叫的當下同步拿到結果；而 renderToStaticMarkup 是一次性、同步跑完的舊版 API，不會等待任何微任務完成。這正是為什麼 React 官方後來推出串流式的 SSR API（如 renderToPipeableStream）取代這種舊版同步 API——只有串流版本才有能力『先送出 fallback，等資料真的到位後再補上真正的內容』。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { Suspense, lazy } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nconst LazyWidget = lazy(() => Promise.resolve({ default: () => <p>loaded</p> }));\nfunction App() {\n  return (\n    <Suspense fallback={<p>loading...</p>}>\n      <LazyWidget />\n    </Suspense>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<p>loading...</p>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-7-q5",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "Error Boundary 攔截不到同步 SSR 階段的錯誤",
+      "docs": "https://react.dev/reference/react/Component",
+      "story": "",
+      "prompt": "這個 ErrorBoundary 在瀏覽器裡執行完全正常——Bomb 拋出的錯誤會被接住，畫面顯示「發生錯誤了」。但如果改用 renderToStaticMarkup 在伺服器端渲染同一棵樹，會發生什麼事？",
+      "code": "class ErrorBoundary extends React.Component {\n  state = { hasError: false };\n  static getDerivedStateFromError() {\n    return { hasError: true };\n  }\n  render() {\n    if (this.state.hasError) return <p>發生錯誤了</p>;\n    return this.props.children;\n  }\n}\n\nfunction Bomb() {\n  throw new Error(\"boom\");\n}\n\nfunction App() {\n  return (\n    <ErrorBoundary>\n      <Bomb />\n    </ErrorBoundary>\n  );\n}\n\nconsole.log(renderToStaticMarkup(<App />));",
+      "options": [
+        { "id": "a", "text": "程式會直接拋出未捕捉的例外，renderToStaticMarkup 整個中斷、不會印出任何 HTML——Error Boundary 的攔截機制是設計給用戶端渲染／commit 階段使用的，並不涵蓋這種同步的伺服器端靜態渲染，Bomb 拋出的錯誤會直接往外傳，不會被 ErrorBoundary 接住" },
+        { "id": "b", "text": "伺服器端行為跟瀏覽器端一致，一樣會印出「發生錯誤了」這段 HTML" },
+        { "id": "c", "text": "伺服器端會印出空字串，不會有任何錯誤，也不會顯示任何 fallback 內容" },
+        { "id": "d", "text": "renderToStaticMarkup 遇到子元件拋出的錯誤時，會自動重試三次才真正拋出例外" }
+      ],
+      "answer": "a",
+      "explanation": "這是一個容易誤判的陷阱：Error Boundary 在瀏覽器端能攔截渲染錯誤，讓人直覺以為它在任何渲染環境都通用；但傳統同步的伺服器端渲染 API（renderToStaticMarkup／renderToString）並不會把子元件拋出的錯誤導向父層的 getDerivedStateFromError，錯誤會直接沿著呼叫堆疊往外拋，中斷整個渲染流程。想在伺服器端也優雅處理渲染錯誤，需要改用支援串流的新版 SSR API 搭配其提供的錯誤處理選項，不能只依賴 Error Boundary。",
+      "verify": {
+        "checks": [
+          { "jsx": "import React from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nclass ErrorBoundary extends React.Component {\n  state = { hasError: false };\n  static getDerivedStateFromError() {\n    return { hasError: true };\n  }\n  render() {\n    if (this.state.hasError) return <p>發生錯誤了</p>;\n    return this.props.children;\n  }\n}\nfunction Bomb() {\n  throw new Error(\"boom\");\n}\nfunction App() {\n  return (\n    <ErrorBoundary>\n      <Bomb />\n    </ErrorBoundary>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expectError": "boom" }
+        ]
+      }
+    },
+    {
+      "id": "ri-7-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "React 19：函式元件的 defaultProps 已失效",
+      "docs": "https://react.dev/blog/2024/04/25/react-19-upgrade-guide",
+      "story": "",
+      "prompt": "這段程式碼在 React 17／18 可以正常運作、沒傳 name 時會顯示預設的 Guest。換到 React 19 之後，畫面實際上會顯示什麼？",
+      "code": "function Greeting({ name }) {\n  return <p>Hello, {name}</p>;\n}\nGreeting.defaultProps = { name: \"Guest\" };\n\nconsole.log(renderToStaticMarkup(<Greeting />));",
+      "options": [
+        { "id": "a", "text": "<p>Hello, </p>（name 是空的）：React 19 移除了函式元件的 defaultProps 支援，Greeting.defaultProps 這行程式碼不會報錯、也依然可以賦值成功，但 React 已經不會再讀取它；要達到『沒傳 name 時顯示預設值』的效果，得改用 JavaScript 原生的預設參數語法 function Greeting({ name = \"Guest\" })" },
+        { "id": "b", "text": "<p>Hello, Guest</p>：defaultProps 在所有 React 版本都完全相容，行為沒有任何改變" },
+        { "id": "c", "text": "程式會直接拋出例外，因為 defaultProps 已經從 API 裡整個移除，賦值當下就會報錯" },
+        { "id": "d", "text": "<p>Hello, undefined</p>：React 19 改成顯示字面上的 undefined 文字，而不是空字串" }
+      ],
+      "answer": "a",
+      "explanation": "defaultProps 原本是 class component 時代遺留下來、後來也適用於函式元件的機制；React 19 的其中一項清理是移除函式元件對 defaultProps 的支援（class component 仍保留），但沒有把它做成報錯，只是單純不再讀取——這種『靜默失效』比直接報錯更危險，容易在升級後留下一段『看起來合法、實際上完全沒作用』的殘留程式碼。官方建議統一改用 JavaScript 原生的預設參數語法，這在函式元件裡本來就完全能表達同樣的意圖，也不受這次移除影響。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Greeting({ name }) {\n  return <p>Hello, {name}</p>;\n}\nGreeting.defaultProps = { name: \"Guest\" };\nconsole.log(renderToStaticMarkup(<Greeting />));", "expected": "<p>Hello, </p>" }
+        ]
+      }
+    }
+  ]
+}

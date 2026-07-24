@@ -96,6 +96,25 @@
       "answer": "a",
       "explanation": "這個順序反映的是「推理與測試難度」：Data 不用執行就能檢視、Calculation 只需要給輸入斷言輸出、Action 則要準備假的外部環境還要驗證副作用真的發生了。能停在光譜左邊解決問題，就不要往右升級。",
       "verify": { "manual": "概念題：以三種寫法的測試難度對比取代抽象偏好說明，無可執行程式碼。" }
+    },
+    {
+      "id": "fp-3-q6",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "判斷 Action 的關鍵問句：呼叫時機/次數會不會影響結果",
+      "docs": "",
+      "story": "",
+      "prompt": "面對一段陌生的程式碼，想快速判斷它是 Action 還是 Calculation，該問自己哪個關鍵問題？",
+      "code": "function getCurrentUser() { return currentLoggedInUser; }\nfunction double(x) { return x * 2; }",
+      "options": [
+        { "id": "a", "text": "問「如果我現在呼叫它一次，跟等一下再呼叫一次，或者連續呼叫兩次，結果／造成的影響會不會不一樣？」——getCurrentUser() 這次跟下次呼叫可能因為使用者登入狀態改變而回傳不同結果，是 Action；double(x) 不管呼叫幾次、什麼時候呼叫，同樣的 x 永遠得到同樣的結果，是 Calculation" },
+        { "id": "b", "text": "問「這個函式的程式碼行數有沒有超過 10 行」，超過就是 Action，沒超過就是 Calculation" },
+        { "id": "c", "text": "問「這個函式有沒有回傳值」，有回傳值就是 Calculation，沒有就是 Action" },
+        { "id": "d", "text": "問「這個函式的名稱是不是動詞開頭」，是動詞開頭就是 Action" }
+      ],
+      "answer": "a",
+      "explanation": "「呼叫時機或次數會不會影響結果」是辨識 Action 最直接的判斷句：只要答案是「會」，就代表這個函式依賴或影響了某個會隨時間變化的外部狀態，是 Action；答案是「不會」，才有資格被歸類成 Calculation。程式碼行數、有沒有回傳值、命名風格都不是可靠的判斷依據。",
+      "verify": { "manual": "概念題：辨識口訣搭配具體程式碼範例，無可執行程式碼。" }
     }
   ]
 }

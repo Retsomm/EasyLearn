@@ -1,0 +1,198 @@
+{
+  "id": "ri-27",
+  "title": "React 進階探索：Error Boundary 深入",
+  "questions": [
+    {
+      "id": "ri-27-q1",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "componentDidCatch(error, info) 的第二個參數提供元件堆疊資訊",
+      "docs": "https://react.dev/reference/react/Component#componentdidcatch",
+      "story": "",
+      "prompt": "componentDidCatch 這個生命週期方法接收兩個參數。第二個參數 info 裡的 componentStack，內容大致是什麼？",
+      "code": "class ErrorBoundary extends React.Component {\n  state = { hasError: false };\n  static getDerivedStateFromError() {\n    return { hasError: true };\n  }\n  componentDidCatch(error, info) {\n    console.log(error.message);\n    console.log(typeof info.componentStack);\n  }\n  render() {\n    if (this.state.hasError) return <p>發生錯誤了</p>;\n    return this.props.children;\n  }\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "info.componentStack 是一段字串，記錄『拋出錯誤的那個元件，在元件樹裡是被哪些父層元件層層包裹著』的完整路徑（類似瀏覽器原生錯誤的 stack trace，但這裡記的是 React 元件的巢狀關係，不是 JS 函式呼叫堆疊）；這讓開發者能快速定位『這個錯誤是在畫面的哪個區塊、哪個元件層級發生的』，而不只是知道『哪個函式拋出了這個錯誤』"
+        },
+        {
+          "id": "b",
+          "text": "componentStack 是一個布林值，代表這個錯誤是否已經被其他 Error Boundary 攔截過"
+        },
+        {
+          "id": "c",
+          "text": "componentStack 是拋出錯誤那個元件的 props 物件快照"
+        },
+        {
+          "id": "d",
+          "text": "componentDidCatch 只接收一個參數，不存在第二個 info 參數"
+        }
+      ],
+      "answer": "a",
+      "explanation": "componentDidCatch(error, info) 的第二個參數是專門給 Error Boundary 用的除錯資訊，componentStack 這段字串記錄的是「元件層級」的巢狀路徑，補足了原生 JS 錯誤堆疊只看得到函式呼叫關係、看不出 React 元件樹結構的落差，在除錯『這個錯誤發生在畫面哪個區塊』時特別有用。",
+      "verify": {
+        "checks": [],
+        "manual": "componentDidCatch 需要真實的用戶端渲染與子元件拋錯才能觸發並觀察 componentStack 內容，無法用 renderToStaticMarkup 或 node -e 驗證（前面 ri-7 章節已驗證同步 SSR 不會觸發 Error Boundary）。"
+      }
+    },
+    {
+      "id": "ri-27-q2",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "Error Boundary 攔不到的幾種情境：事件處理器、非同步程式碼、SSR、自己拋的錯",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊在整個應用程式外層包了一個 Error Boundary，以為所有錯誤都會被攔截、顯示成統一的錯誤畫面。結果一個按鈕的 onClick 事件處理器裡拋出的錯誤，完全沒有被攔到，直接讓整個頁面卡死、console 出現未捕捉的錯誤。為什麼 Error Boundary 沒有生效？",
+      "code": "function Button() {\n  function handleClick() {\n    throw new Error(\"boom\"); // 事件處理器裡拋出的錯誤\n  }\n  return <button onClick={handleClick}>點我</button>;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "Error Boundary 只攔截『渲染過程』中拋出的錯誤（元件函式執行、生命週期方法執行期間），不包含事件處理器裡的錯誤、非同步程式碼（setTimeout、Promise）裡的錯誤，也不包含伺服器端渲染期間的錯誤（前面 ri-7 章節已驗證過）；事件處理器裡的錯誤需要自己用一般的 try/catch 包住，或搭配全域的錯誤監控工具（如 window.onerror）才能攔截，Error Boundary 這個機制的設計範圍從一開始就限定在渲染階段"
+        },
+        {
+          "id": "b",
+          "text": "Error Boundary 應該要能攔截所有情境的錯誤，這裡沒有攔到是因為套件版本過舊的 bug"
+        },
+        {
+          "id": "c",
+          "text": "問題出在 Error Boundary 沒有包在 <Suspense> 裡面，兩者必須搭配使用才能攔截事件處理器的錯誤"
+        },
+        {
+          "id": "d",
+          "text": "事件處理器裡的錯誤只有在 React 19 之後的版本才能被 Error Boundary 攔截，這個專案的版本太舊"
+        }
+      ],
+      "answer": "a",
+      "explanation": "「Error Boundary 只管渲染階段」是官方文件明確劃定的邊界，這也是它常讓新手誤判涵蓋範圍的地方：事件處理器、setTimeout／Promise 這類非同步回呼、伺服器端渲染，都在這個邊界之外。事件處理器裡的錯誤處理，官方建議直接用一般的 try/catch 包住易出錯的邏輯，這是完全不同的錯誤處理機制，不能靠 Error Boundary 一次涵蓋所有情境。",
+      "verify": {
+        "checks": [],
+        "manual": "事件處理器內拋出的錯誤需要真實瀏覽器點擊互動才能觸發並觀察是否被攔截，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-27-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "React 16 起，渲染階段的未捕捉錯誤會讓整棵元件樹被卸載，而不是停留在半毀壞的畫面",
+      "docs": "",
+      "story": "",
+      "prompt": "React 16 之前，一個元件渲染時拋出的未捕捉錯誤，可能只會讓畫面停留在『部分損壞、UI 顯示不完整』的狀態。React 16 起，如果沒有任何 Error Boundary 攔截這個錯誤，行為改成了什麼？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "React 16 起，渲染階段一旦出現沒有被任何 Error Boundary 攔截的錯誤，會把『整棵』受影響的元件樹（不只是拋錯的那個元件）從畫面上完全卸載，而不是讓應用程式停留在一個不完整、可能顯示錯誤或誤導資訊的『半毀壞』畫面；這是刻意的設計決策——寧可讓使用者看到空白（配合 Error Boundary 顯示合理的備援畫面），也不要讓使用者看到一個邏輯已經壞掉、卻表面上看起來還在運作的 UI"
+        },
+        {
+          "id": "b",
+          "text": "React 16 起，未捕捉的渲染錯誤會被自動忽略，畫面照樣正常顯示，不會有任何變化"
+        },
+        {
+          "id": "c",
+          "text": "React 16 起，未捕捉的錯誤會自動重試渲染三次，三次都失敗才會卸載元件樹"
+        },
+        {
+          "id": "d",
+          "text": "這個行為在 React 16 前後完全沒有任何改變"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是 React 16 一項重要但容易被忽略的行為改變：與其冒著讓使用者看到一個邏輯已經壞掉、卻可能還顯示著誤導性內容的畫面，不如乾脆卸載掉受影響的整棵樹。這也直接提高了 Error Boundary 的重要性——沒有妥善布建 Error Boundary，一個原本只影響小範圍的渲染錯誤，可能會讓一大片（甚至整個）UI 消失。",
+      "verify": {
+        "checks": [],
+        "manual": "整棵樹卸載的行為需要真實用戶端渲染環境搭配未捕捉錯誤才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-27-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Error Boundary 該放在哪：依「希望多大範圍一起失效」決定放置的層級",
+      "docs": "",
+      "story": "",
+      "prompt": "一個頁面同時有「側邊導覽列」跟「主要內容區塊」。主要內容區塊裡某個元件渲染出錯時，理想的使用者體驗是側邊導覽列依然正常顯示、可以正常導頁離開，只有主要內容區塊顯示錯誤訊息。Error Boundary 該放在哪一層？",
+      "code": "// 好的做法：分別包住彼此獨立的區塊\n<Layout>\n  <Sidebar />\n  <ErrorBoundary fallback={<p>內容載入失敗</p>}>\n    <MainContent />\n  </ErrorBoundary>\n</Layout>\n\n// 不好的做法：整個頁面共用一個 Error Boundary\n<ErrorBoundary fallback={<p>發生錯誤了</p>}>\n  <Layout>\n    <Sidebar />\n    <MainContent />\n  </Layout>\n</ErrorBoundary>",
+      "options": [
+        {
+          "id": "a",
+          "text": "把 Error Boundary 放在『各自獨立、希望彼此不互相拖累』的區塊外層，而不是整個頁面共用一個：這裡把 Error Boundary 放在 MainContent 外面，Sidebar 出錯不會影響 MainContent，反過來 MainContent 出錯也不會連累 Sidebar 一起消失。如果 Error Boundary 只放在最外層包住整個頁面，任何一個小區塊出錯，都會讓整頁（包含原本運作正常的 Sidebar）一起顯示備援畫面，影響範圍被不必要地放大"
+        },
+        {
+          "id": "b",
+          "text": "Error Boundary 只能放在整個應用程式的最外層，不能包住頁面內部的局部區塊"
+        },
+        {
+          "id": "c",
+          "text": "Error Boundary 的放置位置對錯誤影響範圍完全沒有任何差異，放哪裡效果都一樣"
+        },
+        {
+          "id": "d",
+          "text": "Error Boundary 應該包住每一個最小的 DOM 元素，粒度越細越好，沒有任何取捨"
+        }
+      ],
+      "answer": "a",
+      "explanation": "Error Boundary 的放置粒度直接決定「一個錯誤會拖累多大範圍」，這是實務上需要依產品體驗權衡的設計決策：太粗（只放最外層）會讓小範圍錯誤波及整頁；太細（每個最小元素都包一層）會增加大量樣板程式碼、也不見得每個地方都需要獨立的錯誤隔離。常見的合理做法是依「使用者體驗上，這幾塊彼此獨立、希望能各自失效互不影響」的功能區塊邊界來放置。",
+      "verify": {
+        "checks": [],
+        "manual": "Error Boundary 影響範圍的實際使用者體驗需要真實渲染錯誤情境才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-27-q5",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "元件堆疊資訊的好處：定位錯誤發生在哪個畫面區塊，而不只是哪一行程式碼",
+      "docs": "",
+      "story": "",
+      "prompt": "只看瀏覽器原生的 JavaScript 錯誤堆疊（哪個函式呼叫了哪個函式），跟額外看 Error Boundary 提供的元件堆疊（componentStack），兩者能幫忙定位問題的角度有什麼不同？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "JS 原生堆疊回答『這個錯誤是被哪一連串函式呼叫觸發的』（程式碼執行路徑的角度）；元件堆疊回答『這個錯誤發生在畫面上、元件樹的哪個位置』（UI 結構的角度）——同一個工具函式如果被多個不同畫面區塊共用，光看 JS 堆疊可能看不出『這次是哪個畫面在用它時出錯』，元件堆疊能直接告訴你『是 Sidebar 裡的 UserAvatar，還是 MainContent 裡的 CommentList 用到它時出的錯』，兩種資訊互補，一起看能更快定位問題"
+        },
+        {
+          "id": "b",
+          "text": "兩者提供的資訊完全相同，只是呈現格式不同"
+        },
+        {
+          "id": "c",
+          "text": "元件堆疊只在正式環境（production build）才會顯示，開發模式反而看不到"
+        },
+        {
+          "id": "d",
+          "text": "JS 原生堆疊在使用 React 之後會完全消失，只剩下元件堆疊可以參考"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這兩種堆疊資訊分別對應「程式碼執行路徑」與「UI 結構位置」這兩個不同的除錯視角，在共用元件、共用工具函式的專案裡特別互補——單看其中一種常常不足以快速定位問題，元件堆疊補足了原生堆疊看不到的『這是畫面上哪個區塊』這層資訊。",
+      "verify": {
+        "checks": [],
+        "manual": "屬除錯資訊互補性的概念說明題，無可執行程式碼佐證兩種堆疊格式的實際呈現差異。"
+      }
+    },
+    {
+      "id": "ri-27-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "getDerivedStateFromError（算 state，無副作用）vs componentDidCatch（處理副作用，如記錄錯誤）",
+      "docs": "",
+      "story": "",
+      "prompt": "一個完整的 Error Boundary 通常會同時定義 static getDerivedStateFromError() 跟 componentDidCatch()，而不是只寫其中一個。這兩者的分工是什麼？",
+      "code": "class ErrorBoundary extends React.Component {\n  state = { hasError: false };\n  static getDerivedStateFromError(error) {\n    return { hasError: true }; // 只回傳新 state，不做任何副作用\n  }\n  componentDidCatch(error, info) {\n    logErrorToService(error, info.componentStack); // 副作用：回報錯誤到監控服務\n  }\n  render() {\n    if (this.state.hasError) return <p>發生錯誤了</p>;\n    return this.props.children;\n  }\n}",
+      "options": [
+        { "id": "a", "text": "getDerivedStateFromError 是一個靜態方法，只負責『根據這個錯誤，算出新的 state 該長什麼樣』，官方明確要求它不能有副作用（不能在裡面呼叫 API、寫 log）；componentDidCatch 才是允許執行副作用的地方，通常用來把錯誤回報給監控服務。兩者刻意分開，是延續 React『state 計算』與『副作用執行』要分開的一貫設計原則" },
+        { "id": "b", "text": "兩者功能完全重複，隨便留一個、刪掉另一個都不會有任何影響" },
+        { "id": "c", "text": "getDerivedStateFromError 才是用來記錄錯誤到監控服務的地方，componentDidCatch 只負責算 state" },
+        { "id": "d", "text": "只有 componentDidCatch 是必要的，getDerivedStateFromError 是已經被棄用的舊 API" }
+      ],
+      "answer": "a",
+      "explanation": "這組分工呼應 React 一貫的設計哲學：『算出下一個 state』跟『執行副作用』是兩件事，該放在不同的地方（這也是 reducer 必須是純函式、useEffect 才能做副作用的同一套原則）。getDerivedStateFromError 只管當機時 state 該變成什麼樣，componentDidCatch 才是记錄、上報這類有副作用的操作該待的地方，兩者都保留、各司其職，才是官方建議的完整寫法。",
+      "verify": {
+        "checks": [],
+        "manual": "getDerivedStateFromError／componentDidCatch 需要真實用戶端渲染與子元件拋錯才能觸發並觀察兩者各自的呼叫時機，無法用 renderToStaticMarkup 或 node -e 驗證。"
+      }
+    }
+  ]
+}

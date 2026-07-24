@@ -3,12 +3,11 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
 import { colors, fonts } from '@/constants/theme';
-import { chapters, type IconName, type Progress } from '@easylearn/core';
+import { chapters, LEVEL_SIZE, type Progress } from '@easylearn/core';
 
-type StatusIcon = 'lock' | 'check-circle' | 'play';
+type StatusIcon = 'check-circle' | 'play';
 
 const STATUS_COLOR: Record<StatusIcon, string> = {
-  lock: colors.locked,
   'check-circle': colors.cyan,
   play: colors.primary,
 };
@@ -37,15 +36,12 @@ export default function ChapterMap({ chapterId, progress, onStartLevel, onBack }
 
       {chapter.levels.map((level, i) => {
         const record = progress.completedLevels[level.id];
-        const prevDone = i === 0 || progress.completedLevels[chapter.levels[i - 1].id];
-        const locked = !prevDone;
-        const statusIcon: StatusIcon = locked ? 'lock' : record ? 'check-circle' : 'play';
+        const statusIcon: StatusIcon = record ? 'check-circle' : 'play';
         return (
           <Pressable
             key={level.id}
-            disabled={locked}
             onPress={() => onStartLevel(level.id)}
-            style={[styles.levelRow, locked && styles.levelLocked]}
+            style={styles.levelRow}
           >
             <View style={styles.levelIcon}>
               <Icon name={statusIcon} size={20} color={STATUS_COLOR[statusIcon]} />
@@ -56,9 +52,7 @@ export default function ChapterMap({ chapterId, progress, onStartLevel, onBack }
             <Text style={styles.levelRecord}>
               {record
                 ? `最佳 ${record.best}/${record.total}`
-                : locked
-                  ? '完成上一關解鎖'
-                  : `共 ${level.questions.length} 題`}
+                : `共 ${Math.min(LEVEL_SIZE, level.questions.length)} 題`}
             </Text>
           </Pressable>
         );
@@ -103,9 +97,6 @@ const styles = StyleSheet.create({
     borderColor: colors.optionBorder,
     paddingVertical: 16,
     paddingHorizontal: 18,
-  },
-  levelLocked: {
-    opacity: 0.55,
   },
   levelIcon: {
     width: 28,

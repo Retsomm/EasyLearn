@@ -1,0 +1,166 @@
+{
+  "id": "ri-19",
+  "title": "React 進階探索：Hooks 基礎心智模型",
+  "questions": [
+    {
+      "id": "ri-19-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Hooks 讓函式元件也能擁有 state 與生命週期能力，不用改寫成 class",
+      "docs": "",
+      "story": "",
+      "prompt": "Hooks 出現之前，只有 class component 能有自己的 state、能用生命週期方法處理副作用。Hooks 解決了什麼根本問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "讓函式元件也能『掛上』狀態與生命週期相關的能力（useState 對應 state、useEffect 對應多個生命週期方法的組合），不用為了取得這些能力被迫改寫成 class component；這也連帶解決了 class component 常見的痛點——邏輯散落在不同生命週期方法裡難以重用、this 綁定容易出錯" },
+        { "id": "b", "text": "Hooks 讓函式元件擁有比 class component 更高的渲染優先權，永遠比 class component 先渲染" },
+        { "id": "c", "text": "Hooks 的存在只是為了縮短程式碼行數，跟狀態或生命週期能力無關" },
+        { "id": "d", "text": "Hooks 讓元件可以完全不需要接收任何 props" }
+      ],
+      "answer": "a",
+      "explanation": "Hooks 的官方動機文件明確列出幾個 class component 的痛點：邏輯難以在元件間重用（HOC／render props 的巢狀問題）、龐大元件難以拆分（一個 componentDidMount 裡塞了好幾種不相關的邏輯）、this 綁定容易出錯。useState／useEffect 這些 Hooks 讓函式元件也能表達同樣的能力，同時緩解這些痛點。",
+      "verify": { "checks": [], "manual": "屬 Hooks 設計動機的概念說明題，無可執行程式碼。" }
+    },
+    {
+      "id": "ri-19-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Hooks 規則：呼叫順序每次渲染都要一致，不能放進條件式",
+      "docs": "https://react.dev/warnings/invalid-hook-call-warning",
+      "story": "",
+      "prompt": "一個元件把 useState 放進 if 判斷式裡，只在某個條件成立時才呼叫。這違反了 Hooks 的哪一條核心規則？",
+      "code": "function Panel({ showExtra }) {\n  const [main, setMain] = useState(0);\n  if (showExtra) {\n    const [extra, setExtra] = useState(0); // 條件式呼叫 Hook：違規\n  }\n  return <p>{main}</p>;\n}",
+      "options": [
+        { "id": "a", "text": "違反了『Hooks 必須在每次渲染時，都以完全相同的順序被呼叫』這條規則：React 內部是依照『這是這次渲染呼叫的第 N 個 Hook』這個順序、而不是變數名稱，去對應到內部儲存的狀態；如果 showExtra 在不同渲染之間變來變去，Hook 呼叫的總數與順序就會跟著變動，導致 React 把某次渲染的狀態誤對應到錯誤的 Hook 上，這也是為什麼 use()（前面 ri-8 章節談過）刻意被設計成這條規則的例外" },
+        { "id": "b", "text": "沒有違反任何規則，Hooks 本來就可以自由放進條件式，這是完全合法的寫法" },
+        { "id": "c", "text": "違反的是『一個元件最多只能呼叫五個 Hooks』這條數量限制" },
+        { "id": "d", "text": "違反的是『useState 不能出現在函式元件裡』這條規則，只能出現在自訂 Hook 裡" }
+      ],
+      "answer": "a",
+      "explanation": "這條規則的根本原因是實作機制：React 不是用「變數名稱」記錄每個 useState 對應哪一份狀態，而是用「這是第幾次呼叫」這個呼叫順序當索引；只要呼叫順序在不同渲染間可能不一致（放進條件式、迴圈、提早 return 之後），這個索引對應就會錯亂。use() 是刻意設計成免疫這條規則的特例，其餘所有 Hooks（useState、useEffect、useContext...）都必須遵守。",
+      "verify": { "checks": [], "manual": "Hooks 呼叫順序錯亂在多輪真實渲染間才會顯現對應錯誤，無法用單次 node 執行驗證，且開發模式下才會印出對應警告。" }
+    },
+    {
+      "id": "ri-19-q3",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "遷移到 Hooks 是漸進式的選擇，不需要一次重寫所有 class component",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊有一個穩定運作多年、幾乎不再變動的 class component。Hooks 全面普及之後，是不是必須把它重寫成函式元件？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不需要：class component 至今仍然被完整支援，React 官方從未要求、也沒有計畫強制淘汰它（唯一站得住腳的『必須用 class』情境是前面 ri-9 章節談過的 Error Boundary）。Hooks 遷移通常建議循序漸進——新元件用函式元件寫、真的需要修改邏輯的舊元件才順便改寫，沒有變動需求的穩定舊元件，重寫的風險（引入新 bug）通常大於收益，不需要為了『追新』而重寫" },
+        { "id": "b", "text": "必須立刻全部重寫，React 已經正式宣布未來版本會完全移除 class component 支援" },
+        { "id": "c", "text": "不需要，因為 class component 從技術上無法被轉換成函式元件加 Hooks 的寫法" },
+        { "id": "d", "text": "只有超過 100 行程式碼的 class component 才需要重寫，較短的可以保留" }
+      ],
+      "answer": "a",
+      "explanation": "React 官方的立場一貫是「Hooks 是新增能力，不是移除 class component」，重寫與否應該看實際維護成本與收益，而不是單純追新。這也是務實的技術債管理原則：沒有變動需求、運作穩定的程式碼，貿然重構反而承擔不必要的風險。",
+      "verify": { "checks": [], "manual": "屬技術債與重構時機判斷的推理題，無可執行程式碼。" }
+    },
+    {
+      "id": "ri-19-q4",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "useState 回傳的是一個長度固定為 2 的陣列，用陣列解構取名",
+      "docs": "https://react.dev/reference/react/useState",
+      "story": "",
+      "prompt": "useState 回傳的結果用陣列解構語法 const [count, setCount] = useState(0) 取用，而不是物件解構（const { value, setValue } = ...）。這是為什麼？",
+      "code": "function useCounter() {\n  const result = useState(0);\n  console.log(Array.isArray(result), result.length);\n  return result;\n}\nuseCounter();",
+      "options": [
+        { "id": "a", "text": "useState 回傳的其實就是一個長度固定為 2 的普通陣列 [目前值, setter函式]；用陣列解構的好處是呼叫端可以『自由重新命名』這兩個值（const [count, setCount]、const [name, setName]...），不像物件解構如果 useState 回傳固定的欄位名稱（例如 value、setValue），同一個元件裡用多次 useState 就會撞名，還得每次額外用 as 重新命名，陣列解構天生沒有這個困擾" },
+        { "id": "b", "text": "useState 回傳的是一個物件，陣列解構語法只是巧合能正常運作" },
+        { "id": "c", "text": "陣列解構純粹是歷史包袱，如果重新設計 React，官方會改用物件解構" },
+        { "id": "d", "text": "useState 回傳值的型別會依呼叫時機不同，有時是陣列有時是物件" }
+      ],
+      "answer": "a",
+      "explanation": "這是一個常被問到、看似小細節但背後有明確設計理由的問題：陣列解構允許呼叫端任意命名兩個值，這對『同一個元件裡會呼叫好幾次 useState，每次都需要不同名稱』的實際使用情境特別友善，是刻意的 API 設計選擇，不是隨意或歷史包袱。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { useState } from 'react'\nfunction useCounter() {\n  const result = useState(0);\n  console.log(Array.isArray(result), result.length);\n  return result;\n}\nfunction Test() {\n  useCounter();\n  return null;\n}\nimport { renderToStaticMarkup } from 'react-dom/server'\nrenderToStaticMarkup(<Test />);", "expected": "true 2" }
+        ]
+      }
+    },
+    {
+      "id": "ri-19-q5",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Hooks 的靈感來源：函數式程式設計與其他語言的類似概念",
+      "docs": "",
+      "story": "",
+      "prompt": "React 團隊在推出 Hooks 時提到，這個設計參考了其他程式語言／函式庫的一些既有概念。這反映了什麼樣的設計態度？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "Hooks 不是憑空發明的全新概念，而是借鑑了函數式程式設計裡『用可組合的小函式表達邏輯』這個思路（呼應本專案 fp 章節談過的高階函式、組合），也參考了社群裡早已存在的一些實驗性模式（如 react-future 討論串裡提出的一些構想）；這種『站在既有想法上整理、打磨成官方一致的 API』的做法，讓 Hooks 能吸收社群已經驗證過的經驗，而不是從零開始賭一個全新的未經驗證的設計" },
+        { "id": "b", "text": "Hooks 是完全獨立於任何既有程式設計概念、React 團隊獨創、沒有參考任何外部靈感的全新發明" },
+        { "id": "c", "text": "Hooks 是直接照抄 Angular 的服務注入機制，兩者的實作與心智模型完全相同" },
+        { "id": "d", "text": "Hooks 這個名稱純粹是行銷考量，設計上跟函數式程式設計沒有任何關聯" }
+      ],
+      "answer": "a",
+      "explanation": "技術設計很少是全新發明，Hooks 的演講與文件裡都提到參考了函數式程式設計、社群已有的實驗；這種做法本身就是一種務實的工程態度——借鑑已被驗證過的想法、整理成一致的官方 API，而不是為了「原創」硬要從零設計一套沒人試過的東西。",
+      "verify": { "checks": [], "manual": "屬 Hooks 設計歷史脈絡的說明題，無可執行程式碼。" }
+    },
+    {
+      "id": "ri-19-q6",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "JSX 需要建置工具轉譯，瀏覽器本身不認得 JSX 語法",
+      "docs": "https://react.dev/learn/writing-markup-with-jsx",
+      "story": "",
+      "prompt": "如果把一個 .jsx 檔案的原始內容（未經轉譯）直接丟給瀏覽器的 <script type=\"text/javascript\"> 執行，會發生什麼事？",
+      "code": "// 未轉譯的原始 JSX\nfunction App() {\n  return <h1>Hi</h1>;\n}",
+      "options": [
+        { "id": "a", "text": "會拋出 JavaScript 語法錯誤：<h1>Hi</h1> 這種尖括號語法不是合法的 JavaScript 表達式，瀏覽器的 JS 引擎完全不認得 JSX 語法；JSX 必須先經過 Babel、esbuild、SWC 這類工具在建置階段轉譯成 React.createElement(...) 這種合法的 JavaScript 函式呼叫，瀏覽器實際執行的永遠是轉譯後的產物，從來不是原始 JSX 檔案本身" },
+        { "id": "b", "text": "現代瀏覽器（Chrome、Firefox 最新版）已經原生支援直接解析 JSX 語法，不需要任何轉譯步驟" },
+        { "id": "c", "text": "瀏覽器會把 JSX 當成一段 HTML 字串直接插入頁面，忽略外層的 function 宣告" },
+        { "id": "d", "text": "只有 Safari 瀏覽器原生支援 JSX，其餘瀏覽器都需要轉譯" }
+      ],
+      "answer": "a",
+      "explanation": "JSX 從來不是瀏覽器原生理解的語法，這是需要建置工具介入的根本原因；每一個用 JSX 開發的 React 專案，背後都有一道轉譯步驟（不管是獨立呼叫 Babel、還是打包工具內建的轉譯 loader），把類 HTML 語法轉成 React.createElement 呼叫，瀏覽器實際看到、執行的永遠是轉譯後的純 JavaScript。",
+      "verify": { "checks": [], "manual": "瀏覽器直接執行未轉譯 JSX 會拋出語法錯誤，需要真實瀏覽器環境觀察錯誤訊息，此處著重原理陳述。" }
+    },
+    {
+      "id": "ri-19-q7",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "prop drilling：資料要穿過好幾層跟資料本身無關的中間元件",
+      "docs": "",
+      "story": "",
+      "prompt": "一份使用者資料需要從最頂層的 App 元件，一路往下傳到第 5 層深的 Avatar 元件，中間 3 層元件（Layout、Sidebar、ProfileCard）完全不需要用到這份資料，只是負責『轉手』把 props 繼續往下傳。這個現象叫什麼，通常怎麼解決？",
+      "code": "<App>\n  <Layout user={user}>\n    <Sidebar user={user}>\n      <ProfileCard user={user}>\n        <Avatar user={user} /> {/* 真正用到 user 的只有這裡 */}\n      </ProfileCard>\n    </Sidebar>\n  </Layout>\n</App>",
+      "options": [
+        { "id": "a", "text": "這叫 prop drilling（прop 逐層鑽孔）：中間層元件被迫攜帶一份自己根本用不到的 props，純粹只是為了轉手給更深層的子元件；常見解法是用 Context（讓深層元件直接向上『訂閱』這份資料，不需要中間層手動轉傳）或狀態管理工具（Redux 等），跳過中間層直接把資料送到真正需要的地方" },
+        { "id": "b", "text": "這是正常、推薦的資料傳遞方式，不需要任何額外處理，props 穿越再多層都沒有問題" },
+        { "id": "c", "text": "這叫 Lifting State Up，跟前面 ri-10 章節談過的手足元件共享 state 是同一個概念" },
+        { "id": "d", "text": "這種情境下 React 會自動偵測並優化，中間層元件不會真的收到這份 props" }
+      ],
+      "answer": "a",
+      "explanation": "prop drilling 描述的是「資料流向」的一種痛點，跟 Lifting State Up（往上移動 state 讓手足元件共享）方向相反、目的也不同——後者是為了共享，前者是資料要往下穿越不相關的中間層。Context 正是為了解決這個具體痛點被設計出來的機制，讓深層元件可以跳過中間層直接讀到需要的資料。",
+      "verify": { "checks": [], "manual": "屬資料流動模式辨識的推理題，無可執行程式碼。" }
+    },
+    {
+      "id": "ri-19-q8",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "wrapper component：純粹負責包裝排版、把 children 轉發下去",
+      "docs": "https://react.dev/learn/passing-props-to-a-component#passing-jsx-as-children",
+      "story": "",
+      "prompt": "Card 元件本身不知道、也不關心裡面會放什麼內容，只負責提供統一的邊框與內距，把實際內容原樣轉發。這種元件被稱為什麼？",
+      "code": "function Card({ children }) {\n  return <div className=\"card\">{children}</div>;\n}\n\nconsole.log(renderToStaticMarkup(\n  <Card><p>任何內容都能放進來</p></Card>\n));",
+      "options": [
+        { "id": "a", "text": "wrapper component（包裝元件）：它的職責純粹是提供一層共通的外觀或排版（邊框、內距、置中），完全不關心、也不假設裡面實際會放什麼內容，靠 children 這個機制把控制權交還給呼叫端；Card、Modal、Layout 這類容器型元件通常都是這種設計" },
+        { "id": "b", "text": "這種元件叫 Higher-Order Component，跟一般函式元件的定義不同" },
+        { "id": "c", "text": "這種元件叫 render props 元件，因為它接收了 children 這個特殊 prop" },
+        { "id": "d", "text": "這種元件必須用 class component 實作，函式元件無法達成同樣效果" }
+      ],
+      "answer": "a",
+      "explanation": "wrapper component 這個說法強調的是「元件的職責是包裝、不是決定內容」，跟 HOC（接收元件、回傳新元件的函式）是完全不同層次的概念——wrapper component 本身就是一個普通元件，只是設計上刻意保持對內容的無知，透過 children 這個標準機制達到通用性。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Card({ children }) {\n  return <div className=\"card\">{children}</div>;\n}\nconsole.log(renderToStaticMarkup(\n  <Card><p>任何內容都能放進來</p></Card>\n));", "expected": "<div class=\"card\"><p>任何內容都能放進來</p></div>" }
+        ]
+      }
+    }
+  ]
+}

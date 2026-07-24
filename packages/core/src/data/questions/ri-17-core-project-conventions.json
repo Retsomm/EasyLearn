@@ -1,0 +1,189 @@
+{
+  "id": "ri-17",
+  "title": "Core React：專案慣例與工具鏈",
+  "questions": [
+    {
+      "id": "ri-17-q1",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "SPA 導頁不會觸發整頁重新整理，Google Analytics 需要手動補送 pageview",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊在 React Router 的 SPA 上裝了 Google Analytics，卻發現使用者切換頁面時，Analytics 後台完全沒有記錄到新的 pageview。已知 GA 傳統上是靠偵測『整頁重新整理』來記錄頁面瀏覽。問題出在哪？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "SPA 的路由切換（React Router 的 navigate／Link 點擊）不會觸發瀏覽器真正的整頁重新整理，只是在同一份頁面裡換掉畫面內容，GA 傳統的自動偵測機制因此完全不會觸發；解法是監聽路由變化的事件（例如 React Router 的 useLocation 搭配 useEffect），每次路徑變動時手動呼叫 GA 的 pageview 追蹤方法，主動告訴 GA『使用者換頁了』" },
+        { "id": "b", "text": "Google Analytics 從技術上完全無法搭配任何 SPA 框架使用，只能用在傳統多頁面網站" },
+        { "id": "c", "text": "問題出在 React Router 的版本太舊，升級到最新版就會自動修正這個問題" },
+        { "id": "d", "text": "GA 的追蹤碼安裝位置錯誤，應該裝在每個元件內部而不是最外層" }
+      ],
+      "answer": "a",
+      "explanation": "這是所有分析工具在 SPA 環境都會遇到的共同課題：傳統網頁分析工具假設『換頁＝整頁重新整理＝一次新的 HTTP 請求』，SPA 打破了這個假設。解法的通用模式都一樣——在路由函式庫提供的『路徑變化』事件裡，主動呼叫分析工具的追蹤方法，這是開發者要自己補上的一段整合邏輯，不是框架版本問題。",
+      "verify": { "checks": [], "manual": "Google Analytics 整合與 SPA 路由事件需要真實瀏覽器環境與外部服務才能觀察，無法用 node 直接驗證。" }
+    },
+    {
+      "id": "ri-17-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "行內樣式的 vendor prefix 要自己以物件多個 key 的形式列出",
+      "docs": "",
+      "story": "",
+      "prompt": "想在行內樣式裡用 CSS transform，並確保在舊版瀏覽器上也生效（部分舊版瀏覽器需要 -webkit-transform 這類帶廠商前綴的寫法）。React 的 style 物件該怎麼寫？",
+      "code": "const style = {\n  WebkitTransform: \"rotate(45deg)\",\n  MozTransform: \"rotate(45deg)\",\n  transform: \"rotate(45deg)\",\n};",
+      "options": [
+        { "id": "a", "text": "React 本身不會自動幫行內樣式加上 vendor prefix，需要開發者自己在物件裡手動列出每個廠商前綴版本的 key（駝峰式，且廠商前綴的第一個字母要大寫，如 WebkitTransform、MozTransform），這些額外的 key 最終都會被轉換成對應的帶前綴 CSS 屬性；實務上更常見的做法是改用 autoprefixer 這類建置工具，在 CSS 檔案層級自動處理前綴，而不是在每一段行內樣式手動列舉" },
+        { "id": "b", "text": "React 會自動偵測使用者的瀏覽器，自動幫所有行內樣式加上必要的廠商前綴，不需要手動列出" },
+        { "id": "c", "text": "行內樣式完全不支援任何形式的 vendor prefix，必須全部改成外部 CSS 檔案才能加前綴" },
+        { "id": "d", "text": "vendor prefix 只能用小寫開頭寫法，如 webkitTransform，大寫開頭會被視為不合法屬性" }
+      ],
+      "answer": "a",
+      "explanation": "React 的 style 物件是純粹的資料傳遞，不含任何『自動幫你判斷瀏覽器該加哪個前綴』的邏輯，這件事完全依賴開發者自己處理，或交給建置工具（如 PostCSS 的 autoprefixer）在 CSS 層級自動化。行內樣式手動列舉多組前綴的寫法能動，但維護成本高，這也是實務上大型專案傾向把樣式移出行內、改用有 autoprefixer 支援的 CSS 方案的原因之一。",
+      "verify": { "checks": [], "manual": "vendor prefix 在不同瀏覽器上的實際生效情況需要真實瀏覽器環境測試才能驗證，無法用 node 直接驗證。" }
+    },
+    {
+      "id": "ri-17-q3",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "元件用 ES6 模組的 export/import 匯出匯入，預設匯出與具名匯出可以並存",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export",
+      "story": "",
+      "prompt": "一個檔案裡同時用 export default 匯出主要元件，也用具名 export 匯出一個輔助函式。這兩種匯出方式在同一個檔案裡可以並存嗎？呼叫端該怎麼分別匯入？",
+      "code": "// Button.js\nexport function formatLabel(text) {\n  return text.toUpperCase();\n}\nexport default function Button({ label }) {\n  return `[${formatLabel(label)}]`;\n}\n\n// 呼叫端\nimport Button, { formatLabel } from \"./Button\";\nconsole.log(Button({ label: \"送出\" }));\nconsole.log(formatLabel(\"hi\"));",
+      "options": [
+        { "id": "a", "text": "可以並存：一個模組可以有『最多一個』default export，同時搭配任意數量的具名 export；匯入端用 import 預設變數名稱, { 具名成員 } from \"...\" 這種語法同時取用兩者——這在 React 元件檔案裡很常見，主要元件用 default 匯出，一些輔助函式、型別、常數用具名匯出" },
+        { "id": "b", "text": "不行，一個模組檔案裡只能選擇 export default 或具名 export 其中一種，不能同時使用" },
+        { "id": "c", "text": "可以並存，但匯入時必須分別寫成兩個獨立的 import 陳述式，不能寫在同一行" },
+        { "id": "d", "text": "可以並存，但具名匯出的函式在匯入端必須加上 default 前綴才能使用" }
+      ],
+      "answer": "a",
+      "explanation": "ES6 模組系統的匯出限制只有一條：一個模組最多一個 default export，但具名 export 可以有任意多個，兩者完全可以同時出現在同一個檔案、同一行 import 陳述式裡取用。這在元件庫、工具函式庫裡很常見的組織方式，讓使用者可以簡短地匯入主要元件（不用打完整名稱），同時視需要額外匯入輔助工具。",
+      "verify": {
+        "checks": [
+          { "code": "function formatLabel(text) {\n  return text.toUpperCase();\n}\nfunction Button({ label }) {\n  return `[${formatLabel(label)}]`;\n}\nconsole.log(Button({ label: \"go\" }));\nconsole.log(formatLabel(\"hi\"));", "expected": "[GO]\nHI" }
+        ]
+      }
+    },
+    {
+      "id": "ri-17-q4",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "元件命名的例外情境：動態決定元件時，變數名稱一樣要大寫開頭",
+      "docs": "",
+      "story": "",
+      "prompt": "已經知道元件名稱必須大寫開頭，JSX 才會把它當成元件而不是原生標籤（見前面 ri-14 章節）。如果元件是「動態決定」的（例如從一個物件裡取出來的），存放它的變數名稱該怎麼命名？",
+      "code": "const components = { info: InfoIcon, warning: WarningIcon };\n\nfunction Notice({ type }) {\n  const SelectedIcon = components[type]; // 變數名稱刻意大寫開頭\n  return <SelectedIcon />;\n}",
+      "options": [
+        { "id": "a", "text": "即使元件是動態取出來的（存在一個變數裡，不是直接寫死的元件名稱），這個變數的名稱本身仍然要大寫開頭（如 SelectedIcon），JSX 才會把 <SelectedIcon /> 當成『查找這個變數目前的值、當成元件呼叫』，而不是誤判成一個叫 selectedIcon 的原生 HTML 標籤——JSX 判斷『是元件還是原生標籤』的規則，只看標籤名稱的第一個字母大小寫，不管這個名稱背後是不是動態決定的" },
+        { "id": "b", "text": "動態決定的元件屬於例外情況，變數名稱不需要遵守大寫開頭的規則" },
+        { "id": "c", "text": "只有直接寫死在程式碼裡的元件名稱需要大寫開頭，透過變數存放的元件不受這條規則限制" },
+        { "id": "d", "text": "動態決定元件時必須改用字串型別的元件名稱，而不是變數參考" }
+      ],
+      "answer": "a",
+      "explanation": "這是「元件命名例外」裡常被問到的一個細節：規則本身沒有例外（永遠是看標籤名稱第一個字母的大小寫），例外的是「元件不一定要直接寫死名稱，也可以是一個變數，只要這個變數本身取名時遵守大寫開頭」。這也是前面 ri-14 章節「switching component」模式能正常運作的語法前提——對照表裡取出來的元件，賦值給一個大寫開頭的變數，JSX 才會正確辨識。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction InfoIcon() { return <span>i</span>; }\nfunction WarningIcon() { return <span>!</span>; }\nconst components = { info: InfoIcon, warning: WarningIcon };\nfunction Notice({ type }) {\n  const SelectedIcon = components[type];\n  return <SelectedIcon />;\n}\nconsole.log(renderToStaticMarkup(<Notice type=\"warning\" />));", "expected": "<span>!</span>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-17-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "React 元件裡可以自由使用 async/await，只要不是元件函式本身宣告成 async",
+      "docs": "",
+      "story": "",
+      "prompt": "想在事件處理器裡用 async/await 處理非同步的表單送出邏輯。元件函式（渲染函式）本身能不能宣告成 async？",
+      "code": "function Form() {\n  // 事件處理器裡用 async/await：完全合法\n  async function handleSubmit() {\n    const res = await fetch(\"/api/submit\");\n    console.log(await res.json());\n  }\n  return <button onClick={handleSubmit}>送出</button>;\n}\n\n// 元件函式本身宣告成 async：不合法的用法\n// async function BrokenComponent() {\n//   const data = await fetch(\"/api/data\");\n//   return <p>{data}</p>;\n// }",
+      "options": [
+        { "id": "a", "text": "事件處理器、自訂 Hook 內部的邏輯函式都能自由使用 async/await，這只是普通的 JavaScript 語法，跟 React 沒有特殊衝突；但元件函式（渲染函式）本身不能宣告成 async——React 預期呼叫元件函式會『同步』立刻拿到一個 React element（或 null）當回傳值，一個 async 函式呼叫後拿到的永遠是一個 Promise 物件，不是 React 認得的 element，會導致渲染出錯或顯示不出預期內容" },
+        { "id": "b", "text": "元件函式本身也可以宣告成 async，React 會自動 await 它的回傳值再渲染" },
+        { "id": "c", "text": "React 元件完全不能使用 async/await，只能用 .then() 鏈式呼叫處理非同步邏輯" },
+        { "id": "d", "text": "async/await 只能在 class component 的生命週期方法裡使用，函式元件完全不支援" }
+      ],
+      "answer": "a",
+      "explanation": "這裡的關鍵是分清楚「元件函式本身」跟「元件內部定義、被事件觸發呼叫的其他函式」：後者只是普通函式，可以自由用 async/await；前者的呼叫方式（渲染時同步呼叫、期待立即拿到 element）跟 async 函式『永遠回傳 Promise』這個特性衝突，這也是為什麼 React 元件不能直接宣告成 async function 的根本原因（React Server Components 是特例，那是完全不同的執行模型）。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Form() {\n  async function handleSubmit() {\n    console.log(\"submitted\");\n  }\n  return <button onClick={handleSubmit}>送出</button>;\n}\nconsole.log(renderToStaticMarkup(<Form />));", "expected": "<button>送出</button>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-17-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "常見的 React 專案資料夾結構：依功能還是依型別分類",
+      "docs": "",
+      "story": "",
+      "prompt": "新專案要決定資料夾結構，「依型別分類」（所有元件放 components/、所有 hooks 放 hooks/、所有工具函式放 utils/）跟「依功能分類」（每個功能一個資料夾，內含自己的元件、hooks、工具函式），該怎麼選？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "沒有絕對正確答案，取決於專案規模：小型專案或元件數量不多時，依型別分類容易一眼掌握『所有 hooks 在哪裡』；專案變大、功能模組增加時，依功能分類讓『改一個功能只需要在一個資料夾內找檔案』，減少『改一個功能要在五個型別資料夾裡各自找一個檔案』的跳轉成本——這跟前面 ri-4 章節談過 Redux 專案資料夾規劃的取捨是同一個道理，只是應用範圍從 Redux 相關檔案擴大到整個專案" },
+        { "id": "b", "text": "React 官方強制規定只能用依型別分類這一種資料夾結構，其他結構都不合法" },
+        { "id": "c", "text": "依功能分類的專案完全不能使用 TypeScript" },
+        { "id": "d", "text": "資料夾結構對專案的可維護性沒有任何實質影響，選哪種都一樣" }
+      ],
+      "answer": "a",
+      "explanation": "React 官方文件明確表示不會強制規定資料夾結構，這是留給團隊依專案規模自行決定的取捨。這個決策模式跟 ri-4 章節談過的 Redux 資料夾組織原則一致：小規模時「依型別」直覺、好找；規模變大時「依功能」讓修改一個功能的檔案跳轉成本更低，這是可以隨專案演進而調整的架構決策，不是一次性的硬性規定。",
+      "verify": { "checks": [], "manual": "屬專案架構規劃的推理題，無可執行程式碼。" }
+    },
+    {
+      "id": "ri-17-q7",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "React 生態裡常見的動畫函式庫：各自解決的場景不同",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊想幫元件的進場、離場加上動畫效果（例如清單項目刪除時淡出，而不是瞬間消失）。純手寫 CSS transition 在「元素從 DOM 移除的瞬間」會遇到什麼困難，動畫函式庫（如 React Transition Group、Framer Motion）想解決的正是這個問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "純 CSS transition 沒辦法在『元素真的要被移除』跟『離場動畫播放完畢』之間爭取到時間差——React 一旦決定移除某個節點，會立刻把它從 DOM 拿掉，CSS transition 的動畫還沒播完就被打斷；動畫函式庫的核心價值就是介入這個時機，讓 React『延後』真正移除 DOM 節點的時間點，等離場動畫確實播放完成後才真正卸載，同時也提供進場動畫的生命週期掛鉤" },
+        { "id": "b", "text": "純 CSS transition 完全沒辦法用在 React 專案裡，必須改用動畫函式庫才能使用任何 CSS 動畫" },
+        { "id": "c", "text": "動畫函式庫的唯一功能是取代 CSS，讓開發者不用再寫任何樣式" },
+        { "id": "d", "text": "React 内建了完整的動畫系統，不需要任何第三方動畫函式庫" }
+      ],
+      "answer": "a",
+      "explanation": "「進場動畫」相對容易（元素已經在 DOM 裡，用 CSS transition 配合一個觸發 class 切換即可）；「離場動畫」的困難點在於元素被移除的時機完全由 React 的渲染邏輯決定，純 CSS 沒有能力介入、延後這個時機。動畫函式庫的核心工作正是提供一層「延後卸載、等動畫播完再真正移除」的協調機制，這是它們相對純 CSS 動畫真正補上的能力缺口。",
+      "verify": { "checks": [], "manual": "動畫函式庫的離場動畫時機協調需要真實瀏覽器渲染與過場觀察才能驗證，無法用 node 直接驗證。" }
+    },
+    {
+      "id": "ri-17-q8",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "CSS Modules／樣式模組：讓類別名稱自動加上唯一雜湊，避免全域命名衝突",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊裡兩個不同元件都各自定義了一個叫 .title 的 CSS class，樣式互相覆蓋、打架。改用 CSS Modules（檔名 Button.module.css）之後，這個衝突怎麼被解決？",
+      "code": "/* Button.module.css */\n.title { color: blue; }\n\n// Button.jsx\nimport styles from \"./Button.module.css\";\nfunction Button() {\n  return <span className={styles.title}>按鈕標題</span>;\n}",
+      "options": [
+        { "id": "a", "text": "CSS Modules 在建置階段會把每個檔案裡的 class 名稱，自動轉換成帶有這個檔案專屬雜湊值的唯一名稱（例如 .title 變成 .Button_title__a1b2c），import 進來的 styles 物件裡的 styles.title 對應到的就是這個轉換後的唯一名稱；不同檔案各自定義的 .title 因為雜湊值不同，最終產生的實際 class 名稱不會撞名，天生解決了全域 CSS 命名空間衝突的問題，不需要開發者自己手動想辦法命名避免衝突（如 BEM 命名法那樣）" },
+        { "id": "b", "text": "CSS Modules 只是把多個 .css 檔案合併成一個檔案，不會對 class 名稱做任何轉換" },
+        { "id": "c", "text": "CSS Modules 要求所有元件共用同一份全域樣式表，跟一般 CSS 檔案完全沒有差異" },
+        { "id": "d", "text": "使用 CSS Modules 之後，就不能再使用 className 屬性，必須改用 style 屬性" }
+      ],
+      "answer": "a",
+      "explanation": "CSS Modules 解決的正是「全域 CSS 命名空間只有一個，大型專案裡類別名稱很容易撞名」這個老問題，做法是建置階段自動幫每個檔案的類別名稱加上唯一識別後綴，讓『樣式作用域局限在這個檔案』的效果，不需要開發者自己手動用命名慣例（如 BEM）去人工避免撞名，這也是它被稱為「模組」的原因——樣式像 JS 模組一樣有各自獨立的作用域。",
+      "verify": { "checks": [], "manual": "CSS Modules 的類別名稱雜湊轉換需要真實建置工具鏈（webpack/Vite 等）處理，無法用 node 直接驗證。" }
+    },
+    {
+      "id": "ri-17-q9",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "React 專屬 linter：eslint-plugin-react 與 eslint-plugin-react-hooks",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊的 ESLint 設定裡加了 eslint-plugin-react-hooks 這個外掛，它主要幫忙抓出哪一類容易犯錯、但一般 JavaScript linter 規則抓不到的問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "eslint-plugin-react-hooks 專門檢查 Hooks 使用規則有沒有被違反——例如 Hook 是不是被放進了條件式或迴圈裡呼叫（違反 Hooks 呼叫順序必須每次渲染都一致的規則）、useEffect／useCallback 的依賴陣列是不是漏列了實際用到的變數；這些是 Hooks 這套機制特有的陷阱，一般不了解 React 內部運作的通用 JavaScript linter 規則完全沒有能力偵測，需要專屬外掛才抓得出來" },
+        { "id": "b", "text": "eslint-plugin-react-hooks 只負責檢查程式碼縮排與分號等格式問題，跟 Hooks 邏輯無關" },
+        { "id": "c", "text": "eslint-plugin-react-hooks 會自動幫開發者把 class component 全部轉寫成函式元件" },
+        { "id": "d", "text": "eslint-plugin-react-hooks 只在 TypeScript 專案裡才能安裝使用，純 JavaScript 專案不支援" }
+      ],
+      "answer": "a",
+      "explanation": "Hooks 呼叫順序、依賴陣列這兩類錯誤，是 Hooks 機制特有、而且很容易在重構時不小心引入、肉眼審查也未必能立刻發現的陷阱（例如漏列 useEffect 依賴會造成 closure 捕捉到過期的值）。eslint-plugin-react-hooks 這個官方維護的外掛，正是把這些「React 特有的正確性規則」自動化成可以在寫程式碼當下就被 linter 抓出來的檢查項目，是幾乎所有 React 專案的標準配置之一。",
+      "verify": { "checks": [], "manual": "ESLint 規則檢查需要真實 lint 工具鏈執行才能觀察實際抓出的錯誤，無法用 node 直接驗證。" }
+    }
+  ]
+}

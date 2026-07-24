@@ -1,0 +1,270 @@
+{
+  "id": "ri-6",
+  "title": "React 生態系與工具鏈",
+  "questions": [
+    {
+      "id": "ri-6-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "PropTypes 是執行期檢查，TypeScript 是編譯期檢查",
+      "docs": "",
+      "story": "",
+      "prompt": "一個元件同時用 PropTypes 宣告 props 型別、專案也已經導入 TypeScript。呼叫端不小心傳錯型別時，這兩種機制分別在什麼時間點讓你發現問題？",
+      "code": "MyButton.propTypes = {\n  label: PropTypes.string.isRequired,\n};\n\nfunction MyButton({ label }: { label: string }) {\n  return <button>{label}</button>;\n}\n\n// 呼叫端誤傳了數字\n<MyButton label={42} />",
+      "options": [
+        { "id": "a", "text": "TypeScript 在『編譯期』（寫程式碼、build 的當下）就會標紅報錯，阻止這段程式碼被打包出去；PropTypes 是『執行期』檢查，只有這段程式碼真的被執行、元件真的渲染時，才會在 console 印出警告——如果剛好沒有使用者走到會觸發這個元件的路徑，PropTypes 的警告根本不會出現，問題可能一路帶到正式環境才被回報" },
+        { "id": "b", "text": "兩者完全一樣，都只在執行期才會被發現" },
+        { "id": "c", "text": "PropTypes 是編譯期檢查，TypeScript 只在執行期生效" },
+        { "id": "d", "text": "只要用了 TypeScript，PropTypes 的宣告就會被自動忽略，不會有任何效果" }
+      ],
+      "answer": "a",
+      "explanation": "這是兩種型別檢查機制最本質的差異：TypeScript 的檢查發生在你寫程式碼、執行 tsc 或 build 的那一刻，錯誤在程式碼真正跑起來之前就被攔下；PropTypes 沒有編譯步驟，它是包在元件裡的一段執行期程式碼，只有等到瀏覽器真的渲染這個元件、傳入的 props 真的不符合宣告時，才會透過 console.warn 印出警告——覆蓋率完全取決於使用者的操作路徑有沒有剛好經過。",
+      "verify": {
+        "checks": [],
+        "manual": "PropTypes 執行期警告需要真實渲染流程才能觀察，TypeScript 的編譯期檢查則需要建置工具鏈，兩者皆無法用 node 直接執行驗證。"
+      }
+    },
+    {
+      "id": "ri-6-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "SVG 當 React 元件匯入，才能用 props 動態改色",
+      "docs": "",
+      "story": "",
+      "prompt": "想在一個 icon 上動態改變顏色（跟隨目前的 theme 色）。下面兩種引入 SVG 檔案的方式，哪一種辦得到？",
+      "code": "// 方式一\nimport logo from \"./logo.svg\";\n<img src={logo} alt=\"logo\" />\n\n// 方式二（透過建置工具把 svg 轉成元件）\nimport { ReactComponent as Logo } from \"./logo.svg\";\n<Logo fill=\"currentColor\" />",
+      "options": [
+        { "id": "a", "text": "方式二：把 SVG 當成 React 元件匯入，等於把 SVG 檔案內部的 <path> 等節點直接變成 JSX 的一部分，可以用 props（如 fill、stroke）動態控制顏色，甚至加上 onClick 事件；方式一的 <img src=...> 只是把 SVG 當成一張『圖片檔案』整包載入，圖片內部的顏色已經定型，外部沒辦法用 props 或 CSS 去改動裡面線條的顏色" },
+        { "id": "b", "text": "兩種方式效果完全一樣，img 標籤本來就能用 fill 屬性改變 SVG 內部顏色" },
+        { "id": "c", "text": "方式一才能動態改顏色，因為 img 標籤原生支援 CSS filter 直接改變圖片內部顏色" },
+        { "id": "d", "text": "SVG 檔案本來就不能用在 React 專案裡，只能使用點陣圖格式如 PNG" }
+      ],
+      "answer": "a",
+      "explanation": "<img> 標籤永遠是把 src 指向的檔案當成一張不透明的圖片載入，瀏覽器不會把圖片內部的向量節點暴露給外部 CSS 或 props 操作。把 SVG 轉譯成 React 元件（常見工具如 SVGR，許多建置工具鏈內建支援），本質上是把 SVG 檔案的 XML 結構轉成一段 JSX，內部的顏色、線條粗細都變成可以用 props 覆寫的屬性，這才具備「跟隨 theme 動態變色」的能力。",
+      "verify": {
+        "checks": [],
+        "manual": "SVGR／建置工具的 SVG 轉元件流程未安裝於本專案，無法用 node 直接執行驗證，需人工審核。"
+      }
+    },
+    {
+      "id": "ri-6-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "styled-components 的取捨：開發彈性 vs 執行期成本",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊在討論要不要引入 styled-components。下列哪個描述，最準確反映它的取捨？",
+      "code": "const Button = styled.button`\n  background: ${(props) => (props.primary ? \"navy\" : \"white\")};\n  color: ${(props) => (props.primary ? \"white\" : \"navy\")};\n`;",
+      "options": [
+        { "id": "a", "text": "styled-components 讓樣式跟元件邏輯定義在同一個檔案，甚至能直接依 props 動態插值運算出 CSS（如範例），對「樣式需要根據互動狀態頻繁變化」的元件很方便；代價是每個樣式化元件在執行期都要額外計算並注入一段 CSS-in-JS，對效能較敏感、或已經有一套穩定 design system 的專案，靜態的 CSS Modules／Tailwind 這類『建置期就決定好樣式』的方案通常有更小的執行期負擔" },
+        { "id": "b", "text": "styled-components 完全沒有任何取捨，效能與開發體驗都優於其他所有 CSS 方案" },
+        { "id": "c", "text": "styled-components 只能用在 class component，函式元件無法使用" },
+        { "id": "d", "text": "使用 styled-components 之後，專案就完全不能再使用任何一般的 CSS 檔案" }
+      ],
+      "answer": "a",
+      "explanation": "任何工具的選型都該看取捨，不是單方面的優劣：styled-components 把「樣式跟著 props 動態變化」這件事做得很自然，代價是執行期需要額外的 CSS-in-JS 運算與注入；CSS Modules、Tailwind 這類方案把樣式決定在建置期完成，執行期幾乎零額外成本，但動態插值的彈性不如 CSS-in-JS 直覺。兩者可以在同一個專案裡因地制宜地並存，不是互斥的二選一。",
+      "verify": {
+        "checks": [],
+        "manual": "styled-components 未安裝於本專案，CSS-in-JS 的執行期效能特性需要實際效能量測工具才能驗證，無法用 node 直接執行驗證。"
+      }
+    },
+    {
+      "id": "ri-6-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "用 React DevTools Profiler 找出不必要的重繪",
+      "docs": "",
+      "story": "",
+      "prompt": "一個列表元件效能不好，懷疑是「某個子元件明明 props 沒變卻一直重繪」。React DevTools 的 Profiler 分頁，怎麼幫你找到這個問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "開啟 Profiler 分頁的錄製功能、操作一輪畫面互動後停止，它會畫出這段期間每個元件『實際渲染了幾次、每次渲染花多少時間』的火焰圖，並且可以勾選『Highlight updates when components render』直接在畫面上用色塊標出正在重繪的元件；找到那個『props 沒變卻頻繁亮起』的元件，就是效能問題的候選對象，接下來才是判斷該不該用 React.memo 包起來" },
+        { "id": "b", "text": "Profiler 只能顯示元件樹的巢狀結構，沒辦法看出渲染次數或耗費時間" },
+        { "id": "c", "text": "必須手動在每個元件加上 console.log 才能觀察渲染次數，Profiler 完全幫不上忙" },
+        { "id": "d", "text": "Profiler 只在正式環境（production build）才能使用，開發模式下無法錄製" }
+      ],
+      "answer": "a",
+      "explanation": "React DevTools 的 Profiler 分頁正是為了「找出不必要的重繪」設計的工具：錄製一段互動、看火焰圖裡哪些元件被重複渲染、每次渲染耗時多少；搭配「Highlight updates」選項可以更直觀地在畫面上即時看到誰在重繪。找到候選元件之後，才進一步分析是不是因為 props 參考（reference）每次都變成新物件、或者真的需要用 memo／useMemo 優化。",
+      "verify": {
+        "checks": [],
+        "manual": "React DevTools 為瀏覽器擴充功能，Profiler 的錄製與火焰圖顯示需要真實瀏覽器環境才能操作，無法用 node 直接執行驗證。"
+      }
+    },
+    {
+      "id": "ri-6-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "為什麼多數新專案選 TypeScript 而非 Flow",
+      "docs": "",
+      "story": "",
+      "prompt": "大多數近幾年啟動的新 React 專案，靜態型別選擇幾乎都是 TypeScript，而不是曾經流行的 Flow。下列哪個說法最貼近這個現象背後的原因？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "TypeScript 不僅限於 React／JavaScript 前端生態，而是從前端到 Node.js 後端、建置工具、第三方套件的社群型別定義都廣泛支援，形成的生態規模與工具鏈成熟度遠超過主要專注在 React 生態的 Flow；兩者本質上都做靜態型別檢查，差異主要在生態系網路效應與長期維護動能，不是語法能力的本質差距" },
+        { "id": "b", "text": "因為 Flow 完全沒有能力做靜態型別檢查，只能檢查執行期錯誤" },
+        { "id": "c", "text": "因為 TypeScript 是 React 官方唯一認可的型別系統，Flow 技術上已經無法搭配 React 使用" },
+        { "id": "d", "text": "因為 Flow 的語法比 TypeScript 複雜非常多，導致學習曲線過於陡峭" }
+      ],
+      "answer": "a",
+      "explanation": "Flow 和 TypeScript 在能力上高度重疊，都能做靜態型別檢查、型別推斷、泛型等。真正拉開差距的是生態系規模：TypeScript 覆蓋前後端整條工具鏈，社群維護的型別定義庫（DefinitelyTyped）數量龐大，IDE 支援也更成熟；這種網路效應讓新專案傾向選擇能拿到最完整型別支援的那一個，不是因為 Flow 技術上有什麼缺陷。",
+      "verify": {
+        "checks": [],
+        "manual": "屬生態系與工具鏈成熟度的比較推理題，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-6-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "回答框架選型比較題的成熟心態",
+      "docs": "",
+      "story": "",
+      "prompt": "面試被問「React 和 Vue／Angular 比起來有什麼優勢」，下列哪種回答方式最能反映對前端框架選型的成熟理解？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "誠實列出 React 相對突出的特性（例如龐大生態系、Hooks 的組合彈性、React Native 讓 Web/Mobile 團隊共用部分知識），同時承認這些優勢是『取捨後』的結果而非無條件的絕對優越——例如 Vue 的模板語法對新手更直覺、Angular 內建更完整的一套慣例（路由、表單、依賴注入）；選型最終要看團隊背景、專案規模、長期維護需求，而不是宣稱某個框架全面碾壓其他框架" },
+        { "id": "b", "text": "斬釘截鐵地說 React 在任何情境下都是唯一正確答案，其他框架都是錯誤選擇" },
+        { "id": "c", "text": "說框架之間沒有任何差異，選哪一個都一樣，不需要進行任何比較" },
+        { "id": "d", "text": "避而不答，主張『框架比較』這種問題本來就不應該被拿出來討論" }
+      ],
+      "answer": "a",
+      "explanation": "成熟的技術判斷從來不是「哪個框架絕對最好」，而是「在什麼條件下，哪個選擇的取捨最划算」。誠實列出優勢、同時承認代價與情境限制，反映的是對技術選型有完整的成本效益思考，而不是無條件的信仰宣示——這種回答方式在面試裡通常也更能展現資深工程師的判斷力。",
+      "verify": {
+        "checks": [],
+        "manual": "屬技術溝通與職涯情境推理題，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-6-q7",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "reselect／createSelector：記憶化 selector 避免重複運算",
+      "docs": "",
+      "story": "",
+      "prompt": "一個 selector 每次都重新從 state 裡篩選、排序一份大清單，即使 state 根本沒變，元件依然每次重繪都重新算一次，效能有浪費。reselect（或 Redux Toolkit 內建的 createSelector）想解決的是什麼問題？",
+      "code": "// 沒有記憶化：每次呼叫都重新篩選＋排序\nconst getVisibleTodos = (state) =>\n  state.todos.filter((t) => !t.completed).sort((a, b) => a.priority - b.priority);\n\n// 用 createSelector 記憶化\nconst getVisibleTodos = createSelector(\n  (state) => state.todos,\n  (todos) => todos.filter((t) => !t.completed).sort((a, b) => a.priority - b.priority)\n);",
+      "options": [
+        { "id": "a", "text": "createSelector 會記住『輸入值（這裡是 state.todos）』跟『上一次算出的結果』，只有當輸入值真的變了（用參考相等比較）才會重新執行篩選＋排序這段運算，輸入沒變就直接回傳快取的舊結果；這樣即使元件因為其他不相干的 state 變化而重繪，也不會浪費算力重複做同一份昂貴運算" },
+        { "id": "b", "text": "createSelector 只是把函式包一層 try/catch，跟效能沒有任何關係" },
+        { "id": "c", "text": "createSelector 會讓篩選結果自動存進 localStorage，跨頁面重新整理都不用重算" },
+        { "id": "d", "text": "createSelector 讓這段程式碼可以在 reducer 裡直接呼叫 dispatch" }
+      ],
+      "answer": "a",
+      "explanation": "reselect 的核心是「記憶化」：把一個 selector 拆成『輸入 selectors』與『計算函式』，只有輸入值改變時才重新執行計算函式，其餘時候直接回傳快取結果。這對「篩選、排序、彙整大量資料」這類昂貴的衍生計算特別有價值，避免每次任何 state 變動都觸發重新運算，即使變動的其實是完全不相干的另一塊 state。",
+      "verify": {
+        "checks": [],
+        "manual": "reselect／Redux Toolkit 未安裝於本專案，記憶化的參考比對機制需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-6-q8",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "圖示庫元件化：Font Awesome 用 React 元件取代 CSS class",
+      "docs": "",
+      "story": "",
+      "prompt": "想在專案裡用 Font Awesome 圖示庫，其中一種官方支援的做法是安裝對應的 React 套件，把圖示當成一個 React 元件使用，而不是像傳統網頁那樣載入一份 CSS、再用 class name 標記圖示。這種「元件化」的做法對 React 專案有什麼好處？",
+      "code": "// 傳統網頁寫法\n<i className=\"fa fa-home\"></i>\n\n// React 元件化寫法\nimport { FontAwesomeIcon } from \"@fortawesome/react-fontawesome\";\nimport { faHome } from \"@fortawesome/free-solid-svg-icons\";\n\n<FontAwesomeIcon icon={faHome} />",
+      "options": [
+        { "id": "a", "text": "元件化寫法讓圖示變成一個可以吃 props（例如 size、color、旋轉角度）的正常 React 元件，也能透過打包工具做 tree-shaking——只打包真正用到的圖示，不用整包字型檔案全部載入；傳統的 className=\"fa fa-home\" 依賴一份全域 CSS／字型檔定義所有圖示的樣式，不管用到幾個圖示都得載入整包資源" },
+        { "id": "b", "text": "兩種寫法在打包體積、可調整性上完全沒有差異，純粹是寫法偏好問題" },
+        { "id": "c", "text": "元件化寫法只能在 TypeScript 專案使用，一般 JavaScript 專案必須用傳統寫法" },
+        { "id": "d", "text": "使用元件化寫法之後，圖示就不能再透過 CSS 調整大小或顏色" }
+      ],
+      "answer": "a",
+      "explanation": "把圖示變成 React 元件之後，每個圖示就是一個獨立的可匯入模組，打包工具能分析出「這個專案實際用到哪些圖示」，只把用到的打進最終產物；傳統的字型檔＋className 方案沒有這種細粒度，通常得整包字型一起載入。元件化也讓圖示能像其他 React 元件一樣接收 props，寫法上更貼近 React 的慣例。",
+      "verify": {
+        "checks": [],
+        "manual": "@fortawesome/react-fontawesome 未安裝於本專案，打包體積與 tree-shaking 效果需要實際建置流程才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-6-q9",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "React DevTools 抓不到 file:// 開頭的本機頁面",
+      "docs": "",
+      "story": "",
+      "prompt": "React DevTools 瀏覽器擴充功能，在大部分網站上都能正常抓到 React 元件樹，唯獨直接用 file:// 開啟本機 HTML 檔案測試時卻完全抓不到、Components 分頁整個是空的。最可能的原因是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "瀏覽器擴充功能預設不會被授權存取 file:// 開頭的本機檔案（這是瀏覽器對擴充功能的安全限制，不是 React DevTools 本身的 bug）；需要到瀏覽器的擴充功能管理頁面，針對 React DevTools 額外打開『允許存取檔案網址』這個選項，才能讓它在 file:// 頁面上運作" },
+        { "id": "b", "text": "React DevTools 從來沒有支援過本機檔案，這是設計上的硬限制，沒有任何解法" },
+        { "id": "c", "text": "本機檔案需要先安裝 Node.js 才能被 React DevTools 偵測到" },
+        { "id": "d", "text": "問題出在 React 版本太舊，升級到最新版就能自動解決" }
+      ],
+      "answer": "a",
+      "explanation": "瀏覽器對擴充功能存取 file:// 協定有額外的安全限制，預設是關閉的，這跟擴充功能本身寫得好不好無關。這也是很多瀏覽器擴充功能（不只 React DevTools）在本機檔案上「看起來完全沒作用」的常見成因，排查時第一步該檢查的是擴充功能的權限設定，而不是懷疑套件版本或程式碼本身。",
+      "verify": {
+        "checks": [],
+        "manual": "瀏覽器擴充功能的權限設定需要真實瀏覽器操作才能驗證，無法用 node 直接執行驗證。"
+      }
+    },
+    {
+      "id": "ri-6-q10",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "React 與 Web Components（如 Polymer）混用的限制",
+      "docs": "",
+      "story": "",
+      "prompt": "專案裡想沿用一批既有的 Polymer（Web Components 標準）元件，跟 React 元件混用。下列哪個描述最貼近兩者互通時常見的限制？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "Web Components（包含用 Polymer 寫的）可以直接當成一般 HTML 標籤放進 JSX 裡渲染，但 React 對它的屬性傳遞主要走『字串型別的 HTML attribute』，複雜資料型別（物件、陣列、函式）通常沒辦法直接當 prop 傳進去，得改用 ref 抓到真實 DOM 節點、手動賦值屬性或呼叫其方法／監聽自訂事件，才能傳遞複雜資料或處理事件" },
+        { "id": "b", "text": "React 完全無法與任何 Web Components 共存，必須把所有 Polymer 元件都改寫成 React 元件才能使用" },
+        { "id": "c", "text": "Web Components 與 React 元件之間可以無縫傳遞任何型別的 props，包括函式與物件，沒有任何限制" },
+        { "id": "d", "text": "混用 Polymer 元件會導致 React 應用程式完全無法啟動" }
+      ],
+      "answer": "a",
+      "explanation": "React 對待 Web Components（自訂元素）基本上是把它們當成一般 HTML 標籤處理，屬性傳遞走的是瀏覽器原生的 attribute 機制（字串為主），不像傳給 React 元件的 props 可以直接傳任意 JavaScript 值。想傳物件、陣列給 Web Component，或監聽它觸發的自訂事件，通常需要透過 ref 拿到底層 DOM 節點後手動操作，不能直接當成一般 React 元件的 props 傳遞。",
+      "verify": {
+        "checks": [],
+        "manual": "Polymer／Web Components 的互通行為需要真實瀏覽器與自訂元素定義才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-6-q11",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "React DevTools 的分頁消失不見",
+      "docs": "",
+      "story": "",
+      "prompt": "打開瀏覽器開發者工具，React DevTools 應該要出現「Components」「Profiler」這兩個分頁，但整個消失不見，只剩瀏覽器原生的 Elements、Console 等分頁。最常見的原因是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "目前這個頁面沒有被偵測到使用 React（例如頁面實際上是純靜態 HTML、或整個頁面還沒載入完成），React DevTools 只有在偵測到頁面確實載入了 React 執行環境時，才會顯示這兩個專屬分頁；也可能是分頁需要重新整理頁面後才會被重新偵測到，或擴充功能需要重新啟用" },
+        { "id": "b", "text": "這是瀏覽器的 bug，跟頁面有沒有使用 React 完全無關" },
+        { "id": "c", "text": "只有付費版的 React DevTools 才會顯示這兩個分頁" },
+        { "id": "d", "text": "必須先在該網域上登入 GitHub 帳號才能解鎖這兩個分頁" }
+      ],
+      "answer": "a",
+      "explanation": "React DevTools 的運作方式是在頁面載入時偵測是否存在 React 的執行時期標記，只有偵測到才會啟用對應的分頁。最常見的「分頁不見了」原因就是頁面本身沒有使用 React、頁面還在載入中、或者擴充功能因為某些原因未被啟用；這跟付費與否、登入帳號都無關，是免費且不需要登入即可使用的工具。",
+      "verify": {
+        "checks": [],
+        "manual": "瀏覽器擴充功能的偵測時機需要真實瀏覽器操作才能驗證，無法用 node 直接執行驗證。"
+      }
+    },
+    {
+      "id": "ri-6-q12",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Relay：把資料需求宣告跟元件綁在一起",
+      "docs": "",
+      "story": "",
+      "prompt": "Relay 是 Facebook 官方維護、專門搭配 GraphQL 使用的資料層框架。跟直接用 fetch 手動呼叫 GraphQL API 相比，Relay 提供的核心價值是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "Relay 把『元件需要哪些資料欄位』跟『元件本身』綁定在一起宣告（每個元件宣告自己的 GraphQL fragment），框架會在建置階段把整棵元件樹用到的 fragment 自動組合成一個最終查詢，並且處理快取、資料正規化、只重新抓取真正變動的部分；手動 fetch 得自己維護一份龐大又容易跟畫面脫節的查詢字串，也得自己刻快取與資料正規化邏輯" },
+        { "id": "b", "text": "Relay 只是 fetch 的別名，兩者功能完全一樣" },
+        { "id": "c", "text": "Relay 只能用來取代 CSS-in-JS 方案，跟資料抓取無關" },
+        { "id": "d", "text": "Relay 要求後端必須改用 REST API，不能搭配 GraphQL" }
+      ],
+      "answer": "a",
+      "explanation": "Relay 的設計哲學是「資料需求跟著元件走」：每個元件透過 GraphQL fragment 宣告自己需要哪些欄位，不用關心其他元件需要什麼，框架在建置與執行階段把整棵樹的 fragment 組合、去重、快取，並且能精準判斷『哪些資料真的變了、只重新抓那一部分』。這一整套快取與正規化機制是手動 fetch 很難自己重新實作到同樣完整度的。",
+      "verify": {
+        "checks": [],
+        "manual": "Relay 未安裝於本專案，且需要 GraphQL 後端與建置階段的查詢組合機制才能觀察，無法用 node 直接驗證。"
+      }
+    }
+  ]
+}
