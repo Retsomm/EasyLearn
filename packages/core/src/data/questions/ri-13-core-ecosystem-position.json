@@ -1,0 +1,189 @@
+{
+  "id": "ri-13",
+  "title": "Core React：生態定位與周邊 API",
+  "questions": [
+    {
+      "id": "ri-13-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "React 的優勢：元件化、可預測的資料流、龐大生態",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊要跟利害關係人說明「為什麼選 React」，下列哪個理由最貼近 React 實際帶來的優勢，而不是空泛的行銷詞？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "元件化讓 UI 可以拆成獨立、可重複使用、可各自測試的單元；配合單向資料流（props 往下傳、事件往上回報），大型應用的資料流向比雙向綁定更容易追蹤除錯；再加上生態系成熟（現成的路由、狀態管理、UI 元件庫選擇多），能加快開發速度、也容易找到有經驗的工程師" },
+        { "id": "b", "text": "React 保證任何專案的效能都優於所有其他框架，沒有例外" },
+        { "id": "c", "text": "React 是唯一能用 JavaScript 撰寫前端介面的技術，其他框架都必須用別的語言" },
+        { "id": "d", "text": "使用 React 之後，專案就完全不需要撰寫任何 CSS" }
+      ],
+      "answer": "a",
+      "explanation": "評估技術選型該講具體、可驗證的優勢，而不是無條件的行銷式宣稱。元件化、可預測的資料流、生態系規模，都是 React 實際、可以舉出具體案例佐證的優勢；效能、語言排他性、CSS 免除這類過度誇大的說法都禁不起檢驗。",
+      "verify": { "checks": [], "manual": "屬技術溝通與優勢陳述的推理題，無可執行程式碼。" }
+    },
+    {
+      "id": "ri-13-q2",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "React 的限制：只是 View 層，其餘（路由、狀態管理、資料抓取）要自己選型組合",
+      "docs": "",
+      "story": "",
+      "prompt": "新人剛學完 React 官方文件裡的元件、hooks，發現要做一個「有多個頁面、要打 API、要記住登入狀態」的完整應用，React 本身完全沒有提供路由、資料抓取、全域狀態這些功能，得自己額外選擇、組合其他套件。這反映了 React 定位上的什麼限制？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "React 核心刻意只專注在『View 層』（把 state 轉換成畫面）這一件事，不像 Angular 這類『全家桶』框架內建路由、狀態管理、HTTP 客戶端；這個限制的另一面是彈性——開發者能自由選擇路由（React Router）、狀態管理（Redux／Context）、資料抓取方案，但代價是一個完整應用需要自己組合、評估多個第三方套件，學習與決策成本比『開箱即用』的全家桶框架更高" },
+        { "id": "b", "text": "React 完全無法用來開發多頁面應用，只能做單一畫面的小工具" },
+        { "id": "c", "text": "這只是暫時的技術限制，React 官方即將把路由與狀態管理整合進核心套件" },
+        { "id": "d", "text": "這代表 React 的設計有缺陷，不應該被用在任何正式產品上" }
+      ],
+      "answer": "a",
+      "explanation": "React 官方明確把自己定位成一個「用來建構 UI 的函式庫」，而不是一個包山包海的框架，這是刻意的設計取捨：換取彈性（各個環節都可以替換成最適合團隊的方案），代價是入門的學習曲線與初期的選型工作量比 Angular 這類內建一切的框架更高，這是限制、不是缺陷，也沒有跡象顯示官方要把這些功能整合進核心。",
+      "verify": { "checks": [], "manual": "屬框架定位取捨的推理題，無可執行程式碼。" }
+    },
+    {
+      "id": "ri-13-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "靜態型別檢查的選擇：TypeScript 目前是主流建議",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊的 React 專案目前完全沒有靜態型別檢查，props 傳錯型別要等執行期出錯才會發現。除了 PropTypes 這種執行期檢查，官方推薦的靜態型別檢查方案是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "TypeScript：它讓型別檢查發生在編譯期（寫程式碼、build 的當下），能在程式碼真正執行之前就攔截型別不符的錯誤，而不是等使用者的操作路徑剛好觸發問題才被發現；create-react-app、Vite、Next.js 這類主流的建置工具都內建 TypeScript 範本，目前是 React 生態系裡最廣泛採用的靜態型別方案" },
+        { "id": "b", "text": "只能用 PropTypes，React 目前沒有其他任何靜態型別檢查工具可以選擇" },
+        { "id": "c", "text": "必須改用 Angular 才能取得靜態型別檢查的能力" },
+        { "id": "d", "text": "React 從技術上無法搭配任何型別檢查工具使用" }
+      ],
+      "answer": "a",
+      "explanation": "PropTypes（執行期）與 TypeScript（編譯期）的差異前面已經細談過（見 ri-6、ri-12 章節），這裡要強調的是：靜態型別檢查在 React 生態系裡是完全可行、而且是目前主流建議的做法，並非只能靠執行期檢查、也不需要換框架才能取得型別安全。",
+      "verify": { "checks": [], "manual": "屬工具鏈選型的事實性題目，無需執行驗證。" }
+    },
+    {
+      "id": "ri-13-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "react-dom：把 React 元件對應到瀏覽器 DOM 的橋接套件",
+      "docs": "",
+      "story": "",
+      "prompt": "為什麼 React 把「元件、Hooks、Context」這些核心概念放在 react 這個套件，卻把 createRoot、渲染到瀏覽器畫面這件事，另外拆到一個叫 react-dom 的獨立套件？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "react 套件本身是平台無關的核心（描述元件、狀態、生命週期這些概念，不假設渲染目標是什麼）；react-dom 是專門把這些概念對應到『瀏覽器 DOM』這個特定渲染目標的橋接層。這樣拆分讓同一套核心概念（元件、Hooks）可以被不同的 renderer 共用——react-dom 對應瀏覽器，react-native 對應 iOS/Android 原生元件，react-test-renderer 對應純 JS 物件——react 套件本身完全不需要因為渲染目標不同而改動" },
+        { "id": "b", "text": "純粹是歷史包袱，兩者理論上應該合併成同一個套件，只是還沒有人去做這件事" },
+        { "id": "c", "text": "react-dom 是給後端 Node.js 使用，react 套件只給瀏覽器前端使用" },
+        { "id": "d", "text": "這種拆分只是為了讓套件檔名看起來比較短，沒有任何架構上的意義" }
+      ],
+      "answer": "a",
+      "explanation": "這個套件拆分直接對應到前面 ri-5 章節談過的「reconciler 與 renderer 分離」架構：react 是渲染目標無關的核心，react-dom／react-native／react-test-renderer 是各自對應不同渲染目標的橋接層。這正是同一套 Hooks、元件寫法能同時支援網頁、行動裝置、測試環境的根本原因，不是隨意的套件拆分。",
+      "verify": { "checks": [], "manual": "屬套件架構設計理念的說明題，無可執行程式碼。" }
+    },
+    {
+      "id": "ri-13-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "ReactDOMServer：把元件渲染成 HTML 字串，用於伺服器端渲染",
+      "docs": "https://react.dev/reference/react-dom/server",
+      "story": "",
+      "prompt": "renderToStaticMarkup 跟 renderToString 都能把 React 元件渲染成 HTML 字串，兩者最主要的差異是什麼？",
+      "code": "function Greeting() {\n  return <p data-testid=\"greeting\">Hi</p>;\n}\n\nconsole.log(renderToStaticMarkup(<Greeting />));\nconsole.log(renderToString(<Greeting />));",
+      "options": [
+        { "id": "a", "text": "兩者真正的差異不是輸出的字串長怎樣，而是這份輸出之後『能不能被用戶端 React 接手 hydrate』：renderToString 產生的 HTML 是設計給後續 hydrate 用的（讓用戶端接上事件監聽器、變成可互動的應用）；renderToStaticMarkup 產生的則是不打算被 hydrate 的純靜態輸出，用它的結果去 hydrate 是不被支援的行為。對這個沒有任何互動邏輯的簡單 Greeting 元件來說，兩者目前輸出的字串其實完全相同（如下方驗證所示）——差異在於用途與後續能不能安全 hydrate，不是『renderToString 一定會多印出看得到的標記屬性』" },
+        { "id": "b", "text": "兩者輸出完全一樣，沒有任何差異，只是函式名稱不同" },
+        { "id": "c", "text": "renderToStaticMarkup 只能渲染沒有任何 props 的元件" },
+        { "id": "d", "text": "renderToString 只能在瀏覽器端執行，renderToStaticMarkup 只能在 Node.js 執行" }
+      ],
+      "answer": "a",
+      "explanation": "兩者的核心差異在於「輸出的 HTML 之後支不支援在用戶端被 hydrate（接手成互動式 React 應用）」：renderToString 產生的輸出是為了支援後續 hydrate 而設計；renderToStaticMarkup 產生的是不打算被 hydrate 的純靜態輸出。對這個沒有任何互動邏輯的簡單 Greeting 元件來說，兩個函式目前輸出的字串確實完全相同（如驗證程式所示），但這不代表兩者『一定』會產生不同的標記字串——差異的本質在於用途與後續能不能安全 hydrate，而不是『renderToString 一律會多附加看得到的標記屬性』這種簡化說法。這也是本次新增的 React Router／Modern React 章節裡大量驗證題選用 renderToStaticMarkup 的原因：只需要靜態渲染結果，不需要 hydrate。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup, renderToString } from 'react-dom/server'\nfunction Greeting() {\n  return <p>Hi</p>;\n}\nconsole.log(renderToStaticMarkup(<Greeting />) === renderToString(<Greeting />));", "expected": "true" }
+        ]
+      }
+    },
+    {
+      "id": "ri-13-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "dangerouslySetInnerHTML：명字本身就是警告，繞過 JSX 的自動逃逸機制",
+      "docs": "https://react.dev/reference/react-dom/components/common#dangerously-setting-the-inner-html",
+      "story": "",
+      "prompt": "想把一段從後端拿到、已經確定安全的 HTML 字串（例如富文本編輯器產生的內容）直接插入畫面，一般的 {content} 寫法會把它當純文字逃逸顯示（尖括號會變成文字符號，不會被解析成標籤）。該怎麼讓瀏覽器把這段字串真正解析成 HTML？",
+      "code": "function Article({ htmlContent }) {\n  return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />;\n}",
+      "options": [
+        { "id": "a", "text": "使用 dangerouslySetInnerHTML={{ __html: 字串 }} 這個特殊屬性，它會繞過 JSX 對文字內容的自動逃逸機制，直接把字串當成 HTML 交給瀏覽器解析；屬性名稱刻意取得很長、帶有『danger』字樣，就是為了在程式碼審查時提醒開發者『這裡插入的內容如果來自不受信任的使用者輸入，會有 XSS 風險』，只有在確定內容安全（例如經過後端消毒過的內容）時才該使用" },
+        { "id": "b", "text": "直接把 htmlContent 放進 {htmlContent} 大括號裡，JSX 會自動判斷字串裡有沒有 HTML 標籤並決定要不要解析" },
+        { "id": "c", "text": "dangerouslySetInnerHTML 只是一個容易誤導人的屬性名稱，實際效果跟一般文字渲染完全一樣，不會真的解析 HTML" },
+        { "id": "d", "text": "必須把字串轉成 Base64 編碼之後才能用這個屬性顯示" }
+      ],
+      "answer": "a",
+      "explanation": "這正好跟前面 ri-7 章節談過的「JSX 自動逃逸文字內容」互為對照：一般情況下 React 為了防 XSS，會把放進大括號的內容一律當純文字逃逸；dangerouslySetInnerHTML 是唯一明確繞過這層保護的入口，屬性命名故意做得又長又顯眼，逼開發者正視『這裡跳過了安全機制，內容來源必須自己確保可信』這個責任。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Article({ htmlContent }) {\n  return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />;\n}\nconsole.log(renderToStaticMarkup(<Article htmlContent=\"<b>粗體</b>\" />));", "expected": "<div><b>粗體</b></div>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-13-q7",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "行內樣式用 JS 物件表示，屬性名稱是駝峰式",
+      "docs": "https://react.dev/reference/react-dom/components/common#the-style-prop",
+      "story": "",
+      "prompt": "React 的 style 屬性不接受 CSS 字串，而是接受一個 JavaScript 物件。下面這段程式碼渲染出的 style 屬性字串會是什麼？",
+      "code": "function Box() {\n  return <div style={{ backgroundColor: \"tomato\", fontSize: 14 }}>Hi</div>;\n}\n\nconsole.log(renderToStaticMarkup(<Box />));",
+      "options": [
+        { "id": "a", "text": "<div style=\"background-color:tomato;font-size:14px\">Hi</div>：style 屬性接收的是一個物件，key 用駝峰式命名（backgroundColor），React 會自動轉換成 CSS 慣用的連字號寫法（background-color）；數字型別的值，React 也會自動幫大多數屬性（如 fontSize）補上 px 單位（少數屬性如 opacity、lineHeight 例外，維持純數字不加單位）" },
+        { "id": "b", "text": "<div style=\"backgroundColor:tomato;fontSize:14\">Hi</div>，React 完全不轉換屬性名稱與數字單位，原封不動輸出" },
+        { "id": "c", "text": "程式會拋出例外，style 屬性只能接受字串，不能傳物件" },
+        { "id": "d", "text": "<div style=\"background-color:tomato;font-size:14\">Hi</div>，字串跟數字都不加任何單位轉換" }
+      ],
+      "answer": "a",
+      "explanation": "React 的 style 屬性刻意設計成接收 JS 物件而不是 CSS 字串，一部分原因是物件寫法能直接複用 JS 的變數、運算、條件邏輯；駝峰式的 key 名稱也是為了避免連字號在 JS 物件屬性名稱裡需要额外用字串包住的不便。轉成最終 CSS 字串時，React 會處理好連字號轉換與大多數數字屬性的 px 單位補齊，省去手動字串拼接的麻煩。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Box() {\n  return <div style={{ backgroundColor: \"tomato\", fontSize: 14 }}>Hi</div>;\n}\nconsole.log(renderToStaticMarkup(<Box />));", "expected": "<div style=\"background-color:tomato;font-size:14px\">Hi</div>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-13-q8",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "React 事件跟原生事件的差異：合成事件、事件委派、駝峰式命名",
+      "docs": "",
+      "story": "",
+      "prompt": "已經知道 React 事件處理器收到的是 SyntheticEvent（見前面 ri-10 章節）。除此之外，React 的事件系統跟原生 DOM 事件相比，還有哪個實作層面的差異值得留意？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "React 內部並不是在每個 DOM 節點上各自綁定一份原生事件監聽器，而是採用『事件委派』：大多數事件實際上是在應用程式的根節點統一監聽，再由 React 自己判斷事件實際發生在哪個元件、依序模擬冒泡流程呼叫對應的處理器；這讓 React 能更有效率地管理大量元件的事件監聽，也是它能在事件處理器裡穩定拿到跨瀏覽器一致行為的實作基礎之一" },
+        { "id": "b", "text": "React 的事件系統與原生 DOM 事件在實作上完全相同，只是改用駝峰式命名，沒有任何底層差異" },
+        { "id": "c", "text": "React 的事件處理器只能監聽滑鼠事件，不支援鍵盤或觸控事件" },
+        { "id": "d", "text": "使用 React 事件系統之後，原生的 addEventListener 就完全無法在同一個應用程式裡使用" }
+      ],
+      "answer": "a",
+      "explanation": "事件委派（event delegation）是 React 事件系統的一個重要實作細節：與其在成千上百個 DOM 節點上各自掛一份監聽器（消耗記憶體、綁定/解綁都有成本），不如在根節點集中監聽、由 React 自己判斷該分派給哪個元件的處理器。這跟命名風格（駝峰式）是不同層次的差異，也不影響原生 addEventListener 仍然可以在同一頁面上並存使用。",
+      "verify": { "checks": [], "manual": "事件委派屬 React 內部實作細節，需要原始碼層級理解，無法用單一可執行片段驗證。" }
+    },
+    {
+      "id": "ri-13-q9",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "用陣列索引當 key，清單中間插入項目時會讓錯誤的元素對應到錯誤的 state",
+      "docs": "https://react.dev/learn/rendering-lists#why-does-react-need-keys",
+      "story": "",
+      "prompt": "清單一開始是 [A, B, C]，key 用陣列索引（0、1、2）。使用者在最前面插入一筆 X，變成 [X, A, B, C]。如果每一項的輸入框都用 useState 維護自己輸入的暫存文字，重新渲染後，原本輸入在 A 那一項裡的文字，會留在哪一項？",
+      "code": "// key 用陣列索引\nitems.map((item, index) => <ListItemInput key={index} label={item} />)\n\n// 插入前：index 0→A, 1→B, 2→C\n// 插入後：index 0→X, 1→A, 2→B, 3→C",
+      "options": [
+        { "id": "a", "text": "原本輸入在『第一項（index 0，當時對應 A）』裡的文字，插入後會錯誤地出現在新的『第一項（index 0，現在對應 X）』上：React 用 key 判斷『這是不是同一個元件實例、該不該保留它的 state』，用索引當 key 時，React 看到的只是『index 0 這個位置』，不知道實際資料已經從 A 換成 X，於是把原本屬於 index 0（A）的 state 直接沿用給現在也是 index 0、但其實是全新項目的 X，造成輸入內容跟顯示資料錯位" },
+        { "id": "b", "text": "React 會自動偵測到清單插入了新項目，正確地把 state 保留在原本的 A 項目上，跟 X 的插入位置無關" },
+        { "id": "c", "text": "所有項目的 state 都會被重置成初始值，沒有任何一項會保留輸入內容" },
+        { "id": "d", "text": "程式會拋出例外，陣列索引不能當作 key 使用" }
+      ],
+      "answer": "a",
+      "explanation": "這是「index 當 key」最經典、也最容易在真實專案裡造成使用者困惑的 bug：key 是 React 判斷『元素身份是否不變』的唯一依據，索引只反映『位置』，不反映『這筆資料是誰』。清單一旦有插入、刪除、重新排序這類會改變順序的操作，用索引當 key 就會讓 state 錯誤地跟著位置走、而不是跟著資料走。正確做法是用資料本身穩定、唯一的 id 當 key（例如每個 item 的資料庫主鍵），而不是它在陣列裡當下的索引。",
+      "verify": { "checks": [], "manual": "index-as-key 導致 state 錯位需要多輪真實互動（插入項目、比對 state 保留情況）才能觀察，無法用單次 node 執行驗證。" }
+    }
+  ]
+}

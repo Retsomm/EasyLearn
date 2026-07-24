@@ -1,0 +1,185 @@
+{
+  "id": "ri-18",
+  "title": "React 進階探索：Redux 周邊與元件細節",
+  "questions": [
+    {
+      "id": "ri-18-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Reselect 的核心功能就是記憶化 selector（呼應前面 ri-6 章節）",
+      "docs": "",
+      "story": "",
+      "prompt": "Reselect 函式庫的說明文件把自己定義成「用於計算 Redux 衍生資料的函式庫」。它的核心功能具體是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "記憶化（memoized）selector：只有輸入真的改變時才重新計算衍生資料，並且能把多個 selector 組合成新的 selector，讓『從 state 算出畫面需要的資料』這件事可以被拆解成小塊、各自快取、彼此組合，避免每次重繪都重複執行昂貴的篩選/排序運算" },
+        { "id": "b", "text": "自動幫應用程式產生完整的 Redux store 設定，不需要手寫任何 reducer" },
+        { "id": "c", "text": "取代 react-redux，讓元件不再需要 useSelector 或 connect()" },
+        { "id": "d", "text": "把 Redux 的 state 自動同步到瀏覽器的 localStorage" }
+      ],
+      "answer": "a",
+      "explanation": "Reselect 專注在「衍生資料的記憶化與組合」這一件事，不涉及 store 設定、不取代 react-redux 的連接機制、也不處理持久化——這些都是其他專責的套件（Redux Toolkit、redux-persist）在做的事，各自職責分明。",
+      "verify": { "checks": [], "manual": "reselect 未安裝於本專案，記憶化行為需要真實套件執行才能觀察，無法用 node 直接驗證。" }
+    },
+    {
+      "id": "ri-18-q2",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Redux 不綁定 React，可以搭配任何 UI 層甚至純 JS 使用",
+      "docs": "",
+      "story": "",
+      "prompt": "一個純 Node.js 後端服務（沒有任何 UI 畫面）想借用 Redux 的『可預測狀態容器＋action/reducer』模式管理內部狀態機。這樣做技術上可行嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "可行：Redux 核心套件（createStore、reducer、action）跟 React 完全沒有依賴關係，是一個通用的 JavaScript 狀態容器；react-redux 才是專門橋接 Redux 與 React 元件的套件，兩者是分開的。任何 JavaScript 環境（純後端服務、Vue、Angular 專案）都能單獨使用 Redux 核心，不需要一併安裝 react-redux 或依賴任何 React 概念" },
+        { "id": "b", "text": "不可行，Redux 從技術上綁定了 react-dom，任何非 React 專案都無法安裝使用" },
+        { "id": "c", "text": "可行，但只能在瀏覽器環境使用，Node.js 環境完全不支援" },
+        { "id": "d", "text": "不可行，Redux 的 createStore API 只在有 window 物件的環境才能執行" }
+      ],
+      "answer": "a",
+      "explanation": "Redux 核心刻意設計成跟 UI 框架無關，這也是為什麼它能同時被 React、Vue、Angular 生態系借用；react-redux 才是那一層「把 Redux store 跟 React 元件橋接起來」的專屬套件。純 JS 環境（包含 Node.js 後端）安裝 redux 核心套件、使用 createStore 是完全合法且常見的用法。",
+      "verify": { "checks": [], "manual": "Redux 未安裝於本專案，跨環境相容性需要實際套件執行驗證，無法用 node -e 觀察其內部依賴關係。" }
+    },
+    {
+      "id": "ri-18-q3",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "使用 Redux 不需要特定建置工具，任何能跑 JS 的環境都行",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊用 Vite 建置一個 React 專案，有人擔心「Redux 是不是只能搭配 webpack 使用」。這個顧慮成立嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不成立：Redux 本身只是一套普通的 npm 套件（純 JavaScript 邏輯），不依賴任何特定建置工具；不管是 webpack、Vite、esbuild、還是完全不經過打包工具、直接在瀏覽器用 <script> 標籤載入，只要能執行 JavaScript，就能使用 Redux" },
+        { "id": "b", "text": "成立，Redux 只能在 webpack 建置的專案裡正常運作" },
+        { "id": "c", "text": "成立，改用 Vite 之後必須額外安裝一個叫 vite-redux-plugin 的官方外掛才能使用" },
+        { "id": "d", "text": "不成立，但只有 Create React App 這個特定工具鏈能搭配 Redux" }
+      ],
+      "answer": "a",
+      "explanation": "Redux 核心沒有任何建置工具層面的特殊需求，這個顧慮通常是把「常見的教學範例剛好用 webpack／CRA 示範」誤會成「技術上的必要條件」。只要 JavaScript 執行環境能載入這個套件，任何建置工具鏈（或完全不用打包工具）都能正常使用。",
+      "verify": { "checks": [], "manual": "屬套件相容性的事實性題目，無需執行驗證。" }
+    },
+    {
+      "id": "ri-18-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "PropTypes.oneOfType：允許同一個 prop 接受多種型別之一",
+      "docs": "",
+      "story": "",
+      "prompt": "一個 Avatar 元件的 size prop 可能被傳數字（像素值）也可能被傳字串（如 \"large\"），想用 PropTypes 同時允許這兩種型別，該怎麼宣告？",
+      "code": "Avatar.propTypes = {\n  size: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),\n};",
+      "options": [
+        { "id": "a", "text": "PropTypes.oneOfType([...]) 接收一個型別驗證子陣列，只要傳入的值符合陣列裡任何一種型別就算通過；這裡宣告 size 可以是 number 或 string 其中一種，比只宣告單一固定型別更能反映『這個 prop 本來就設計成接受多種輸入形式』的實際需求" },
+        { "id": "b", "text": "PropTypes 只能宣告單一固定型別，不存在允許多種型別擇一的寫法" },
+        { "id": "c", "text": "oneOfType 只能用來限制字串的可能值（例如列舉），不能混合不同的型別驗證子" },
+        { "id": "d", "text": "使用 oneOfType 之後，這個 prop 就變成必填，不能再省略" }
+      ],
+      "answer": "a",
+      "explanation": "oneOfType 是 PropTypes 提供的「聯集型別」驗證子，讓一個 prop 能合法接受多種不同型別的值，這在允許彈性輸入（像素數字或具名尺寸字串）的元件設計裡很常見，也是 TypeScript 聯集型別（number | string）在 PropTypes 這套執行期驗證系統裡的對應寫法。",
+      "verify": { "checks": [], "manual": "PropTypes 未安裝於本專案，型別驗證邏輯需要真實套件執行才能觀察，無法用 node 直接驗證。" }
+    },
+    {
+      "id": "ri-18-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "render hijacking：HOC 攔截並改造被包裝元件的渲染結果",
+      "docs": "",
+      "story": "",
+      "prompt": "一個 HOC 不只是「決定要不要渲染」被包裝的元件（如前面 ri-12 章節的 withLoading），還進一步「攔截並修改」被包裝元件本來會渲染出的內容（例如額外插入除錯用的邊框）。這種手法被稱為什麼？",
+      "code": "function withDebugBorder(WrappedComponent) {\n  return function Wrapped(props) {\n    return (\n      <div style={{ border: \"1px dashed red\" }}>\n        <WrappedComponent {...props} />\n      </div>\n    );\n  };\n}",
+      "options": [
+        { "id": "a", "text": "render hijacking（渲染劫持）：HOC 不只是單純轉發 props、決定渲不渲染，而是進一步『介入並改造』被包裝元件實際渲染出的結果（這裡是額外包一層除錯邊框），本質上仍然是 HOC 模式的一種延伸應用，只是強調『對渲染結果本身動手腳』這個特性" },
+        { "id": "b", "text": "這種手法叫做 render props，跟 HOC 是完全不同的概念" },
+        { "id": "c", "text": "這種手法只能在 class component 裡實作，函式元件無法達成同樣效果" },
+        { "id": "d", "text": "這是一種反模式，React 官方明確禁止任何形式的渲染結果攔截" }
+      ],
+      "answer": "a",
+      "explanation": "render hijacking 是 HOC 眾多應用場景裡的一種說法，強調的是「HOC 不只是傳遞控制權，還能實際插手、改造子元件的渲染輸出」，跟前面 ri-12 章節示範的 withLoading（決定渲不渲染）是同一大類技巧的不同應用重點，函式元件跟 class component 都能實作。",
+      "verify": { "checks": [], "manual": "屬 HOC 應用模式的概念說明題，無可執行程式碼佐證抽象分類定義。" }
+    },
+    {
+      "id": "ri-18-q6",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "傳數字型別的 prop 不需要引號，直接放進大括號",
+      "docs": "https://react.dev/learn/passing-props-to-a-component",
+      "story": "",
+      "prompt": "想把數字 5 當作 prop 傳給元件，下面哪一種寫法傳的才是「數字」而不是「字串」？",
+      "code": "function Rating({ stars }) {\n  return <p>{typeof stars}：{stars}</p>;\n}\n\nconsole.log(renderToStaticMarkup(<Rating stars={5} />));\nconsole.log(renderToStaticMarkup(<Rating stars=\"5\" />));",
+      "options": [
+        { "id": "a", "text": "stars={5}（大括號包住字面數字）傳的才是真正的數字型別；stars=\"5\"（雙引號包住）傳的是字串 \"5\"——JSX 屬性只有用大括號包住的內容才會被當成 JavaScript 表達式求值，雙引號永遠產生字串，這條規則跟前面談過『屬性值想放變數要用大括號』是同一組語法規則的延伸" },
+        { "id": "b", "text": "兩種寫法效果完全一樣，JSX 會自動判斷數字字面值該轉換成哪種型別" },
+        { "id": "c", "text": "stars=\"5\" 傳的才是數字，stars={5} 才是字串" },
+        { "id": "d", "text": "只有 stars={5} 這種寫法合法，stars=\"5\" 會直接拋出例外" }
+      ],
+      "answer": "a",
+      "explanation": "這是前面 ri-15 章節「屬性值想放表達式要用大括號」規則的具體案例：純數字字面值也是一種表達式，只有用大括號包住才會被當成數字型別的 5 求值；雙引號無論裡面放什麼字元，永遠產生字串。混用兩者最常見的後果，就是拿到型別是字串的 \"5\"，如果後續程式碼假設它是數字（例如做加法運算），會得到字串拼接而非數字加總的意外結果。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Rating({ stars }) {\n  return <p>{typeof stars}：{stars}</p>;\n}\nconsole.log(renderToStaticMarkup(<Rating stars={5} />));\nconsole.log(renderToStaticMarkup(<Rating stars=\"5\" />));", "expected": "<p>number：5</p>\n<p>string：5</p>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-18-q7",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Service Worker 讓 CRA 產出的應用支援離線快取，registerServiceWorker 是啟用它的進入點",
+      "docs": "",
+      "story": "",
+      "prompt": "早期 Create React App 產生的專案，index.js 裡會呼叫一個叫 registerServiceWorker() 的函式（後期版本改名為 serviceWorkerRegistration.register()）。它的用途是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "註冊瀏覽器的 Service Worker，讓應用程式的靜態資源（JS、CSS、圖片等）被快取起來，使用者離線或網路不穩時仍能開啟已經造訪過的頁面、後續造訪的載入速度也更快；這是讓一個一般的網頁應用具備 PWA（Progressive Web App）離線能力的基礎機制之一，預設通常刻意不啟用（呼叫的是 unregister，需要開發者主動選擇啟用）" },
+        { "id": "b", "text": "這個函式的用途是把 React 元件註冊到瀏覽器的除錯工具裡，跟離線快取無關" },
+        { "id": "c", "text": "這是用來啟動後端 Node.js 伺服器的函式，跟前端瀏覽器行為無關" },
+        { "id": "d", "text": "這個函式會自動幫應用程式的所有 API 請求加上快取層，跟靜態資源無關" }
+      ],
+      "answer": "a",
+      "explanation": "Service Worker 是瀏覽器提供的背景執行緒機制，能攔截網路請求、快取資源，是 PWA 離線能力的核心技術。CRA 範本內建的這段設定，讓開發者可以選擇是否啟用這層快取（早期版本預設呼叫 unregister，避免非預期地讓使用者卡在舊版快取內容），是否啟用要考量應用是否真的需要離線支援、以及快取失效策略是否處理得當。",
+      "verify": { "checks": [], "manual": "Service Worker 需要真實瀏覽器與網路環境才能觀察快取與離線行為，無法用 node 直接驗證。" }
+    },
+    {
+      "id": "ri-18-q8",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "setState／useState 更新若值沒有真的變化，React 仍可能跳過重繪（Object.is 比較）",
+      "docs": "https://react.dev/reference/react/useState",
+      "story": "",
+      "prompt": "按鈕的 onClick 呼叫 setCount(count)，傳入的值跟目前的 count 一模一樣（沒有 +1）。React 會不會因此觸發一次重繪？",
+      "code": "function Counter() {\n  const [count, setCount] = useState(5);\n  function handleClick() {\n    setCount(count); // 傳入跟目前值完全相同的 5\n  }\n  return <button onClick={handleClick}>{count}</button>;\n}",
+      "options": [
+        { "id": "a", "text": "React 內部用 Object.is() 比較新舊 state 值，如果判定『完全相同』（這裡兩次都是數字 5），會跳過這次重繪，即使呼叫了 setState／setCount；這是 React 內建的一項效能優化，避免因為呼叫了 setter 但值其實沒變而浪費一次不必要的渲染" },
+        { "id": "b", "text": "React 只要偵測到呼叫了 setCount，不管傳入值是否相同，永遠會觸發一次重繪" },
+        { "id": "c", "text": "這種寫法會拋出例外，setState 不允許傳入跟目前值相同的內容" },
+        { "id": "d", "text": "Object.is 比較只在 class component 的 setState 有效，函式元件的 useState 不會做這個優化" }
+      ],
+      "answer": "a",
+      "explanation": "這是 React 一個容易被忽略的效能優化：呼叫 state 的 setter 不代表『一定會重繪』，React 會用 Object.is（近似嚴格相等，但能正確處理 NaN 與 +0/-0 的邊界情況）比較新舊值，值真的沒變就跳過這次渲染。這條規則對函式元件的 useState 與 class component 的 setState 都適用，是 React 內部一致的優化策略。",
+      "verify": { "checks": [], "manual": "跳過重繪的效能優化需要多輪真實渲染搭配渲染次數計數才能觀察，無法用單次 node 執行驗證。" }
+    },
+    {
+      "id": "ri-18-q9",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "React 16 起支援直接回傳陣列與字串，不需要額外包一層元素",
+      "docs": "https://react.dev/learn/rendering-lists",
+      "story": "",
+      "prompt": "React 16 之前，元件的 render 方法只能回傳單一個元素，不能直接回傳一個陣列或純字串。下面這段寫法，在 React 16 之後的版本能正常渲染嗎？",
+      "code": "function Words() {\n  return [\"Hello\", \" \", \"World\"]; // 直接回傳陣列，沒有用 Fragment 或 div 包住\n}\n\nconsole.log(renderToStaticMarkup(<Words />));",
+      "options": [
+        { "id": "a", "text": "能正常渲染出 Hello World：React 16 起放寬了元件回傳值的限制，允許直接回傳陣列（陣列裡每一項會被當成手足元素依序渲染，通常建議搭配 key）或純文字字串，不強制要求一定要包一層 Fragment 或容器元素；這是 React 16 眾多改進裡，讓元件回傳值更貼近『陣列本身也是一種合法的多節點集合』這種直覺的一項放寬" },
+        { "id": "b", "text": "會拋出例外，元件永遠只能回傳單一個 JSX 元素，這條限制從未被放寬過" },
+        { "id": "c", "text": "只會顯示陣列的第一個元素 Hello，其餘元素會被忽略" },
+        { "id": "d", "text": "會顯示字面上的陣列語法（如 [\"Hello\",\" \",\"World\"]），而不是把每一項當成獨立內容渲染" }
+      ],
+      "answer": "a",
+      "explanation": "在 Fragment 正式支援之前，React 16 就已經先放寬了「元件只能回傳單一元素」這條限制，允許直接回傳陣列或字串，這也是後來 Fragment 這個更明確的語法糖出現前的一種過渡能力。實務上直接回傳陣列時，如果陣列元素是 JSX（不是純文字），仍然建議加上 key 屬性，避免前面 ri-10 章節提過的『陣列渲染缺少 key』警告。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Words() {\n  return [\"Hello\", \" \", \"World\"];\n}\nconsole.log(renderToStaticMarkup(<Words />));", "expected": "Hello World" }
+        ]
+      }
+    }
+  ]
+}

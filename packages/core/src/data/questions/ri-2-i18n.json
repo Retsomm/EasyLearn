@@ -1,0 +1,139 @@
+{
+  "id": "ri-2",
+  "title": "React 國際化（i18n）",
+  "questions": [
+    {
+      "id": "ri-2-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "FormattedMessage 不能當 placeholder 用",
+      "docs": "",
+      "story": "",
+      "prompt": "想幫輸入框設定翻譯過的 placeholder，下面這樣寫完全沒有作用（畫面上的 placeholder 是空的或直接報錯），問題出在哪？",
+      "code": "function SearchBox() {\n  return (\n    <input\n      placeholder={<FormattedMessage id=\"search.placeholder\" defaultMessage=\"搜尋...\" />}\n    />\n  );\n}",
+      "options": [
+        { "id": "a", "text": "<FormattedMessage> 渲染出來的是一個 React 元素，不是純文字字串；placeholder 這種 HTML 屬性只吃字串，塞進一個元素不會被轉成文字，要改用 useIntl() 拿到 formatMessage 函式，呼叫 formatMessage({ id }) 取得字串再放進 placeholder" },
+        { "id": "b", "text": "FormattedMessage 只能用在 class component，函式元件裡不能用" },
+        { "id": "c", "text": "defaultMessage 屬性名稱打錯了，正確名稱是 default" },
+        { "id": "d", "text": "input 元素本身不支援 placeholder 屬性" }
+      ],
+      "answer": "a",
+      "explanation": "react-intl 的 <Formatted... /> 系列元件回傳的都是「元素」，適合直接放進 JSX 當畫面內容；但像 placeholder、alt、aria-label 這種只接受純字串的 HTML 屬性，塞一個元素進去不會自動轉成文字。這種情境要改用底層的 API：useIntl() 拿到 intl 物件，呼叫 intl.formatMessage({ id: ... }) 直接算出翻譯後的字串。",
+      "verify": {
+        "checks": [],
+        "manual": "react-intl 未安裝於本專案，且需要 <IntlProvider> 的語系 context 才能實際運作，無法用 node 直接執行驗證。"
+      }
+    },
+    {
+      "id": "ri-2-q2",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "useIntl 取代舊版 injectIntl",
+      "docs": "",
+      "story": "",
+      "prompt": "舊版 react-intl 要用 injectIntl() 高階元件把 intl 物件注入 class component 的 props。改寫成 Hooks 風格的函式元件後，下面這個說法對嗎？",
+      "code": "function DebugLocale() {\n  const intl = useIntl();\n  return <p>目前語系：{intl.locale}</p>;\n}",
+      "options": [
+        { "id": "a", "text": "對：useIntl() 是 react-intl 提供的 Hook，會從最近的 <IntlProvider> 讀出目前的 locale 與格式化方法，效果等同於舊版 injectIntl 注入的 intl 物件，但不需要額外包一層高階元件" },
+        { "id": "b", "text": "不對：intl 其實是全域變數，不需要任何 Provider 包裹就能直接讀到" },
+        { "id": "c", "text": "不對：useIntl() 是 React 內建的 Hook，跟 react-intl 這個套件完全無關" },
+        { "id": "d", "text": "不對：只有 class component 才能拿到 intl 物件，函式元件必須手動用 props 傳" }
+      ],
+      "answer": "a",
+      "explanation": "react-intl 從 v3 開始提供 useIntl() 這個 Hook，作用跟舊版 injectIntl() 高階元件完全一樣——都是從最近的 <IntlProvider> context 讀出 intl 物件（裡面有 locale、formatMessage、formatDate 等）。差別只在於不用再多包一層高階元件，函式元件裡直接呼叫 Hook 就能拿到，寫法更直覺。",
+      "verify": {
+        "checks": [],
+        "manual": "react-intl 未安裝於本專案，且需要 <IntlProvider> 的語系 context 才能實際運作，無法用 node 直接執行驗證。"
+      }
+    },
+    {
+      "id": "ri-2-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "用 ICU plural 語法處理單複數，而不是手刻 if/else",
+      "docs": "",
+      "story": "",
+      "prompt": "購物車要顯示「您有 1 件商品」或「您有 3 件商品」，數量不同、單複數措辭在某些語言差異很大（英文 1 item vs 3 items，阿拉伯文甚至有 6 種複數形式）。react-intl 建議用下面這種寫法，而不是自己在程式碼裡手刻 count === 1 ? ... : ... 判斷，為什麼？",
+      "code": "<FormattedMessage\n  id=\"cart.itemCount\"\n  defaultMessage=\"You have {count, plural, one {# item} other {# items}}\"\n  values={{ count: itemCount }}\n/>",
+      "options": [
+        { "id": "a", "text": "{count, plural, ...} 是 ICU MessageFormat 的語法，把單複數規則寫進翻譯字串本身，交給 react-intl 依照『當下這個語言』的複數規則自動選字；不同語言的複數規則數量、判斷邏輯都不同，寫死在 JavaScript 的 if/else 裡沒辦法涵蓋所有語言，只有把規則留給翻譯字串才能讓每個語言各自定義" },
+        { "id": "b", "text": "不管數量多少都寫死 items，反正使用者看得懂意思" },
+        { "id": "c", "text": "在 JavaScript 裡寫 count === 1 ? 'item' : 'items'，直接嵌入 defaultMessage 字串裡" },
+        { "id": "d", "text": "改用兩個完全獨立的翻譯 id，一個叫 singular 一個叫 plural，呼叫端每次都要自己手動判斷該用哪一個" }
+      ],
+      "answer": "a",
+      "explanation": "把單複數判斷寫死在 JavaScript 程式碼裡，只能覆蓋你當下想到的語言規則（例如英文的「是不是恰好等於 1」）；但像阿拉伯文有 6 種複數形式、波蘭文规则也跟英文不同。ICU plural 語法把「怎麼選字」的規則留給每一份翻譯檔自己定義，程式碼只要負責傳入 count 這個數字，跨語言的正確性就不用寫在應用程式邏輯裡。",
+      "verify": {
+        "checks": [],
+        "manual": "react-intl 未安裝於本專案，ICU MessageFormat 的複數規則需要實際的翻譯字串引擎解析，無法用 node 直接執行驗證。"
+      }
+    },
+    {
+      "id": "ri-2-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "貨幣格式化背後其實是原生 Intl.NumberFormat",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat",
+      "story": "",
+      "prompt": "react-intl 的 <FormattedNumber> 格式化貨幣，底層其實是呼叫瀏覽器原生的 Intl.NumberFormat。不依賴任何函式庫，只用原生 API 把 1234.5 格式化成美元字串，該傳入哪個 style 選項？把空格填起來",
+      "code": "const formatter = new Intl.NumberFormat(\"en-US\", { style: \"____\", currency: \"USD\" });\nconsole.log(formatter.format(1234.5));",
+      "options": [
+        { "id": "a", "text": "currency" },
+        { "id": "b", "text": "decimal" },
+        { "id": "c", "text": "money" },
+        { "id": "d", "text": "unit" }
+      ],
+      "answer": "a",
+      "explanation": "Intl.NumberFormat 的 style 選項決定輸出格式：\"currency\" 需要搭配 currency（如 \"USD\"）印出帶符號的貨幣字串（$1,234.50）；\"decimal\" 是純數字不帶符號；\"unit\" 用在公尺、公里這類度量單位；\"money\" 根本不是合法選項。react-intl 的 <FormattedNumber> 元件只是把這個原生 API 包一層 React 元件介面，格式化規則完全共通。",
+      "verify": {
+        "checks": [
+          { "code": "const formatter = new Intl.NumberFormat(\"en-US\", { style: \"currency\", currency: \"USD\" });\nconsole.log(formatter.format(1234.5));", "expected": "$1,234.50" }
+        ]
+      }
+    },
+    {
+      "id": "ri-2-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "SSR 與用戶端 locale 不一致造成 hydration mismatch",
+      "docs": "",
+      "story": "",
+      "prompt": "這個 App 用 cookie 記錄使用者選擇的語系。伺服器渲染階段直接讀 cookie 決定 locale；用戶端第一次 render 卻先用瀏覽器的 navigator.language 當預設值，等 useEffect 跑完才修正成 cookie 裡的值。使用者選的是 \"en\"、但瀏覽器語言是 \"zh-TW\"，重新整理頁面時最可能出現什麼症狀？",
+      "code": "// 伺服器端（依 cookie，得到 \"en\"）\nconst serverLocale = getLocaleFromCookie(req);\n\n// 用戶端第一次 render（cookie 還沒讀到，先用瀏覽器語言）\nconst [locale, setLocale] = useState(navigator.language); // \"zh-TW\"\nuseEffect(() => {\n  setLocale(getLocaleFromCookie()); // 之後才修正成 \"en\"\n}, []);",
+      "options": [
+        { "id": "a", "text": "React 會在 console 印出 hydration mismatch 警告，畫面上也會看到文字先短暫顯示中文（用戶端第一次渲染的結果），再瞬間切換成英文（useEffect 修正之後）——因為伺服器渲染出的英文 HTML 跟用戶端第一次渲染的中文結果對不上" },
+        { "id": "b", "text": "完全沒有任何差異，React 會自動偵測並同步兩邊的 locale，不會有任何警告或畫面閃爍" },
+        { "id": "c", "text": "伺服器會直接拋出例外、整個頁面回應失敗" },
+        { "id": "d", "text": "只有 IE11 才會出現這個問題，其餘現代瀏覽器都不受影響" }
+      ],
+      "answer": "a",
+      "explanation": "SSR 的黃金原則是：伺服器渲染出的第一次 HTML，必須跟用戶端第一次（hydrate 前）render 出的結果完全一致，React 才能安全地把事件監聽器「接上」既有的 DOM，而不用整個重繪。這裡伺服器依 cookie 判斷是英文，但用戶端程式碼刻意先用瀏覽器語言、之後才用 effect 修正——這就製造出兩次不一致的渲染結果，觸發 hydration mismatch 警告，使用者也會親眼看到語系「跳一下」。正確做法是讓用戶端第一次 render 使用的初始 locale 來源跟伺服器一致（例如都從同一個 cookie 讀，而不是分別依賴 cookie 和 navigator.language）。",
+      "verify": {
+        "checks": [],
+        "manual": "hydration mismatch 需要真實的 SSR + 瀏覽器 hydrate 流程才能觀察，無法用 node 直接執行驗證。"
+      }
+    },
+    {
+      "id": "ri-2-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "非 JSX 情境（如 document.title）該怎麼取得翻譯字串",
+      "docs": "",
+      "story": "",
+      "prompt": "頁籤標題 document.title 不是 JSX，不能直接塞 <FormattedMessage>。想把它設定成翻譯後的文字，下面這個自訂 Hook 的空格該填什麼？",
+      "code": "function useDocumentTitle(messageId) {\n  const intl = useIntl();\n  useEffect(() => {\n    document.title = ____;\n  }, [intl, messageId]);\n}",
+      "options": [
+        { "id": "a", "text": "intl.formatMessage({ id: messageId })" },
+        { "id": "b", "text": "<FormattedMessage id={messageId} />" },
+        { "id": "c", "text": "messageId" },
+        { "id": "d", "text": "intl.locale" }
+      ],
+      "answer": "a",
+      "explanation": "任何「不是 JSX 內容、而是需要純文字字串」的場景（document.title、alert()、瀏覽器通知內容、傳給第三方非 React 元件的文字），都得繞過 <Formatted... /> 元件、改用 intl.formatMessage() 這個底層 API 直接算出字串。選項 b 是元素，塞進 document.title（一個字串型別的屬性）只會被強制轉成類似 \"[object Object]\" 的無意義文字；c 只是翻譯 id 本身，不是翻譯結果；d 拿到的是語系代碼，不是訊息內容。",
+      "verify": {
+        "checks": [],
+        "manual": "react-intl 未安裝於本專案，且需要 <IntlProvider> 的語系 context 才能實際運作，無法用 node 直接執行驗證。"
+      }
+    }
+  ]
+}

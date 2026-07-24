@@ -1,0 +1,248 @@
+{
+  "id": "ri-23",
+  "title": "React 進階探索：useLayoutEffect、useRef 與 useImperativeHandle",
+  "questions": [
+    {
+      "id": "ri-23-q1",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "useLayoutEffect 的典型用途：量測 DOM 尺寸並在畫面繪製前調整，避免閃爍",
+      "docs": "",
+      "story": "",
+      "prompt": "一個提示框（Tooltip）要顯示在觸發元素正上方，但必須先知道提示框本身的實際高度，才能算出正確的垂直位移。用 useEffect 量測會出現『先閃一下在錯誤位置、才跳到正確位置』的畫面閃爍；改用 useLayoutEffect 能解決嗎？",
+      "code": "function Tooltip({ targetRect }) {\n  const ref = useRef(null);\n  const [top, setTop] = useState(0);\n\n  useLayoutEffect(() => {\n    const height = ref.current.getBoundingClientRect().height;\n    setTop(targetRect.top - height);\n  }, [targetRect]);\n\n  return <div ref={ref} style={{ position: \"absolute\", top }}>提示內容</div>;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "能：useLayoutEffect 保證在瀏覽器『真正把畫面繪製到螢幕上』之前同步執行完畢，這裡在裡面量測 DOM 尺寸、呼叫 setTop 調整位置，會在使用者眼睛看到任何畫面之前就完成，因此不會有『先顯示錯誤位置、再跳到正確位置』這種閃爍；useEffect 則通常是在瀏覽器已經繪製完成『之後』才非同步執行（並非保證絕對如此——某些情況下瀏覽器實際排程仍可能讓它在下一次繪製前執行），如果裡面也做了會改變版面的更新，使用者通常會先看到一次錯誤位置的畫面，才看到修正後的結果，這正是兩者最關鍵的時機差異：useLayoutEffect 是『保證繪製前』，useEffect 則是『通常繪製後、但沒有像 useLayoutEffect 那樣的同步保證』"
+        },
+        {
+          "id": "b",
+          "text": "不能，useLayoutEffect 跟 useEffect 的執行時機完全相同，都無法避免這種閃爍"
+        },
+        {
+          "id": "c",
+          "text": "能，但原因是 useLayoutEffect 會自動快取上一次量測的結果，不需要重新計算"
+        },
+        {
+          "id": "d",
+          "text": "不能，useLayoutEffect 只能在 class component 裡使用，函式元件必須用 useEffect"
+        }
+      ],
+      "answer": "a",
+      "explanation": "useLayoutEffect 與 useEffect 的 API 用法幾乎一樣，差別純粹在『相對瀏覽器繪製的時機』：useLayoutEffect 同步執行在繪製之前，適合『需要量測 DOM、並且這次量測結果會回頭影響這次要顯示的畫面』這種場景，避免使用者看到中間過渡狀態的閃爍；代價是它會阻塞瀏覽器繪製，如果邏輯耗時較長，會讓畫面卡頓，這也是為什麼官方建議『沒有明確需要才別用它，優先用 useEffect』的原因。",
+      "verify": {
+        "checks": [],
+        "manual": "useLayoutEffect 相對瀏覽器繪製時機的差異需要真實瀏覽器環境觀察畫面閃爍與否，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-23-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "useLayoutEffect 在伺服器端渲染會印出警告，因為 SSR 沒有真實的瀏覽器繪製步驟",
+      "docs": "https://react.dev/reference/react/useLayoutEffect#usage",
+      "story": "",
+      "prompt": "一個用了 useLayoutEffect 量測 DOM 尺寸的元件，如果被用在伺服器端渲染（renderToString／renderToStaticMarkup）的流程裡，會發生什麼事？",
+      "code": "function Widget() {\n  useLayoutEffect(() => {\n    console.log(\"量測 DOM\");\n  }, []);\n  return <div>Hi</div>;\n}\n\nconsole.log(renderToStaticMarkup(<Widget />));",
+      "options": [
+        {
+          "id": "a",
+          "text": "useLayoutEffect（以及 useEffect）在伺服器端渲染階段完全不會執行——這呼應前面 ri-7 章節已經驗證過的事實：SSR 沒有真實 DOM、沒有瀏覽器繪製這個時間點，兩種 Effect 依賴的時機根本不存在；額外值得注意的是，React 在 SSR 環境使用 useLayoutEffect 通常會在開發模式印出一則警告，提醒『這個 Hook 在伺服器端不會有任何效果，建議確認是否真的需要在 SSR 也執行這段邏輯』"
+        },
+        {
+          "id": "b",
+          "text": "useLayoutEffect 會在伺服器端同步執行，因為它本來就是『同步』的 Hook，不受渲染環境影響"
+        },
+        {
+          "id": "c",
+          "text": "程式會直接拋出例外，useLayoutEffect 完全不能用在任何會被伺服器端渲染的元件裡"
+        },
+        {
+          "id": "d",
+          "text": "useLayoutEffect 會被自動轉換成 useEffect 在伺服器端執行"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這題把前面 ri-7 章節已經用真實程式碼驗證過的事實（SSR 階段兩種 Effect 都不執行），延伸到 useLayoutEffect 特有的警告行為：因為它「同步阻塞、依賴繪製時機」的特性在 SSR 完全沒有對應概念，React 會主動提醒開發者留意這個落差，而不是靜默忽略。",
+      "verify": {
+        "checks": [
+          {
+            "jsx": "import { useLayoutEffect } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nfunction Widget() {\n  useLayoutEffect(() => {\n    console.log(\"量測 DOM\");\n  }, []);\n  return <div>Hi</div>;\n}\nconsole.log(renderToStaticMarkup(<Widget />));",
+            "expected": "<div>Hi</div>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ri-23-q3",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "把不需要同步阻塞繪製的邏輯放進 useLayoutEffect，會讓畫面感覺卡頓",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊把一段「元件掛載時打一次 API 記錄使用者行為」的邏輯，寫進了 useLayoutEffect（而不是 useEffect）。這樣做對使用者體驗有什麼實際影響？",
+      "code": "// 不必要地使用 useLayoutEffect\nuseLayoutEffect(() => {\n  logAnalytics(\"page_view\"); // 跟畫面版面完全無關的邏輯\n}, []);",
+      "options": [
+        {
+          "id": "a",
+          "text": "會讓畫面感覺卡頓：useLayoutEffect 保證在瀏覽器真正繪製畫面之前『同步』執行完畢，代表它會阻塞繪製——如果放進去的邏輯（像這裡打 API 記錄）本身不影響這次要顯示的版面、不需要在繪製前就緒，卻被迫同步阻塞繪製流程，等於讓使用者多等一段本來不需要等待的時間才看到畫面；這種跟版面調整無關的邏輯，該用 useEffect（非同步、繪製後才執行，不阻塞使用者看到畫面）"
+        },
+        {
+          "id": "b",
+          "text": "沒有任何負面影響，useLayoutEffect 與 useEffect 的效能表現完全相同"
+        },
+        {
+          "id": "c",
+          "text": "會讓 API 請求的回應速度變快，因為 useLayoutEffect 有更高的網路請求優先權"
+        },
+        {
+          "id": "d",
+          "text": "會導致這段程式碼完全不會被執行，useLayoutEffect 只能放置與 DOM 量測相關的邏輯"
+        }
+      ],
+      "answer": "a",
+      "explanation": "「這段邏輯跟這次要顯示的版面有沒有關係」是判斷該用 useEffect 還是 useLayoutEffect 的關鍵問題：只有『量測 DOM、並且結果會回頭影響這次繪製』這類場景才值得付出阻塞繪製的代價；跟版面無關的邏輯（記錄分析、發送不影響畫面的請求）放進 useLayoutEffect，只會平白讓使用者等待，是常見的誤用情境。",
+      "verify": {
+        "checks": [],
+        "manual": "阻塞繪製造成的使用者體驗差異需要真實瀏覽器環境與效能量測工具才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-23-q4",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "layout thrashing：在 useLayoutEffect 裡反覆讀寫 DOM 版面資訊，強迫瀏覽器重複計算版面",
+      "docs": "",
+      "story": "",
+      "prompt": "一個 useLayoutEffect 裡，對多個元素依序執行「讀取這個元素目前的高度 → 依高度設定另一個元素的樣式 → 再讀取另一個元素的高度 → ...」這種讀寫交錯的邏輯，發現效能明顯變差。這是什麼問題？",
+      "code": "useLayoutEffect(() => {\n  items.forEach((item) => {\n    const height = item.ref.current.getBoundingClientRect().height; // 讀\n    item.ref.current.style.marginTop = height / 2 + \"px\"; // 寫，接著又讀下一個\n  });\n}, [items]);",
+      "options": [
+        {
+          "id": "a",
+          "text": "layout thrashing（版面震盪）：瀏覽器為了效能，通常會把多次版面相關的『讀取』盡量批次處理、延後計算；但只要中間穿插了一次『寫入』（改變樣式），就會強迫瀏覽器立刻同步重新計算一次版面（因為寫入可能影響了還沒讀取的其他元素），才能讓下一次讀取拿到正確的值。這裡反覆讀、寫、讀、寫，等於強迫瀏覽器一次又一次同步重新計算版面，效能開銷遠高於『先把所有讀取集中做完，再統一做所有寫入』的寫法"
+        },
+        {
+          "id": "b",
+          "text": "這是正常且無法避免的效能表現，任何版面量測邏輯都會有相同的效能開銷"
+        },
+        {
+          "id": "c",
+          "text": "問題純粹出在使用了 forEach 迴圈，改用 for 迴圈就能完全解決效能問題"
+        },
+        {
+          "id": "d",
+          "text": "這只在 Firefox 瀏覽器上會發生，其餘瀏覽器不受影響"
+        }
+      ],
+      "answer": "a",
+      "explanation": "layout thrashing 是前端效能裡一個經典的瀏覽器層級議題，跟 React 本身無關，但很容易在 useLayoutEffect 這種『本來就是為了同步操作 DOM』的場合裡不小心踩到。解法是把邏輯改寫成『先集中做完所有讀取（例如先算出一個包含所有高度的陣列），再集中做完所有寫入』，讓瀏覽器只需要重新計算一次版面，而不是讀寫交錯地反覆計算。",
+      "verify": {
+        "checks": [],
+        "manual": "layout thrashing 屬瀏覽器版面重新計算的效能議題，需要真實瀏覽器與效能量測工具才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-23-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "useRef 除了抓 DOM，也常用來存放「不希望變動觸發重繪」的跨渲染資料",
+      "docs": "https://react.dev/reference/react/useRef",
+      "story": "",
+      "prompt": "這個元件用 useRef 記錄「目前已經送出過幾次表單」，這個數字只給內部邏輯判斷用（例如超過 3 次要鎖住按鈕），完全不顯示在畫面上。用 ref 而不是 state 記錄，對重繪次數有什麼影響？",
+      "code": "function Form() {\n  const submitCountRef = useRef(0);\n\n  function handleSubmit() {\n    submitCountRef.current += 1;\n    if (submitCountRef.current > 3) {\n      console.log(\"鎖住按鈕\");\n    }\n  }\n\n  return <button onClick={handleSubmit}>送出</button>;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "累加 submitCountRef.current 完全不會觸發這個元件重繪：ref 的 current 屬性改變，不像 state 那樣會排定一次更新，這正是 useRef 的定義性特徵（前面既有 react-11 章節談過）；這裡的送出次數純粹是內部邏輯判斷用的計數器，畫面上沒有任何內容依賴它，用 ref 而不是 state 記錄，省下了『每次送出表單都要多重繪一次、卻沒有任何畫面內容真的改變』這種浪費"
+        },
+        {
+          "id": "b",
+          "text": "累加 submitCountRef.current 每次都會觸發這個元件重繪，效果跟用 state 記錄完全一樣"
+        },
+        {
+          "id": "c",
+          "text": "submitCountRef.current 每次都會被重置回 0，無法跨越多次點擊累加"
+        },
+        {
+          "id": "d",
+          "text": "程式會拋出例外，ref 不能用來存放數字，只能存放 DOM 節點"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是「state vs ref」判斷準則（前面既有章節反覆談過）在一個具體案例上的應用：畫面完全不需要顯示的內部計數器，用 ref 記錄既能跨渲染保留、又不會製造不必要的重繪，是比 state 更貼切的選擇；若這個次數需要顯示在畫面上（例如提示『已送出 2 次』），才會需要改用 state。",
+      "verify": {
+        "checks": [],
+        "manual": "原本的檢查直接在 Form 的 render body 裡連續累加 submitCountRef.current 兩次來湊出『2』這個結果，但這等於在渲染過程直接做 ref 的副作用寫入——跟題目本身『useRef 值該在事件處理器裡更新，不該寫在 render body』的重點矛盾（render 可能被 React 多次呼叫，例如開發模式的 StrictMode 雙重呼叫，會讓寫在 render body 的累加被多算）。要真正驗證『點擊 handleSubmit 兩次、ref 累加到 2，但不觸發重新渲染』，需要真實 DOM 環境搭配點擊互動（如 fireEvent.click／userEvent.click）並觀察渲染次數，本專案 verify 執行環境僅支援 react-dom/server 的單次靜態渲染、沒有 jsdom 或互動能力，無法用 node 直接驗證，需人工審核。"
+      }
+    },
+    {
+      "id": "ri-23-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "useImperativeHandle：讓父層透過 ref 呼叫子元件內部定義的特定方法，而不是拿到整個 DOM 節點",
+      "docs": "",
+      "story": "",
+      "prompt": "父層想透過 ref 呼叫子元件 VideoPlayer 的 play()／pause() 方法，但不希望父層能拿到底層 <video> 的完整 DOM 節點、任意亂改它的屬性。useImperativeHandle 怎麼解決這個需求？",
+      "code": "const VideoPlayer = forwardRef(function VideoPlayer(props, ref) {\n  const videoRef = useRef(null);\n\n  useImperativeHandle(ref, () => ({\n    play() { videoRef.current.play(); },\n    pause() { videoRef.current.pause(); },\n  }));\n\n  return <video ref={videoRef} src={props.src} />;\n});",
+      "options": [
+        {
+          "id": "a",
+          "text": "useImperativeHandle(ref, () => ({...}))：讓父層透過 ref.current 拿到的，不是底層真正的 DOM 節點，而是一個『開發者自己客製化的物件』，裡面只暴露想讓外部呼叫的方法（這裡是 play、pause）；父層完全碰不到 videoRef 這個內部的、真正指向 <video> 的 ref，等於把『子元件對外暴露的操作介面』限縮到刻意設計的最小範圍，而不是整個 DOM 節點的所有屬性與方法"
+        },
+        {
+          "id": "b",
+          "text": "useImperativeHandle 讓父層自動拿到底層 DOM 節點的完整存取權限，跟不使用它時完全一樣"
+        },
+        {
+          "id": "c",
+          "text": "useImperativeHandle 只能用在函式元件上，class component 無法使用等價功能"
+        },
+        {
+          "id": "d",
+          "text": "useImperativeHandle 的用途是取代 useState，管理元件內部的狀態"
+        }
+      ],
+      "answer": "a",
+      "explanation": "useImperativeHandle 解決的是「用 ref 溝通時，怎麼控制暴露的介面範圍」這個問題：一般搭配 ref 轉發（forwardRef／React 19 的 ref-as-prop）拿到的是完整 DOM 節點，父層理論上什麼都能改；useImperativeHandle 讓子元件自己決定要暴露哪些方法，是命令式（imperative）API 設計裡「最小暴露原則」的具體實踐，官方文件也提醒這是相對少用的進階 Hook，優先考慮宣告式（用 props 控制）的設計。",
+      "verify": {
+        "checks": [],
+        "manual": "useImperativeHandle 搭配真實 DOM 影音播放需要瀏覽器環境才能觀察 play/pause 效果，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-23-q7",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "useImperativeHandle 該搭配 forwardRef（或 React 19 的 ref-as-prop）使用，才能讓父層的 ref 生效",
+      "docs": "",
+      "story": "",
+      "prompt": "一個函式元件內部呼叫了 useImperativeHandle，但這個元件本身沒有用 forwardRef 包裝、也沒有在 React 19 風格下把 ref 當成一般 prop 接收。父層傳進來的 ref 能正確拿到 useImperativeHandle 暴露的物件嗎？",
+      "code": "// 沒有接收 ref，useImperativeHandle 的第一個參數傳了什麼？\nfunction Broken() {\n  useImperativeHandle(???, () => ({ focus() {} })); // 沒有 ref 可以傳\n  return <input />;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "不能：useImperativeHandle 的第一個參數必須是父層透過某種管道（forwardRef 的第二個參數、或 React 19 直接從 props 解構出的 ref）傳進來的那個 ref 物件，這個元件才知道要把自訂的操作介面『掛』到哪個 ref 上；沒有先透過 forwardRef（或 ref-as-prop）拿到父層的 ref，useImperativeHandle 根本沒有東西可以傳，第一個參數會是 undefined，父層的 ref.current 也就拿不到任何東西"
+        },
+        {
+          "id": "b",
+          "text": "能，useImperativeHandle 會自動幫元件補上一個 forwardRef 包裝，不需要開發者手動處理"
+        },
+        {
+          "id": "c",
+          "text": "能，只要元件內部有呼叫 useRef，父層的 ref 就會自動連接上"
+        },
+        {
+          "id": "d",
+          "text": "能，useImperativeHandle 完全不依賴 forwardRef 或 ref-as-prop，兩者是彼此獨立無關的機制"
+        }
+      ],
+      "answer": "a",
+      "explanation": "useImperativeHandle 只是負責『客製化要掛在 ref 上的內容』，它本身不負責『怎麼從父層拿到這個 ref』——這件事必須靠 forwardRef（舊寫法）或 React 19 起把 ref 當一般 prop 解構（新寫法，前面既有 react-11 章節談過）先完成，兩者是搭配使用、缺一不可的組合，不是各自獨立的機制。",
+      "verify": {
+        "checks": [],
+        "manual": "ref 轉發與 useImperativeHandle 的搭配需要真實元件掛載與父層 ref 存取才能觀察，無法用 node 直接驗證。"
+      }
+    }
+  ]
+}

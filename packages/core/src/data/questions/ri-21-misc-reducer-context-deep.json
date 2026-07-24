@@ -1,0 +1,324 @@
+{
+  "id": "ri-21",
+  "title": "React 進階探索：useReducer 與 useContext 深入",
+  "questions": [
+    {
+      "id": "ri-21-q1",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "useState vs useReducer：狀態更新邏輯變複雜、彼此有關聯時改用 useReducer",
+      "docs": "",
+      "story": "",
+      "prompt": "一個購物車元件原本用好幾個獨立的 useState（items、总金額、折扣、運費各自一份 state），更新邏輯彼此牽連（加一項商品要同時更新總金額跟可能觸發的折扣門檻），程式碼變得難以追蹤『這次更新到底影響了哪些欄位』。什麼時候該考慮把這些 useState 收斂成一個 useReducer？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "當多個 state 欄位的更新邏輯彼此關聯、經常需要『同時』依某個事件一起變化時，把它們收斂進同一個 reducer，用一個 action 描述『發生了什麼事』，reducer 內部一次決定所有相關欄位該怎麼變，比分散在好幾個 useState 呼叫、還要小心翼翼確保彼此同步更新更不容易出錯；如果 state 欄位彼此獨立、更新邏輯簡單，維持多個 useState 反而更直接，不需要為了『看起來更工程化』強行改用 useReducer"
+        },
+        {
+          "id": "b",
+          "text": "任何情境下 useReducer 都比 useState 優越，應該無條件把所有 useState 都改寫成 useReducer"
+        },
+        {
+          "id": "c",
+          "text": "useReducer 只能管理數字型別的狀態，物件或陣列狀態必須用 useState"
+        },
+        {
+          "id": "d",
+          "text": "useReducer 與 useState 是完全不相關的兩個 Hook，不能用其中一個取代另一個的功能"
+        }
+      ],
+      "answer": "a",
+      "explanation": "useReducer 本質上是 useState 的一種進階形式（React 內部甚至可以把 useState 理解成一個簡化版的 useReducer），適合「更新邏輯複雜、多個欄位彼此關聯」的情境；state 簡單、彼此獨立時，多個 useState 更直接易懂，兩者是依情境選擇的工具，不是絕對優劣的關係。",
+      "verify": {
+        "checks": [],
+        "manual": "屬狀態管理工具選型的推理題，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-21-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "useReducer 的運作方式：dispatch 一個 action，reducer 算出新 state",
+      "docs": "https://react.dev/reference/react/useReducer",
+      "story": "",
+      "prompt": "這個計數器用 useReducer 管理。連續 dispatch 兩次 { type: \"increment\" } 之後，count 會是多少？",
+      "code": "function counterReducer(state, action) {\n  switch (action.type) {\n    case \"increment\": return { count: state.count + 1 };\n    case \"reset\": return { count: 0 };\n    default: return state;\n  }\n}\n\nfunction useCounter() {\n  const [state, dispatch] = useReducer(counterReducer, { count: 0 });\n  const incrementTwice = () => {\n    dispatch({ type: \"increment\" });\n    dispatch({ type: \"increment\" });\n  };\n  return { state, incrementTwice }; // dispatch 改放進事件處理器裡呼叫，不是在 render body 直接呼叫\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "useReducer(reducer, initialState) 回傳 [目前的 state, dispatch 函式]；每次呼叫 dispatch(action)，React 會用『目前的 state』跟這個 action 呼叫 reducer 函式，把回傳結果當成新的 state；這跟 useState 的更新流程概念一致，只是把『怎麼算出新 state』這件事，從呼叫端直接給值，改成集中寫在 reducer 函式裡、由 action 描述意圖"
+        },
+        {
+          "id": "b",
+          "text": "dispatch 呼叫的當下會立刻同步更新 state 並回傳新值，不需要等待下一次渲染"
+        },
+        {
+          "id": "c",
+          "text": "reducer 函式只能回傳數字，不能回傳物件型別的 state"
+        },
+        {
+          "id": "d",
+          "text": "useReducer 的第二個參數（初始 state）只能是空物件，不能帶初始值"
+        }
+      ],
+      "answer": "a",
+      "explanation": "useReducer 的心智模型可以類比成「小型的 Redux」：dispatch 送出一個描述『發生了什麼』的 action，reducer 是一個純函式，依 (目前state, action) 算出下一個 state。跟 setState 一樣，dispatch 本身不是同步立刻反映到你手上這個變數，而是排定一次更新、下一次渲染才會拿到新的 state。",
+      "verify": {
+        "checks": [],
+        "manual": "useReducer 需要在真實元件渲染週期中觀察 dispatch 觸發的重繪與狀態更新，單次呼叫無法完整驗證非同步更新特性，需人工審核。"
+      }
+    },
+    {
+      "id": "ri-21-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "useReducer 搭配 useContext：把「狀態＋操作方式」一起往下傳，取代淺層 Redux",
+      "docs": "",
+      "story": "",
+      "prompt": "一個中型應用想要「多個不相鄰的元件都能讀取、也都能觸發更新」某份共享狀態，但團隊覺得為此引入完整的 Redux 有點殺雞用牛刀。useReducer 搭配 useContext 組合起來，能扮演類似的角色嗎？",
+      "code": "const TasksContext = createContext(null);\nconst TasksDispatchContext = createContext(null);\n\nfunction TasksProvider({ children }) {\n  const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);\n  return (\n    <TasksContext.Provider value={tasks}>\n      <TasksDispatchContext.Provider value={dispatch}>\n        {children}\n      </TasksDispatchContext.Provider>\n    </TasksContext.Provider>\n  );\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "可以：用 useReducer 管理狀態與更新邏輯，再把『目前狀態』跟『dispatch 函式』分別透過兩個 Context 往下傳（拆成兩個 Context 是為了讓『只需要 dispatch、不需要讀 state』的元件不會因為 state 變動而不必要地重繪），任何深層元件都能透過 useContext 讀到狀態、或拿到 dispatch 觸發更新——這正是 React 內建工具能做到、不需要引入外部狀態管理套件就能覆蓋的中型應用場景"
+        },
+        {
+          "id": "b",
+          "text": "不行，useContext 只能讀取靜態值，沒辦法搭配會隨時間變化的 state 使用"
+        },
+        {
+          "id": "c",
+          "text": "可以，但這種組合的效果跟 Redux 完全相同，包括 DevTools 時間旅行除錯這類功能也都會自動具備"
+        },
+        {
+          "id": "d",
+          "text": "不行，一個應用程式裡最多只能建立一個 Context，不能同時建立 TasksContext 與 TasksDispatchContext"
+        }
+      ],
+      "answer": "a",
+      "explanation": "React 官方文件明確示範這個組合模式，把它定位成「不需要引入外部狀態管理套件、用內建工具就能撐起中型應用共享狀態需求」的方案；但它不會自動具備 Redux DevTools 那種時間旅行除錯能力（那是 Redux 生態系額外提供的工具），選項 c 誇大了兩者的等價程度。拆成兩個 Context 是這個模式裡一個值得注意的效能細節，避免不必要的重繪範圍擴大。",
+      "verify": {
+        "checks": [],
+        "manual": "屬架構模式選型的推理題，完整效果需要多元件協調的真實互動情境才能觀察，無法用單一片段驗證。"
+      }
+    },
+    {
+      "id": "ri-21-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "同一個事件處理器裡連續 dispatch 多次，會依序各自被處理",
+      "docs": "https://react.dev/learn/queueing-a-series-of-state-updates",
+      "story": "",
+      "prompt": "一個按鈕的 onClick 裡連續呼叫了三次 dispatch({ type: \"increment\" })。跟連續呼叫三次 setCount(c => c + 1) 類似，count 最終會增加多少？",
+      "code": "function reducer(count, action) {\n  if (action.type === \"increment\") return count + 1;\n  return count;\n}\n\nfunction handleClick(dispatch) {\n  dispatch({ type: \"increment\" });\n  dispatch({ type: \"increment\" });\n  dispatch({ type: \"increment\" });\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "增加 3：React 會把同一個事件處理器裡連續的 dispatch 呼叫，依序排進一個更新佇列，逐一用『前一步驟算出的最新 state』當輸入呼叫 reducer——這裡的 reducer 直接用 count + 1（讀取的是佇列裡累積到當下的最新值，不是這次渲染最初拿到的那個 count），所以三次呼叫會依序疊加，最終增加 3；這跟 useState 搭配更新函式 c => c + 1 的行為模式一致，都是『排隊、依序處理』而不是互相覆蓋"
+        },
+        {
+          "id": "b",
+          "text": "只會增加 1，因為 React 會把同一個事件裡對同一個 state 的多次更新自動去重，只保留最後一次"
+        },
+        {
+          "id": "c",
+          "text": "增加 3，但三次 dispatch 會各自觸發一次獨立的重繪，總共重繪三次"
+        },
+        {
+          "id": "d",
+          "text": "程式會拋出例外，同一個事件處理器裡不能連續呼叫多次 dispatch"
+        }
+      ],
+      "answer": "a",
+      "explanation": "React 對同一個事件處理器裡的多次狀態更新有「批次處理」機制：多次 dispatch／setState 呼叫會先排進佇列，事件處理器執行完畢後，React 才依序、一次性地把這些更新套用完、只觸發一次重繪。這裡因為 reducer 用的是 count + 1（依賴目前傳入的 count 讀取『最新排隊結果』），三次呼叫會正確疊加成 +3，而不是像『直接寫死某個值』那樣互相覆蓋。",
+      "verify": {
+        "checks": [],
+        "manual": "dispatch 佇列與批次處理需要在真實元件多次事件觸發後才能觀察最終渲染結果，無法用單次 node 執行完整驗證。"
+      }
+    },
+    {
+      "id": "ri-21-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "dispatch 本身是同步呼叫，但『新的 state 值』要等下一次渲染才讀得到",
+      "docs": "",
+      "story": "",
+      "prompt": "呼叫 dispatch 之後，緊接著在同一行程式碼裡讀取 state 變數，會拿到更新後的新值嗎？",
+      "code": "function handleClick() {\n  dispatch({ type: \"increment\" });\n  console.log(state.count); // 這裡讀到的是？\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "讀到的仍然是這次渲染『當下』的舊值，不是 dispatch 之後算出的新值：dispatch 這個動作本身是同步執行的（它會立刻把 action 放進更新佇列），但『重新呼叫 reducer、算出新 state、觸發重新渲染』是之後才發生的事；state 這個變數是這次渲染閉包捕捉到的值，在這次渲染結束、下一次重新渲染發生之前，它的值不會改變——想在 dispatch 之後立刻拿到最新值，唯一可靠的辦法是在 reducer 內部自己算出這個新值並使用它，或者等到下一次渲染"
+        },
+        {
+          "id": "b",
+          "text": "讀到的是更新後的新值，dispatch 會立刻同步更新 state 變數本身"
+        },
+        {
+          "id": "c",
+          "text": "這段程式碼會拋出例外，dispatch 之後不能立刻讀取 state"
+        },
+        {
+          "id": "d",
+          "text": "讀到的值是 undefined，dispatch 呼叫的當下 state 會被暫時清空"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是 useState／useReducer 共通、也是最常讓新手困惑的特性：state 變數是「這一次渲染」的閉包快照，dispatch／setState 呼叫不會『穿越回去』改變這個已經捕捉好的變數值，只會排定『下一次渲染』要用新值重新執行整個元件函式。想確認更新後的值，要嘛在 useEffect 裡觀察 state 依賴的變化（下一次渲染後才會跑），要嘛從 reducer 的回傳值本身推算，不能寄望 dispatch 後緊接著讀到的變數立刻反映新值。",
+      "verify": {
+        "checks": [],
+        "manual": "state 閉包快照特性需要在真實渲染週期中比對 dispatch 前後讀值的差異才能觀察，無法用單次 node 執行完整驗證。"
+      }
+    },
+    {
+      "id": "ri-21-q6",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "useContext 讀取最近一層 Provider 提供的值，沒有 Provider 就用 createContext 的預設值",
+      "docs": "https://react.dev/reference/react/useContext",
+      "story": "",
+      "prompt": "ThemeContext 用 createContext(\"light\") 建立，帶了預設值 \"light\"。下面這個元件完全沒有被任何 <ThemeContext.Provider> 包住，useContext(ThemeContext) 會拿到什麼？",
+      "code": "const ThemeContext = createContext(\"light\");\n\nfunction ThemedText() {\n  const theme = useContext(ThemeContext);\n  return <p>目前主題：{theme}</p>;\n}\n\n// 完全沒有用 Provider 包住\nconsole.log(renderToStaticMarkup(<ThemedText />));",
+      "options": [
+        {
+          "id": "a",
+          "text": "拿到 \"light\"：useContext 會沿著元件樹往上找『最近的一個』對應的 Provider，如果沒有任何 Provider 包住（就像這裡），就會退回使用 createContext(defaultValue) 當初宣告時給的預設值；這個預設值主要的用途是『在還沒接上真正的 Provider 之前，讓元件獨立渲染也不會報錯』，方便單獨測試或元件庫的預覽情境"
+        },
+        {
+          "id": "b",
+          "text": "拿到 undefined，沒有 Provider 包住時 useContext 一律回傳 undefined，忽略 createContext 給的預設值"
+        },
+        {
+          "id": "c",
+          "text": "程式會拋出例外，useContext 必須搭配至少一個 Provider 才能使用"
+        },
+        {
+          "id": "d",
+          "text": "拿到 null，這是 useContext 在缺少 Provider 時的固定回傳值"
+        }
+      ],
+      "answer": "a",
+      "explanation": "createContext(defaultValue) 的 defaultValue 不是「随便寫著好看」的參數，而是在『樹上真的找不到任何對應的 Provider』時的合法備援值。這個特性讓元件在缺少完整 Provider 情境（例如獨立測試、Storybook 預覽）下仍然能渲染出合理的結果，不會直接壞掉。",
+      "verify": {
+        "checks": [
+          {
+            "jsx": "import { createContext, useContext } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nconst ThemeContext = createContext(\"light\");\nfunction ThemedText() {\n  const theme = useContext(ThemeContext);\n  return <p>目前主題：{theme}</p>;\n}\nconsole.log(renderToStaticMarkup(<ThemedText />));",
+            "expected": "<p>目前主題：light</p>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ri-21-q7",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "一個元件可以同時使用多個不同的 Context，彼此互不影響",
+      "docs": "https://react.dev/reference/react/useContext",
+      "story": "",
+      "prompt": "一個元件同時需要「目前主題」跟「目前語系」這兩份彼此無關的全域資訊，各自用獨立的 Context 提供。可以在同一個元件裡呼叫兩次 useContext 嗎？",
+      "code": "const ThemeContext = createContext(\"light\");\nconst LocaleContext = createContext(\"zh-TW\");\n\nfunction Header() {\n  const theme = useContext(ThemeContext);\n  const locale = useContext(LocaleContext);\n  return <p>{theme} / {locale}</p>;\n}\n\nconsole.log(renderToStaticMarkup(\n  <ThemeContext.Provider value=\"dark\">\n    <LocaleContext.Provider value=\"en-US\">\n      <Header />\n    </LocaleContext.Provider>\n  </ThemeContext.Provider>\n));",
+      "options": [
+        {
+          "id": "a",
+          "text": "可以：一個元件呼叫多次 useContext，分別讀取不同的 Context，彼此完全獨立、互不影響，每個 useContext(SomeContext) 呼叫各自沿著樹往上找『最近的』對應 Provider；這裡巢狀包了兩層不同的 Provider，Header 能同時正確讀到 dark 跟 en-US"
+        },
+        {
+          "id": "b",
+          "text": "不行，一個元件裡只能呼叫一次 useContext，需要多份全域資料時必須合併成同一個 Context"
+        },
+        {
+          "id": "c",
+          "text": "可以，但兩個 Context 的 Provider 必須放在同一層（不能巢狀），否則只有最外層的會生效"
+        },
+        {
+          "id": "d",
+          "text": "程式會拋出例外，同一個元件不能同時訂閱兩個不同的 Context"
+        }
+      ],
+      "answer": "a",
+      "explanation": "Context 之間彼此獨立，一個元件可以自由訂閱任意數量的不同 Context，也不要求它們的 Provider 一定要在同一層——巢狀包裹是完全合法且常見的寫法（例如全域主題、語系、認證資訊各自用獨立的 Provider）。這是 Context 設計上刻意保持的靈活性，讓不同關注點的全域狀態可以彼此解耦、各自管理。",
+      "verify": {
+        "checks": [
+          {
+            "jsx": "import { createContext, useContext } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nconst ThemeContext = createContext(\"light\");\nconst LocaleContext = createContext(\"zh-TW\");\nfunction Header() {\n  const theme = useContext(ThemeContext);\n  const locale = useContext(LocaleContext);\n  return <p>{theme} / {locale}</p>;\n}\nconsole.log(renderToStaticMarkup(\n  <ThemeContext.Provider value=\"dark\">\n    <LocaleContext.Provider value=\"en-US\">\n      <Header />\n    </LocaleContext.Provider>\n  </ThemeContext.Provider>\n));",
+            "expected": "<p>dark / en-US</p>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ri-21-q8",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "Context 傳物件時常見陷阱：value 每次渲染都建立新物件，訂閱者會被迫重繪",
+      "docs": "https://react.dev/reference/react/useContext#optimizing-re-renders-when-passing-objects-and-functions",
+      "story": "",
+      "prompt": "Provider 的 value 每次都用行內物件字面值 { user, theme } 傳入。父層因為某個不相關的 state 重繪時，所有訂閱這個 Context 的子元件會發生什麼事？",
+      "code": "function App() {\n  const [tick, setTick] = useState(0); // 跟 user/theme 完全無關的 state\n  const [user] = useState({ name: \"Amy\" });\n  const [theme] = useState(\"dark\");\n\n  return (\n    <AppContext.Provider value={{ user, theme }}> {/* 每次渲染都是新物件 */}\n      <button onClick={() => setTick(t => t + 1)}>跟 Context 無關的按鈕</button>\n      <Dashboard />\n    </AppContext.Provider>\n  );\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "即使 user 跟 theme 這兩份『實際內容』完全沒變，光是點擊那個跟 Context 毫不相干的按鈕（觸發 App 重繪），{ user, theme } 這個行內物件字面值就會重新建立成一個新的物件參考；所有透過 useContext(AppContext) 訂閱這個 Context 的子元件，都會因為 Provider 的 value 參考變了而被迫重繪——這跟前面 ri-14 章節談過 memo 淺層比較的陷阱是同一個根本原因（物件參考不穩定），解法是用 useMemo 包住這個 value 物件，讓它只在真正的依賴（user、theme）改變時才產生新參考"
+        },
+        {
+          "id": "b",
+          "text": "訂閱的子元件不會受到任何影響，Context 的 Provider 會自動做深層比較，判斷內容沒變就跳過重繪"
+        },
+        {
+          "id": "c",
+          "text": "只有 tick 這個 state 本身相關的元件會重繪，訂閱 AppContext 的子元件完全不會被牽連"
+        },
+        {
+          "id": "d",
+          "text": "程式會拋出例外，Context 的 value 不能是行內物件字面值"
+        }
+      ],
+      "answer": "a",
+      "explanation": "Context 沒有內建的淺層或深層比較機制——它單純用參考比對判斷 value 是否改變，這個特性經常跟 memo 的陷阱一起出現：只要 Provider 所在的元件重繪、且 value 是行內建立的物件字面值，所有訂閱者都會被迫跟著重繪，即使實際內容完全沒變。用 useMemo 包住 value（依賴陣列只放真正會變動的值），讓物件參考在不相關的重繪之間保持穩定，是這個常見效能陷阱的標準解法。",
+      "verify": {
+        "checks": [],
+        "manual": "Context 訂閱者被迫重繪的行為需要多輪真實渲染搭配重繪次數計數才能觀察，無法用單次 node 執行驗證。"
+      }
+    },
+    {
+      "id": "ri-21-q9",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "巢狀 Provider 時，讀到的永遠是最近的那一層",
+      "docs": "https://react.dev/learn/passing-data-deeply-with-context#context-passes-through-intermediate-components",
+      "story": "",
+      "prompt": "同一個 ThemeContext 被巢狀包了兩層，外層 value=\"light\"、內層又包了一層 value=\"dark\"。在兩層 Provider 之間的元件，跟在最內層的元件，各自讀到的值一樣嗎？",
+      "code": "function App() {\n  return (\n    <ThemeContext.Provider value=\"light\">\n      <p>{useContext(ThemeContext)}</p> {/* 外層：應該讀到 light（示意，實際 Hook 需在元件內呼叫） */}\n      <ThemeContext.Provider value=\"dark\">\n        <Inner />\n      </ThemeContext.Provider>\n    </ThemeContext.Provider>\n  );\n}\nfunction Inner() {\n  return <p>{useContext(ThemeContext)}</p>;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "不一樣：useContext 永遠讀取『沿著元件樹往上找，第一個遇到的』Provider 提供的值；在兩層 Provider 之間的位置，往上找到的第一層就是外層的 value=\"light\"；Inner 元件位於內層 Provider 底下，往上第一個遇到的是內層的 value=\"dark\"——巢狀 Provider 允許在樹的不同區域，用同一個 Context 提供不同的值，內層會『覆蓋』外層，但只影響內層底下的子樹，不影響內外層之間的其他元件"
+        },
+        {
+          "id": "b",
+          "text": "一樣，同一個 Context 在整棵樹裡任何位置讀到的值永遠是最外層 Provider 提供的那一個"
+        },
+        {
+          "id": "c",
+          "text": "一樣，同一個 Context 在整棵樹裡任何位置讀到的值永遠是最內層 Provider 提供的那一個"
+        },
+        {
+          "id": "d",
+          "text": "程式會拋出例外，同一個 Context 不能被巢狀的多層 Provider 重複提供"
+        }
+      ],
+      "answer": "a",
+      "explanation": "巢狀 Provider 是 Context 支援『依樹上位置提供不同值』的具體機制：越靠內層的 Provider，只會影響它底下的子樹，不會逆向影響外層或平行的其他分支。這在需要『大部分頁面用預設主題，某個特定區塊強制用另一種主題』這類局部覆蓋的情境很有用，不需要額外設計其他機制。",
+      "verify": {
+        "checks": [
+          {
+            "jsx": "import { createContext, useContext } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nconst ThemeContext = createContext(\"light\");\nfunction Between() {\n  return <p>{useContext(ThemeContext)}</p>;\n}\nfunction Inner() {\n  return <p>{useContext(ThemeContext)}</p>;\n}\nfunction App() {\n  return (\n    <ThemeContext.Provider value=\"light\">\n      <Between />\n      <ThemeContext.Provider value=\"dark\">\n        <Inner />\n      </ThemeContext.Provider>\n    </ThemeContext.Provider>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));",
+            "expected": "<p>light</p><p>dark</p>"
+          }
+        ]
+      }
+    }
+  ]
+}

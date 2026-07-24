@@ -1,0 +1,271 @@
+{
+  "id": "ri-1",
+  "title": "React Router：前端路由基礎",
+  "questions": [
+    {
+      "id": "ri-1-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "四種 Router 元件怎麼挑",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊把一個 React SPA 部署到一台陽春的靜態檔案伺服器，沒有設定「找不到路徑就一律回傳 index.html」這種改寫規則。使用者在 /about 頁面按重新整理時，伺服器會直接回傳 404（因為它真的去找一個叫 about 的檔案，當然找不到）。在不能改伺服器設定的前提下，App 最外層該用哪一個 Router 元件包起來？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "HashRouter —— 網址其實是 /#/about 這種雜湊片段，# 後面的部分瀏覽器根本不會送給伺服器，伺服器永遠只看到對根目錄的請求，重新整理不會 404；代價是網址多了一個 # 符號" },
+        { "id": "b", "text": "BrowserRouter —— 用 HTML5 history API，網址乾淨沒有 #，但重新整理 /about 時瀏覽器會真的對伺服器發出 /about 請求，沒有改寫規則就會 404，跟「不能改伺服器設定」這個前提直接衝突" },
+        { "id": "c", "text": "MemoryRouter —— 路由狀態只存在記憶體裡，不會反映在網址列，使用者看不到網址、也存不了書籤，不適合一般對外的網頁" },
+        { "id": "d", "text": "StaticRouter —— 是給伺服器端渲染（SSR）用的一次性渲染結果，瀏覽器端後續的互動式導航不會用它" }
+      ],
+      "answer": "a",
+      "explanation": "四種 Router 差在「路由狀態存在哪裡、伺服器看不看得到」：BrowserRouter 用真實網址、需要伺服器配合改寫規則；HashRouter 把路由資訊藏進 # 後面，伺服器完全不會收到、天生免疫「重新整理 404」這個問題；MemoryRouter 只活在記憶體，適合測試或 React Native 這種沒有網址列的環境；StaticRouter 只服務 SSR 那一次性的渲染。這題的限制條件（不能改伺服器、但要能重新整理）剛好點名 HashRouter 的存在意義。",
+      "verify": {
+        "checks": [],
+        "manual": "情境屬部署設定與伺服器行為，需要真實伺服器與瀏覽器環境才能觀察；且依賴 react-router-dom（本專案未安裝），無法用 node 直接執行驗證。"
+      }
+    },
+    {
+      "id": "ri-1-q2",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "useNavigate 導頁後不留歷史記錄",
+      "docs": "",
+      "story": "",
+      "prompt": "按下「登出」按鈕後，要把使用者導到 /login，並且不希望使用者按瀏覽器的上一頁又跳回登出前的頁面。下面這段寫法，按上一頁之後會發生什麼事？",
+      "code": "function LogoutButton() {\n  const navigate = useNavigate();\n\n  function handleLogout() {\n    logout();\n    navigate(\"/login\", { replace: true });\n  }\n\n  return <button onClick={handleLogout}>登出</button>;\n}",
+      "options": [
+        { "id": "a", "text": "不會跳回登出前的頁面：{ replace: true } 讓這次導頁『取代』目前這筆歷史記錄，而不是新增一筆，登出前那一頁的紀錄已經被蓋掉了" },
+        { "id": "b", "text": "會跳回登出前的頁面，因為 navigate 預設一律會新增一筆歷史記錄，replace 選項不影響瀏覽器上一頁的行為" },
+        { "id": "c", "text": "瀏覽器的上一頁按鈕會整個失效、不能按" },
+        { "id": "d", "text": "會跳到瀏覽器設定的首頁，跟這個 App 的路由完全無關" }
+      ],
+      "answer": "a",
+      "explanation": "useNavigate() 回傳的函式是 React Router v6 之後取代 v5 withRouter/this.props.history.push 的寫法。第二個參數 { replace: true } 對應 history 的 replace()：把目前這一筆歷史記錄換成新位置，而不是 push() 那樣疊加一筆新的。登出、送出表單後的導頁常用 replace，避免使用者按上一頁又跑回一個已經沒意義的舊狀態。",
+      "verify": {
+        "checks": [],
+        "manual": "牽涉瀏覽器 history 堆疊與使用者實際點擊上一頁的操作；且 useNavigate 依賴 react-router-dom（本專案未安裝），無法用 node 直接執行驗證。"
+      }
+    },
+    {
+      "id": "ri-1-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "useParams 讀出來的動態路由參數",
+      "docs": "",
+      "story": "",
+      "prompt": "路由設定成 <Route path=\"/users/:userId\" element={<UserProfile />} />，目前網址是 /users/42。UserProfile 元件裡執行 console.log(useParams())，會印出什麼？",
+      "code": "// 路由設定\n<Route path=\"/users/:userId\" element={<UserProfile />} />\n\n// 目前網址：/users/42\nfunction UserProfile() {\n  const params = useParams();\n  console.log(params);\n}",
+      "options": [
+        { "id": "a", "text": "{ userId: \"42\" } —— useParams() 依路由裡每個 : 開頭的區段名稱當 key，抓出網址對應位置的實際內容當 value；即使網址上看起來是數字，抓到的一律是字串 \"42\"，不是數字 42" },
+        { "id": "b", "text": "{ userId: 42 } —— React Router 會自動把看起來像數字的參數轉型" },
+        { "id": "c", "text": "\"42\" —— 直接回傳字串本身，不會包成物件" },
+        { "id": "d", "text": "undefined —— useParams 這個 hook 只能在 class component 裡使用" }
+      ],
+      "answer": "a",
+      "explanation": "useParams() 回傳的是一個「路由參數名稱 → 網址對應片段字串」的物件，key 就是路徑裡 :userId 拿掉冒號後的名字，value 永遠是字串——網址本來就是文字，React Router 不會替你猜測要不要轉型。如果程式邏輯需要數字，得自己 Number(params.userId) 轉換。這也是 hook 的一種，只能在函式元件（或自訂 hook）裡呼叫，不能進 class component。",
+      "verify": {
+        "checks": [],
+        "manual": "useParams 需要 react-router-dom 的路由 context 才能運作，本專案未安裝該套件，無法用 node 直接執行驗證，需人工審核。"
+      }
+    },
+    {
+      "id": "ri-1-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "查詢字串背後其實是原生 URLSearchParams",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams/get",
+      "story": "",
+      "prompt": "React Router 的 useSearchParams 底層就是瀏覽器原生的 URLSearchParams。不依賴任何路由套件，只用原生 API 讀出查詢字串裡的 keyword，該呼叫哪個方法？把空格填起來",
+      "code": "const search = \"?keyword=react&page=2\";\nconst params = new URLSearchParams(search);\nconsole.log(params.____(\"keyword\"));",
+      "options": [
+        { "id": "a", "text": "get" },
+        { "id": "b", "text": "getItem" },
+        { "id": "c", "text": "read" },
+        { "id": "d", "text": "value" }
+      ],
+      "answer": "a",
+      "explanation": "URLSearchParams 是瀏覽器（跟 Node.js）都內建的原生 API，get(name) 回傳指定查詢參數的字串值，沒有對應的參數會回傳 null。getItem 是 localStorage/sessionStorage 的方法名稱，容易跟這裡搞混；read、value 都不是這個介面存在的方法。React Router 的 useSearchParams() hook，回傳的第一個值本質上就是一個 URLSearchParams 實例，用法完全共通。",
+      "verify": {
+        "checks": [
+          { "code": "const search = \"?keyword=react&page=2\";\nconst params = new URLSearchParams(search);\nconsole.log(params.get(\"keyword\"));", "expected": "react" }
+        ]
+      }
+    },
+    {
+      "id": "ri-1-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "v5 到 v6：catch-all 404 路由的寫法變了",
+      "docs": "",
+      "story": "",
+      "prompt": "v5 熟悉的寫法是「在 Switch 裡省略 path 屬性的 Route，會永遠比對成功」，拿來當 404 頁面的 fallback。改用 v6 之後，如果只是照抄這個「省略 path」的習慣，還能達到一樣的 catch-all 效果嗎？",
+      "code": "// v5 寫法（Switch 底下，省略 path 的 Route 永遠比對成功）\n<Switch>\n  <Route exact path=\"/\" component={Home} />\n  <Route component={NotFound} />\n</Switch>\n\n// v6 寫法（直接照抄「省略 path」這個習慣）\n<Routes>\n  <Route path=\"/\" element={<Home />} />\n  <Route element={<NotFound />} />\n</Routes>",
+      "options": [
+        { "id": "a", "text": "不一樣：v6 拿掉了「省略 path 就永遠比對成功」這條規則，一個沒有 path 也沒有 index 的 Route，在 v6 裡不會被當成 catch-all；要重新達到 404 效果，得明確寫成 <Route path=\"*\" element={<NotFound />} />" },
+        { "id": "b", "text": "一樣，v6 完全相容 v5 的路由比對規則，只是把元件名稱從 Switch 改成 Routes" },
+        { "id": "c", "text": "一樣，只是 v6 要求元件要改用 element 屬性傳，比對規則本身沒變" },
+        { "id": "d", "text": "不一樣，因為 v6 整個移除了「用路由做 404 頁面」這個概念" }
+      ],
+      "answer": "a",
+      "explanation": "v5 到 v6 是一次不相容的改版：v6 引進了更精確的路徑比對演算法，也連帶取消了「沒寫 path 就無條件命中」這個隱性規則（沒有 path/index 的 Route 現在多半用在巢狀佈局裡配合 Outlet，不再是萬用 fallback）。要在 v6 做出跟 v5 一樣的『其餘路徑都導向 NotFound』效果，需要顯式寫 path=\"*\"，用萬用字元語法取代舊版「省略等於命中」的隱性行為。",
+      "verify": {
+        "checks": [],
+        "manual": "v5 的 Switch/Route 比對規則與 v6 的差異需要對照兩個套件版本的實際執行行為，且兩者皆依賴 react-router（本專案未安裝任一版本），無法用 node 直接執行驗證。"
+      }
+    },
+    {
+      "id": "ri-1-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "登入後自動導向：Navigate 取代舊版 Redirect",
+      "docs": "",
+      "story": "",
+      "prompt": "使用者已經登入時，Login 頁面應該直接跳轉到 /dashboard，不要顯示登入表單。在 React Router v6 的函式元件裡，已登入的分支該 return 哪一段？",
+      "code": "function Login() {\n  const isLoggedIn = useIsLoggedIn();\n\n  if (isLoggedIn) {\n    // 該 return 哪一段？\n  }\n\n  return <LoginForm />;\n}",
+      "options": [
+        { "id": "a", "text": "改用 v6 的 <Navigate> 元件並加上 replace，取代掉 v5 的 <Redirect>", "code": "return <Navigate to=\"/dashboard\" replace />;" },
+        { "id": "b", "text": "沿用 v5 的 <Redirect> 元件", "code": "return <Redirect to=\"/dashboard\" />;" },
+        { "id": "c", "text": "直接呼叫 class component 風格的 history.push", "code": "history.push(\"/dashboard\");\nreturn null;" },
+        { "id": "d", "text": "整頁導頁，捨棄 React 應用程式現有的狀態", "code": "window.location.href = \"/dashboard\";\nreturn null;" }
+      ],
+      "answer": "a",
+      "explanation": "v6 把 v5 的 <Redirect> 元件整個移除，改用 <Navigate to=\"...\" />：直接 return 它，React Router 就會在渲染時觸發導頁，加上 replace 可以避免使用者按上一頁又跳回已經登入過的 Login 頁。选项 c 是 class component 時代透過 this.props.history 導頁的寫法，函式元件拿不到那個 props；選項 d 能導頁，但等於整頁重新整理、丟掉 React 應用程式目前的記憶體狀態，不是 React Router 想解決的用法。",
+      "verify": {
+        "checks": [],
+        "manual": "Navigate/Redirect 都依賴 react-router-dom 的路由 context 與瀏覽器環境，本專案未安裝該套件，無法用 node 直接執行驗證。"
+      }
+    },
+    {
+      "id": "ri-1-q7",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "React Router 解決的問題：讓網址跟畫面內容同步",
+      "docs": "",
+      "story": "",
+      "prompt": "一個 React 應用程式從頭到尾只有一個畫面，沒有任何『網址列變了、畫面內容也該跟著換』的需求。有人建議還是先引入 React Router「以防萬一」，這個建議合理嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不一定合理：React Router 存在的核心價值，是讓『網址（URL）』跟『畫面上顯示的內容』保持同步——多個畫面、頁面能被加入書籤與分享連結、瀏覽器上一頁／下一頁要能正確切換畫面，才是它真正解決的問題；如果應用程式只有一個畫面、沒有這些需求，引入一整套路由函式庫只是增加不必要的依賴與複雜度，等真的需要多畫面切換時再導入也不遲" },
+        { "id": "b", "text": "合理，任何 React 專案都應該無條件引入 React Router，不管有沒有多個畫面" },
+        { "id": "c", "text": "不合理，React Router 只能用在有後端伺服器的專案，純前端 SPA 不能使用" },
+        { "id": "d", "text": "合理，因為 React Router 是 React 官方套件，跟 react/react-dom 一樣是必要依賴" }
+      ],
+      "answer": "a",
+      "explanation": "任何函式庫的引入都該對應一個真實需求，React Router 也不例外：它要解決的是『網址跟畫面內容同步』這個問題。只有一個畫面的應用程式（例如一個小工具、一個單頁表單）沒有這個需求，硬加進來只是多一層抽象跟一個外部依賴，之後真的長出第二個畫面時再導入完全來得及，不需要為了『以防萬一』預先背負複雜度。",
+      "verify": {
+        "checks": [],
+        "manual": "屬架構決策的情境推理題，取決於專案實際需求，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-1-q8",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "history 函式庫 vs React Router：底層記錄 vs 畫面對應",
+      "docs": "",
+      "story": "",
+      "prompt": "React Router 內部其實是包了一層 history 這個函式庫。如果只是想在 React Native（沒有瀏覽器 window.history）裡管理『畫面堆疊』，直接學 history 這個底層函式庫、自己刻導航邏輯，還是直接用 React Router（或其對應版本），何者更合適？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "直接用 React Router 更合適：history 函式庫本身只負責管理『一串位置紀錄』這個底層資料結構，並依環境提供 browser／hash／memory 三種實作（memory 版本正是給沒有瀏覽器 window.history 的環境用的，例如 React Native、Node.js 測試）；React Router 在這之上，額外處理了『目前的位置該對應渲染哪個畫面元件』這一整層邏輯，這才是應用程式開發真正需要的，直接手刻在 history 之上重新做一遍等於重造輪子" },
+        { "id": "b", "text": "直接用 history 更合適，React Router 沒辦法在沒有瀏覽器的環境使用" },
+        { "id": "c", "text": "兩者功能完全一樣，選哪個都沒差" },
+        { "id": "d", "text": "history 函式庫已經被棄用，任何情境都該直接使用 React Router 的內部 API" }
+      ],
+      "answer": "a",
+      "explanation": "history 只回答「使用者去過哪些位置、現在在哪」這個底層問題；「這個位置該渲染哪個畫面元件」這一層對應邏輯（也就是應用程式開發者真正每天在寫的東西）是 React Router 加上去的價值。這也是為什麼 React Router 能透過 memory history 支援 React Native——沒有瀏覽器不影響「位置紀錄」跟「畫面對應」這兩件事本身的運作方式。",
+      "verify": {
+        "checks": [],
+        "manual": "history／react-router 均未安裝於本專案，底層行為需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-1-q9",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "push()：像陣列一樣不斷疊加歷史紀錄",
+      "docs": "",
+      "story": "",
+      "prompt": "使用者依序造訪了 A → B（用 push）→ C（用 push）。這時候瀏覽器的歷史紀錄堆疊長什麼樣子，按幾次上一頁能回到 A？",
+      "code": "navigate(\"/b\"); // push，堆疊：[A, B]\nnavigate(\"/c\"); // push，堆疊：[A, B, C]",
+      "options": [
+        { "id": "a", "text": "堆疊是 [A, B, C]，目前在 C；按一次上一頁回到 B，再按一次回到 A——push 每次都是『在陣列尾端新增一筆』，不會覆蓋掉任何既有紀錄，所以造訪過的每個頁面都能透過上一頁逐步回溯" },
+        { "id": "b", "text": "堆疊是 [C]，因為 push 每次都會清空之前的紀錄，按一次上一頁就會離開這個網站" },
+        { "id": "c", "text": "堆疊是 [A, C]，B 被中間跳過，按一次上一頁直接回到 A" },
+        { "id": "d", "text": "push 不會影響瀏覽器歷史紀錄，只有 replace 才會" }
+      ],
+      "answer": "a",
+      "explanation": "把 history 想像成一個只能往尾端新增、不能隨意刪改的陣列，是理解 push／replace 最直接的心智模型：push() 永遠是「在陣列尾端加一筆」，之前每一筆都完整保留；replace() 才是「把陣列最後一筆換成新的」，不會增加陣列長度。這裡全程都是 push，所以堆疊裡三個頁面都在，可以逐步用上一頁回溯到最早的 A。",
+      "verify": {
+        "checks": [],
+        "manual": "瀏覽器 history 堆疊的實際行為需要真實瀏覽器環境操作觀察，且依賴 react-router-dom（本專案未安裝），無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-1-q10",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "v6 的 Routes 內建互斥比對，不再需要額外包 Switch",
+      "docs": "",
+      "story": "",
+      "prompt": "v5 若把多個 <Route> 未經任何單一元素包裝、直接當成 <Router>（如 <BrowserRouter>）的子元素排開，因為 <Router> 規定只能接受一個子元素，官方會印出「Router may have only one child element」這類警告。這跟另一個獨立的問題——網址同時符合多個 Route 的 path 時，若沒有用 <Switch> 包住，這些符合的 Route 會全部一起渲染出來——是兩碼子事：只要用任一個元素（不限 <Switch>）包起來就能讓「only one child」警告消失，但只有 <Switch> 才會讓比對變成互斥、只渲染第一個符合的。改用 v6 的 <Routes> 之後，還需要自己額外處理這兩個問題嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不需要：v6 的 <Routes> 本身就只接受 <Route> 作為子元素、天生保證互斥比對，同時符合多個 path 時也只會渲染最匹配的那一個；『子元素數量』與『只渲染第一個符合的』這兩件事都內建在 Routes 裡，不再需要像 v5 那樣額外包一層 <Switch> 才能解決" },
+        { "id": "b", "text": "仍然需要，v6 只是把 Switch 改名成 Routes，行為完全一樣，一樣要手動確保只有一個包裝層" },
+        { "id": "c", "text": "不需要，因為 v6 已經完全移除『只渲染一個 Route』這個概念，允許同時渲染所有符合的 Route" },
+        { "id": "d", "text": "需要，但要改用 <Fragment> 包住所有 Route 才能達到互斥效果" }
+      ],
+      "answer": "a",
+      "explanation": "v5 的「Router may have only one child element」警告，根源只是 <Router> 規定子元素只能有一個——把多個 <Route> 未經包裝直接排開就會觸發，用任何單一元素包起來（哪怕只是一個 <div>）都能讓警告消失，這跟是不是用 <Switch> 沒有必然關係。但單純用 <div> 包起來並不會讓比對變成互斥：網址同時符合多個 <Route> 的 path 時，這些 Route 依然會全部一起渲染，要避免這個問題必須明確用 <Switch> 包住，因為「只挑第一個符合的渲染」是 Switch 自己的比對邏輯，不是子元素數量規則附帶的效果。v6 把這兩件事直接內建進 Routes：Routes 本身就只接受 Route 作為子元素、也保證只渲染第一個符合的，因此拿掉了「忘記包 Switch」這整類錯誤，官方文件也不再提供獨立的 Switch 元件。",
+      "verify": {
+        "checks": [],
+        "manual": "react-router-dom 未安裝於本專案，Routes 的比對邏輯需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-1-q11",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "用 navigate 的 state 選項傳遞資料，不出現在網址列",
+      "docs": "",
+      "story": "",
+      "prompt": "送出表單後想跳到 /result 頁面，同時把表單送出後拿到的 response.data 一併帶過去，不想放進網址的 query string 裡（避免資料暴露在網址列、或資料太大不適合塞進 URL）。v6 的 useNavigate 該怎麼寫？",
+      "code": "const navigate = useNavigate();\n\nfunction handleSubmit(response) {\n  navigate(\"/result\", {\n    state: { detail: response.data },\n  });\n}\n\n// 在 /result 頁面元件裡\nfunction ResultPage() {\n  const location = useLocation();\n  console.log(location.state); // ?\n}",
+      "options": [
+        { "id": "a", "text": "{ detail: response.data }：navigate() 的第二個參數可以帶一個 state 物件，這份資料會存在瀏覽器的 history entry 裡，不會出現在網址列上（不像 query string）；目的頁面透過 useLocation().state 就能讀回這份資料，適合傳遞『不想被使用者看到網址、或不方便序列化進字串』的內容" },
+        { "id": "b", "text": "undefined：state 只能在 v5 的 class component 裡透過 this.props.history 存取，v6 已經移除這個功能" },
+        { "id": "c", "text": "response.data 會被自動轉成 query string 附加在網址後面" },
+        { "id": "d", "text": "程式會拋出例外，navigate() 的第二個參數只能是字串" }
+      ],
+      "answer": "a",
+      "explanation": "這是 v5 「history.push({ pathname, state })」這種寫法在 v6 的對應版本：navigate 的第二個參數物件裡的 state 欄位，會原封不動存進這筆瀏覽器歷史紀錄，不出現在網址上，目的頁面用 useLocation().state 讀回。要注意這份資料存在『這筆 history entry』裡、不在網址裡，所以不會出現在分享出去的連結上，直接輸入網址造訪、開新分頁，或任何『重新產生一筆新 history entry』的情境，該筆新 entry 都不會帶有這份 state，讀到的會是 undefined；同一筆 entry 單純整頁重新整理時，state 是否還在則要看瀏覽器實作（多數現代瀏覽器會保留），不是「重新整理就一定會清掉」這種絕對規則。不適合放「必須可被分享連結、書籤或直接貼網址存取」的關鍵資料。",
+      "verify": {
+        "checks": [],
+        "manual": "react-router-dom 未安裝於本專案，navigate 的 state 傳遞需要真實路由 context 才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-1-q12",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "元件樹之外觸發導頁：自訂 history 實例",
+      "docs": "",
+      "story": "",
+      "prompt": "一個放在 utils/api.js 的攔截器（不是 React 元件，是一般 JS 函式），偵測到 API 回傳 401 未授權時，想導頁到 /login。但 useNavigate() 是 Hook，只能在函式元件或自訂 Hook 內呼叫，這種『元件樹之外』的情境該怎麼觸發導頁？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "自己建立並匯出一個共用的 history 實例（例如用 history 套件的 createBrowserHistory()），讓最上層改用能接受自訂 history 的 Router，app 裡任何地方（包括 utils/api.js 這種非元件檔案）都直接 import 這個共用 history、呼叫 history.push('/login') 觸發導頁，不受 Hook『只能在元件內呼叫』的限制" },
+        { "id": "b", "text": "在 utils/api.js 裡直接呼叫 useNavigate()，Hook 沒有這個限制，任何檔案都能用" },
+        { "id": "c", "text": "沒有辦法，React Router 不支援在元件樹之外觸發任何導頁行為" },
+        { "id": "d", "text": "用 window.location.reload() 就能達到跟 useNavigate 完全一樣的效果" }
+      ],
+      "answer": "a",
+      "explanation": "Hook 的『只能在元件內呼叫』限制，本質上是因為它依賴 React 內部的呼叫順序追蹤，跟一般 JS 函式的執行環境不相容。解法是把「誰負責記錄目前位置」這件事，從『只能透過 Hook 存取的 React 內部狀態』，換成『一個一般 JS 變數就能 import 的共用實例』——由這個共用 history 實例驅動 Router，App 裡任何檔案（不管是不是元件）都能直接操作它，等於把導頁能力從 React 樹狀結構裡解放出來。",
+      "verify": {
+        "checks": [],
+        "manual": "history／react-router 均未安裝於本專案，自訂 history 實例的路由行為需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    }
+  ]
+}

@@ -13,8 +13,8 @@ import {
   getWrongEntries,
   getWrongQuestions,
   REVIEW_SIZE,
+  sampleFixedQuestions,
   sampleQuestions,
-  shuffle,
   type Question,
 } from '@easylearn/core';
 
@@ -41,7 +41,7 @@ export default function NotesScreen() {
   }
 
   const startReview = () => {
-    const picked = shuffle(getWrongQuestions(progress.wrongIds)).slice(0, REVIEW_SIZE);
+    const picked = sampleFixedQuestions(getWrongQuestions(progress.wrongIds), REVIEW_SIZE);
     if (picked.length === 0) return;
     setView({ name: 'review', questions: picked });
   };

@@ -1,0 +1,332 @@
+{
+  "id": "ri-28",
+  "title": "React 進階探索：元件慣例與表單生態",
+  "questions": [
+    {
+      "id": "ri-28-q1",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "displayName：讓 HOC 包裝過的元件，在 DevTools 裡顯示有意義的名字，而不是 Anonymous",
+      "docs": "https://react.dev/reference/react/Component#static-displayname",
+      "story": "",
+      "prompt": "一個 HOC 把元件包了一層之後，回傳的新元件在 React DevTools 裡顯示成 \"Anonymous\" 或一個看不出來源的名字，很難分辨『這是包裝了哪個原始元件的版本』。displayName 怎麼解決這個除錯困擾？",
+      "code": "function withLogging(WrappedComponent) {\n  function Wrapped(props) {\n    return <WrappedComponent {...props} />;\n  }\n  Wrapped.displayName = `WithLogging(${WrappedComponent.displayName || WrappedComponent.name})`;\n  return Wrapped;\n}\n\nfunction Button() { return <button />; }\nconst LoggedButton = withLogging(Button);\nconsole.log(LoggedButton.displayName);",
+      "options": [
+        {
+          "id": "a",
+          "text": "手動設定 displayName 這個靜態屬性，讓 React DevTools 顯示這個自訂的名稱，而不是函式本身的名字（HOC 回傳的包裝函式常常是匿名或名稱不具辨識度）；這裡組合成 WithLogging(Button) 這種『HOC名稱(原始元件名稱)』的慣例寫法，讓除錯時能一眼看出這是哪個原始元件被哪個 HOC 包裝過的結果，是撰寫可重用 HOC 時的推薦實踐"
+        },
+        {
+          "id": "b",
+          "text": "displayName 只是一個裝飾性屬性，React DevTools 完全不會讀取它，永遠顯示函式本身的名字"
+        },
+        {
+          "id": "c",
+          "text": "displayName 只能設定在 class component 上，函式元件無法使用這個屬性"
+        },
+        {
+          "id": "d",
+          "text": "設定 displayName 之後，這個元件就無法再被其他 HOC 繼續包裝"
+        }
+      ],
+      "answer": "a",
+      "explanation": "displayName 是 React 元件（函式或 class 都適用）上的一個靜態屬性，DevTools 顯示元件樹時會優先讀取它。HOC 這種『動態產生包裝元件』的模式特別需要它——不設定的話，DevTools 很難分辨一長串巢狀的 HOC 包裝分別對應到哪個原始元件，組合成慣例格式的 displayName 是解決這個除錯痛點的標準做法。",
+      "verify": {
+        "checks": [
+          {
+            "code": "function withLogging(WrappedComponent) {\n  function Wrapped(props) {\n    return null;\n  }\n  Wrapped.displayName = `WithLogging(${WrappedComponent.displayName || WrappedComponent.name})`;\n  return Wrapped;\n}\nfunction Button() { return null; }\nconst LoggedButton = withLogging(Button);\nconsole.log(LoggedButton.displayName);",
+            "expected": "WithLogging(Button)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ri-28-q2",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "React 應用的瀏覽器支援範圍：由 React 本身與專案的建置設定共同決定",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊被問到「這個 React 應用支援 IE11 嗎？」該怎麼判斷，而不是憑印象回答？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "瀏覽器支援範圍取決於兩層：①React 本身這個版本官方支援到哪些瀏覽器（新版 React 通常鎖定現代瀏覽器，逐步放棄對非常舊的瀏覽器如 IE 的支援）；②專案的建置工具設定（如 browserslist 設定、是否引入了必要的 polyfill）決定最終產出的 JS/CSS 能不能在目標瀏覽器上正確執行。要準確回答，得同時檢查 React 版本的官方支援聲明，以及專案自己的建置設定，不是單看其中一項就能下定論"
+        },
+        {
+          "id": "b",
+          "text": "React 應用永遠能在任何瀏覽器上正常運作，不受瀏覽器版本影響"
+        },
+        {
+          "id": "c",
+          "text": "瀏覽器支援完全由使用者的作業系統決定，跟 React 或建置工具設定無關"
+        },
+        {
+          "id": "d",
+          "text": "只要專案有安裝 TypeScript，就自動具備所有瀏覽器的完整相容性"
+        }
+      ],
+      "answer": "a",
+      "explanation": "「支援哪些瀏覽器」是一個需要具體查證、而非憑印象回答的問題——React 核心版本的支援聲明、專案建置工具的 polyfill／transpile 設定，兩者共同決定實際的相容範圍。這也是為什麼同一份 React 程式碼，在不同專案的建置設定下，對舊瀏覽器的相容性可能完全不同。",
+      "verify": {
+        "checks": [],
+        "manual": "瀏覽器相容性需要在目標瀏覽器實際開啟測試才能驗證，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-28-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "React 支援絕大多數標準 HTML 屬性，也支援 aria-* 與 data-* 這類非標準但慣例明確的屬性",
+      "docs": "https://react.dev/reference/react-dom/components/common",
+      "story": "",
+      "prompt": "想在一個 div 上同時加標準 HTML 屬性 title、無障礙屬性 aria-label、跟自訂的 data-testid，這三種屬性能不能在同一個元素上混用？",
+      "code": "function Card() {\n  return (\n    <div title=\"卡片\" aria-label=\"使用者卡片\" data-testid=\"user-card\">\n      內容\n    </div>\n  );\n}\n\nconsole.log(renderToStaticMarkup(<Card />));",
+      "options": [
+        {
+          "id": "a",
+          "text": "可以混用，三者都會正確輸出到最終的 HTML：title 是標準 HTML 全域屬性；aria-* 開頭的屬性是無障礙（ARIA）規範定義的屬性，React 完整支援；data-* 開頭的屬性是 HTML 規範明確保留給開發者自訂使用的『資料屬性』，這正好呼應前面 ri-15 章節談過『React 16 起支援自訂屬性透傳』——只是 data-*／aria-* 這兩種前綴，即使在 React 16 之前的舊版也一直都受到支援，不受那條規則放寬的影響"
+        },
+        {
+          "id": "b",
+          "text": "只能擇一使用，同一個元素不能同時擁有標準屬性、ARIA 屬性與自訂資料屬性"
+        },
+        {
+          "id": "c",
+          "text": "aria-label 只能用在 class component 渲染出的元素上，函式元件不支援"
+        },
+        {
+          "id": "d",
+          "text": "data-testid 這種屬性只在測試環境下才會被渲染，正式環境會被自動移除"
+        }
+      ],
+      "answer": "a",
+      "explanation": "HTML 標準屬性、ARIA 屬性、data-* 自訂屬性三者可以自由並存在同一個元素上，這是原生 HTML／DOM 規範本身就允許的事，React 完整支援、原樣輸出，不會因為環境是開發還是正式模式而有任何差異，也不限定只能用在特定類型的元件上。",
+      "verify": {
+        "checks": [
+          {
+            "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Card() {\n  return (\n    <div title=\"卡片\" aria-label=\"使用者卡片\" data-testid=\"user-card\">\n      內容\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<Card />));",
+            "expected": "<div title=\"卡片\" aria-label=\"使用者卡片\" data-testid=\"user-card\">內容</div>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ri-28-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "布林型 prop 可以省略值，直接寫屬性名稱等同傳 true",
+      "docs": "https://react.dev/learn/passing-props-to-a-component",
+      "story": "",
+      "prompt": "一個 Checkbox 元件的 disabled prop 是布林值。下面兩種寫法，效果一樣嗎？",
+      "code": "function Checkbox({ disabled }) {\n  return <p>disabled: {String(disabled)}</p>;\n}\n\nconsole.log(renderToStaticMarkup(<Checkbox disabled={true} />));\nconsole.log(renderToStaticMarkup(<Checkbox disabled />));",
+      "options": [
+        {
+          "id": "a",
+          "text": "效果一樣：JSX 有一條慣例語法糖——屬性只寫名稱、不給值（如 disabled），等同於 disabled={true}；這條規則只對『省略值』的情境生效，如果要傳 false，必須明確寫成 disabled={false}，不能靠省略達成（省略永遠等同 true，不存在『省略等於 false』的寫法）"
+        },
+        {
+          "id": "b",
+          "text": "不一樣，disabled（沒有值）等同於 disabled={false}，跟 disabled={true} 效果相反"
+        },
+        {
+          "id": "c",
+          "text": "不一樣，disabled（沒有值）會被當成字串 \"disabled\"，不是布林值"
+        },
+        {
+          "id": "d",
+          "text": "這段程式碼會拋出例外，JSX 屬性不能省略等號後面的值"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是 JSX 對布林 prop 提供的一條語法糖，源自 HTML 本身『某些屬性只要出現就代表啟用』的慣例（如原生的 disabled、checked）。要注意這條規則是單向的——只有『省略值』才等同 true，沒有對稱的『省略等於 false』寫法，false 永遠得顯式寫出來。",
+      "verify": {
+        "checks": [
+          {
+            "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Checkbox({ disabled }) {\n  return <p>disabled: {String(disabled)}</p>;\n}\nconsole.log(renderToStaticMarkup(<Checkbox disabled={true} />));\nconsole.log(renderToStaticMarkup(<Checkbox disabled />));",
+            "expected": "<p>disabled: true</p>\n<p>disabled: true</p>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ri-28-q5",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Next.js：在 React 之上加上路由、SSR/SSG、API 路由等應用框架能力",
+      "docs": "",
+      "story": "",
+      "prompt": "React 本身只是一個 View 層函式庫（前面 ri-13 章節談過），不內建路由、伺服器端渲染這些能力。Next.js 這類「React 框架」在這之上補足了什麼？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "Next.js 在 React 核心之上，內建了檔案系統路由（依資料夾/檔名自動產生路由，不用手動設定 React Router）、伺服器端渲染／靜態網站生成（SSR/SSG）、API 路由（在同一個專案裡寫後端 API 端點）、圖片與字型最佳化等一整套應用程式框架能力，把『React 只是 View 層』這件事的其餘拼圖（路由、資料抓取策略、部署）補齊，讓開發者不用從零手動組裝各個第三方套件"
+        },
+        {
+          "id": "b",
+          "text": "Next.js 是一個完全獨立於 React 的框架，兩者的元件語法互不相容"
+        },
+        {
+          "id": "c",
+          "text": "Next.js 唯一的功能是提供 CSS 樣式方案，跟路由、伺服器端渲染無關"
+        },
+        {
+          "id": "d",
+          "text": "使用 Next.js 之後就不能再使用任何 React Hooks"
+        }
+      ],
+      "answer": "a",
+      "explanation": "Next.js 是「React 框架」這個類別的代表：以 React 為核心，補齊路由、渲染策略（SSR/SSG/ISR）、API 層這些「完整應用程式」通常需要、但 React 本身刻意不內建的能力（呼應前面 ri-13 章節談過 React 的定位限制）。它跟 React 語法完全相容，Hooks、元件寫法都照常使用。",
+      "verify": {
+        "checks": [],
+        "manual": "Next.js 未安裝於本專案，框架功能需要真實建置與伺服器環境才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-28-q6",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "傳遞事件處理器：直接傳函式參考，不要在 JSX 裡直接呼叫它",
+      "docs": "https://react.dev/learn/responding-to-events",
+      "story": "",
+      "prompt": "onClick={handleClick} 跟 onClick={handleClick()} 這兩種寫法，效果一樣嗎？",
+      "code": "function Button() {\n  function handleClick() {\n    console.log(\"clicked\");\n  }\n  return (\n    <div>\n      <button id=\"a\" onClick={handleClick}>正確寫法</button>\n      <button id=\"b\" onClick={handleClick()}>錯誤寫法</button>\n    </div>\n  );\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "不一樣：onClick={handleClick} 傳的是『函式本身的參考』，React 會在使用者真正點擊時才呼叫它；onClick={handleClick()} 因為多了一組括號，代表『立刻呼叫 handleClick()』，這個呼叫會在渲染當下（元件函式執行時）就立即執行一次，而它的回傳值（這裡是 undefined，因為 handleClick 沒有 return 任何東西）才是最終被賦值給 onClick 的內容——結果是點擊 id=\"b\" 這顆按鈕完全沒有反應，因為 onClick 收到的其實是 undefined，不是一個函式"
+        },
+        {
+          "id": "b",
+          "text": "兩者效果完全相同，React 會自動判斷該不該在渲染當下呼叫這個函式"
+        },
+        {
+          "id": "c",
+          "text": "onClick={handleClick()} 才是正確寫法，onClick={handleClick} 會導致按鈕永遠無法點擊"
+        },
+        {
+          "id": "d",
+          "text": "兩種寫法都會拋出例外，事件處理器不能用這兩種方式傳遞"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是新手最常犯的錯誤之一，根源在於混淆了『傳遞一個函式』跟『呼叫一個函式、傳遞它的結果』：多了括號就是立即呼叫，這在渲染階段就會執行（而不是等待點擊），而且執行結果通常不是一個函式，導致真正點擊時 React 找不到有效的處理器可以呼叫。需要『帶參數呼叫』時，正確做法是用一個箭頭函式包起來（如 onClick={() => handleClick(id)}），而不是直接呼叫。",
+      "verify": {
+        "checks": [
+          {
+            "code": "let calls = 0;\nfunction handleClick() {\n  calls++;\n  return undefined;\n}\nconst passedAsReference = handleClick;\nconst passedAsCallResult = handleClick();\nconsole.log(calls, typeof passedAsReference, typeof passedAsCallResult);",
+            "expected": "1 function undefined"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ri-28-q7",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "防止函式被連續呼叫多次：debounce／throttle，或用旗標鎖住重複觸發",
+      "docs": "",
+      "story": "",
+      "prompt": "一個「送出訂單」按鈕，使用者手滑連續點擊了三下，結果送出了三筆重複的訂單。該怎麼防止同一個函式在短時間內被重複觸發？",
+      "code": "function OrderButton() {\n  const [isSubmitting, setIsSubmitting] = useState(false);\n\n  async function handleSubmit() {\n    if (isSubmitting) return; // 用旗標鎖住，避免重複觸發\n    setIsSubmitting(true);\n    try {\n      await submitOrder();\n    } finally {\n      setIsSubmitting(false); // 無論成功或拋出例外都會執行，避免旗標卡在 true\n    }\n  }\n\n  return <button onClick={handleSubmit} disabled={isSubmitting}>送出訂單</button>;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "用一個『正在處理中』的旗標（這裡是 isSubmitting 這份 state）在函式一開頭就檢查，處理中就直接 return、不重複執行；同時搭配把按鈕 disabled 掉，從使用者互動的源頭就防止重複點擊。另外要注意 await submitOrder() 這段要包在 try/finally 裡，把 setIsSubmitting(false) 放進 finally——這樣不管送出成功還是拋出例外，旗標都保證會被重置，不會因為送出失敗就讓按鈕永遠卡在 disabled 狀態。另一種常見手法是用 debounce（等使用者停止操作一段時間才真正執行一次）或 throttle（固定時間內最多執行一次），適合搜尋框打字這類高頻率觸發的場景，跟這裡『防止表單重複送出』的旗標鎖手法側重點略有不同"
+        },
+        {
+          "id": "b",
+          "text": "React 會自動防止同一個函式在短時間內被重複呼叫，不需要開發者額外處理"
+        },
+        {
+          "id": "c",
+          "text": "唯一的解法是把按鈕從畫面上完全移除，讓使用者無法再次點擊"
+        },
+        {
+          "id": "d",
+          "text": "只要函式宣告成 async，就會自動具備防止重複呼叫的能力"
+        }
+      ],
+      "answer": "a",
+      "explanation": "「防止重複觸發」在不同情境下有不同的合適手法：表單送出這種『同一個操作不該重複執行』的場景，旗標鎖（搭配 disabled 按鈕）最直接；搜尋框打字這種『使用者操作結束後才需要真正執行一次』的場景，debounce 更合適；捲動、resize 這種『持續觸發，但只需要固定頻率反應』的場景，throttle 更合適。React 本身不會自動處理這些情境，需要開發者依實際需求選擇對應的手法。另外旗標鎖本身也要注意一個細節：把重置旗標的程式碼放進 try/finally 的 finally 區塊，才能保證不管 submitOrder() 成功還是拋出例外，isSubmitting 都會被重置成 false；如果只在成功路徑（或 try 區塊結尾）重置，一旦送出失敗，旗標會卡在 true、按鈕永遠停在 disabled，使用者從此再也無法重新送出。",
+      "verify": {
+        "checks": [],
+        "manual": "重複點擊防止需要真實瀏覽器連續點擊互動才能觀察效果，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-28-q8",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "更新已經渲染出的元素：不是直接改 DOM，而是改變驅動它的 state/props、讓 React 重新渲染",
+      "docs": "",
+      "story": "",
+      "prompt": "畫面上已經顯示了一段文字「Hello」，現在想把它改成「Hi」。在 React 裡，正確的做法是直接找到那個 DOM 節點、呼叫 node.textContent = \"Hi\" 修改嗎？",
+      "code": "// 錯誤示範：繞過 React，直接操作 DOM\ndocument.getElementById(\"greeting\").textContent = \"Hi\";\n\n// 正確做法：改變驅動畫面的 state，讓 React 重新渲染\nfunction Greeting() {\n  const [text, setText] = useState(\"Hello\");\n  return (\n    <div>\n      <p id=\"greeting\">{text}</p>\n      <button onClick={() => setText(\"Hi\")}>改成 Hi</button>\n    </div>\n  );\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "不建議：直接用原生 DOM API 繞過 React 手動修改內容，會讓這個節點的實際內容跟 React 內部維護的 Virtual DOM 紀錄產生落差——下一次 React 因為其他原因重新渲染這個區域時，很可能會根據它自己記錄的（舊的）狀態把內容改回去，或者出現難以預期的顯示錯誤；正確做法永遠是透過改變驅動這段內容的 state（或 props），讓 React 依照它自己的機制重新渲染，保持『畫面內容』與『React 內部認知』的一致"
+        },
+        {
+          "id": "b",
+          "text": "建議這樣做，直接操作 DOM 比透過 state 更新更有效率，是官方推薦的做法"
+        },
+        {
+          "id": "c",
+          "text": "兩種做法完全等價，React 會自動偵測到外部對 DOM 的修改並同步更新內部狀態"
+        },
+        {
+          "id": "d",
+          "text": "直接操作 DOM 的寫法會導致程式立即拋出例外，無法執行"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是 React 心智模型最核心的一條紀律：畫面內容永遠應該是 state／props 的『函式』，任何想要的變化都該透過改變這些驅動資料達成，而不是繞過 React 直接動手改 DOM。繞過去修改雖然當下可能看起來有效，卻讓 React 對『這個節點現在長什麼樣』的內部認知跟真實 DOM 產生分歧，之後的重繪很容易出現難以預期的行為。",
+      "verify": {
+        "checks": [],
+        "manual": "React 內部認知與真實 DOM 分歧的後續錯誤行為需要多輪真實互動渲染才能觀察，無法用單次 node 執行驗證。"
+      }
+    },
+    {
+      "id": "ri-28-q9",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "key 只需要在「同一層兄弟節點之間」唯一，不需要整個應用程式全域唯一",
+      "docs": "https://react.dev/learn/rendering-lists#rules-of-keys",
+      "story": "",
+      "prompt": "頁面上有兩份各自獨立的清單（左邊「待辦事項」、右邊「已完成事項」），兩份清單裡都各自用了 key=\"1\"、key=\"2\" 這種簡單的編號，兩邊出現了重複的 key 值。這樣合法嗎？",
+      "code": "<div>\n  <ul>{/* 待辦事項清單 */}\n    <li key=\"1\">買菜</li>\n    <li key=\"2\">倒垃圾</li>\n  </ul>\n  <ul>{/* 已完成事項清單，key 值剛好也是 1、2 */}\n    <li key=\"1\">洗碗</li>\n    <li key=\"2\">拖地</li>\n  </ul>\n</div>",
+      "options": [
+        {
+          "id": "a",
+          "text": "合法：key 只需要在『同一次 .map() 產生的、彼此為兄弟關係的元素之間』保持唯一，不需要在整個應用程式、甚至整個頁面裡全域唯一；這裡兩個 <ul> 底下的 <li> 各自是獨立的兄弟群組，彼此的 key 是否重複完全不影響 React 的判斷，只要『在各自那一組』裡不重複即可"
+        },
+        {
+          "id": "b",
+          "text": "不合法，key 值必須在整個應用程式裡全域唯一，重複使用會導致渲染錯誤"
+        },
+        {
+          "id": "c",
+          "text": "不合法，但只有在兩份清單使用同一個父層元件時才會出問題"
+        },
+        {
+          "id": "d",
+          "text": "合法，但只有字串型別的 key 可以重複，數字型別的 key 必須全域唯一"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是關於 key 的一個常見誤解：key 的比較範圍是「同一層的兄弟節點」，不是全域命名空間。React 在協調某一組兄弟元素時，只需要在『這一組』裡面能唯一識別每個元素即可，不同群組（不同的 .map() 呼叫、不同的父層）之間的 key 值完全可以重複，不會互相干擾。",
+      "verify": {
+        "checks": [
+          {
+            "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Lists() {\n  return (\n    <div>\n      <ul>\n        <li key=\"1\">買菜</li>\n        <li key=\"2\">倒垃圾</li>\n      </ul>\n      <ul>\n        <li key=\"1\">洗碗</li>\n        <li key=\"2\">拖地</li>\n      </ul>\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<Lists />));",
+            "expected": "<div><ul><li>買菜</li><li>倒垃圾</li></ul><ul><li>洗碗</li><li>拖地</li></ul></div>"
+          }
+        ]
+      }
+    }
+  ]
+}

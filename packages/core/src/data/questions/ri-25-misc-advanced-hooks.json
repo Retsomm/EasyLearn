@@ -1,0 +1,202 @@
+{
+  "id": "ri-25",
+  "title": "React 進階探索：進階 Hooks 與最佳實踐",
+  "questions": [
+    {
+      "id": "ri-25-q1",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "useDeferredValue：讓一個值的『更新』可以延後，優先保持輸入框本身的即時回應",
+      "docs": "https://react.dev/reference/react/useDeferredValue",
+      "story": "",
+      "prompt": "一個搜尋框，輸入框本身用 query 這個 state 即時反映使用者打字；下方的搜尋結果清單改用 useDeferredValue(query) 包過的 deferredQuery 渲染。第一次渲染（沒有任何延遲的必要）時，deferredQuery 會是什麼？",
+      "code": "function Search() {\n  const [query, setQuery] = useState(\"\");\n  const deferredQuery = useDeferredValue(query);\n  return (\n    <div>\n      <input value={query} onChange={(e) => setQuery(e.target.value)} />\n      <p>目前查詢：{deferredQuery}</p>\n    </div>\n  );\n}\n\nconsole.log(renderToStaticMarkup(<Search />));",
+      "options": [
+        {
+          "id": "a",
+          "text": "第一次渲染，deferredQuery 就等於 query 本身（這裡都是空字串）：useDeferredValue 只有在『這個值變化、且畫面正忙著處理更緊急的更新』時，才會讓渲染結果暫時落後於最新值幾拍；沒有任何延遲需求的初次渲染，兩者完全一致。它真正發揮作用的時機，是使用者快速打字時：input 本身（受控於 query）保持每個按鍵都立即反映，下方使用 deferredQuery 渲染的搜尋結果清單，可以暫時使用『稍舊一點』的查詢字串重新渲染，讓昂貴的清單重新計算不阻塞打字的流暢度"
+        },
+        {
+          "id": "b",
+          "text": "deferredQuery 永遠比 query 慢一個字元，即使是初次渲染也一樣"
+        },
+        {
+          "id": "c",
+          "text": "deferredQuery 永遠是空字串，不管 query 是什麼值"
+        },
+        {
+          "id": "d",
+          "text": "程式會拋出例外，useDeferredValue 只能接收數字型別的值"
+        }
+      ],
+      "answer": "a",
+      "explanation": "useDeferredValue 的心智模型是「這個值允許暫時落後」：平常（沒有效能壓力）它就是原始值本身；當渲染負擔重、有更緊急的更新需要優先處理時，React 才會讓依賴這個延後值的部分暫時使用舊值渲染，避免拖慢輸入框這種需要即時回饋的互動。這跟 useTransition（前面 ri-8 章節談過）解決的是同一類問題，但 useDeferredValue 包的是一個『值』，useTransition 包的是一段『更新的動作』，適用情境略有不同。",
+      "verify": {
+        "checks": [
+          {
+            "jsx": "import { useState, useDeferredValue } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nfunction Search() {\n  const [query] = useState(\"\");\n  const deferredQuery = useDeferredValue(query);\n  return (\n    <div>\n      <p>目前查詢：{deferredQuery}</p>\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<Search />));",
+            "expected": "<div><p>目前查詢：</p></div>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ri-25-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "useSyncExternalStore：安全地訂閱 React 狀態管理系統之外的外部資料來源",
+      "docs": "",
+      "story": "",
+      "prompt": "一個第三方函式庫（不是 useState/useReducer 管理，是自己維護一份全域資料＋訂閱機制）想跟 React 元件整合，讓元件在這份外部資料變化時正確重繪。為什麼不能直接用 useState + useEffect 手動訂閱，而官方建議改用 useSyncExternalStore？",
+      "code": "const value = useSyncExternalStore(\n  externalStore.subscribe, // 訂閱函式：外部資料變化時呼叫傳入的 callback\n  externalStore.getSnapshot // 取值函式：回傳目前的值\n);",
+      "options": [
+        {
+          "id": "a",
+          "text": "手動用 useState + useEffect 訂閱外部資料源，在 React 18 引入的並行渲染（concurrent rendering）機制下，容易出現『畫面上不同部分讀到不一致的外部資料快照』這種細微的錯誤（不同渲染批次讀到的外部值時間點不一致）；useSyncExternalStore 是官方針對『安全訂閱 React 之外的資料源』設計的專屬 Hook，內部處理了並行渲染下的一致性問題，這是手動拼湊 useState/useEffect 很難自己正確做到的保證"
+        },
+        {
+          "id": "b",
+          "text": "useState + useEffect 技術上完全無法訂閱任何外部資料源，只有 useSyncExternalStore 能做到"
+        },
+        {
+          "id": "c",
+          "text": "useSyncExternalStore 純粹是效能優化，跟並行渲染的一致性問題無關"
+        },
+        {
+          "id": "d",
+          "text": "useSyncExternalStore 只是 useState 的別名，兩者沒有任何行為差異"
+        }
+      ],
+      "answer": "a",
+      "explanation": "useSyncExternalStore 是 React 18 為了「跟外部狀態源正確整合」新增的專屬 Hook，很多狀態管理函式庫（包含 react-redux 的新版 useSelector）內部改用它實作，正是為了處理並行渲染模式下手動訂閱容易出現的細微不一致問題；一般應用程式開發者較少直接使用它，通常是透過已經整合好它的函式庫間接受益。",
+      "verify": {
+        "checks": [],
+        "manual": "useSyncExternalStore 需要真實外部資料源與並行渲染情境才能觀察一致性保證，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-25-q3",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "useInsertionEffect：CSS-in-JS 函式庫專用，在 DOM 變動前注入樣式，一般應用程式幾乎用不到",
+      "docs": "",
+      "story": "",
+      "prompt": "useInsertionEffect 執行時機比 useLayoutEffect 還要更早（在 DOM 真正發生變動之前）。官方文件明確說這個 Hook 主要是設計給誰用的？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "主要是設計給 CSS-in-JS 函式庫（如 styled-components、Emotion 這類在執行期動態注入 <style> 標籤的方案）在底層實作用的，用來確保『動態產生的樣式規則』能在瀏覽器計算版面、useLayoutEffect 執行之前就已經插入到 DOM 裡，避免樣式套用時機錯亂造成的版面抖動；一般應用程式開發者幾乎不需要直接使用這個 Hook，絕大多數情境用 useEffect 或 useLayoutEffect 就足夠"
+        },
+        {
+          "id": "b",
+          "text": "這是給一般應用程式開發者處理表單輸入驗證邏輯用的標準 Hook"
+        },
+        {
+          "id": "c",
+          "text": "這是用來取代 useState 管理元件狀態的新版 Hook，官方建議所有新專案優先採用"
+        },
+        {
+          "id": "d",
+          "text": "這個 Hook 專門用來處理路由跳轉邏輯，是搭配 React Router 使用的專屬 API"
+        }
+      ],
+      "answer": "a",
+      "explanation": "useInsertionEffect 是一個目標讀者非常明確、範圍很窄的底層 API：解決的是「CSS-in-JS 函式庫在執行期動態插入樣式規則」這個特定時機問題。React 官方文件也直接寫明「這個 Hook 是給函式庫作者用的，應用程式程式碼幾乎不需要用到它」，一般業務邏輯用 useEffect／useLayoutEffect 完全足夠，不需要因為看到這個名字就以為必須學會使用它。",
+      "verify": {
+        "checks": [],
+        "manual": "useInsertionEffect 的樣式注入時機屬 CSS-in-JS 函式庫內部實作細節，需要真實瀏覽器環境與函式庫原始碼才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-25-q4",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "useEffectEvent（React 19.2 起為穩定 API）：讓 effect 內部讀到「最新」的值，但不把它列進依賴陣列觸發重新執行",
+      "docs": "",
+      "story": "",
+      "prompt": "一個聊天室連線的 effect，依賴陣列只想放 roomId（連線本身只跟房間有關），但 effect 內部想在收到訊息時，用『當下最新』的 theme 這個 state 決定通知樣式——theme 改變不該觸發重新連線，但也不想讀到過期的 theme 值。這個『既要最新值、又不想列入依賴觸發重新執行』的矛盾，React 19.2 起已穩定發布的 useEffectEvent（或社群慣稱的 useEvent）想解決什麼？",
+      "code": "// React 19.2 起為穩定、正式文件化的 API，可直接從 'react' 匯入\nconst onMessage = useEffectEvent((message) => {\n  showNotification(message, theme); // 讀到的永遠是『最新』的 theme\n});\n\nuseEffect(() => {\n  const connection = createConnection(roomId);\n  connection.on(\"message\", onMessage);\n  return () => connection.disconnect();\n}, [roomId]); // 依賴陣列不需要放 theme，也不會讀到過期值",
+      "options": [
+        {
+          "id": "a",
+          "text": "useEffectEvent 讓開發者可以把『effect 裡需要用到、但改變時不該觸發 effect 重新執行』的邏輯抽出來，包裝成一個特殊函式：這個函式內部永遠能讀到呼叫當下最新的 props/state（不像一般函式會被閉包鎖定在定義那一刻的值），但它本身不需要（也不能）被放進 effect 的依賴陣列——解決了『依賴陣列想保持精簡（只放真正該觸發重新執行的值），又不想因此讀到過期閉包值』這個長期存在的兩難"
+        },
+        {
+          "id": "b",
+          "text": "useEffectEvent 是用來取代 useEffect 本身的新 Hook，官方建議所有 effect 都改寫成這種形式"
+        },
+        {
+          "id": "c",
+          "text": "useEffectEvent 讓依賴陣列變得完全不重要，任何值都不需要再放進依賴陣列"
+        },
+        {
+          "id": "d",
+          "text": "useEffectEvent 建立出來的函式可以在任何地方直接呼叫，包括直接寫在 render 過程或一般事件處理器（如 onClick）裡，沒有呼叫時機上的限制"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這個 Hook 想解決的是 useEffect 依賴陣列一個長期的兩難：『只放真正該觸發重新執行的依賴』與『effect 內部不該讀到過期閉包值』這兩個目標有時會衝突。它不是要取代 useEffect，也不會讓依賴陣列本身變得不重要——真正該觸發重新連線的 roomId 仍然要放在依賴陣列裡，只是把『讀最新值但不觸發重新執行』的那部分邏輯，抽出來用專屬機制處理。useEffectEvent 從 React 19.2 起已經是穩定、正式文件化的官方 API，不再是實驗性功能，可以直接從 'react' 匯入使用。使用上有幾個限制：Effect Event 要在元件內呼叫 useEffectEvent(...) 建立（呼叫時機跟其他 Hook 一樣，位於元件的渲染範圍內），但建立出來的這個函式本身只能在 effect 內部呼叫、或是被另一個 Effect Event 呼叫——不能直接從 render 過程或一般事件處理器（如 onClick）呼叫；也正因為它讀到的永遠是最新值，通常不需要（也不應該）被放進呼叫端 effect 的依賴陣列。",
+      "verify": {
+        "checks": [],
+        "manual": "useEffectEvent 為 React 19.2 起的穩定官方 API，但其『讀到最新閉包值、且只能從 effect 內呼叫』的行為仍需要多輪真實渲染與 effect 觸發才能觀察，無法用單次 node 執行完整驗證。"
+      }
+    },
+    {
+      "id": "ri-25-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Hooks 使用的幾條實務準則：命名慣例、依賴陣列誠實、拆分關注點",
+      "docs": "",
+      "story": "",
+      "prompt": "把本次深入談過的各種 Hooks 陷阱（依賴陣列參考不穩定、effect 混雜不相關邏輯、記憶化用錯地方）收斂成幾條實務準則，下列哪一組最貼切？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "①自訂 Hook 一律以 use 開頭命名，讓 ESLint 的 Hooks 規則外掛能正確辨識並套用檢查；②依賴陣列要『誠實』列出 effect 內部實際讀取的每一個外部值，而不是為了避免重新執行刻意省略某些依賴；③一個 effect 只處理一件事，關注點不同的邏輯拆成多個 effect；④memo／useMemo／useCallback 是效能優化工具，先確認真的有效能問題、且參考穩定性有意義的地方才用，不是每個元件、每個值都要無腦包一層"
+        },
+        {
+          "id": "b",
+          "text": "任何情境下都應該讓每個元件用盡可能多的 useMemo/useCallback 包住所有的值與函式，越多越好"
+        },
+        {
+          "id": "c",
+          "text": "依賴陣列應該永遠留空（[]），避免 effect 因為依賴變化而重新執行造成困擾"
+        },
+        {
+          "id": "d",
+          "text": "所有跟副作用相關的邏輯都應該合併進同一個 useEffect，減少 Hook 呼叫的總數"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這幾條準則是把本次深入的多個章節（依賴陣列比較、effect 拆分關注點、memo 陷阱）收斂成可以直接應用的原則。選項 b、c、d 分別對應到常見的過度優化（無差別亂包 memo 反而增加程式碼複雜度跟些微額外開銷）、隱藏依賴陷阱（省略依賴會讀到過期閉包值）、混雜關注點（依賴陣列變得又臭又長）這些反模式，都不是建議的做法。",
+      "verify": {
+        "checks": [],
+        "manual": "Hooks 最佳實踐屬綜合性推理與規範說明，無單一可執行程式碼片段能完整驗證所有準則。"
+      }
+    },
+    {
+      "id": "ri-25-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "useTransition 包的是『動作』，useDeferredValue 包的是『值』——該用哪一個看你能不能控制更新的觸發點",
+      "docs": "",
+      "story": "",
+      "prompt": "同樣是「篩選一份大清單、不要卡住輸入框」這個需求，什麼情境該用 useTransition，什麼情境該用 useDeferredValue？",
+      "code": "// 情境一：你自己觸發這次更新（呼叫 setState 的地方就在你手上）\nfunction handleChange(e) {\n  setQuery(e.target.value); // 這裡你可以自己決定要不要包進 startTransition\n}\n\n// 情境二：值是從 props 傳進來的，你控制不了它什麼時候變\nfunction SearchResults({ query }) {\n  // query 的更新時機不是這個元件決定的\n}",
+      "options": [
+        { "id": "a", "text": "情境一（你自己能決定在哪裡呼叫 setState）適合用 useTransition：直接把這次 setState 包進 startTransition，標記成低優先權；情境二（值是從外部 props 傳入，你沒辦法控制觸發更新的那一行程式碼）適合用 useDeferredValue：對拿到的這個值本身『延後使用』，不需要控制它是怎麼被更新的" },
+        { "id": "b", "text": "兩者在任何情境下都完全可以互相替代，選哪個純粹看個人喜好" },
+        { "id": "c", "text": "useTransition 只能用在 class component，useDeferredValue 只能用在函式元件" },
+        { "id": "d", "text": "情境一該用 useDeferredValue，情境二該用 useTransition，跟描述剛好相反" }
+      ],
+      "answer": "a",
+      "explanation": "兩者解決的是同一類「大量重新渲染拖慢緊急互動」的問題，差別在切入點：useTransition 要求你能拿到「觸發這次更新的那個動作」本身，把它包進 startTransition；useDeferredValue 則不需要碰觸發更新的程式碼，只需要對『收到的值』宣告『這裡允許暫時落後』，適合值來自 props、你無法控制觸發時機的情境。",
+      "verify": {
+        "checks": [],
+        "manual": "兩者的取捨情境需要真實多元件協作與實際輸入互動才能完整驗證，無法用單一可執行片段驗證。"
+      }
+    }
+  ]
+}

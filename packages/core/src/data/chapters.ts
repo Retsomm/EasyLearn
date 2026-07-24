@@ -47,6 +47,36 @@ import fp16 from './questions/fp-16-sharing-resources.json'
 import fp17 from './questions/fp-17-coordinating-timelines.json'
 import fp18 from './questions/fp-18-reactive-onion.json'
 import fp19 from './questions/fp-19-road-ahead.json'
+import ri1 from './questions/ri-1-router.json'
+import ri2 from './questions/ri-2-i18n.json'
+import ri3 from './questions/ri-3-testing.json'
+import ri4 from './questions/ri-4-redux.json'
+import ri5 from './questions/ri-5-native.json'
+import ri6 from './questions/ri-6-ecosystem.json'
+import ri7 from './questions/ri-7-misc.json'
+import ri8 from './questions/ri-8-modern.json'
+import ri9 from './questions/ri-9-core-basics.json'
+import ri10 from './questions/ri-10-core-props-events.json'
+import ri11 from './questions/ri-11-core-vdom.json'
+import ri12 from './questions/ri-12-core-hoc-composition.json'
+import ri13 from './questions/ri-13-core-ecosystem-position.json'
+import ri14 from './questions/ri-14-core-rendering-patterns.json'
+import ri15 from './questions/ri-15-core-jsx-details.json'
+import ri16 from './questions/ri-16-core-styling-tools.json'
+import ri17 from './questions/ri-17-core-project-conventions.json'
+import ri18 from './questions/ri-18-misc-early.json'
+import ri19 from './questions/ri-19-misc-hooks-foundations.json'
+import ri20 from './questions/ri-20-misc-rendering-internals.json'
+import ri21 from './questions/ri-21-misc-reducer-context-deep.json'
+import ri22 from './questions/ri-22-misc-useeffect-deep.json'
+import ri23 from './questions/ri-23-misc-layouteffect-ref-imperative.json'
+import ri24 from './questions/ri-24-misc-memo-callback-custom-hooks.json'
+import ri25 from './questions/ri-25-misc-advanced-hooks.json'
+import ri26 from './questions/ri-26-misc-code-splitting-perf.json'
+import ri27 from './questions/ri-27-misc-error-boundaries.json'
+import ri28 from './questions/ri-28-misc-component-conventions.json'
+import ri29 from './questions/ri-29-misc-forms-composition.json'
+import ri30 from './questions/ri-30-misc-state-alternatives-internals.json'
 import type { Chapter, Level, Question, WrongEntry, WrongEntryMeta } from '../types'
 
 // 題目 JSON 的 type 欄位在匯入時只會被推斷成 string，用 as 收斂回字面量聯合型別
@@ -80,6 +110,16 @@ export const chapters: Chapter[] = [
     levels: [
       fp1, fp2, fp3, fp4, fp5, fp6, fp7, fp8, fp9, fp10,
       fp11, fp12, fp13, fp14, fp15, fp16, fp17, fp18, fp19,
+    ].map(asLevel),
+  },
+  {
+    id: 'react-interview',
+    title: 'React 面試題',
+    icon: 'lightbulb',
+    levels: [
+      ri9, ri10, ri11, ri12, ri13, ri14, ri15, ri16, ri17,
+      ri1, ri2, ri3, ri4, ri5, ri6, ri7, ri8,
+      ri18, ri19, ri20, ri21, ri22, ri23, ri24, ri25, ri26, ri27, ri28, ri29, ri30,
     ].map(asLevel),
   },
 ]

@@ -1,0 +1,197 @@
+{
+  "id": "ri-9",
+  "title": "Core React：基礎觀念與元件",
+  "questions": [
+    {
+      "id": "ri-9-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "React 解決的問題：把 UI 描述成資料的函式",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊原本用 jQuery 直接操作 DOM（找到節點、改屬性、插入子節點），改用 React 之後，最根本的心智模型轉變是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "從『命令式地一步步操作 DOM』轉成『宣告式地描述在某個 state 下畫面應該長什麼樣子』：開發者不再寫『找到這個節點、把它的文字改掉』，而是寫『state 是這樣時，畫面應該渲染成這樣』，DOM 該怎麼變化交給 React 內部去計算與執行" },
+        { "id": "b", "text": "React 只是 jQuery 的別名，兩者程式碼寫法幾乎一模一樣" },
+        { "id": "c", "text": "React 要求完全不能有任何 DOM 操作，包括 React 自己內部也不能操作 DOM" },
+        { "id": "d", "text": "React 只是把 jQuery 的 $ 符號換成 React.createElement，其餘概念完全相同" }
+      ],
+      "answer": "a",
+      "explanation": "React 的核心賣點是宣告式 UI：你描述「這個 state 對應這個畫面」，不用自己寫「怎麼從舊畫面一步步改成新畫面」的指令。React 內部（透過虛擬 DOM 與 reconciliation）負責把這份宣告轉換成實際、有效率的 DOM 操作，這是它與 jQuery 這類命令式操作 DOM 的函式庫最根本的差異。",
+      "verify": { "checks": [], "manual": "屬程式設計典範轉移的概念題，無可執行程式碼。" }
+    },
+    {
+      "id": "ri-9-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "JSX 是 React.createElement 的語法糖",
+      "docs": "https://react.dev/learn/writing-markup-with-jsx",
+      "story": "",
+      "prompt": "JSX 不是瀏覽器看得懂的語法，必須先被轉譯。下面這段 JSX，轉譯後大致對應呼叫哪個函式？渲染結果會是什麼？",
+      "code": "function Greeting() {\n  return <h1 className=\"title\">Hello</h1>;\n}\n\nconsole.log(renderToStaticMarkup(<Greeting />));",
+      "options": [
+        { "id": "a", "text": "<h1 className=\"title\">Hello</h1> 會被轉譯成 React.createElement(\"h1\", { className: \"title\" }, \"Hello\")，最終渲染出 <h1 class=\"title\">Hello</h1>——JSX 只是 createElement 呼叫的語法糖，方便開發者用近似 HTML 的寫法描述元素樹，實際執行的仍然是一般的 JavaScript 函式呼叫" },
+        { "id": "b", "text": "JSX 會被瀏覽器直接當成 HTML 字串解析，不需要任何轉譯步驟" },
+        { "id": "c", "text": "className 屬性會被直接渲染成 HTML 的 className=\"title\"，而不是 class=\"title\"" },
+        { "id": "d", "text": "這段程式碼會拋出例外，JSX 不能在函式元件裡直接 return" }
+      ],
+      "answer": "a",
+      "explanation": "JSX 需要 Babel 或 esbuild 這類工具在建置階段轉譯成 React.createElement(type, props, ...children) 的呼叫，這也是為什麼 JSX 檔案裡即使沒有直接用到 React 這個變數名稱（新版 JSX transform 下），底層仍然依賴 react 套件；渲染到瀏覽器 DOM 上時，className 這個 React/JSX 專屬的屬性名稱，會被轉換回瀏覽器認得的 class 屬性。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Greeting() {\n  return <h1 className=\"title\">Hello</h1>;\n}\nconsole.log(renderToStaticMarkup(<Greeting />));", "expected": "<h1 class=\"title\">Hello</h1>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-9-q3",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Element 是描述畫面的普通物件，Component 是產生 Element 的函式",
+      "docs": "",
+      "story": "",
+      "prompt": "<Greeting /> 這個 JSX 表達式的執行結果（一個 React Element），跟 Greeting 這個函式元件本身，是同一種東西嗎？",
+      "code": "function Greeting() {\n  return <h1>Hello</h1>;\n}\n\nconst element = <Greeting />;\nconsole.log(typeof Greeting, typeof element);",
+      "options": [
+        { "id": "a", "text": "不是同一種東西：Greeting 是一個函式（Component），描述『給定 props，該怎麼算出畫面』的邏輯；<Greeting /> 執行後產生的 element 是一個普通的、輕量的物件，只是描述『畫面上這裡該放一個 Greeting，props 是這些』，本身不含任何邏輯，也還沒有真的被渲染成 DOM——element 是資料，component 是產生資料的函式" },
+        { "id": "b", "text": "是同一種東西，element 跟 component 只是同一個概念的兩種稱呼" },
+        { "id": "c", "text": "element 是一個 DOM 節點，component 是一段 CSS 樣式" },
+        { "id": "d", "text": "typeof Greeting 會是 'object'，typeof element 會是 'function'" }
+      ],
+      "answer": "a",
+      "explanation": "Component 是函式（或 class），接收 props、回傳 element；element 是一個純資料物件（{ type, props, key... }），描述某個時間點畫面該長什麼樣。React 拿到 element 之後才會去呼叫對應的 component 函式、遞迴地算出更深層的 element，最終才映射成真正的 DOM——這整個過程就是 reconciliation。",
+      "verify": {
+        "checks": [
+          { "jsx": "function Greeting() {\n  return <h1>Hello</h1>;\n}\nconst element = <Greeting />;\nconsole.log(typeof Greeting, typeof element);", "expected": "function object" }
+        ]
+      }
+    },
+    {
+      "id": "ri-9-q4",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "什麼時候該用 class component（現在幾乎只剩一種情境）",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊的程式碼風格指南要求「新元件一律用函式元件」，但保留了一個例外：只有某一種情境還是得寫 class component。是什麼情境？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "需要實作 Error Boundary（攔截子元件渲染時拋出的錯誤並顯示備援畫面）時：目前只有 class component 才能定義 static getDerivedStateFromError() 與 componentDidCatch() 這兩個生命週期方法，函式元件與 Hooks 沒有對應的錯誤攔截機制，這是少數函式元件無法完全取代 class component 的場景" },
+        { "id": "b", "text": "需要使用 useState 管理狀態時，必須用 class component" },
+        { "id": "c", "text": "需要使用 props 時，必須用 class component" },
+        { "id": "d", "text": "class component 已經被完全移除，任何情境都不能再使用" }
+      ],
+      "answer": "a",
+      "explanation": "Hooks 幾乎覆蓋了 class component 生命週期能做的所有事（狀態、副作用、context...），唯獨 Error Boundary 依賴的 getDerivedStateFromError／componentDidCatch 至今沒有對應的 Hook 版本，這也是為什麼即使是全面擁抱函式元件的專案，程式碼庫裡通常還會留著一個（或少數幾個）用來實作 Error Boundary 的 class component。",
+      "verify": { "checks": [], "manual": "屬 API 現況的事實性題目，官方文件明確說明此限制，無需執行驗證。" }
+    },
+    {
+      "id": "ri-9-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Pure Component／React.memo：props 沒變就跳過重繪",
+      "docs": "https://react.dev/reference/react/memo",
+      "story": "",
+      "prompt": "父層重繪了兩次，但傳給 Child 的 props（name=\"A\"）完全沒變。Child 外面包了 React.memo，它裡面的 console.log 會被印出幾次？",
+      "code": "let renderCount = 0;\nfunction ChildImpl({ name }) {\n  renderCount++;\n  return <p>{name}</p>;\n}\nconst Child = React.memo(ChildImpl);\n\nfunction App() {\n  const [, forceRerender] = useState(0);\n  return (\n    <>\n      <button onClick={() => forceRerender((c) => c + 1)}>重繪父層</button>\n      <Child name=\"A\" />\n    </>\n  );\n}\n\n// 模擬：父層初次渲染 + 兩次 forceRerender\nconsole.log(renderToStaticMarkup(<App />));\nconsole.log(renderCount);",
+      "options": [
+        { "id": "a", "text": "第一次渲染會呼叫一次 ChildImpl（memo 沒辦法跳過『第一次』渲染，只能跳過『props 沒變的後續重繪』）；但這裡是伺服器端一次性的 renderToStaticMarkup，只會觸發一次渲染，之後模擬的父層重繪並不會在這段程式碼裡實際發生，所以 renderCount 印出 1" },
+        { "id": "b", "text": "renderCount 永遠是 0，React.memo 包起來的元件完全不會被呼叫" },
+        { "id": "c", "text": "renderCount 會等於父層重繪的總次數，React.memo 對伺服器端渲染沒有任何效果" },
+        { "id": "d", "text": "這段程式碼會拋出例外，React.memo 不能用在函式元件上" }
+      ],
+      "answer": "a",
+      "explanation": "React.memo 的效果是「props 沒變就跳過這次重繪」，但它介入的時間點是『重繪』本身，第一次渲染一定會執行。這裡的 renderToStaticMarkup 只做了一次性的伺服器端渲染，沒有真正觸發父層重繪的迴圈，所以只會看到一次 ChildImpl 執行；要觀察 memo 真正跳過重複渲染的效果，需要瀏覽器端多次觸發重繪才看得出來。",
+      "verify": {
+        "checks": [
+          { "jsx": "import React, { useState } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nlet renderCount = 0;\nfunction ChildImpl({ name }) {\n  renderCount++;\n  return <p>{name}</p>;\n}\nconst Child = React.memo(ChildImpl);\nfunction App() {\n  return (\n    <>\n      <Child name=\"A\" />\n    </>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));\nconsole.log(renderCount);", "expected": "<p>A</p>\n1" }
+        ]
+      }
+    },
+    {
+      "id": "ri-9-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "state 是元件自己的記憶，props 是外部傳入的唯讀資料",
+      "docs": "https://react.dev/learn/state-a-components-memory",
+      "story": "",
+      "prompt": "Counter 元件用 useState 記錄自己的點擊次數。父層完全不知道也不管這個次數。下面這樣描述 state 跟 props 的差異，正確嗎？",
+      "code": "function Counter() {\n  const [count, setCount] = useState(0); // state：元件自己的、私有的記憶\n  return <button onClick={() => setCount(count + 1)}>{count}</button>;\n}\n\nfunction Toolbar({ title }) { // props：外部傳入，Toolbar 自己不能改\n  return <h2>{title}</h2>;\n}",
+      "options": [
+        { "id": "a", "text": "正確：state 是元件『自己』宣告、自己管理、外部無法直接讀取或修改的內部資料，只有這個元件自己能透過 setCount 改變它；props 則是由外部（父層）傳入的資料，對收到的元件而言是唯讀的，Toolbar 內部不能直接修改 title 這個 prop 的值" },
+        { "id": "b", "text": "不正確，state 跟 props 其實是同一種東西，只是命名不同" },
+        { "id": "c", "text": "不正確，props 才是元件自己的私有資料，state 才是外部傳入的" },
+        { "id": "d", "text": "不正確，父層永遠可以直接修改子層的 state" }
+      ],
+      "answer": "a",
+      "explanation": "這是 React 資料流最基礎的一組區分：state 是「這個元件自己的記憶」，只有它自己能透過對應的 setter 改變；props 是「別人傳給你的資料」，收到的一方只能讀取、不能直接修改（想改，得請求父層透過重新渲染傳入新的 props，或呼叫父層透過 props 傳來的回呼函式）。搞混這兩者最常見的症狀就是想「直接改一個 prop」結果毫無效果。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { useState } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nfunction Counter() {\n  const [count] = useState(0);\n  return <button>{count}</button>;\n}\nfunction Toolbar({ title }) {\n  return <h2>{title}</h2>;\n}\nfunction App() {\n  return (\n    <div>\n      <Counter />\n      <Toolbar title=\"我的工具列\" />\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<div><button>0</button><h2>我的工具列</h2></div>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-9-q7",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "什麼時候該把資料設計成 state，而不是每次重算",
+      "docs": "",
+      "story": "",
+      "prompt": "一個元件需要顯示「篩選後的清單項目數量」，這個數字可以直接從 props.items 篩選運算得到。下列哪種設計比較恰當？",
+      "code": "// 版本一：另外用 state 存這個數字，並在每次 items 改變時手動同步\nconst [count, setCount] = useState(0);\nuseEffect(() => {\n  setCount(items.filter((i) => i.active).length);\n}, [items]);\n\n// 版本二：渲染時直接算，不額外存成 state\nconst count = items.filter((i) => i.active).length;",
+      "options": [
+        { "id": "a", "text": "版本二比較恰當：這個數字完全可以從現有的 props（items）直接算出來，屬於『衍生資料』，不需要另外用一份 state 存放並手動同步；版本一多了一次不必要的 state、一個容易漏寫依賴或造成『state 跟 props 不同步』風險的 useEffect，而且會多一次重繪（先渲染舊值，effect 跑完才更新成新值）" },
+        { "id": "b", "text": "版本一比較恰當，任何顯示在畫面上的數值都應該是獨立的 state" },
+        { "id": "c", "text": "兩者完全等價，選哪個都沒有任何差異" },
+        { "id": "d", "text": "版本二有語法錯誤，不能在渲染過程中直接呼叫 filter" }
+      ],
+      "answer": "a",
+      "explanation": "React 官方文件明確建議：如果一個值可以從既有的 props 或 state 純粹計算出來，就不要把它另外存成一份 state。額外存一份不僅冗餘，還會製造出「這份 state 跟真正的來源資料不同步」的風險（例如忘記在某個更新路徑上呼叫 setCount）；渲染時直接算，永遠保證跟來源資料一致，也少一次不必要的重繪。",
+      "verify": { "checks": [], "manual": "屬狀態設計原則的推理題，重點在避免不必要的衍生 state，無需可執行程式碼佐證。" }
+    },
+    {
+      "id": "ri-9-q8",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "props 有預設值時，沒傳該 prop 會用預設參數補上",
+      "docs": "https://react.dev/learn/passing-props-to-a-component",
+      "story": "",
+      "prompt": "Button 元件用預設參數宣告 variant = \"primary\"。呼叫端沒有傳 variant 這個 prop，畫面會顯示什麼？",
+      "code": "function Button({ label, variant = \"primary\" }) {\n  return <button className={variant}>{label}</button>;\n}\n\nconsole.log(renderToStaticMarkup(<Button label=\"送出\" />));",
+      "options": [
+        { "id": "a", "text": "<button class=\"primary\">送出</button>：這是 JavaScript 原生的解構預設參數語法，呼叫端沒有傳 variant 時，函式內部會用宣告時給的預設值 \"primary\" 補上；這跟舊版 Component.defaultProps 是兩種不同的機制，但效果類似，函式元件目前建議直接用這種原生語法" },
+        { "id": "b", "text": "<button class=\"undefined\">送出</button>，沒傳的 prop 會被轉成字面上的 undefined 字串" },
+        { "id": "c", "text": "程式會拋出例外，variant 是必填 prop，沒傳就會報錯" },
+        { "id": "d", "text": "<button>送出</button>，className 屬性會被完全省略" }
+      ],
+      "answer": "a",
+      "explanation": "函式元件的 props 本質上就是一個一般的 JavaScript 物件參數，解構賦值搭配預設值語法（{ variant = \"primary\" }）在這裡完全比照一般函式參數的規則運作：呼叫端沒傳這個屬性、或傳的是 undefined，就會套用預設值；只有明確傳入 null 或其他值時才不會使用預設值。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Button({ label, variant = \"primary\" }) {\n  return <button className={variant}>{label}</button>;\n}\nconsole.log(renderToStaticMarkup(<Button label=\"送出\" />));", "expected": "<button class=\"primary\">送出</button>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-9-q9",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "何時把 Component 拆小：職責是否單一、是否需要重複使用",
+      "docs": "",
+      "story": "",
+      "prompt": "一個 UserCard 元件裡同時塞了「頭像顯示」「使用者名稱與簡介」「追蹤按鈕與其點擊邏輯」三大段完全不相關的 JSX 與邏輯，檔案長達 300 行。下列哪個判斷，是決定要不要拆成更小元件的合理依據？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "看這三段各自是否有『獨立、可以脫離彼此單獨描述』的職責，以及是否有機會在別處被重複使用（例如頭像元件在留言列表、個人頁面都可能用到）；如果某一段邏輯複雜到難以一眼理解、或明顯可能被其他畫面重用，通常就是該拆成獨立元件的訊號，而不是單純依檔案行數或個人喜好決定" },
+        { "id": "b", "text": "只要檔案超過 100 行就必須拆分，這是唯一該遵守的硬性規則" },
+        { "id": "c", "text": "永遠不應該拆分元件，所有邏輯都該塞在同一個檔案裡以方便維護" },
+        { "id": "d", "text": "只有使用 TypeScript 的專案才需要考慮拆分元件" }
+      ],
+      "answer": "a",
+      "explanation": "拆分元件的判斷依據應該是「職責是否單一」與「是否有重複使用的價值」，而不是死板的行數規則。追蹤按鈕邏輯獨立、頭像元件可能被其他地方複用，這些都是拆分的合理理由；反過來說，兩段邏輯緊密耦合、拆開反而要傳一堆 props 才能溝通，強行拆分也不見得更好維護。",
+      "verify": { "checks": [], "manual": "屬元件設計與職責劃分的推理題，無可執行程式碼。" }
+    }
+  ]
+}

@@ -1,0 +1,231 @@
+{
+  "id": "ri-8",
+  "title": "Modern React：18／19 新特性",
+  "questions": [
+    {
+      "id": "ri-8-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "useId：伺服器與用戶端算出同一個穩定 id，不是隨機碼",
+      "docs": "https://react.dev/reference/react/useId",
+      "story": "",
+      "prompt": "想幫 label 跟 input 建立可靠的關聯（htmlFor 屬性值要跟 id 屬性值一致）。過去常見寫法是自己手刻一個隨機字串或遞增計數器當 id，在 SSR + hydration 的情境下容易讓伺服器端跟用戶端算出的值對不上。改用 useId() 之後，下面這段程式碼裡，label 的 htmlFor 屬性值跟 input 的 id 屬性值會是同一個字串嗎？",
+      "code": "function Field() {\n  const id = useId();\n  return (\n    <div>\n      <label htmlFor={id}>姓名</label>\n      <input id={id} />\n    </div>\n  );\n}\n\nconst html = renderToStaticMarkup(<Field />);\nconst forMatch = html.match(/for=\"([^\"]+)\"/);\nconst idMatch = html.match(/id=\"([^\"]+)\"/);\nconsole.log(forMatch[1] === idMatch[1] ? \"same id\" : \"different id\");",
+      "options": [
+        { "id": "a", "text": "same id：同一次 useId() 呼叫在這個元件裡只執行一次、回傳一個穩定值，這裡把同一個結果同時用在 htmlFor 跟 id 上，兩者當然相同；useId 的關鍵設計目標正是『同一棵元件樹在伺服器端與用戶端算出的 id 保持一致』，避免用 Math.random() 或遞增計數器這種容易因為執行順序不同步而對不上、觸發 hydration mismatch 的做法" },
+        { "id": "b", "text": "different id：htmlFor 跟 id 各自對應到不同的內部呼叫，理論上會拿到不同的值" },
+        { "id": "c", "text": "程式會拋出錯誤，同一個 id 字串不能同時用在兩個不同的 HTML 屬性上" },
+        { "id": "d", "text": "只有在用戶端渲染才會相同，伺服器端渲染時兩者永遠是空字串" }
+      ],
+      "answer": "a",
+      "explanation": "useId() 在同一次呼叫裡只執行一次、回傳的值在整次渲染中固定不變，這裡的程式碼只呼叫了一次 useId 並把結果重複使用在兩個屬性上，所以 htmlFor 跟 id 必然相同。它跟手刻隨機碼最大的差異在於：useId 依「元件在樹狀結構中的位置」決定性地產生 id，不依賴 Math.random() 或執行順序，伺服器端渲染出的 HTML 跟用戶端 hydrate 時算出來的 id 保證一致，避免常見的 hydration mismatch 警告。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { useId } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nfunction Field() {\n  const id = useId();\n  return (\n    <div>\n      <label htmlFor={id}>姓名</label>\n      <input id={id} />\n    </div>\n  );\n}\nconst html = renderToStaticMarkup(<Field />);\nconst forMatch = html.match(/for=\"([^\"]+)\"/);\nconst idMatch = html.match(/id=\"([^\"]+)\"/);\nconsole.log(forMatch[1] === idMatch[1] ? \"same id\" : \"different id\");", "expected": "same id" }
+        ]
+      }
+    },
+    {
+      "id": "ri-8-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "use()：唯一可以放進條件式呼叫的 Hook",
+      "docs": "https://react.dev/reference/react/use",
+      "story": "",
+      "prompt": "React 的 Hook 有一條大家都背過的規則：不能放進 if、for 這類條件式或迴圈裡呼叫。下面這段程式碼裡，use(ThemeContext) 被包在 if 判斷式裡面才呼叫——這樣合法嗎？渲染結果是什麼？",
+      "code": "const ThemeContext = createContext(\"light\");\n\nfunction Label({ showTheme }) {\n  if (showTheme) {\n    const theme = use(ThemeContext); // 條件式呼叫\n    return <span>目前主題：{theme}</span>;\n  }\n  return <span>不顯示主題</span>;\n}\n\nfunction App() {\n  return (\n    <ThemeContext.Provider value=\"dark\">\n      <Label showTheme={true} />\n    </ThemeContext.Provider>\n  );\n}\n\nconsole.log(renderToStaticMarkup(<App />));",
+      "options": [
+        { "id": "a", "text": "合法，印出「目前主題：dark」：use() 是 React 19 引入的特殊 API，刻意設計成可以在條件式、迴圈裡呼叫——這是它跟 useContext／useState 等傳統 Hook 最大的差異，傳統 Hook『不能放進 if/for』的規則，use() 是明確的例外" },
+        { "id": "b", "text": "不合法，會直接拋出錯誤：違反了 Hook 規則裡『不能放進條件式』的限制，use() 也不例外" },
+        { "id": "c", "text": "合法，但因為是條件式呼叫，React 讀不到 Context 目前的值，結果會是 undefined" },
+        { "id": "d", "text": "合法，但 use() 只能讀取 Promise，不能讀取 Context，這段程式碼型別就用錯了" }
+      ],
+      "answer": "a",
+      "explanation": "傳統 Hook（useState、useContext、useEffect...）依賴「每次渲染呼叫順序完全相同」來對應內部狀態，這正是為什麼它們不能放進條件式。use() 不受這個限制，官方文件明確說明它可以在條件式、迴圈、甚至 early return 之後呼叫——這讓它除了讀取 Context，也很適合搭配「只有某些情境才需要讀取某個資源」的邏輯，不用被迫把整個元件拆成兩個。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { createContext, use } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nconst ThemeContext = createContext(\"light\");\nfunction Label({ showTheme }) {\n  if (showTheme) {\n    const theme = use(ThemeContext);\n    return <span>目前主題：{theme}</span>;\n  }\n  return <span>不顯示主題</span>;\n}\nfunction App() {\n  return (\n    <ThemeContext.Provider value=\"dark\">\n      <Label showTheme={true} />\n    </ThemeContext.Provider>\n  );\n}\nconsole.log(renderToStaticMarkup(<App />));", "expected": "<span>目前主題：dark</span>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-8-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "useTransition 的 isPending 初始值是 false",
+      "docs": "https://react.dev/reference/react/useTransition",
+      "story": "",
+      "prompt": "元件掛載後、還沒有任何使用者操作觸發 startTransition 之前，isPending 是什麼？",
+      "code": "function Search() {\n  const [isPending] = useTransition();\n  return <p>{isPending ? \"篩選中...\" : \"就緒\"}</p>;\n}\n\nconsole.log(renderToStaticMarkup(<Search />));",
+      "options": [
+        { "id": "a", "text": "false，顯示「就緒」：isPending 反映的是『目前是否有一個被標記為 transition 的更新正在進行中』，元件剛掛載、還沒有任何 transition 被觸發過，自然是 false；只有呼叫 startTransition(() => { ... }) 之後、在這個更新真正完成前，isPending 才會變成 true" },
+        { "id": "b", "text": "true，顯示「篩選中...」：useTransition 預設就是啟動中的狀態" },
+        { "id": "c", "text": "undefined，因為 isPending 只有搭配 Suspense 才會有值" },
+        { "id": "d", "text": "會拋出錯誤，useTransition 必須先呼叫 startTransition 才能安全渲染" }
+      ],
+      "answer": "a",
+      "explanation": "useTransition() 回傳一組 [isPending, startTransition]，isPending 單純是一個布林旗標，反映『有沒有一個被標記為低優先權（transition）的更新正在處理中』。掛載當下什麼更新都還沒發生，isPending 自然是預設的 false；它的用途通常是在使用者觸發了一個會讓畫面短暫『卡頓』的重度篩選/切換時，顯示一個載入提示，而不影響其他更緊急的互動（如輸入框本身立即回應按鍵）。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { useTransition } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nfunction Search() {\n  const [isPending] = useTransition();\n  return <p>{isPending ? \"篩選中...\" : \"就緒\"}</p>;\n}\nconsole.log(renderToStaticMarkup(<Search />));", "expected": "<p>就緒</p>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-8-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "useOptimistic 在還沒觸發樂觀更新前，顯示的就是真實值",
+      "docs": "https://react.dev/reference/react/useOptimistic",
+      "story": "",
+      "prompt": "這個讚數元件用 useOptimistic 包住 likes。畫面剛掛載、使用者都還沒按下任何「按讚」動作時，第一次渲染顯示的是什麼？",
+      "code": "function Likes({ likes }) {\n  const [optimisticLikes] = useOptimistic(likes);\n  return <p>{optimisticLikes} 個讚</p>;\n}\n\nconsole.log(renderToStaticMarkup(<Likes likes={10} />));",
+      "options": [
+        { "id": "a", "text": "10 個讚：useOptimistic(likes) 在沒有任何待處理的樂觀更新時，回傳的就是你傳入的真實狀態本身；它只有在後續某個非同步 action 執行『期間』，才會暫時顯示你另外指定的樂觀猜測值，等 action 完成後再對齊回真正的伺服器狀態——沒觸發任何更新時，行為就等同直接讀 likes" },
+        { "id": "b", "text": "0 個讚：useOptimistic 的初始值永遠固定是 0，要等第一次更新後才會顯示正確數字" },
+        { "id": "c", "text": "undefined 個讚：必須先呼叫對應的更新函式才能顯示任何內容" },
+        { "id": "d", "text": "10 個讚，但文字後面會自動附加一段「（更新中...）」的提示" }
+      ],
+      "answer": "a",
+      "explanation": "useOptimistic 的設計目的是「在等待伺服器確認的空檔，先讓使用者看到看起來已經生效的結果」，但這個機制只在你主動觸發一次樂觀更新時才啟動。沒有觸發任何更新的初始渲染，它單純把你傳入的真實值原封不動回傳，跟一般讀一個 prop 沒有兩樣——這也是為什麼它的第一個參數就叫「實際狀態」，樂觀值只是疊加在這個真實狀態之上的暫時性顯示。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { useOptimistic } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nfunction Likes({ likes }) {\n  const [optimisticLikes] = useOptimistic(likes);\n  return <p>{optimisticLikes} 個讚</p>;\n}\nconsole.log(renderToStaticMarkup(<Likes likes={10} />));", "expected": "<p>10 個讚</p>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-8-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "useActionState：初次渲染顯示初始狀態，action 還沒被呼叫過",
+      "docs": "https://react.dev/reference/react/useActionState",
+      "story": "",
+      "prompt": "表單元件用 useActionState 綁定一個非同步的 submitAction，並給了初始狀態 { message: '尚未送出' }。頁面剛渲染、使用者還沒按下送出按鈕之前，畫面顯示什麼？",
+      "code": "async function submitAction(prevState, formData) {\n  return { message: \"送出成功\" };\n}\n\nfunction Form() {\n  const [state, formAction] = useActionState(submitAction, { message: \"尚未送出\" });\n  return <p>{state.message}</p>;\n}\n\nconsole.log(renderToStaticMarkup(<Form />));",
+      "options": [
+        { "id": "a", "text": "尚未送出：useActionState(action, initialState) 的第一個回傳值，在 action 真正被觸發（也就是表單被送出）之前，就是你傳入的 initialState；submitAction 只有在使用者實際觸發表單提交時才會被呼叫，呼叫完成後 state 才會更新成 action 的回傳值" },
+        { "id": "b", "text": "送出成功：只要元件掛載，useActionState 就會立刻自動呼叫一次 action" },
+        { "id": "c", "text": "undefined：state 要等第一次呼叫 formAction 之後才會有任何值" },
+        { "id": "d", "text": "會拋出錯誤，submitAction 必須是同步函式，不能宣告成 async" }
+      ],
+      "answer": "a",
+      "explanation": "useActionState（前身是 useFormState）把「表單送出後的非同步處理結果」跟 state 綁在一起管理，但這件事本身是被動觸發的：只有真正呼叫回傳的 formAction（通常綁在 <form action={formAction}>）才會執行 submitAction；掛載當下沒有任何提交行為發生，state 自然停留在你傳入的初始值，不會提前執行 action 去『預先看一眼結果』。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { useActionState } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nasync function submitAction(prevState, formData) {\n  return { message: \"送出成功\" };\n}\nfunction Form() {\n  const [state] = useActionState(submitAction, { message: \"尚未送出\" });\n  return <p>{state.message}</p>;\n}\nconsole.log(renderToStaticMarkup(<Form />));", "expected": "<p>尚未送出</p>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-8-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "React Compiler 自動記憶化，不代表要刪掉現有的 useMemo",
+      "docs": "",
+      "story": "",
+      "prompt": "導入 React Compiler（原代號 React Forget）之後，下面這個手動加了 useMemo 的元件，跟原本比起來效益上有什麼差異？",
+      "code": "function ProductList({ products, filterText }) {\n  const filtered = useMemo(\n    () => products.filter((p) => p.name.includes(filterText)),\n    [products, filterText]\n  );\n  return <ul>{filtered.map((p) => <li key={p.id}>{p.name}</li>)}</ul>;\n}",
+      "options": [
+        { "id": "a", "text": "React Compiler 會在建置階段靜態分析元件程式碼，自動幫『沒有手動加 useMemo/useCallback/React.memo』的一般計算與函式做記憶化，讓開發者理論上不再需要手動判斷『這裡要不要包 useMemo』；已經手動寫好的 useMemo 在有 Compiler 的情況下通常不會造成傷害（頂多是多餘的樣板程式碼），Compiler 的目標是讓『沒有手動優化過的程式碼』也能拿到接近手動優化的效能，不是要求你把現有的 useMemo 全部刪掉" },
+        { "id": "b", "text": "手動寫的 useMemo 會直接讓 React Compiler 編譯失敗，兩者無法共存" },
+        { "id": "c", "text": "React Compiler 只能自動記憶化 useState，跟 useMemo 完全無關" },
+        { "id": "d", "text": "React Compiler 是純粹的執行期機制，跟建置階段的靜態分析完全無關" }
+      ],
+      "answer": "a",
+      "explanation": "React Compiler 的核心價值主張是：把「該不該手動包 useMemo/useCallback/memo」這種需要工程師自己判斷、容易判斷錯誤（漏包或包錯依賴陣列）的工作，轉移給建置階段的靜態分析自動處理。它不要求也不會破壞既有手動優化過的程式碼，實務上多半建議先在既有專案上啟用觀察效果，而不是急著大規模刪除現有的 useMemo/useCallback。",
+      "verify": {
+        "checks": [],
+        "manual": "React Compiler 屬建置期靜態分析工具，未安裝於本專案，效果需要實際的 babel 編譯管線才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-8-q7",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "React 18 重點特性總覽：自動批次處理、Transition、串流 SSR",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊正把專案從 React 17 升級到 18，想知道升級後能用哪些新工具解決現有痛點。下列哪一組「痛點 → 對應 React 18 特性」的配對正確？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "①在同一個 setTimeout callback 裡連續呼叫兩次 setState，React 17 會各自觸發一次重繪、React 18 的自動批次處理（automatic batching）讓這種情境也只重繪一次；②篩選一份大型清單導致輸入框卡頓 → 用 useTransition 把『重新篩選清單』標記成低優先權更新，讓輸入框本身維持流暢；③需要在伺服器渲染階段就先送出畫面骨架、資料還沒到位的部分先顯示 fallback → 改用支援串流的新版 SSR API" },
+        { "id": "b", "text": "①②③全部都是 React 17 就已經內建的功能，React 18 沒有引入任何新東西" },
+        { "id": "c", "text": "React 18 的重點只有『把 ReactDOM.render 換成 createRoot』這一個改動，其餘都只是套件版本號提升" },
+        { "id": "d", "text": "React 18 移除了 Hooks，改回全面使用 class component" }
+      ],
+      "answer": "a",
+      "explanation": "React 18 這幾項重點特性不是各自獨立的裝飾功能，而是分別解決三種真實痛點：自動批次處理讓『多次 setState 觸發多次重繪』這個效能陷阱在更多情境下（不只事件處理器內）自動消失；Transition 讓開發者可以明確標記『這個更新不急著顯示，可以被更緊急的互動打斷』；串流 SSR 則讓伺服器渲染不用『整頁等最慢的那塊資料』才能開始回應。三者共同的主軸是讓大型應用在面對『部分內容比較慢』時，使用者體驗更順暢。",
+      "verify": {
+        "checks": [],
+        "manual": "屬版本升級的特性總覽推理題，涉及跨多個 API 的綜合理解，無單一可執行程式碼片段。"
+      }
+    },
+    {
+      "id": "ri-8-q8",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "React 19 重點特性總覽：ref-as-prop、Actions、use()",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊接著把專案從 React 18 升級到 19。下列哪一組「舊寫法 → React 19 對應的新選項」配對正確？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "①函式元件想接收父層傳來的 ref，舊版一定要包一層 forwardRef → React 19 可以直接把 ref 當一般 prop 解構接收；②表單送出後要手動管理 loading／success／error 三種狀態 → 可以改用 useActionState 搭配 <form action={...}>；③讀取一個非同步資源（如 Promise、Context）想在條件式裡呼叫 → 可以用新引入的 use() API" },
+        { "id": "b", "text": "React 19 主要是內部效能調校，沒有新增任何 Hook 或 API" },
+        { "id": "c", "text": "React 19 把所有 class component 的支援整個移除，只能寫函式元件" },
+        { "id": "d", "text": "React 19 要求所有專案都必須搭配 TypeScript 才能使用" }
+      ],
+      "answer": "a",
+      "explanation": "這三項是 React 19 最常被提及的開發體驗改進：ref-as-prop 讓函式元件不必為了接一個 ref 就得包一層 forwardRef；Actions（搭配 useActionState／useFormStatus）把『表單提交 → 處理中 → 結果』這個過程原生化，不用自己手刻三個 state；use() 則是第一個明確允許在條件式、迴圈裡呼叫的 Hook，讓讀取 Promise／Context 的彈性大幅提升。三者都沒有移除 class component 的支援，也不要求 TypeScript。",
+      "verify": {
+        "checks": [],
+        "manual": "屬版本升級的特性總覽推理題，涉及跨多個 API 的綜合理解，無單一可執行程式碼片段。"
+      }
+    },
+    {
+      "id": "ri-8-q9",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "Server Actions：表單提交直接對應一段伺服器端函式",
+      "docs": "",
+      "story": "",
+      "prompt": "傳統寫法要送出表單，得自己寫一個 API route、在前端用 fetch 呼叫、處理 loading 跟 error 狀態。React 19 的 Server Actions（搭配支援它的框架，如 Next.js）想解決的是什麼問題？",
+      "code": "// Server Action：函式本體標記 \"use server\"，直接被前端當成表單的 action 呼叫\nasync function createTodo(formData) {\n  \"use server\";\n  const text = formData.get(\"text\");\n  await db.todos.create({ text });\n}\n\nfunction NewTodoForm() {\n  return (\n    <form action={createTodo}>\n      <input name=\"text\" />\n      <button type=\"submit\">新增</button>\n    </form>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "讓『表單提交』直接對應到一段標記 \"use server\" 的伺服器端函式，不用自己手刻一個 API route、也不用在前端手動 fetch／處理 loading 狀態；框架會在背後把表單提交自動轉成一次對伺服器的呼叫，開發者只要專注在『收到 formData 之後要做什麼』這段邏輯，大幅減少『前後端各寫一份、手動兜接』的樣板程式碼" },
+        { "id": "b", "text": "Server Actions 只是把現有的 API route 改個檔名，行為完全沒有任何簡化" },
+        { "id": "c", "text": "Server Actions 讓所有邏輯都只能在瀏覽器端執行，伺服器端程式碼會被忽略" },
+        { "id": "d", "text": "Server Actions 是取代 Redux 的新狀態管理方案，跟表單提交無關" }
+      ],
+      "answer": "a",
+      "explanation": "Server Actions 把「前端表單 → API route → 後端處理」這條原本要手動兜接前後兩端的路徑，收斂成一個標記 \"use server\" 的函式，直接掛在 <form action={...}> 上。這需要框架層級（如 Next.js 的 App Router）的支援才能運作，本質上是把『網路請求』這個實作細節從應用程式邏輯裡抽象掉，而不是取代狀態管理或改變程式碼的執行位置本身。",
+      "verify": {
+        "checks": [],
+        "manual": "Server Actions 需要框架（如 Next.js）的建置管線與伺服器執行環境支援，無法用單純的 node 執行驗證。"
+      }
+    },
+    {
+      "id": "ri-8-q10",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "串流 SSR：先送出骨架，慢的子樹晚一點再補",
+      "docs": "",
+      "story": "",
+      "prompt": "傳統的 renderToString／renderToStaticMarkup 是「整棵樹渲染完成才回傳」的同步 API；React 18 起提供的串流式 SSR（如 renderToPipeableStream）想解決什麼問題？",
+      "code": "// 傳統：整頁資料都準備好，才能開始送出任何 HTML\nconst html = renderToString(<App />); // 要等最慢的那個子樹渲染完\n\n// 串流：可以先送出畫面骨架，慢的子樹之後再補上\nconst { pipe } = renderToPipeableStream(<App />, {\n  onShellReady() {\n    pipe(response);\n  },\n});",
+      "options": [
+        { "id": "a", "text": "串流 SSR 讓『準備好的部分先送、還沒準備好的部分（包在 Suspense 裡）晚一點再補』成為可能：使用者不用等到最慢的那個資料來源完成，就能先看到頁面骨架與已經就緒的內容，大幅改善大型頁面在『某個子樹特別慢』時的首次顯示體驗，這是傳統一次性同步渲染 API 做不到的" },
+        { "id": "b", "text": "串流 SSR 只是把 HTML 拆成好幾個檔案分開存放，跟渲染時機無關" },
+        { "id": "c", "text": "串流 SSR 會讓伺服器渲染完全消失，改成純粹的用戶端渲染" },
+        { "id": "d", "text": "串流 SSR 只能用在完全沒有任何非同步資料的靜態頁面上" }
+      ],
+      "answer": "a",
+      "explanation": "傳統同步 SSR API 的瓶頸在於「整棵樹裡最慢的那一個子樹，拖累了整份回應的送出時間」——即使頁面 90% 的內容早就準備好了，也得等最慢的那 10% 完成才能開始回傳任何 HTML。串流 SSR 把這個限制打破：先送出骨架與已就緒內容，Suspense 包住的慢速子樹用 fallback 佔位，等資料真正到位後，再透過同一個串流連線把真正內容『補』進頁面對應的位置。",
+      "verify": {
+        "checks": [],
+        "manual": "renderToPipeableStream 需要 Node.js 伺服器環境搭配串流回應機制才能實際觀察效果，超出本驗證腳本 node -e 的執行範圍，無法自動驗證。"
+      }
+    }
+  ]
+}

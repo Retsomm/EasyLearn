@@ -1,0 +1,193 @@
+{
+  "id": "ri-14",
+  "title": "Core React：條件渲染與元件慣例",
+  "questions": [
+    {
+      "id": "ri-14-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "條件渲染的幾種等價寫法：三元運算子、&&、提早 return",
+      "docs": "https://react.dev/learn/conditional-rendering",
+      "story": "",
+      "prompt": "isLoggedIn 為 false 時，這個元件用「提早 return」的寫法處理條件渲染。畫面會顯示什麼？",
+      "code": "function Greeting({ isLoggedIn }) {\n  if (!isLoggedIn) {\n    return <p>請先登入</p>;\n  }\n  return <p>歡迎回來</p>;\n}\n\nconsole.log(renderToStaticMarkup(<Greeting isLoggedIn={false} />));",
+      "options": [
+        { "id": "a", "text": "<p>請先登入</p>：在函式元件裡，提早 return 是處理『某個條件成立時，整個元件該顯示完全不同內容』最直接的寫法之一，跟三元運算子（isLoggedIn ? <A/> : <B/>）、&& 短路（只顯示或不顯示，沒有第二種內容）比起來，提早 return 特別適合『兩種情況的畫面結構差異很大、硬要用一個表達式塞在一起反而更難讀』的情境" },
+        { "id": "b", "text": "<p>歡迎回來</p>，提早 return 只會影響函式的執行流程，不影響最終畫面內容" },
+        { "id": "c", "text": "兩段文字都會顯示，因為函式元件裡的 return 不會真的中斷執行" },
+        { "id": "d", "text": "程式會拋出例外，函式元件裡不能有多個 return 語句" }
+      ],
+      "answer": "a",
+      "explanation": "三元運算子、&&、提早 return 都是條件渲染的合法手段，選哪一種通常看「兩種情況的畫面差異有多大」：差異小（有沒有一個小圖示）用 &&；兩種內容都要顯示、彼此互斥用三元；兩種情況的 JSX 結構差異很大、放在同一個表達式裡會很難讀，提早 return 通常最清楚。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Greeting({ isLoggedIn }) {\n  if (!isLoggedIn) {\n    return <p>請先登入</p>;\n  }\n  return <p>歡迎回來</p>;\n}\nconsole.log(renderToStaticMarkup(<Greeting isLoggedIn={false} />));", "expected": "<p>請先登入</p>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-14-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "展開 props 到 DOM 元素上要小心，未知屬性會被原樣輸出到 HTML",
+      "docs": "https://react.dev/learn/passing-props-to-a-component",
+      "story": "",
+      "prompt": "Button 元件把收到的所有 props（用展開運算子）直接灑到底層的 <button> 上，圖方便不用一一列出每個要轉發的屬性。呼叫端不小心多傳了一個跟 HTML 屬性完全無關、只是內部邏輯用的 isPrimary，畫面會發生什麼事？",
+      "code": "function Button(props) {\n  return <button {...props}>{props.children}</button>;\n}\n\nconsole.log(renderToStaticMarkup(<Button isPrimary={true}>送出</Button>));",
+      "options": [
+        { "id": "a", "text": "isPrimary 不會出現在最終的 HTML 屬性裡（畫面上只有 <button>送出</button>）：目前的 React 會偵測出這不是一個合法的 HTML 屬性名稱，直接把它從輸出的 DOM 屬性裡濾掉，同時在 console 印出警告，提醒『如果是不小心從父層傳下來的，該在展開前先移除；如果真的想讓它出現在 DOM 上當自訂屬性，要改成全小寫的 isprimary』；不加選擇地展開全部 props，容易讓這種只給元件邏輯用的內部旗標，在不知情的狀況下產生一堆 console 警告雜訊" },
+        { "id": "b", "text": "isPrimary=\"true\" 會被原樣渲染到 HTML 上（<button isprimary=\"true\">），因為 React 對於不認得的屬性一律照樣輸出，不會做任何過濾" },
+        { "id": "c", "text": "程式會直接拋出例外，展開運算子不能用在 JSX 元素的屬性位置" },
+        { "id": "d", "text": "React 會自動把 isPrimary 轉換成合法的 aria-* 屬性再輸出" }
+      ],
+      "answer": "a",
+      "explanation": "React 對「看起來像自訂屬性但命名不符合慣例」的 prop 有偵測機制：不認得的駝峰式屬性名稱（如 isPrimary）會被濾掉、不會出現在最終 HTML 裡，同時在 console 印出警告告訴你原因與修正方式；只有全小寫、符合自訂屬性慣例的名稱（如 isprimary、或帶 data-/aria- 前綴）才會被正常輸出。這代表毫不篩選地展開全部 props 到底層 DOM 元素，雖然不會讓內部旗標洩漏到 HTML 上，但還是會在 console 產生警告雜訊，正確做法仍然是先明確解構出真正需要轉發給 DOM 的屬性。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Button(props) {\n  return <button {...props}>{props.children}</button>;\n}\nconsole.log(renderToStaticMarkup(<Button isPrimary={true}>送出</Button>));", "expected": "<button>送出</button>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-14-q3",
+      "type": "find-bug",
+      "difficulty": 1,
+      "topic": "memo 只做淺層比較，物件/函式型別的 props 每次都是新參考會讓 memo 失效",
+      "docs": "https://react.dev/reference/react/memo",
+      "story": "",
+      "prompt": "團隊幫一個效能敏感的元件包上 React.memo，卻發現它還是每次都跟著父層一起重繪，完全沒有省下任何重繪。父層每次重繪都用行內物件字面值傳入 style prop。這是為什麼？",
+      "code": "function Parent() {\n  const [tick, setTick] = useState(0);\n  return (\n    <div>\n      <button onClick={() => setTick((t) => t + 1)}>tick</button>\n      <ExpensiveChild style={{ color: \"red\" }} />\n    </div>\n  );\n}\nconst ExpensiveChild = React.memo(function ExpensiveChild({ style }) {\n  return <p style={style}>內容</p>;\n});",
+      "options": [
+        { "id": "a", "text": "React.memo 預設只做淺層比較（shallow compare）：逐一比較新舊 props 的每個欄位是否『參考相等』；每次父層重繪時，{ color: \"red\" } 這個行內物件字面值都會建立一個全新的物件參考（即使內容看起來一樣），淺層比較判定 style 這個 prop『變了』（新舊物件參考不同），memo 因此判斷『需要重繪』，完全沒省到任何重繪；要解決，得把這個物件抽到元件外部宣告成穩定的常數，或用 useMemo 包住，讓它在父層重繪之間保持同一個參考" },
+        { "id": "b", "text": "React.memo 對物件型別的 props 完全不做任何比較，一律視為沒變" },
+        { "id": "c", "text": "這是 React 的一個 bug，官方尚未提供任何解法" },
+        { "id": "d", "text": "只要用了 React.memo，物件型別的 props 就會自動被深層比較，這裡的情境不應該發生" }
+      ],
+      "answer": "a",
+      "explanation": "這是 memo 最常見的踩坑情境：memo 做的是「淺層」比較，物件、陣列、函式這類參考型別，只要每次渲染都重新建立（哪怕內容完全一樣），參考不相等就會被判定成「變了」。解法是讓這些參考型別的值在渲染之間保持穩定（提到元件外部宣告、或用 useMemo/useCallback 包住），memo 才能真正發揮跳過重繪的效果。",
+      "verify": { "checks": [], "manual": "memo 淺層比較造成重繪的行為需要多輪真實渲染才能觀察，無法用單次 node 執行驗證。" }
+    },
+    {
+      "id": "ri-14-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "SSR：伺服器先產出 HTML，用戶端再 hydrate 接手成互動式應用",
+      "docs": "",
+      "story": "",
+      "prompt": "一個純用戶端渲染（CSR）的 React 應用，使用者打開網址後畫面會先是一片空白，等 JS 下載、執行完才看到內容。改成伺服器端渲染（SSR）之後，這個體驗會怎麼改變？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "使用者一打開網址，瀏覽器收到的就是伺服器已經把元件渲染好的完整 HTML（用 renderToString 之類的 API 產生），畫面能立刻顯示內容，不用等 JS 執行完；等 JS 真正下載並執行後，React 會透過 hydrate 把事件監聽器『接上』這份已經存在的 HTML，讓它變成完全互動式的應用——SSR 主要改善的是『使用者多快看到內容』（首次內容繪製），不是讓應用完全不需要 JavaScript" },
+        { "id": "b", "text": "SSR 之後應用完全不需要載入任何 JavaScript，所有互動都在伺服器端處理" },
+        { "id": "c", "text": "SSR 只會改變伺服器的效能，對使用者看到畫面的時間完全沒有任何影響" },
+        { "id": "d", "text": "SSR 會讓應用程式的邏輯完全搬到後端執行，前端完全不需要 React" }
+      ],
+      "answer": "a",
+      "explanation": "SSR 解決的核心痛點是「使用者多快看到有意義的內容」：伺服器預先算好 HTML 直接回應，省去等待 JS bundle 下載執行的空白畫面；但要讓畫面真正能互動（按鈕能點、輸入框能打字），還是需要用戶端下載、執行 JS，透過 hydrate 把事件邏輯接上已經存在的 HTML 結構——這也是為什麼 SSR 應用仍然需要載入 JavaScript，只是使用者不用『等 JS 才看得到內容』。",
+      "verify": { "checks": [], "manual": "SSR 與 hydrate 的實際使用者體驗需要真實伺服器與瀏覽器環境才能觀察，無法用 node 直接驗證。" }
+    },
+    {
+      "id": "ri-14-q5",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "生產模式建置：拿掉開發模式的額外檢查與警告，換取更小更快的產物",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊發現正式環境部署的是開發模式建置的 React 應用（檔案體積明顯較大、執行也比較慢），沒有切換成生產模式。啟用生產模式建置主要會帶來什麼改變？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "生產模式建置（例如用 Vite/webpack 的 production 設定，或框架的 build 指令）會拿掉開發模式專屬的額外檢查與警告訊息（例如重複 key 值警告、更詳細的錯誤訊息與元件堆疊追蹤、部分開發用的除錯輔助程式碼），並且做程式碼壓縮、tree-shaking，最終產物體積更小、執行效率更好；代價是拿掉這些開發時的輔助檢查，錯誤訊息會變得比較簡略，這也是為什麼開發階段建議一律用開發模式建置，只有真正要部署上線時才切成生產模式" },
+        { "id": "b", "text": "生產模式與開發模式的建置產物完全一樣，只有檔名不同" },
+        { "id": "c", "text": "生產模式會自動幫應用程式加上更多除錯訊息，方便正式環境排查問題" },
+        { "id": "d", "text": "只有付費版的 React 才能啟用生產模式建置" }
+      ],
+      "answer": "a",
+      "explanation": "React 內部有很多只在開發模式生效的檢查（例如重複 key 值警告、StrictMode 的額外重複呼叫、更詳細的錯誤訊息），這些檢查對開發階段抓 bug 很有幫助，但會拖慢執行效率、增加檔案體積，正式環境不需要它們。生產模式建置正是拿掉這些開發專屬負擔，換取更精簡、更快的正式產物，這是部署前的標準步驟，不是額外的付費功能。",
+      "verify": { "checks": [], "manual": "開發模式與生產模式建置產物的差異需要真實建置工具鏈才能比對，無法用 node 直接驗證。" }
+    },
+    {
+      "id": "ri-14-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Hooks 讓大部分 render props／HOC 的用途變得沒必要，但不是徹底取代",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊過去用 render props 模式（一個元件接收一個函式當 children，讓呼叫端決定怎麼渲染）跟資料訂閱邏輯共用。Hooks 出現之後，這種模式是不是完全被淘汰、不該再用？",
+      "code": "// render props 模式\n<DataSubscription>\n  {(data) => <p>{data}</p>}\n</DataSubscription>\n\n// Hooks 模式：直接把邏輯抽成自訂 Hook\nfunction useDataSubscription() {\n  const [data, setData] = useState(null);\n  // ...訂閱邏輯\n  return data;\n}\nfunction MyComponent() {\n  const data = useDataSubscription();\n  return <p>{data}</p>;\n}",
+      "options": [
+        { "id": "a", "text": "大部分『共用邏輯、不共用畫面』的情境，自訂 Hook 確實比 render props／HOC 更直接（不用多一層巢狀元件、程式碼可讀性通常更好），這也是 Hooks 推出後 render props／HOC 使用頻率大幅下降的原因；但 Hooks 並沒有完全取代這兩種模式能做的所有事——某些情境仍然需要真正影響到『元件樹的結構本身』（例如 Error Boundary 這種必須攔截子元件渲染錯誤的場景，Hooks 做不到），這時 HOC 或元件組合仍然有其位置" },
+        { "id": "b", "text": "完全淘汰，Hooks 出現之後 render props 與 HOC 在任何情境下都不應該再被使用" },
+        { "id": "c", "text": "Hooks 只是 render props 的另一種語法糖，兩者在底層實作上完全相同" },
+        { "id": "d", "text": "render props 與 HOC 從未被 Hooks 影響，兩者的使用頻率跟 Hooks 出現前完全一樣" }
+      ],
+      "answer": "a",
+      "explanation": "Hooks 主要解決的是「邏輯共用」不需要「多包一層元件」這個問題（過去 render props／HOC 常見的巢狀地獄），這讓大部分『純邏輯共用』的場景改用自訂 Hook 更直接；但涉及『元件樹結構本身』的需求（如 Error Boundary），Hooks 目前沒有對應能力，這也是前面 ri-9 章節提過「class component 仍有一個站得住腳的存在理由」的同一個原因。",
+      "verify": { "checks": [], "manual": "屬程式碼組織模式演進的推理題，無可執行程式碼。" }
+    },
+    {
+      "id": "ri-14-q7",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "switching component：依某個值動態決定要渲染哪一個元件",
+      "docs": "",
+      "story": "",
+      "prompt": "一個「依通知類型顯示不同圖示元件」的需求，與其寫一長串 if/else if 判斷，改用一個「型別到元件」的對照表（switching component 模式）。下面這樣寫，type=\"warning\" 時會渲染出什麼？",
+      "code": "const ICONS = {\n  info: () => <span>ℹ️</span>,\n  warning: () => <span>⚠️</span>,\n  error: () => <span>⛔</span>,\n};\n\nfunction NotificationIcon({ type }) {\n  const Icon = ICONS[type] ?? ICONS.info;\n  return <Icon />;\n}\n\nconsole.log(renderToStaticMarkup(<NotificationIcon type=\"warning\" />));",
+      "options": [
+        { "id": "a", "text": "<span>⚠️</span>：這是「switching component」模式——把『某個值對應到哪個元件』整理成一份物件對照表，用查表取代一長串的 if/else if／switch 判斷；找不到對應的 key 時（例如傳入一個沒定義過的 type），用 ?? 搭配一個預設元件（這裡是 info）當保底，程式碼在增加新的通知類型時，只需要往物件裡加一筆對照，不需要改動任何判斷邏輯本身" },
+        { "id": "b", "text": "會同時渲染三個圖示，因為物件裡定義了三個元件" },
+        { "id": "c", "text": "程式會拋出例外，型別對照表不能用來動態決定渲染哪個元件" },
+        { "id": "d", "text": "<span>ℹ️</span>，因為物件的 key 存取一律回傳第一個定義的元件" }
+      ],
+      "answer": "a",
+      "explanation": "switching component 本質上是「資料驅動選擇渲染內容」的具體案例：把『條件 → 對應行為』的關係從程式碼邏輯（if/else 分支）搬到資料結構（物件對照表）裡，新增一種情況只需要加一筆資料，不用改動任何既有的判斷邏輯，這是讓程式碼容易擴充、減少重複 if/else 判斷的常見手法。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nconst ICONS = {\n  info: () => <span>ℹ️</span>,\n  warning: () => <span>⚠️</span>,\n  error: () => <span>⛔</span>,\n};\nfunction NotificationIcon({ type }) {\n  const Icon = ICONS[type] ?? ICONS.info;\n  return <Icon />;\n}\nconsole.log(renderToStaticMarkup(<NotificationIcon type=\"warning\" />));", "expected": "<span>⚠️</span>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-14-q8",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Pointer Events：統一滑鼠、觸控、手寫筆的事件模型",
+      "docs": "",
+      "story": "",
+      "prompt": "一個手繪畫板功能，希望同時支援滑鼠拖曳跟觸控螢幕手指拖曳，不想分別寫 onMouseDown/onMouseMove 跟 onTouchStart/onTouchMove 兩套邏輯。React 支援哪一組事件，讓多種輸入裝置可以共用同一套處理邏輯？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "Pointer Events（onPointerDown、onPointerMove、onPointerUp 等）：這是瀏覽器原生規範裡『統一』滑鼠、觸控、手寫筆等不同輸入裝置的事件模型，React 直接支援對應的合成事件版本，讓開發者只需要寫一套處理邏輯，不用再分別處理滑鼠事件與觸控事件兩套 API" },
+        { "id": "b", "text": "React 沒有提供任何統一的輸入裝置事件，必須自己手動偵測裝置類型並各自綁定" },
+        { "id": "c", "text": "Pointer Events 只支援滑鼠輸入，觸控螢幕完全無法觸發這組事件" },
+        { "id": "d", "text": "只有原生 JavaScript 才能使用 Pointer Events，React 的合成事件系統不支援" }
+      ],
+      "answer": "a",
+      "explanation": "Pointer Events 是瀏覽器規範層級對『輸入裝置多樣化』這個問題的解法：不管使用者是用滑鼠、手指觸控還是觸控筆，都能對應到同一組事件（pointerdown/pointermove/pointerup），省去分別處理 Mouse Events 跟 Touch Events 兩套 API 的重複工作，React 的合成事件系統完整支援這組事件的對應版本。",
+      "verify": { "checks": [], "manual": "Pointer Events 需要真實輸入裝置（滑鼠、觸控螢幕）互動才能觀察，無法用 node 直接驗證。" }
+    },
+    {
+      "id": "ri-14-q9",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "元件名稱必須大寫開頭，JSX 才會把它當成元件而不是 HTML 標籤",
+      "docs": "https://react.dev/learn/your-first-component#step-2-define-the-function",
+      "story": "",
+      "prompt": "元件命名不小心用了小寫開頭。JSX 引擎會怎麼解讀 <greeting />？",
+      "code": "function greeting() {\n  return <p>Hi</p>;\n}\n\n// 小寫開頭\nconsole.log(renderToStaticMarkup(<greeting />));",
+      "options": [
+        { "id": "a", "text": "React／JSX 會把小寫開頭的標籤（如 <greeting />）一律當成原生 HTML 標籤處理，而不是查找一個叫做 greeting 的元件；這裡瀏覽器並不認得一個叫 greeting 的 HTML 元素，會被當成一個未知的自訂標籤直接輸出，不會呼叫 greeting 這個函式，畫面上也就看不到 <p>Hi</p> 這段內容——這也是為什麼 React 官方強制要求元件名稱必須大寫開頭，讓 JSX 能明確分辨『這是元件』還是『這是原生標籤』" },
+        { "id": "b", "text": "JSX 會自動偵測到 greeting 是一個已宣告的函式，正確地把它當成元件呼叫，渲染出 <p>Hi</p>" },
+        { "id": "c", "text": "程式會在建置階段直接拋出語法錯誤，禁止使用小寫開頭的函式名稱" },
+        { "id": "d", "text": "小寫或大寫開頭對 JSX 而言完全沒有差異，只是程式碼風格上的建議" }
+      ],
+      "answer": "a",
+      "explanation": "JSX 用「首字母大小寫」當作區分『這是自訂元件』還是『這是原生 HTML 標籤』的依據——這是一條純粹依賴命名慣例的規則，沒有大小寫以外的判斷方式，也解釋了為什麼所有 React 元件命名規範都強制要求大寫開頭（PascalCase），一旦不小心用了小寫，JSX 引擎會直接當成一個瀏覽器不認得的 HTML 標籤處理，不會出錯提醒，但也不會呼叫你寫的元件函式。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction greeting() {\n  return <p>Hi</p>;\n}\nconsole.log(renderToStaticMarkup(<greeting />));", "expected": "<greeting></greeting>" }
+        ]
+      }
+    }
+  ]
+}

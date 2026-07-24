@@ -1,0 +1,210 @@
+{
+  "id": "ri-26",
+  "title": "React 進階探索：程式碼分割與效能技巧",
+  "questions": [
+    {
+      "id": "ri-26-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "code-splitting：把打包產物拆成多個小塊，需要時才載入",
+      "docs": "",
+      "story": "",
+      "prompt": "一個應用程式把所有頁面的程式碼打包成單一個巨大的 JS 檔案，使用者不管要不要用到「後台管理」這個很少人會進去的頁面，都得先下載完這包含後台程式碼的完整檔案才能開始使用首頁。code-splitting 想解決這個問題的思路是什麼？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "把打包產物拆成多個較小的檔案（chunk），依『使用者實際會不會用到』決定要不要載入——例如首頁需要的程式碼先載入，後台管理頁面的程式碼包成獨立的一塊，只有使用者真的導航到那個頁面時才觸發下載；這讓『使用者第一次打開網站』需要下載、解析、執行的程式碼量大幅減少，改善首次載入速度"
+        },
+        {
+          "id": "b",
+          "text": "code-splitting 是把同一份程式碼複製成多份存放在不同伺服器，跟載入時機無關"
+        },
+        {
+          "id": "c",
+          "text": "code-splitting 要求把所有的 CSS 樣式都改寫成行內樣式，不能使用外部樣式檔案"
+        },
+        {
+          "id": "d",
+          "text": "code-splitting 只能套用在圖片資源上，不能套用在 JavaScript 程式碼"
+        }
+      ],
+      "answer": "a",
+      "explanation": "code-splitting 的核心思路很直接：使用者不需要的程式碼，就不該強迫他們的瀏覽器先下載。這在大型應用（多頁面、多角色權限）特別有價值，React.lazy 搭配動態 import() 是 React 生態系裡實現這個思路最常見的手法（下一題會具體示範）。",
+      "verify": {
+        "checks": [],
+        "manual": "code-splitting 的實際載入行為需要真實建置工具與瀏覽器網路面板才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-26-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "動態 import()：語法上就是一個回傳 Promise 的函式呼叫，是 code-splitting 的底層機制",
+      "docs": "",
+      "story": "",
+      "prompt": "React.lazy(() => import(\"./AdminPage\")) 這段程式碼裡的 import(\"./AdminPage\")，跟檔案最上方常見的 import AdminPage from \"./AdminPage\" 有什麼本質上的差異？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "檔案最上方的 import 是靜態語法，建置工具在打包當下就會把這個模組的程式碼一起打進最終產物（不管執行期用不用得到）；import(\"...\") 是動態、回傳 Promise 的函式呼叫，讓建置工具能辨識出『這裡是一個可以獨立拆開的邊界』，把這個模組拆成一個獨立的 chunk，只有程式碼真正執行到這一行、Promise 被呼叫時，才會觸發對應 chunk 的網路請求下載"
+        },
+        {
+          "id": "b",
+          "text": "兩者在打包後的最終產物裡完全沒有差異，只是撰寫語法不同"
+        },
+        {
+          "id": "c",
+          "text": "動態 import() 只能用來載入圖片或 CSS 檔案，不能用來載入 JavaScript 模組"
+        },
+        {
+          "id": "d",
+          "text": "靜態 import 語法本身就會觸發程式碼分割，動態 import() 反而不會"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這是 code-splitting 能夠實現的語法基礎：建置工具（webpack、Vite 等）都把「動態 import()」當成程式碼分割點的訊號，靜態的頂層 import 則是無條件打包進去。React.lazy 只是把這個原生的動態 import 語法，包裝成一個能被 Suspense 識別、等待載入完成的元件形式。",
+      "verify": {
+        "checks": [],
+        "manual": "動態 import 的打包分割行為需要真實建置工具處理才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-26-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "loadable components：react-loadable／@loadable/component 是 React.lazy 官方支援之前，社群常用的替代方案",
+      "docs": "",
+      "story": "",
+      "prompt": "在 React.lazy＋Suspense 這組官方方案成熟之前，社群普遍怎麼做動態載入元件（code-splitting）？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "使用 react-loadable（或後繼的 @loadable/component）這類第三方套件：概念上跟 React.lazy 很相似（包一層動態 import()、載入完成前顯示 loading 畫面），差異在於它們額外補上了官方早期版本缺乏的能力，例如伺服器端渲染（SSR）時期的動態載入支援；React.lazy＋Suspense 現在已經是官方內建的標準做法，多數新專案不再需要額外安裝第三方套件"
+        },
+        {
+          "id": "b",
+          "text": "社群完全沒有任何解法，動態載入元件的能力是 React.lazy 首次引入才變得可能"
+        },
+        {
+          "id": "c",
+          "text": "loadable components 是一種瀏覽器內建 API，跟 React 生態系的第三方套件無關"
+        },
+        {
+          "id": "d",
+          "text": "loadable components 只能用來載入 CSS，不能用來動態載入 JavaScript 元件"
+        }
+      ],
+      "answer": "a",
+      "explanation": "react-loadable／@loadable/component 是 code-splitting 生態系裡「官方方案還不夠完善時，社群先補上」的典型案例，尤其是 SSR 場景下的動態載入曾經一度是 React.lazy 的弱項（前面 ri-8 章節談過同步 SSR 對 Suspense/lazy 的限制），這也是這類第三方套件當時仍有其存在價值的原因，隨著官方方案（如串流 SSR）逐漸完善，依賴這些套件的必要性也隨之下降。",
+      "verify": {
+        "checks": [],
+        "manual": "第三方 loadable components 套件未安裝於本專案，需要真實套件執行才能觀察其 SSR 支援，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-26-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "route-based code splitting：以「頁面」為單位做程式碼分割，是最常見、投資報酬率最高的切分粒度",
+      "docs": "",
+      "story": "",
+      "prompt": "一個有 10 個頁面的應用，想導入 code-splitting，但不確定該用什麼粒度切分（每個元件都獨立切一塊？還是整個頁面切一塊？）。「以路由（頁面）為單位」切分，為什麼是常見的起手式？",
+      "code": "const Dashboard = lazy(() => import(\"./pages/Dashboard\"));\nconst Settings = lazy(() => import(\"./pages/Settings\"));\n\n<Routes>\n  <Route path=\"/dashboard\" element={<Dashboard />} />\n  <Route path=\"/settings\" element={<Settings />} />\n</Routes>",
+      "options": [
+        {
+          "id": "a",
+          "text": "使用者在同一個時間點，通常只會看到『一個頁面』的內容，不同頁面之間天生就有清楚的『這批程式碼現在用不到』的邊界；以路由為單位切分，能用最少的重構成本，換取『使用者只下載目前這個頁面需要的程式碼』這個最大的效益，是投資報酬率很高的起手式。切得比這更細（例如每個小元件都獨立切分）雖然理論上能再省一點，但過多的小 chunk 會增加網路請求數量與管理複雜度，不一定划算"
+        },
+        {
+          "id": "b",
+          "text": "以路由為單位切分是唯一合法的切分方式，React.lazy 不支援對非頁面層級的元件做程式碼分割"
+        },
+        {
+          "id": "c",
+          "text": "路由層級切分完全不會影響應用程式的載入效能，純粹是程式碼組織上的個人偏好"
+        },
+        {
+          "id": "d",
+          "text": "路由層級切分要求整個應用程式必須放棄使用任何全域狀態管理工具"
+        }
+      ],
+      "answer": "a",
+      "explanation": "「使用者在同一時刻通常只看一個頁面」這個自然邊界，讓路由層級成為 code-splitting 最直覺、效益最明顯的切分粒度，這也是 React Router 官方文件直接提供搭配範例的原因。切得更細（元件層級）在特定情境（例如一個很少被打開的巨大 Modal、圖表函式庫）依然有價值，但不是通用的起手式，過度切分反而會增加請求數與維護複雜度。",
+      "verify": {
+        "checks": [],
+        "manual": "路由層級的程式碼分割效益需要真實建置產物與網路請求分析才能量化觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-26-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "windowing／虛擬化：只渲染使用者目前看得到的那一小段清單，而不是全部",
+      "docs": "",
+      "story": "",
+      "prompt": "一份有 10,000 筆資料的清單，一次全部渲染成 10,000 個 DOM 節點，導致捲動卡頓、記憶體佔用過高。windowing（虛擬化）技術想怎麼解決這個問題？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "只實際渲染『使用者目前捲動視窗看得到的那一小段』（例如畫面上看得到的 20 筆，加上上下各緩衝幾筆），其餘 9,900 多筆完全不建立對應的 DOM 節點；使用者捲動時，動態計算目前該顯示哪些項目、卸載捲出畫面的舊項目、掛載捲進畫面的新項目，讓實際存在的 DOM 節點數量始終維持在一個小範圍內，不管資料總筆數有多大，效能表現都差不多"
+        },
+        {
+          "id": "b",
+          "text": "windowing 是把整份清單資料先壓縮成一個檔案，下載完成後才一次性解壓縮渲染"
+        },
+        {
+          "id": "c",
+          "text": "windowing 純粹是 CSS 層面的技巧（例如用 overflow: hidden），不影響實際建立的 DOM 節點數量"
+        },
+        {
+          "id": "d",
+          "text": "windowing 要求後端一次把所有 10,000 筆資料都不分頁地傳給前端，這樣才能正確運作"
+        }
+      ],
+      "answer": "a",
+      "explanation": "windowing（也稱虛擬清單／虛擬捲動）的核心思路是「只渲染看得到的部分」，這跟一次全部渲染、用 CSS 隱藏其餘部分完全不同——後者仍然要付出建立大量 DOM 節點的成本，前者從根本上避免了這個成本。react-window、react-virtualized 是 React 生態系裡實作這個技巧的常見函式庫，適合資料量很大、單筆項目版面相對一致的清單場景。",
+      "verify": {
+        "checks": [],
+        "manual": "虛擬化清單需要真實瀏覽器捲動互動與 DOM 節點數量觀察才能驗證效果，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-26-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "CSS-in-JS 該不該用，取決於團隊需求，不是無條件推薦",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊在討論新專案要不要導入 CSS-in-JS（如 styled-components、Emotion）。什麼情境下這類方案的優勢比較明顯，什麼情境下傳統 CSS／CSS Modules 可能更合適？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "CSS-in-JS 在『樣式需要頻繁依 props／state 動態變化』『元件庫需要跟 JS 邏輯緊密封裝在同一個檔案』的情境下優勢明顯；但它有執行期額外的效能開銷（前面 ri-6 章節談過），如果專案的樣式相對靜態、已經有一套穩定的 design system、或者對執行期效能特別敏感（例如效能受限的裝置），CSS Modules 或 Tailwind 這類建置期就決定好樣式的方案通常更划算。沒有哪一種方案在所有情境下都無條件優於另一種"
+        },
+        {
+          "id": "b",
+          "text": "CSS-in-JS 在任何情境下都應該被優先採用，傳統 CSS 方案已經完全過時"
+        },
+        {
+          "id": "c",
+          "text": "CSS-in-JS 唯一的用途是取代 JavaScript 的邏輯運算，跟樣式完全無關"
+        },
+        {
+          "id": "d",
+          "text": "CSS Modules 與 CSS-in-JS 在瀏覽器最終渲染出的效果與效能表現上完全沒有任何差異"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這題延續前面 ri-6 章節談過的 CSS-in-JS 取捨，強調的是「沒有放諸四海皆準的最佳選擇」——樣式需求的動態程度、團隊對執行期效能的敏感度、既有 design system 的成熟度，都是實際決策時該納入考量的變數，技術選型的成熟判斷永遠是「什麼情境適合什麼工具」，不是「哪個工具絕對最好」。",
+      "verify": {
+        "checks": [],
+        "manual": "屬技術選型取捨的推理題，無可執行程式碼。"
+      }
+    }
+  ]
+}

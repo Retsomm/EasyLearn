@@ -1,0 +1,138 @@
+{
+  "id": "ri-3",
+  "title": "React 測試觀念",
+  "questions": [
+    {
+      "id": "ri-3-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "測行為，不測實作細節",
+      "docs": "",
+      "story": "",
+      "prompt": "一個計數器元件目前是用 class component 寫的，內部用 this.state 維護 count。下面兩種測試寫法，哪一種比較不會在『重構了內部實作、但外部行為完全不變』時被誤判成失敗？",
+      "code": "// 寫法一：直接戳內部狀態\nconst wrapper = shallow(<Counter />);\nexpect(wrapper.state('count')).toBe(0);\n\n// 寫法二：只看使用者看得到、操作得到的畫面\nrender(<Counter />);\nexpect(screen.getByText('目前次數：0')).toBeInTheDocument();\nawait userEvent.click(screen.getByRole('button', { name: '加一' }));\nexpect(screen.getByText('目前次數：1')).toBeInTheDocument();",
+      "options": [
+        { "id": "a", "text": "寫法二：只斷言使用者實際會看到、會操作的畫面內容（文字、按鈕），完全不理會元件內部是 class 的 this.state 還是 useState／useReducer 管理資料；之後把 Counter 從 class 改寫成函式元件（例如改用 useReducer），只要畫面行為不變，測試依然通過。寫法一直接戳 wrapper.state('count')，這個 API 本來就只對『class 元件、且真的有 this.state』有效，一旦把元件改寫成函式元件，this.state 根本不存在，測試會直接壞掉，即使使用者體驗完全沒變" },
+        { "id": "b", "text": "寫法一：直接檢查內部 state 最精確，永遠不會誤判" },
+        { "id": "c", "text": "兩種寫法效果完全一樣，選哪個都無所謂" },
+        { "id": "d", "text": "寫法二有 bug，getByText 找不到文字時不會拋出任何錯誤" }
+      ],
+      "answer": "a",
+      "explanation": "測試越貼近元件的內部實作（state 名稱、資料結構），越容易變成「重構的絆腳石」——明明使用者體驗沒變，測試卻因為內部換了寫法而報紅。React Testing Library 的核心哲學就是「像使用者一樣測試」：只斷言畫面上真的會出現的文字、真的能點的按鈕，這樣測試才能只在『行為真的壞掉』時才失敗。",
+      "verify": {
+        "checks": [],
+        "manual": "React Testing Library / Jest 未安裝於本專案，測試框架的渲染、查詢、斷言機制需要真實測試環境才能執行，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-3-q2",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "查詢優先順序：先找語意化角色，最後才用 test id",
+      "docs": "",
+      "story": "",
+      "prompt": "想測試「使用者按下送出按鈕」這件事，Testing Library 建議的查詢優先順序，下列哪一種做法最合適？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "優先用 getByRole('button', { name: '送出' }) 這種貼近『使用者眼中看到的介面語意』的查詢；只有前面幾種語意化查詢都不適用時，才退而求其次用 getByTestId('submit-btn')" },
+        { "id": "b", "text": "一律優先用 getByTestId，因為最不容易因為文案改版而壞掉" },
+        { "id": "c", "text": "一律優先用 container.querySelector('.submit-button')，直接操作 CSS class 最精準" },
+        { "id": "d", "text": "查詢方式怎麼選都一樣，Testing Library 沒有建議的優先順序" }
+      ],
+      "answer": "a",
+      "explanation": "role-based 查詢（getByRole）確保「這個按鈕不只肉眼看得到，滑鼠使用者、鍵盤使用者、螢幕閱讀器使用者也都找得到」，等於順便驗證了可及性（a11y）；test-id 是官方明講的逃生口，代表沒有更好的語意化查詢方式時才用。過度依賴 CSS class 或 selector，等於把測試跟實作細節（樣式命名）綁死，UI 改版時測試容易無故壞掉。",
+      "verify": {
+        "checks": [],
+        "manual": "React Testing Library 未安裝於本專案，查詢 API 的實際比對行為需要真實測試環境才能執行，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-3-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "userEvent 比 fireEvent 更貼近真實使用者操作",
+      "docs": "",
+      "story": "",
+      "prompt": "想模擬使用者「點擊」一個按鈕，下面兩種寫法在測試真實度上有什麼差別？",
+      "code": "// 寫法一\nfireEvent.click(button);\n\n// 寫法二\nawait userEvent.click(button);",
+      "options": [
+        { "id": "a", "text": "userEvent.click 會依序觸發一整串瀏覽器實際會發生的事件（pointerdown、mousedown、focus、pointerup、mouseup、click 等），行為更貼近真實使用者的滑鼠操作；fireEvent.click 只單獨觸發一個 click 事件，如果元件的邏輯是綁在 mousedown 或 focus 上，fireEvent 版本測不出問題" },
+        { "id": "b", "text": "兩者完全等價，只是命名不同" },
+        { "id": "c", "text": "fireEvent 比較真實，因為它是 React 官方唯一支援的測試方式" },
+        { "id": "d", "text": "userEvent 只能用在 TypeScript 專案裡" }
+      ],
+      "answer": "a",
+      "explanation": "fireEvent 是低階 API，直接在 DOM 上派送『指定的那一個』事件；userEvent 是建立在 fireEvent 之上的高階封裝，會模擬使用者操作實際觸發的完整事件序列（例如點擊還牽涉到 pointer 事件、focus 轉移）。當元件邏輯依賴這些中間事件（例如 onMouseDown 就先做某件事、或依賴 focus 狀態）時，只用 fireEvent.click 可能測不出真正的行為，userEvent 更貼近使用者實際體驗。",
+      "verify": {
+        "checks": [],
+        "manual": "React Testing Library user-event 未安裝於本專案，事件序列的實際觸發需要真實 DOM 與測試環境才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-3-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "非同步資料要用 findBy／waitFor，不是 getBy",
+      "docs": "",
+      "story": "",
+      "prompt": "元件掛載後會發送 API 請求，資料回來才顯示使用者名稱。下面這段測試為什麼一執行就會拋出「Unable to find an element」？",
+      "code": "render(<UserProfile userId=\"1\" />);\nexpect(screen.getByText(\"Alice\")).toBeInTheDocument(); // 立刻拋錯",
+      "options": [
+        { "id": "a", "text": "getByText 是『同步、立刻檢查』的查詢，執行當下 API 請求可能都還沒回來，畫面上根本還沒有 Alice 這段文字；應該改用內建等待機制的 findByText（回傳 Promise），或搭配 waitFor，等非同步資料真的渲染出來後再斷言" },
+        { "id": "b", "text": "Alice 這個名字拼錯了，測試框架其實不區分大小寫" },
+        { "id": "c", "text": "getByText 只能用在同步元件，非同步元件要用完全不同的測試框架" },
+        { "id": "d", "text": "render 函式本身是非同步的，這裡少寫了 await render(...)" }
+      ],
+      "answer": "a",
+      "explanation": "getBy 系列查詢找不到元素會立刻拋出錯誤，適合斷言「這個當下應該存在」的內容；findBy 系列則會在指定的時間內反覆重試查詢，直到元素出現或逾時，天生適合搭配非同步渲染。這裡的 bug 不是拼字或框架限制，而是選錯了「同步查詢」去斷言一個要等 API 回應才會出現的內容。",
+      "verify": {
+        "checks": [],
+        "manual": "React Testing Library 未安裝於本專案，findBy/waitFor 的實際等待重試機制需要真實測試環境才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-3-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "Mock 網路請求，不要打真實 API",
+      "docs": "",
+      "story": "",
+      "prompt": "元件內部呼叫 fetch('/api/user/1') 拿資料。單元測試裡，下列哪種做法最恰當？",
+      "code": "// 做法一：測試直接打真實後端\nrender(<UserProfile userId=\"1\" />);\n\n// 做法二：攔截並提供假回應\nglobal.fetch = jest.fn(() =>\n  Promise.resolve({\n    json: () => Promise.resolve({ name: \"Alice\" }),\n  })\n);\nrender(<UserProfile userId=\"1\" />);",
+      "options": [
+        { "id": "a", "text": "做法二：mock 掉 fetch，讓測試不依賴真實後端、網路狀況或資料庫當下的內容；測試因此變得穩定（跑一百次結果都一樣、不受外部狀態影響），也能刻意模擬後端回傳錯誤或空結果這些平常很難重現的邊界情境" },
+        { "id": "b", "text": "做法一：打真實 API 才能證明整個系統真的能動，永遠優先選這個" },
+        { "id": "c", "text": "兩種做法效果一樣，mock 只是多此一舉" },
+        { "id": "d", "text": "mock fetch 違反測試的『誠實』原則，應該完全避免使用" }
+      ],
+      "answer": "a",
+      "explanation": "單元測試的目標是「快速、穩定、可重複」，打真實後端會讓測試結果受網路狀況、資料庫當下內容、後端是否啟動等外部因素影響，同一份測試在不同時間跑可能得到不同結果。mock 網路請求把「這個元件在收到某種回應時該怎麼渲染」跟「後端真的能不能正常運作」這兩件事切開，後者應該交給整合測試或 E2E 測試負責，不是單元測試的職責。",
+      "verify": {
+        "checks": [],
+        "manual": "jest.fn / global.fetch mock 未安裝於本專案，且需要真實測試環境才能觀察 mock 是否生效，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-3-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "Snapshot 測試被無腦更新，等於失去測試意義",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊在每個元件都加上 expect(container).toMatchSnapshot()。半年後，PR review 時常看到「快照有變化」，工程師的反射動作幾乎都是直接執行更新快照的指令讓測試變綠，沒有人真的去看差異內容。這個習慣最可能造成什麼問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "Snapshot 測試退化成『橡皮圖章』：只要有變化就無腦更新快照，測試等於完全失去『捕捉不小心引入的錯誤』這個原本的目的——哪天某次改動真的是 bug，也會被同一套『看到差異就更新』的反射動作直接蓋過去，不會被攔下來" },
+        { "id": "b", "text": "沒有任何問題，Snapshot 測試本來就是設計成這樣使用的" },
+        { "id": "c", "text": "唯一的問題是快照檔案會佔用比較多硬碟空間" },
+        { "id": "d", "text": "Snapshot 測試會讓應用程式在正式環境執行得比較慢" }
+      ],
+      "answer": "a",
+      "explanation": "Snapshot 測試的價值建立在「差異出現時，人真的會看一眼再決定要不要接受」；一旦更新快照變成看到失敗就反射性執行的動作，快照測試就從『安全網』退化成『每次都會通過的裝飾品』，完全喪失攔截意外變更的能力。這也是業界常見對 snapshot 測試的批評：適合用在小範圍、內容穩定的輸出，大量套用在整個元件樹上很容易走向這個結局。",
+      "verify": {
+        "checks": [],
+        "manual": "Jest snapshot 機制未安裝於本專案，且這是團隊習慣與流程層面的推理題，無可執行程式碼。"
+      }
+    }
+  ]
+}

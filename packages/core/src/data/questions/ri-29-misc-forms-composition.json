@@ -1,0 +1,199 @@
+{
+  "id": "ri-29",
+  "title": "React 進階探索：表單生態與組合優先原則",
+  "questions": [
+    {
+      "id": "ri-29-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "表單處理的主流選擇：react-hook-form／Formik 這類「狀態留在元件本地」的方案",
+      "docs": "",
+      "story": "",
+      "prompt": "現在的 React 專案要處理複雜表單（多欄位驗證、巢狀欄位、非同步驗證），普遍會選擇什麼方案，而不是自己從零手刻每個欄位的 state 與驗證邏輯？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "react-hook-form 或 Formik 這類專門處理表單的函式庫：它們把『欄位值管理、驗證規則、提交狀態、錯誤訊息顯示』這些每個表單都會重複遇到的樣板邏輯封裝起來，開發者只需要宣告『有哪些欄位、驗證規則是什麼』，不用每個表單都手刻一遍 useState + 驗證函式；react-hook-form 特別強調盡量用非受控元件＋ref 減少重繪次數，是目前效能表現與開發體驗都受到廣泛採用的選擇"
+        },
+        {
+          "id": "b",
+          "text": "所有表單都應該手動用多個 useState 管理每個欄位，這是官方唯一建議的做法，不該依賴任何第三方函式庫"
+        },
+        {
+          "id": "c",
+          "text": "表單處理必須依賴 Redux 才能運作，沒有全域狀態管理工具就無法處理任何表單邏輯"
+        },
+        {
+          "id": "d",
+          "text": "React 內建了一套完整的表單處理 API，不需要任何額外的函式庫或手動邏輯"
+        }
+      ],
+      "answer": "a",
+      "explanation": "表單邏輯（驗證、錯誤顯示、提交狀態）是高度重複、也容易寫錯的樣板工作，這正是專責函式庫存在的價值。react-hook-form 這幾年特別受歡迎的原因，除了 API 設計簡潔，還在於它刻意減少不必要的重繪（前面 ri-4 章節談過 Redux Form 把每個按鍵都塞進全域 store 的效能代價，react-hook-form 走的是相反的路線）。",
+      "verify": {
+        "checks": [],
+        "manual": "react-hook-form／Formik 未安裝於本專案，實際驗證與提交行為需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-29-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Formik 相對 Redux Form 的優勢：狀態留在元件本地，不需要繞經全域 store",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊原本用 Redux Form（欄位值存進 Redux store），評估改用 Formik（欄位值留在元件本地 state）。除了前面 ri-4 章節談過『高頻按鍵不該進全域 store』這個效能考量，Formik 這類方案還帶來什麼額外好處？",
+      "code": "",
+      "options": [
+        {
+          "id": "a",
+          "text": "表單邏輯不再需要跟 Redux 這個特定的全域狀態管理方案綁定——即使專案完全沒有使用 Redux、或未來想換掉 Redux，表單元件也不受影響；同時每個表單實例的狀態天生就是獨立的（不用擔心像 Redux Form 那樣，多個表單共用同一個全域 store 時需要額外處理『表單之間的狀態如何互不干擾』這個問題），元件卸載時表單狀態也自然跟著清除，不需要額外的清理邏輯"
+        },
+        {
+          "id": "b",
+          "text": "Formik 唯一的優勢是套件檔案體積比 Redux Form 小，其餘功能完全相同"
+        },
+        {
+          "id": "c",
+          "text": "Formik 必須跟 Redux 一起安裝才能運作，兩者是互相依賴的關係"
+        },
+        {
+          "id": "d",
+          "text": "Formik 不支援任何形式的欄位驗證，驗證邏輯必須完全自己手刻"
+        }
+      ],
+      "answer": "a",
+      "explanation": "把表單狀態的『依賴範圍』從全域狀態管理方案（Redux）收斂回元件本地，除了效能考量，還帶來架構上的解耦——表單邏輯不再是『必須先有 Redux 才能用』的功能，也天生避免了『多個表單實例共用同一個全域 store，得額外處理彼此狀態不要互相汙染』這類問題，元件卸載後狀態自動消失也更符合直覺。",
+      "verify": {
+        "checks": [],
+        "manual": "屬架構解耦優勢的推理題，無可執行程式碼佐證，需搭配真實套件比較兩者實作差異。"
+      }
+    },
+    {
+      "id": "ri-29-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "React 官方建議「組合優先於繼承」，用 children／props 而不是 class 繼承共用邏輯",
+      "docs": "",
+      "story": "",
+      "prompt": "一個新人有物件導向背景，習慣用『類別繼承』共用程式碼，想寫一個 BaseButton class，再讓 PrimaryButton extends BaseButton 取得樣式與行為。React 官方對這種繼承式的元件設計，抱持什麼態度？",
+      "code": "// 不建議的繼承寫法\nclass BaseButton extends React.Component { /* ... */ }\nclass PrimaryButton extends BaseButton { /* ... */ }\n\n// 建議的組合寫法：用 props／children 傳遞客製化內容\nfunction Button({ variant, children }) {\n  return <button className={variant}>{children}</button>;\n}\nfunction PrimaryButton({ children }) {\n  return <Button variant=\"primary\">{children}</Button>;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "React 官方文件明確指出，元件之間很少有需要用到『類別繼承』的情境，絕大多數程式碼重用的需求，用『組合』（一個元件把另一個元件當 children 或透過 props 包起來使用，如前面 ri-12 章節談過的 wrapper component）就能達成，而且更靈活、耦合更低；不像類別繼承會讓子類別跟父類別的實作細節緊密綁定，組合讓元件之間的關係更像『使用某個功能』而不是『是某個東西的一種』"
+        },
+        {
+          "id": "b",
+          "text": "React 官方強烈建議所有元件都應該用類別繼承組織，這是撰寫可重用元件的標準做法"
+        },
+        {
+          "id": "c",
+          "text": "React 從技術上完全禁止使用 class 語法的繼承，寫了會直接拋出例外"
+        },
+        {
+          "id": "d",
+          "text": "組合與繼承在 React 元件設計裡完全等價，選哪一種純粹是個人偏好，沒有官方立場"
+        }
+      ],
+      "answer": "a",
+      "explanation": "「組合優先於繼承」是 React 官方文件一段專門討論過的立場：物件導向裡常見的繼承模式，容易讓元件之間產生過度緊密的耦合（子類別要清楚知道父類別的實作細節才能正確覆寫）；React 元件之間透過 props、children 組合彼此的使用方式，職責更清楚、耦合更鬆散，這也是本次新增的多個章節（wrapper component、HOC）反覆展示的設計方向。",
+      "verify": {
+        "checks": [],
+        "manual": "屬官方設計哲學立場的說明題，無可執行程式碼佐證此架構原則的優劣比較。"
+      }
+    },
+    {
+      "id": "ri-29-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "React 元件裡使用 Web Components（自訂元素）的方式，跟一般 HTML 標籤類似",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊想在 React 元件裡使用一個第三方提供、用 Web Components 標準寫成的 <fancy-slider> 自訂元素。可以直接把它當成一般標籤寫進 JSX 裡使用嗎？",
+      "code": "function App() {\n  return (\n    <div>\n      <fancy-slider min={0} max={100}></fancy-slider>\n    </div>\n  );\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "可以：React 把小寫、帶連字號命名的標籤（符合自訂元素命名慣例，如 fancy-slider）當成一般 DOM 標籤直接渲染，瀏覽器認得這是一個已註冊的自訂元素就會正確初始化它。React 19 起，傳給自訂元素的 props 會依這個元素本身有沒有對應的同名『屬性（property）』決定走哪條路：如果這個自訂元素定義了對應的 property，React 會直接把 props 的值（包含物件、陣列、函式這類複雜型別）設成那個 DOM 節點的 property，不會被字串化；只有『元素本身沒有對應 property』的 props，才會退回設成 HTML attribute（這種情況下才只能是字串）。也就是說，能不能直接傳複雜資料，取決於這個自訂元素有沒有定義對應的 property，不是一律只能走字串 attribute。不過自訂事件的監聽仍可能需要額外處理（例如透過 ref 呼叫 addEventListener），這部分沒有改變"
+        },
+        {
+          "id": "b",
+          "text": "不行，React 完全無法在 JSX 裡渲染任何 Web Components 自訂元素"
+        },
+        {
+          "id": "c",
+          "text": "可以，而且複雜資料型別（物件、函式）也能像一般 React 元件一樣直接透過 props 正常傳遞給自訂元素，沒有任何限制"
+        },
+        {
+          "id": "d",
+          "text": "只有用 TypeScript 撰寫的專案才能在 JSX 裡使用 Web Components"
+        }
+      ],
+      "answer": "a",
+      "explanation": "JSX 語法本身能直接寫自訂元素標籤，React 也會把它當成一般 DOM 元素處理。React 19 對自訂元素 props 的實際規則是『看目的元素有沒有對應的 property』：有對應 property 就直接設成 property（物件、陣列、函式都能原樣傳過去，不會被字串化），沒有對應 property 才退回設成 HTML attribute。這跟『複雜資料一律得靠 ref』的舊印象不同——只要第三方自訂元素有把對應的 property 定義出來，React 就能直接傳。自訂事件的監聽則是另一回事，通常還是需要額外處理（例如透過 ref 手動 addEventListener），這部分不受這個 property/attribute 規則影響。",
+      "verify": {
+        "checks": [],
+        "manual": "Web Components 自訂元素需要真實瀏覽器註冊自訂元素定義才能觀察渲染與互動行為，無法用 node -e 或 renderToStaticMarkup 驗證。"
+      }
+    },
+    {
+      "id": "ri-29-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "存取 Web Component 的命令式 API（方法呼叫），要透過 ref 抓到底層節點",
+      "docs": "",
+      "story": "",
+      "prompt": "上一題的 <fancy-slider> 自訂元素提供了一個 reset() 方法（命令式 API，不是透過 attribute 設定）。想在某個按鈕點擊時呼叫它的 reset()，該怎麼做？",
+      "code": "function SliderPanel() {\n  const sliderRef = useRef(null);\n\n  function handleReset() {\n    sliderRef.current.reset(); // 呼叫自訂元素提供的命令式方法\n  }\n\n  return (\n    <div>\n      <fancy-slider ref={sliderRef} min={0} max={100}></fancy-slider>\n      <button onClick={handleReset}>重設</button>\n    </div>\n  );\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "用 ref 抓到這個自訂元素的真實 DOM 節點（前面既有章節多次談過『ref 抓 DOM』的正當用途），透過 sliderRef.current 直接呼叫這個節點上定義的 reset() 方法；這是存取任何『非標準 React props、而是命令式方法』的通用做法，不限於 Web Components，前面 ri-23 章節談過的 useImperativeHandle 解決的也是同一類『透過 ref 呼叫方法』的需求，只是那裡的目標是 React 元件自己定義的方法，這裡是瀏覽器自訂元素原生提供的方法"
+        },
+        {
+          "id": "b",
+          "text": "直接把 reset 當成一般 prop 傳給 fancy-slider，例如 <fancy-slider reset={true} />"
+        },
+        {
+          "id": "c",
+          "text": "無法呼叫，React 元件完全沒有辦法存取 Web Components 提供的任何命令式方法"
+        },
+        {
+          "id": "d",
+          "text": "必須把 fancy-slider 改寫成一個 React 元件才能呼叫它的方法"
+        }
+      ],
+      "answer": "a",
+      "explanation": "這題把「ref 抓 DOM 節點呼叫方法」這個貫穿本次多個章節的技巧（既有 react-11、本次 ri-23 的 useImperativeHandle），應用到 Web Components 整合的具體情境：命令式 API（不是用 attribute 設定值、而是呼叫方法）不管來源是瀏覽器原生自訂元素還是 React 元件本身，存取方式的核心思路都是透過 ref 拿到底層節點或物件、直接呼叫它暴露的方法。",
+      "verify": {
+        "checks": [],
+        "manual": "Web Components 命令式方法呼叫需要真實瀏覽器自訂元素定義才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-29-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "compound components：<Tabs><Tabs.Tab /></Tabs> 這種寫法怎麼共享狀態",
+      "docs": "https://react.dev/learn/passing-data-deeply-with-context",
+      "story": "",
+      "prompt": "想設計一個 <Tabs><Tabs.Tab label=\"A\" /><Tabs.Tab label=\"B\" /></Tabs> 這種 API，讓每個 Tabs.Tab 都知道『目前選中的是哪一個』，但不想在每個 Tabs.Tab 標籤上手動傳一堆 props（例如 active、onSelect）。這種「一組元件搭配使用、共享同一份狀態」的設計，該怎麼實作？",
+      "code": "const TabsContext = createContext(null);\n\nfunction Tabs({ children }) {\n  return (\n    <TabsContext.Provider value={{ active: 0 }}>\n      {children}\n    </TabsContext.Provider>\n  );\n}\nfunction Tab({ index, label }) {\n  const { active } = useContext(TabsContext);\n  return <span>{label}{active === index ? \"(選中)\" : \"\"}</span>;\n}\nTabs.Tab = Tab;\n\nconsole.log(renderToStaticMarkup(\n  <Tabs>\n    <Tabs.Tab index={0} label=\"A\" />\n    <Tabs.Tab index={1} label=\"B\" />\n  </Tabs>\n));",
+      "options": [
+        { "id": "a", "text": "<span>A(選中)</span><span>B</span>：compound components（複合元件）模式讓父層 Tabs 用 Context 建立一份共享狀態，子元件（Tab）透過 useContext 直接訂閱這份狀態，不需要呼叫端手動把 active 這類 props 一層層往下傳給每個 Tab；把 Tab 掛成 Tabs.Tab 這個靜態屬性，純粹是慣例上讓 API 讀起來更像『這是 Tabs 專屬的子元件』，實際運作靠的是 Context，不是這個掛載方式本身" },
+        { "id": "b", "text": "<span>A</span><span>B</span>：Tab 元件內部其實完全不需要 Context，這種寫法能動只是巧合" },
+        { "id": "c", "text": "程式會拋出例外，Tabs.Tab 這種把元件掛成另一個元件靜態屬性的寫法不合法" },
+        { "id": "d", "text": "兩個 Tab 都會顯示「(選中)」，因為 Context 沒辦法讓不同的子元件讀到不同的判斷結果" }
+      ],
+      "answer": "a",
+      "explanation": "compound components 模式把「一組元件協同運作、共享狀態」這個需求，交給 Context 承擔，而不是要求呼叫端手動逐層傳遞。這裡 index=0 的 Tab 讀到 Context 裡的 active（固定為 0）相符，顯示「(選中)」；index=1 的 Tab 讀到不相符，不顯示。把 Tab 掛成 Tabs.Tab 只是命名慣例，不影響底層透過 Context 共享狀態的運作方式。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { createContext, useContext } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nconst TabsContext = createContext(null);\nfunction Tabs({ children }) {\n  return (\n    <TabsContext.Provider value={{ active: 0 }}>\n      {children}\n    </TabsContext.Provider>\n  );\n}\nfunction Tab({ index, label }) {\n  const { active } = useContext(TabsContext);\n  return <span>{label}{active === index ? \"(選中)\" : \"\"}</span>;\n}\nTabs.Tab = Tab;\nconsole.log(renderToStaticMarkup(\n  <Tabs>\n    <Tabs.Tab index={0} label=\"A\" />\n    <Tabs.Tab index={1} label=\"B\" />\n  </Tabs>\n));", "expected": "<span>A(選中)</span><span>B</span>" }
+        ]
+      }
+    }
+  ]
+}

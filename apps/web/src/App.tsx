@@ -6,10 +6,11 @@ import {
   getWrongEntries,
   getSavedQuestions,
   chapters,
-  shuffle,
   sampleQuestions,
+  sampleFixedQuestions,
   REVIEW_SIZE,
   MIXED_SIZE,
+  LEVEL_SIZE,
 } from '@easylearn/core'
 import Navbar from '@/components/Navbar'
 import Home from '@/screens/Home'
@@ -51,21 +52,21 @@ const App = () => {
   const [view, setView] = useState<View>({ name: 'home' })
 
   const startLevel = (levelId: string) => {
-    // 整個題池隨機排序作答（同難度內順序每次不同）
+    // 固定抽 LEVEL_SIZE 題作答，題池不足就整包抽完（同難度內順序每次不同）
     const level = getLevel(levelId)
     if (!level) return
-    setView({ name: 'quiz', levelId, questions: sampleQuestions(level.questions) })
+    setView({ name: 'quiz', levelId, questions: sampleFixedQuestions(level.questions, LEVEL_SIZE) })
   }
 
   const startReview = () => {
-    const picked = shuffle(getWrongQuestions(progress.wrongIds)).slice(0, REVIEW_SIZE)
+    const picked = sampleFixedQuestions(getWrongQuestions(progress.wrongIds), REVIEW_SIZE)
     if (picked.length === 0) return
     setView({ name: 'review', questions: picked })
   }
 
   const startMixedPractice = () => {
     const pool = chapters.flatMap((ch) => ch.levels.flatMap((l) => l.questions))
-    const picked = shuffle(pool).slice(0, MIXED_SIZE).sort((a, b) => a.difficulty - b.difficulty)
+    const picked = sampleFixedQuestions(pool, MIXED_SIZE)
     setView({ name: 'mixed', questions: picked })
   }
 

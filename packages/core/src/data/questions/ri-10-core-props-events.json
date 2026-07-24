@@ -1,0 +1,170 @@
+{
+  "id": "ri-10",
+  "title": "Core React：事件處理與受控元件",
+  "questions": [
+    {
+      "id": "ri-10-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "React 事件處理器接收的是 SyntheticEvent，不是原生事件",
+      "docs": "https://react.dev/learn/responding-to-events",
+      "story": "",
+      "prompt": "在原生 HTML 裡，事件處理器的 this 通常指向觸發事件的 DOM 節點；React 的事件命名也用駝峰式（onClick 而不是 onclick）。下面這段程式碼，e 這個參數實際上是什麼？",
+      "code": "function Button() {\n  function handleClick(e) {\n    console.log(e.type);\n  }\n  return <button onClick={handleClick}>點我</button>;\n}",
+      "options": [
+        { "id": "a", "text": "e 是 React 包裝過的 SyntheticEvent（合成事件）物件，不是瀏覽器原生的 Event；它把不同瀏覽器的事件差異抹平，提供一致的跨瀏覽器介面，屬性與方法（如 e.type、e.preventDefault()）用法上跟原生事件非常相似，但底層是 React 自己管理的物件" },
+        { "id": "b", "text": "e 就是瀏覽器原生的 Event 物件，React 對事件完全沒有做任何包裝" },
+        { "id": "c", "text": "e 永遠是 undefined，React 的事件處理器不會傳入任何參數" },
+        { "id": "d", "text": "e 是一個字串，內容就是事件名稱本身" }
+      ],
+      "answer": "a",
+      "explanation": "React 的事件系統會把原生瀏覽器事件包裝成 SyntheticEvent，抹平跨瀏覽器的行為差異、統一介面，這也是為什麼 React 的事件命名（onClick）跟原生 HTML 屬性（onclick）看起來相似又不完全相同——底層機制其實不一樣，只是 API 設計得盡量貼近開發者對原生事件的直覺。",
+      "verify": { "checks": [], "manual": "SyntheticEvent 需要真實瀏覽器事件觸發才能觀察，無法用 node 直接驗證，屬事實性說明題。" }
+    },
+    {
+      "id": "ri-10-q2",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "inline 條件表達式：用 && 或三元運算子取代 if/else 區塊",
+      "docs": "",
+      "story": "",
+      "prompt": "想在 JSX 裡「有未讀訊息才顯示紅點」，不想為了這一個小判斷另外抽出一個 if/else 區塊。下列哪種寫法最符合 JSX 慣例？",
+      "code": "function Badge({ unreadCount }) {\n  return (\n    <div>\n      收件匣\n      {unreadCount > 0 && <span className=\"dot\" />}\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "用 && 運算子：JSX 的大括號裡可以放任意運算式，unreadCount > 0 && <span /> 這種寫法利用了 JS 的短路求值——條件為 false 時，&& 直接回傳 false（React 不會渲染 false／null／undefined，等於什麼都不顯示）；條件為 true 時才會回傳並渲染右邊的 JSX，是 JSX 裡表達『有條件才顯示』最常見的慣例寫法" },
+        { "id": "b", "text": "JSX 內部完全不能放任何條件邏輯，必須把整個元件拆成兩個各自完整的 return 語句" },
+        { "id": "c", "text": "用 && 運算子時，如果 unreadCount 剛好是 0，畫面上會顯示字面上的數字 0" },
+        { "id": "d", "text": "inline 條件判斷只能用在 class component，函式元件不支援" }
+      ],
+      "answer": "a",
+      "explanation": "JSX 大括號本質上就是嵌入一個 JavaScript 表達式，&&、三元運算子、立即執行函式都能用。要注意選項 c 提到的陷阱是真實存在的（如果條件寫成 unreadCount &&，當 unreadCount 是數字 0，&& 會回傳 0 而不是 false，React 真的會把字面上的 0 渲染出來）——這裡的寫法是 unreadCount > 0，比較結果一定是布林值，才能安全避開這個陷阱。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Badge({ unreadCount }) {\n  return (\n    <div>\n      收件匣\n      {unreadCount > 0 && <span className=\"dot\" />}\n    </div>\n  );\n}\nconsole.log(renderToStaticMarkup(<Badge unreadCount={0} />));\nconsole.log(renderToStaticMarkup(<Badge unreadCount={3} />));", "expected": "<div>收件匣</div>\n<div>收件匣<span class=\"dot\"></span></div>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-10-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "陣列渲染缺少 key 時，React 印出的 console 警告",
+      "docs": "https://react.dev/learn/rendering-lists",
+      "story": "",
+      "prompt": "渲染一份清單時忘記加上 key。這段程式碼執行起來會怎麼樣？",
+      "code": "function List({ items }) {\n  return (\n    <ul>\n      {items.map((item) => <li>{item}</li>)}\n    </ul>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "畫面依然會正常渲染出清單內容，不會拋出例外；但 React 會在 console 印出「Warning: Each child in a list should have a unique 'key' prop」這類警告——key 是用來幫助 React 在清單增刪、重新排序時，正確追蹤『哪個元素對應哪筆資料』，缺少 key 不會讓程式壞掉，但清單有動態增刪時容易出現渲染錯位、state 對應錯誤等難以察覺的 bug" },
+        { "id": "b", "text": "程式會直接拋出例外，無法完成渲染" },
+        { "id": "c", "text": "React 會自動幫每個項目補上一個隨機的 key，開發者不需要擔心任何問題" },
+        { "id": "d", "text": "少了 key 只會影響 CSS 樣式，不影響任何 JavaScript 層面的行為" }
+      ],
+      "answer": "a",
+      "explanation": "key 不是一個必要到「沒有就會壞掉」的屬性，這也是它常被忽略的原因；但清單一旦牽涉到增刪、重新排序，React 靠 key 判斷「這個元素是不是同一個」，缺少它時 React 只能依賴陣列索引做猜測比對，容易出現 state 錯位（詳見既有 react-9 章節談的 key 與 state 對應關係）。這類問題往往要等清單真的動態變化才會現形，靜態清單看起來完全正常。",
+      "verify": { "checks": [], "manual": "console 警告訊息需要真實瀏覽器開發模式才會顯示，無法用 node -e 直接捕捉這類 React 內部警告輸出。" }
+    },
+    {
+      "id": "ri-10-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "受控元件：畫面上的值完全由 state 決定，不是使用者打字直接反映",
+      "docs": "https://react.dev/reference/react-dom/components/input",
+      "story": "",
+      "prompt": "這個輸入框的 value 被綁定到 state，onChange 卻故意把輸入轉成大寫再存回去。使用者實際打小寫 abc，畫面上的輸入框最終顯示什麼？",
+      "code": "function UppercaseInput() {\n  const [value, setValue] = useState(\"\");\n  return (\n    <input\n      value={value}\n      onChange={(e) => setValue(e.target.value.toUpperCase())}\n    />\n  );\n}",
+      "options": [
+        { "id": "a", "text": "顯示 ABC：這是「受控元件」的定義性特徵——輸入框畫面上顯示的內容，完全由 value 這個 prop（背後綁的是 state）決定，不是瀏覽器原生輸入行為直接反映在畫面上；每次使用者打字觸發 onChange，React 攔截原始輸入、轉成大寫存進 state，下一次渲染時 input 的 value 就是這個轉換後的大寫值，使用者會親眼看到自己打的字『被自動轉成大寫』" },
+        { "id": "b", "text": "顯示 abc，因為瀏覽器原生的輸入行為不受 React state 控制" },
+        { "id": "c", "text": "輸入框會完全無法輸入任何文字，因為 value 被綁定成 state 之後就變成唯讀" },
+        { "id": "d", "text": "程式會拋出例外，value 屬性不能跟 onChange 一起使用" }
+      ],
+      "answer": "a",
+      "explanation": "「受控元件」意味著表單元素的顯示內容完全交給 React state 決定：使用者的輸入不是直接反映到畫面上，而是先觸發 onChange 事件、由開發者決定 state 該變成什麼、React 重新渲染後 input 的 value 才跟著更新。這個機制讓「即時轉大寫」「限制只能輸入數字」這類即時攔截與轉換輸入的功能變得直接可行。",
+      "verify": { "checks": [], "manual": "受控元件的輸入互動需要真實瀏覽器與使用者鍵盤事件才能觀察，無法用 node 直接驗證。" }
+    },
+    {
+      "id": "ri-10-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "非受控元件：用 ref 讀取，不必每個按鍵都觸發重繪",
+      "docs": "",
+      "story": "",
+      "prompt": "一個只有送出時才需要讀取一次值、過程中完全不需要即時驗證或轉換輸入內容的搜尋框，用「非受控元件」（defaultValue + ref）取代「受控元件」（value + onChange + state），有什麼實際好處？",
+      "code": "function SearchBox() {\n  const inputRef = useRef(null);\n  function handleSubmit() {\n    console.log(inputRef.current.value); // 送出當下才讀一次\n  }\n  return (\n    <div>\n      <input ref={inputRef} defaultValue=\"\" />\n      <button onClick={handleSubmit}>搜尋</button>\n    </div>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "使用者每次按鍵都不會觸發這個元件的 setState、也就不會觸發重繪；因為這個場景完全不需要即時知道、驗證或轉換輸入內容，讓瀏覽器原生自己管理輸入框的值、只在真正需要的那一刻（送出）用 ref 讀一次，省去『每個按鍵都要走一次 React 狀態更新與重繪』的開銷" },
+        { "id": "b", "text": "非受控元件的效能永遠比受控元件差，因為多用了一個 ref" },
+        { "id": "c", "text": "非受控元件無法搭配 defaultValue 設定初始值，只能是空字串" },
+        { "id": "d", "text": "使用非受控元件之後，這個輸入框就無法再被使用者手動輸入文字" }
+      ],
+      "answer": "a",
+      "explanation": "受控元件的即時性（每個按鍵都能攔截、驗證、轉換）是有代價的：每次按鍵都要走一次 state 更新與重繪。當這種即時性沒有實際需求時（只在提交那一刻讀一次值），非受控元件讓瀏覽器自己管理輸入框的內部狀態，React 端完全不用參與每一次按鍵，是更輕量的選擇——這也是 React 官方文件裡明確建議的取捨判斷。",
+      "verify": { "checks": [], "manual": "受控 vs 非受控元件的重繪次數差異需要真實瀏覽器互動才能觀察，無法用 node 直接驗證。" }
+    },
+    {
+      "id": "ri-10-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "cloneElement：複製一個既有 element，同時覆寫部分 props",
+      "docs": "https://react.dev/reference/react/cloneElement",
+      "story": "",
+      "prompt": "createElement 是從零建立一個新 element；cloneElement 則是拿一個既有的 element 複製、同時覆寫部分 props。下面這段程式碼，最終渲染出的 className 會是什麼？",
+      "code": "const original = <p className=\"old\">Hello</p>;\nconst cloned = React.cloneElement(original, { className: \"new\" });\n\nconsole.log(renderToStaticMarkup(cloned));",
+      "options": [
+        { "id": "a", "text": "<p class=\"new\">Hello</p>：cloneElement(element, newProps) 會用 newProps 裡的欄位覆蓋原本 element 的同名 props，沒有在 newProps 裡提到的 props（例如這裡的 children「Hello」）會照原樣保留；這常用在 Higher-Order Component 裡『不動子元件原本的內容，只想額外覆寫或補上某幾個 props』的情境" },
+        { "id": "b", "text": "<p class=\"old\">Hello</p>，cloneElement 不會真的覆寫任何既有的 props" },
+        { "id": "c", "text": "程式會拋出例外，cloneElement 不能修改已經建立好的 element 的 props" },
+        { "id": "d", "text": "<p class=\"new\"></p>，cloneElement 會清空原本 element 的所有子內容" }
+      ],
+      "answer": "a",
+      "explanation": "createElement 是從零開始描述一個全新的 element；cloneElement 則是「複製＋局部覆寫」，其餘沒被覆寫的 props（包括 children）維持原樣。這在某些需要「攔截並增強子元件、卻不想重新宣告全部 props」的 HOC 或工具函式場景中很實用，但也因為隱含了對子元件 props 結構的假設，用多了容易讓程式碼難以追蹤資料從哪裡來，官方文件也提醒盡量減少對它的依賴。",
+      "verify": {
+        "checks": [
+          { "jsx": "import React from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nconst original = <p className=\"old\">Hello</p>;\nconst cloned = React.cloneElement(original, { className: \"new\" });\nconsole.log(renderToStaticMarkup(cloned));", "expected": "<p class=\"new\">Hello</p>" }
+        ]
+      }
+    },
+    {
+      "id": "ri-10-q7",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Lifting State Up：兩個手足元件要共享同一份 state，往上移到共同父層",
+      "docs": "",
+      "story": "",
+      "prompt": "TemperatureInput（攝氏）與另一個 TemperatureInput（華氏）需要「其中一個改了，另一個要跟著同步換算顯示」，但兩者是平行的手足元件，沒有直接的父子關係可以傳 props。該怎麼設計？",
+      "code": "// 兩個手足元件各自管理自己的 state，彼此看不到對方 → 無法同步\n// 解法：把溫度這份 state 往上移到共同的父層\nfunction Calculator() {\n  const [celsius, setCelsius] = useState(0);\n  return (\n    <>\n      <TemperatureInput scale=\"c\" value={celsius} onChange={setCelsius} />\n      <TemperatureInput scale=\"f\" value={celsius * 9/5 + 32} onChange={(f) => setCelsius((f - 32) * 5/9)} />\n    </>\n  );\n}",
+      "options": [
+        { "id": "a", "text": "把這份需要共享的 state 往上移到兩者共同的父層（這裡是 Calculator），子層不再各自持有自己的一份 state，而是透過 props 接收目前的值、透過 props 傳入的回呼函式通知父層『我變了』；父層是唯一的真實來源（single source of truth），兩個手足元件的畫面都從同一個地方換算出來，自然保持同步" },
+        { "id": "b", "text": "讓兩個手足元件直接互相 import 對方、直接呼叫對方元件內部的 setState" },
+        { "id": "c", "text": "把其中一個元件的 state 直接複製一份貼到另一個元件裡，兩份各自獨立更新" },
+        { "id": "d", "text": "這種情境沒有辦法解決，React 不支援手足元件之間的資料同步" }
+      ],
+      "answer": "a",
+      "explanation": "「Lifting State Up」是 React 官方文件裡處理『多個元件需要反映同一份、正在變化的資料』的標準模式：與其在多個地方各自維護一份容易不同步的 state，不如把這份 state 移到它們共同的最近父層，子層透過 props 讀取現況、透過父層傳入的回呼函式請求變更。這也是 Context、Redux 這類「集中管理共享狀態」方案背後的同一個核心原則，只是應用的範圍更大。",
+      "verify": { "checks": [], "manual": "屬狀態設計模式的推理題，牽涉多元件協調的完整互動情境，無法用單一 node 執行片段驗證。" }
+    },
+    {
+      "id": "ri-10-q8",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "state 跟 props 都變動時，畫面該以哪個為準",
+      "docs": "",
+      "story": "",
+      "prompt": "一個顯示使用者名稱的元件，同時吃 props.initialName（父層傳入的初始值）跟自己的 state（使用者可以在畫面上編輯暱稱、暫存在 state 裡，尚未送出儲存）。使用者編輯過暱稱後，父層重新渲染、又傳入一次一模一樣的 initialName，畫面該顯示使用者編輯過的內容，還是父層傳入的原始值？",
+      "code": "function NicknameEditor({ initialName }) {\n  const [name, setName] = useState(initialName); // 只在第一次渲染生效\n  return <input value={name} onChange={(e) => setName(e.target.value)} />;\n}",
+      "options": [
+        { "id": "a", "text": "應該顯示使用者編輯過的內容：useState(initialName) 只有在元件第一次渲染時會拿 initialName 當初始值，之後即使父層重新傳入同樣（或不同）的 initialName，也不會覆蓋掉使用者後續在畫面上編輯的 state；state 一旦建立，就是這個元件自己的、獨立於 props 之後變化的記憶，這正是「使用者的編輯內容不該被父層的重新渲染打斷」這個常見需求背後的機制" },
+        { "id": "b", "text": "應該顯示父層傳入的原始值，因為 props 的優先權永遠高於 state" },
+        { "id": "c", "text": "兩者會自動合併成一個新字串顯示" },
+        { "id": "d", "text": "程式會拋出例外，同一個元件不能同時使用 props 與 state" }
+      ],
+      "answer": "a",
+      "explanation": "useState(initialValue) 的 initialValue 參數只在元件的第一次渲染生效，這跟 useRef 的初始值行為一致（見既有 react-11 章節）。這個特性剛好符合這裡的需求：使用者一旦開始編輯，這份「使用者輸入」的 state 就該自己獨立存在，不因為父層重新渲染、重新傳入同樣的初始值而被打斷或覆蓋——這也是分辨『初始值』與『目前值』兩種不同概念的具體案例。",
+      "verify": {
+        "checks": [
+          { "jsx": "import { useState } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nfunction NicknameEditor({ initialName }) {\n  const [name] = useState(initialName);\n  return <input value={name} readOnly />;\n}\nconsole.log(renderToStaticMarkup(<NicknameEditor initialName=\"小明\" />));", "expected": "<input readOnly=\"\" value=\"小明\"/>" }
+        ]
+      }
+    }
+  ]
+}

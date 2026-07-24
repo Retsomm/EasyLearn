@@ -1,0 +1,691 @@
+{
+  "id": "ri-4",
+  "title": "Redux 狀態管理",
+  "questions": [
+    {
+      "id": "ri-4-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "createSlice 看似直接改 state，其實底層靠 Immer 維持不可變性",
+      "docs": "",
+      "story": "",
+      "prompt": "用 Redux Toolkit 的 createSlice 寫 reducer，程式碼看起來直接改了 state.count。這樣真的違反 Redux「state 是唯讀、只能靠回傳新物件來更新」的核心原則嗎？",
+      "code": "const counterSlice = createSlice({\n  name: \"counter\",\n  initialState: { count: 0 },\n  reducers: {\n    increment(state) {\n      state.count += 1; // 看起來像直接修改\n    },\n  },\n});",
+      "options": [
+        { "id": "a", "text": "沒有違反：createSlice 內部用 Immer 這個函式庫包裝了 reducer，你寫的『看似直接修改』程式碼，其實是在一份可追蹤的草稿（draft）上操作，Immer 會依這些修改記錄，自動產生一份全新的、真正不可變的 state 物件回傳；表面寫法變簡潔了，Redux 的不可變性原則在底層依然被遵守" },
+        { "id": "b", "text": "違反了，Redux Toolkit 已經放棄不可變性這個原則，允許直接修改 state" },
+        { "id": "c", "text": "沒有違反，因為 JavaScript 的物件本來就是傳值、不是傳參考" },
+        { "id": "d", "text": "違反了，這段程式碼在執行期會直接拋出錯誤" }
+      ],
+      "answer": "a",
+      "explanation": "傳統 Redux 要求手動用展開運算子等方式複製 state 再回傳，寫起來容易漏掉某個巢狀層級，也容易一時失手直接改了原物件。Redux Toolkit 讓 createSlice 內建 Immer，讓你可以寫出「看起來像直接改」的直覺程式碼，Immer 在背後追蹤所有修改、最後生出一份全新物件——不可變性依然被遵守，只是你不用再手動處理複製邏輯。",
+      "verify": {
+        "checks": [],
+        "manual": "Redux Toolkit（含 Immer）未安裝於本專案，草稿（draft）機制需要實際套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q2",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "reducer 裡不該再觸發另一個 dispatch",
+      "docs": "",
+      "story": "",
+      "prompt": "下面這個 reducer 錯在哪？",
+      "code": "function todosReducer(state, action) {\n  switch (action.type) {\n    case \"ADD_TODO\": {\n      const newState = [...state, action.payload];\n      store.dispatch({ type: \"LOG_TODO_ADDED\" }); // 錯誤\n      return newState;\n    }\n    default:\n      return state;\n  }\n}",
+      "options": [
+        { "id": "a", "text": "reducer 裡呼叫 store.dispatch() 是明確的反模式：reducer 必須是純函式（同樣的 state 與 action 輸入，永遠得到同樣的輸出，且不能有副作用）；在 reducer 內觸發另一個 dispatch，等於在『計算下一個 state』的過程中夾帶一個會啟動連鎖反應的副作用，容易引發難以追蹤的連鎖 dispatch，甚至無窮迴圈" },
+        { "id": "b", "text": "沒有任何問題，reducer 本來就可以自由呼叫 dispatch" },
+        { "id": "c", "text": "問題只在拼字，action.type 的字串應該全部改成小寫" },
+        { "id": "d", "text": "問題在陣列展開語法 [...state, action.payload] 用錯了" }
+      ],
+      "answer": "a",
+      "explanation": "Redux 對 reducer 的要求很單純：純函式、無副作用、只負責「算出下一個 state」。想記錄「新增了一筆 todo」這種副作用（記錄 log、發 API），應該放在 middleware（如 redux-thunk 的 action creator、或 store.subscribe 的監聽者）裡處理，不該塞進 reducer 本體。",
+      "verify": {
+        "checks": [],
+        "manual": "Redux 未安裝於本專案，dispatch 觸發的連鎖行為需要真實 store 執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "useSelector／useDispatch 取代舊版 connect()",
+      "docs": "",
+      "story": "",
+      "prompt": "舊版用 connect(mapStateToProps, mapDispatchToProps) 高階元件把 state 和 dispatch 接進元件。現代 Redux Toolkit + react-redux 的 Hooks 風格，該怎麼在函式元件裡達到同樣效果？",
+      "code": "// 舊寫法\nconst mapStateToProps = (state) => ({ count: state.counter.count });\nconst mapDispatchToProps = { increment };\nexport default connect(mapStateToProps, mapDispatchToProps)(Counter);",
+      "options": [
+        { "id": "a", "text": "用 useSelector 讀取 state、useDispatch 拿到 dispatch 函式", "code": "function Counter() {\n  const count = useSelector((state) => state.counter.count);\n  const dispatch = useDispatch();\n  return <button onClick={() => dispatch(increment())}>{count}</button>;\n}" },
+        { "id": "b", "text": "直接 import store 這個全域變數，手動呼叫 store.getState()", "code": "function Counter() {\n  const count = store.getState().counter.count;\n  const dispatch = store.dispatch;\n  return <button onClick={() => dispatch(increment())}>{count}</button>;\n}" },
+        { "id": "c", "text": "用 useContext 手動讀取一個自訂的 Redux context", "code": "function Counter() {\n  const { count } = useContext(ReduxContext);\n  return <button>{count}</button>;\n}" },
+        { "id": "d", "text": "用 useState 搭配一個模組層級的全域變數手動同步", "code": "let globalCount = 0;\nfunction Counter() {\n  const [count, setCount] = useState(globalCount);\n  return <button>{count}</button>;\n}" }
+      ],
+      "answer": "a",
+      "explanation": "useSelector 與 useDispatch 是 react-redux 提供的 Hooks，效果等同 connect() 高階元件，但不需要額外包一層、也不用手寫 mapStateToProps/mapDispatchToProps。useSelector 內部還會自動比對選出來的值，只有真的變動時才觸發這個元件重繪；選項 b 手動呼叫 store.getState() 拿不到「state 變了自動重新渲染」這個能力，UI 不會跟著 store 更新。",
+      "verify": {
+        "checks": [],
+        "manual": "react-redux 未安裝於本專案，useSelector 的訂閱與自動重繪機制需要真實 store 與元件掛載才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "為什麼 Redux 的核心函式叫做「reducer」",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "Redux 的核心函式取名叫「reducer」不是巧合——概念上跟 JavaScript 原生的 Array.prototype.reduce 是同一件事：把一連串的 action，依序『摺疊』成最終的 state。用原生陣列方法重現這個概念，把空格填起來",
+      "code": "const actions = [\n  { type: \"INCREMENT\" },\n  { type: \"INCREMENT\" },\n  { type: \"DECREMENT\" },\n];\n\nfunction counterReducer(state, action) {\n  switch (action.type) {\n    case \"INCREMENT\": return state + 1;\n    case \"DECREMENT\": return state - 1;\n    default: return state;\n  }\n}\n\nconst finalCount = actions.____(counterReducer, 0);\nconsole.log(finalCount);",
+      "options": [
+        { "id": "a", "text": "reduce" },
+        { "id": "b", "text": "map" },
+        { "id": "c", "text": "forEach" },
+        { "id": "d", "text": "fold" }
+      ],
+      "answer": "a",
+      "explanation": "Array.prototype.reduce(callback, initialValue) 依序把陣列裡每個元素跟目前的累積值丟進 callback，得到新的累積值——這正是 Redux store 內部真正在做的事：把 action 陣列（歷史上每一次 dispatch）依序丟進 reducer、從 initialState 開始不斷累積出最終的 state。map 是一對一轉換、不會累積；forEach 沒有回傳值；fold 是其他語言（如 Haskell）對同個概念的稱呼，JavaScript 原生方法就叫 reduce。",
+      "verify": {
+        "checks": [
+          { "code": "const actions = [\n  { type: \"INCREMENT\" },\n  { type: \"INCREMENT\" },\n  { type: \"DECREMENT\" },\n];\n\nfunction counterReducer(state, action) {\n  switch (action.type) {\n    case \"INCREMENT\": return state + 1;\n    case \"DECREMENT\": return state - 1;\n    default: return state;\n  }\n}\n\nconst finalCount = actions.reduce(counterReducer, 0);\nconsole.log(finalCount);", "expected": "1" }
+        ]
+      }
+    },
+    {
+      "id": "ri-4-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "createAsyncThunk 取代手刻 thunk 管理三種非同步狀態",
+      "docs": "",
+      "story": "",
+      "prompt": "要發送一個非同步 API 請求，並依結果 dispatch 不同的 action（pending / fulfilled / rejected）。Redux Toolkit 建議的標準寫法是什麼？",
+      "code": "// 手刻 thunk（舊寫法，仍然合法，但要自己管三種狀態）\nfunction fetchUserLegacy(id) {\n  return async (dispatch) => {\n    dispatch({ type: \"user/pending\" });\n    try {\n      const res = await fetch(`/api/user/${id}`);\n      const data = await res.json();\n      dispatch({ type: \"user/fulfilled\", payload: data });\n    } catch (err) {\n      dispatch({ type: \"user/rejected\", error: err.message });\n    }\n  };\n}\n\n// Redux Toolkit 建議的寫法？\nconst fetchUser = createAsyncThunk(\"user/fetch\", async (id) => {\n  const res = await fetch(`/api/user/${id}`);\n  return res.json();\n});",
+      "options": [
+        { "id": "a", "text": "createAsyncThunk 會依你傳入的非同步函式回傳的 Promise 狀態，自動 dispatch 對應的 pending/fulfilled/rejected action（action type 自動用你傳入的字首加上固定後綴）；不需要像手刻 thunk 那樣自己手動管理三種狀態、自己組三個 action type 字串，樣板程式碼少很多，也比較不容易漏掉某個狀態" },
+        { "id": "b", "text": "兩者完全等價，createAsyncThunk 只是換個名字，行為上沒有任何簡化" },
+        { "id": "c", "text": "createAsyncThunk 只能處理同步的 action，非同步請求還是得手刻 thunk" },
+        { "id": "d", "text": "createAsyncThunk 已經被 Redux 官方棄用，建議一律手刻 thunk" }
+      ],
+      "answer": "a",
+      "explanation": "手刻 thunk 要自己想三個 action type 字串、自己在每個分支手動 dispatch，容易漏掉某個狀態或字串打錯字不會被檢查出來。createAsyncThunk 把「非同步呼叫的三種狀態」這個重複出現的樣板抽象掉：只要傳入一個回傳 Promise 的函式，Toolkit 就自動幫你 dispatch 對應的 pending/fulfilled/rejected，剩下的工作只是在對應的 slice 裡用 extraReducers 監聽這三種狀態、更新 state。",
+      "verify": {
+        "checks": [],
+        "manual": "Redux Toolkit 未安裝於本專案，createAsyncThunk 的自動 dispatch 機制需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "Redux 跟 Context 不是二選一，依狀態複雜度分別選擇",
+      "docs": "",
+      "story": "",
+      "prompt": "專案的認證資訊（目前登入者）原本用 Context 存放，運作得很好。後來需求變複雜：多個獨立的資料實體彼此有關聯查詢，需要在 DevTools 裡追蹤『這個 state 是被哪個 action 改的』，也常需要在使用者操作後復原到之前某個時間點的狀態。這時候該怎麼選？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "把『需要複雜追蹤、除錯、甚至要能時間旅行復原』的這部分狀態遷移到 Redux（搭配 Redux DevTools 的 action 記錄與時間旅行除錯）；單純、不常變動的資料傳遞（像認證資訊）繼續留在 Context 就好——兩者不是二選一的關係，可以依狀態的複雜度與除錯需求分別選擇" },
+        { "id": "b", "text": "既然已經用了 Context，就應該永遠只用 Context，避免引入 Redux 這個『不必要的複雜度』" },
+        { "id": "c", "text": "應該把所有 Context 都刪除，改成把所有狀態塞進單一個巨大的全域變數" },
+        { "id": "d", "text": "Redux 和 Context 功能完全重複，選哪一個都一樣，沒有任何取捨" }
+      ],
+      "answer": "a",
+      "explanation": "Context 設計初衷是解決「跨層級傳遞資料」這個問題，本身不提供 action 記錄、時間旅行除錯、中介軟體這些工具；Redux（尤其是 Redux DevTools）的價值恰好在「狀態變化的可觀測性、可除錯性」隨應用複雜度上升而變得重要時展現出來。實務上常見的做法就是共存：簡單、局部、不太需要除錯工具的狀態留在 Context，跨模組共享、變化複雜、需要被追蹤的狀態遷到 Redux，依需求分工而不是全有全無。",
+      "verify": {
+        "checks": [],
+        "manual": "屬架構選型的情境推理題，取決於團隊需求與工具鏈評估，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-4-q7",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Flux 是架構理念，Redux 是它的一種具體實作",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊提到「Flux」跟「Redux」，有人以為兩者是同一套東西，只是換個名字。這樣理解正確嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不完全正確：Flux 是 Facebook 提出的一種『單向資料流』架構理念（Action → Dispatcher → Store → View），本身不是一個具體的函式庫，允許有多個 Store 各自管理一部分狀態；Redux 是受 Flux 啟發、但做了關鍵簡化的具體實作——把多個 Store 合併成一個唯一的 store、把 dispatcher 的角色簡化成純函式 reducer，兩者理念相近但不是同一份東西" },
+        { "id": "b", "text": "正確，Flux 與 Redux 是完全相同的技術，只是命名不同" },
+        { "id": "c", "text": "不正確，Flux 是比 Redux 晚出現的技術，是 Redux 的下一代版本" },
+        { "id": "d", "text": "不正確，Flux 專門用於行動裝置開發，Redux 專門用於網頁開發" }
+      ],
+      "answer": "a",
+      "explanation": "把 Flux 想成一套「設計理念」、Redux 想成「一種具體、經過簡化的實作」，會比較容易分清楚兩者關係。Flux 原始設計允許多個 Store、多個 Dispatcher 監聽者；Redux 刻意把這些簡化成單一 store、純函式 reducer，讓整個資料流變得更容易預測與除錯，也因此成為 Flux 理念下最廣為採用的實作之一。",
+      "verify": {
+        "checks": [],
+        "manual": "屬架構理念與具體實作的比較推理題，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-4-q8",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Redux 相對 Flux 的隱性成本：強制不可變性的紀律要求",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊評估要不要把既有的 Flux 架構換成 Redux，有人提出「Redux 比 Flux 多了一項隱性成本」。下列哪個描述最準確？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "Redux 嚴格要求 state 更新必須維持不可變（每次都回傳全新物件），這比 Flux 相對寬鬆的做法多了一層紀律要求；團隊需要養成『絕不直接修改 state』的習慣，或引入像 Immer 這類工具協助，否則容易寫出『看起來更新了、其實還是同一個參考』的 bug" },
+        { "id": "b", "text": "Redux 完全不支援非同步操作，這是它跟 Flux 相比最大的缺點" },
+        { "id": "c", "text": "Redux 的套件大小遠比 Flux 笨重，是兩者最大的差異" },
+        { "id": "d", "text": "Redux 只能搭配 class component 使用，Flux 才能搭配函式元件" }
+      ],
+      "answer": "a",
+      "explanation": "Redux 的可預測性有很大一部分建立在「state 永遠不可變、每次都是全新物件」這個假設上（例如 UI 框架靠參考比對判斷要不要重繪，就仰賴這個假設）；這代表團隊得放棄「直接修改物件比較直覺」的寫法，改用展開運算子或 Immer 這類工具維護不可變性，是導入 Redux 需要額外付出、但 Flux 原始設計沒有強制要求的紀律成本。",
+      "verify": {
+        "checks": [],
+        "manual": "屬架構取捨的推理題，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-4-q9",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "在元件之外讀取 Redux store 目前的狀態",
+      "docs": "",
+      "story": "",
+      "prompt": "想在一個一般的工具函式（不是 React 元件）裡讀取 Redux store 目前的狀態，該怎麼做最直接？",
+      "code": "// store.js\nexport const store = createStore(rootReducer);\n\n// utils/logger.js\nimport { store } from \"../store\";\n\nfunction logCurrentUser() {\n  console.log(store.getState().user);\n}",
+      "options": [
+        { "id": "a", "text": "直接把 createStore() 建立出來的 store 實例匯出，其他模組（不管是不是 React 元件）都能 import 這個模組、呼叫 store.getState() 讀取當下狀態，這是最直接的做法；缺點是這種寫法把 store 變成一個可以被任意模組直接存取的全域物件，濫用容易讓資料流向變得不透明，官方建議盡量把這種存取集中在少數幾個明確的地方" },
+        { "id": "b", "text": "不可能做到，Redux store 只能在 React 元件內用 useSelector 讀取" },
+        { "id": "c", "text": "必須把 store 掛到 window 全域變數上才能在元件外部讀取" },
+        { "id": "d", "text": "只能透過 Redux DevTools 擴充功能才能讀到 store 的內容" }
+      ],
+      "answer": "a",
+      "explanation": "store 本質上就是一個包含 getState()／dispatch()／subscribe() 方法的普通物件，只要模組系統能匯出匯入它，任何檔案都能直接呼叫這些方法，不限於 React 元件。這在攔截器、工具函式這類非元件情境很常見，但也正因為太方便，官方提醒不要濫用——大部分情境下，元件內用 useSelector／useDispatch 才是建議的主要存取方式。",
+      "verify": {
+        "checks": [],
+        "manual": "Redux 未安裝於本專案，store 實例的匯出與存取需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q10",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "MVW 雙向綁定的除錯困境：資料被誰改的難以追蹤",
+      "docs": "",
+      "story": "",
+      "prompt": "在 Flux/Redux 這類單向資料流架構流行之前，許多前端框架採用 MVW（Model-View-Whatever，例如雙向綁定的模式）。這種模式在大型協作應用裡，容易遇到什麼典型問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "雙向資料綁定讓『資料被誰改的』難以追蹤：一個 Model 可能同時被多個 View 綁定，任何一個 View 都能直接改動 Model，資料一多、綁定關係一複雜，除錯時很難回答『這個值是被哪裡的哪段程式碼改成現在這樣的』；單向資料流架構的出現，很大一部分正是為了解決這種『到處都能改、卻沒有一個清楚脈絡』的除錯困境" },
+        { "id": "b", "text": "MVW 模式完全沒有任何缺點，是效能最佳的架構模式" },
+        { "id": "c", "text": "MVW 模式的問題只在於命名太長，跟資料流向沒有任何關係" },
+        { "id": "d", "text": "MVW 模式的唯一問題是不支援任何測試框架" }
+      ],
+      "answer": "a",
+      "explanation": "雙向綁定的吸引力在於「改資料、畫面自動跟著變，改畫面、資料也自動跟著變」，寫小範例很方便；但這也代表任何一處都能直接寫入 Model，隨著協作規模、綁定關係增加，追蹤『這個欄位到底被誰改的』會變得非常困難。單向資料流（Action → 唯一入口 → 可預測的更新）正是為了讓這條追蹤路徑保持清楚、有限，才被提出來取代這種模式。",
+      "verify": {
+        "checks": [],
+        "manual": "屬架構歷史演進與除錯困境的推理題，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-4-q11",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Redux 跟 RxJS 解決的是不同層次的問題，常常搭配使用",
+      "docs": "",
+      "story": "",
+      "prompt": "有人搞混 Redux 跟 RxJS，覺得兩者是互相替代的競爭方案。這個理解準確嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不太準確：Redux 是應用程式的『狀態管理架構』，回答『整個應用程式的資料該怎麼組織、怎麼更新』；RxJS 是『反應式程式設計函式庫』，核心是 Observable 這種處理非同步事件流的通用工具，回答的是『如何優雅地組合、轉換一連串隨時間發生的事件』——兩者解決的問題本來就不同，實務上也常常搭配使用（例如用 RxJS 處理 Redux 裡複雜的非同步副作用，這正是 redux-observable 這個中介軟體存在的原因）" },
+        { "id": "b", "text": "完全準確，Redux 與 RxJS 是同一類工具，只能二選一" },
+        { "id": "c", "text": "不準確，因為 RxJS 只能用在 Angular 專案，React 專案不能使用" },
+        { "id": "d", "text": "不準確，因為 Redux 已經被官方棄用，全面由 RxJS 取代" }
+      ],
+      "answer": "a",
+      "explanation": "Redux 關心「state 長什麼樣、怎麼被更新」，RxJS 關心「一連串隨時間發生的事件，怎麼被組合、過濾、轉換」。兩者的抽象層級不同，甚至可以疊加使用：redux-observable 這個 middleware，就是拿 RxJS 的 Observable 來描述 Redux 裡的非同步副作用流程，是兩者互補而非互斥的實際案例。",
+      "verify": {
+        "checks": [],
+        "manual": "屬工具定位與適用場景的比較推理題，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-4-q12",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "reset state：root reducer 攔截特定 action、強制重建整個 state",
+      "docs": "",
+      "story": "",
+      "prompt": "使用者登出時，想讓整個 store 的狀態全部重置回初始值，而不是保留舊資料。下面這個 rootReducer 的寫法，依序執行完兩次 INCREMENT、再 dispatch 一次 USER_LOGOUT 之後，counter 分別會顯示什麼？",
+      "code": "function counterReducer(state = 0, action) {\n  switch (action.type) {\n    case \"INCREMENT\": return state + 1;\n    default: return state;\n  }\n}\n\nfunction appReducer(state, action) {\n  return { counter: counterReducer(state?.counter, action) };\n}\n\nfunction rootReducer(state, action) {\n  if (action.type === \"USER_LOGOUT\") {\n    state = undefined;\n  }\n  return appReducer(state, action);\n}\n\nlet state = rootReducer(undefined, { type: \"@@INIT\" });\nstate = rootReducer(state, { type: \"INCREMENT\" });\nstate = rootReducer(state, { type: \"INCREMENT\" });\nconsole.log(state.counter); // 登出前\n\nstate = rootReducer(state, { type: \"USER_LOGOUT\" });\nconsole.log(state.counter); // 登出後",
+      "options": [
+        { "id": "a", "text": "登出前印出 2，登出後印出 0：rootReducer 攔截到 USER_LOGOUT 這個特定 action 時，故意把傳入 appReducer 的 state 覆寫成 undefined；而每個 reducer（包含 counterReducer）在收到 undefined 當作 state 時，都會退回自己宣告的預設值（這裡是 0），等於強制讓整棵 state 樹重新初始化一次，不需要手動一一清空每個欄位" },
+        { "id": "b", "text": "登出前印出 2，登出後仍然印出 2，USER_LOGOUT 這個判斷式完全不會生效" },
+        { "id": "c", "text": "登出前跟登出後都印出 0，INCREMENT 完全沒有作用" },
+        { "id": "d", "text": "程式會直接拋出例外，reducer 不能把 state 手動設成 undefined" }
+      ],
+      "answer": "a",
+      "explanation": "這是 Redux 官方推薦的「重置 state」手法：不用在每個 reducer 裡各自寫『收到 LOGOUT 就清空』的邏輯，而是在最外層的 rootReducer 統一攔截這個 action、把要傳給底下 appReducer 的 state 蓄意設成 undefined。每個 reducer 的參數預設值語法（state = 初始值）在收到 undefined 時就會自動生效，整棵狀態樹因此在一次攔截裡被優雅地重新初始化，不需要逐一清空每個 reducer 管理的欄位。",
+      "verify": {
+        "checks": [
+          { "code": "function counterReducer(state = 0, action) {\n  switch (action.type) {\n    case \"INCREMENT\": return state + 1;\n    default: return state;\n  }\n}\n\nfunction appReducer(state, action) {\n  return { counter: counterReducer(state?.counter, action) };\n}\n\nfunction rootReducer(state, action) {\n  if (action.type === \"USER_LOGOUT\") {\n    state = undefined;\n  }\n  return appReducer(state, action);\n}\n\nlet state = rootReducer(undefined, { type: \"@@INIT\" });\nstate = rootReducer(state, { type: \"INCREMENT\" });\nstate = rootReducer(state, { type: \"INCREMENT\" });\nconsole.log(state.counter);\n\nstate = rootReducer(state, { type: \"USER_LOGOUT\" });\nconsole.log(state.counter);", "expected": "2\n0" }
+        ]
+      }
+    },
+    {
+      "id": "ri-4-q13",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "純本地的 UI 互動狀態不需要放進 Redux",
+      "docs": "",
+      "story": "",
+      "prompt": "一個表單元件裡「這個欄位目前有沒有被 focus」這種純粹跟畫面互動有關、其他元件完全不關心的暫時性資料，需要放進 Redux store 嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不需要：Redux 官方建議只把『多個元件需要共享、或需要在應用程式生命週期中持續存在』的資料放進 store；像是否 focus 這類純粹侷限在單一元件內、沒有其他元件關心的 UI 狀態，留在元件本地的 useState 就好，硬塞進 Redux 只會讓 store 變得臃腫，每個小互動都要走一次 dispatch，反而失去在地狀態管理的簡便性" },
+        { "id": "b", "text": "需要，所有狀態不管有沒有共享需求都應該放進 Redux，這樣才算『集中管理』" },
+        { "id": "c", "text": "不需要，因為 Redux 技術上完全不支援儲存布林值" },
+        { "id": "d", "text": "需要，但只能放在 Redux 而不能同時搭配 useState 使用" }
+      ],
+      "answer": "a",
+      "explanation": "判斷一份資料該不該放進 Redux，關鍵問題是「這份資料需不需要被多個元件共享、或者需要在應用程式的生命週期裡持續存在」。單一元件內部的暫時性 UI 狀態（focus、hover、輸入框草稿）不符合這個條件，留在本地 state 反而更簡單直接；Redux 和 useState 完全可以在同一個應用程式裡並存，分別處理各自適合的那一類狀態。",
+      "verify": {
+        "checks": [],
+        "manual": "屬狀態放置位置的架構判斷題，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-4-q14",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "components／containers 資料夾切分：呈現邏輯跟資料來源邏輯分開",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊的資料夾裡有 components/ 跟 containers/ 兩個目錄，新人問這兩者的差異。下列哪個說法正確？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "components/ 放『呈現用』的元件，只負責『資料傳進來、畫面畫出來』，不知道 Redux 的存在；containers/ 放『連接 Redux』的元件，負責用 useSelector/useDispatch（或舊版 connect()）從 store 拿資料、組出 dispatch 函式，再把這些結果當 props 傳給底下對應的呈現元件——這是一種關注點分離：畫面邏輯跟『資料從哪來』的邏輯分開放" },
+        { "id": "b", "text": "兩者完全一樣，只是分別放在不同資料夾，沒有任何職責上的差異" },
+        { "id": "c", "text": "components/ 放測試檔案，containers/ 放正式程式碼" },
+        { "id": "d", "text": "containers/ 只能放 CSS 樣式檔案，不能放任何 JavaScript 邏輯" }
+      ],
+      "answer": "a",
+      "explanation": "這個切法背後的動機是關注點分離：呈現元件（components）只在乎「拿到什麼 props、畫出什麼畫面」，可以脫離 Redux 單獨測試、單獨重複使用；容器元件（containers）專心處理「怎麼從 store 拿資料、怎麼組 dispatch」，把結果交給呈現元件。這種切法在 Hooks 普及後不再是唯一慣例（很多團隊改成在元件內直接呼叫 useSelector），但作為理解「資料來源」與「畫面呈現」分離的概念仍然有參考價值。",
+      "verify": {
+        "checks": [],
+        "manual": "屬程式碼組織慣例的說明題，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-4-q15",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "action type 常數化：讓拼字錯誤能被工具抓出來",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊的 actions.js 跟 reducer.js 都各自手寫字串 \"ADD_TODO\"，有一次 reducer 裡不小心打成 \"ADD_TODOS\"（多了個 s），這個 bug 完全沒有跳出任何錯誤，只是 reducer 悄悄地『沒反應』。把這些字串統一抽成常數（兩邊都 import 同一個常數）能預防這類問題嗎？",
+      "code": "// actionTypes.js\nexport const ADD_TODO = \"ADD_TODO\";\n\n// actions.js\nimport { ADD_TODO } from \"./actionTypes\";\nexport function addTodo(text) {\n  return { type: ADD_TODO, text };\n}\n\n// reducer.js\nimport { ADD_TODO } from \"./actionTypes\";\n// switch (action.type) { case ADD_TODO: ... }",
+      "options": [
+        { "id": "a", "text": "能：把字串抽成一個常數並讓 actions.js 與 reducer.js 都從同一份檔案 import，只要其中一邊手誤打錯了常數的『變數名稱』（不是字串內容），編譯器或 IDE 就能立刻抓到『找不到這個匯出成員』的錯誤；相較之下，兩邊各自手打一模一樣的字串字面值，任何一邊拼錯都不會有任何工具自動抓出來，只能靠肉眼檢查或執行期偵錯" },
+        { "id": "b", "text": "不能，常數化只是美觀考量，跟能不能抓到拼字錯誤沒有任何關係" },
+        { "id": "c", "text": "能，但只有搭配 TypeScript 才有效，純 JavaScript 專案完全沒用" },
+        { "id": "d", "text": "不能，因為 JavaScript 常數在執行期會被自動轉成字串，效果跟直接寫字串一樣" }
+      ],
+      "answer": "a",
+      "explanation": "字串字面值本身沒有任何拼字檢查機制，兩處各自手打完全一樣的字串，編譯器完全看不出差異；但把字串包成一個具名的匯出常數之後，「打錯常數名稱」變成一個「引用了不存在的變數」的錯誤，這種錯誤在純 JavaScript 下執行期就會拋出 ReferenceError／undefined 匯出，搭配 IDE 或 linter 甚至能在寫程式碼的當下就標紅，不需要等到 TypeScript 才生效。",
+      "verify": {
+        "checks": [],
+        "manual": "屬程式碼組織與型別安全的推理題，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-4-q16",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "mapDispatchToProps 的物件簡寫等價於手動包 dispatch",
+      "docs": "",
+      "story": "",
+      "prompt": "mapDispatchToProps 有好幾種等價的寫法。下面兩種寫法，最終效果一樣嗎？",
+      "code": "// 寫法一\nconst mapDispatchToProps = (dispatch) => ({\n  addTodo: (text) => dispatch(addTodo(text)),\n});\n\n// 寫法二（物件簡寫）\nconst mapDispatchToProps = { addTodo };",
+      "options": [
+        { "id": "a", "text": "效果一樣：寫法二是官方提供的『物件簡寫』，connect() 內部看到 mapDispatchToProps 傳進來的是一個『action creator 組成的物件』而不是函式時，會自動幫每一個 action creator 包一層 (...args) => dispatch(actionCreator(...args))，效果等同寫法一手動包的那層 dispatch 呼叫，只是省去了重複的樣板程式碼" },
+        { "id": "b", "text": "效果不一樣，寫法二完全不會呼叫 dispatch，addTodo 只會被當成一般函式呼叫" },
+        { "id": "c", "text": "效果不一樣，寫法一才是合法寫法，寫法二會在執行期直接拋出例外" },
+        { "id": "d", "text": "效果一樣，但寫法二只能用在 TypeScript 專案" }
+      ],
+      "answer": "a",
+      "explanation": "connect() 對 mapDispatchToProps 這個參數做了型別判斷：傳函式就照函式的邏輯處理；傳一個『純粹由 action creator 組成的物件』，就自動幫每一個成員包上呼叫 dispatch 的那層包裝。兩種寫法最終呼叫端拿到的 props（addTodo）行為完全相同，物件簡寫只是省去重複樣板的語法糖。",
+      "verify": {
+        "checks": [],
+        "manual": "react-redux 未安裝於本專案，connect() 的內部型別判斷需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q17",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "mapStateToProps 的 ownProps：依呼叫端 props 決定該挑哪份資料",
+      "docs": "",
+      "story": "",
+      "prompt": "mapStateToProps 的第二個參數 ownProps，什麼時候會用到？",
+      "code": "const mapStateToProps = (state, ownProps) => ({\n  active: ownProps.filter === state.visibilityFilter,\n});",
+      "options": [
+        { "id": "a", "text": "當『從 store 裡該挑哪一份資料』需要依賴這個元件自己收到的 props 才能決定時（例如這裡要判斷『目前這顆 FilterLink 對應的 filter，是不是恰好等於 store 裡目前選中的 visibilityFilter』，答案因每個 FilterLink 實例的 filter prop 而異），就需要透過 ownProps 讀到呼叫端傳入的 props，單靠 state 本身無法算出這個結果" },
+        { "id": "b", "text": "ownProps 是保留參數，任何情況下都不會真的有值" },
+        { "id": "c", "text": "ownProps 只在 class component 裡才有效，函式元件永遠拿到 undefined" },
+        { "id": "d", "text": "ownProps 會自動覆蓋 mapStateToProps 回傳的所有欄位" }
+      ],
+      "answer": "a",
+      "explanation": "大多數 mapStateToProps 只需要 state 這個參數；但當『該回傳什麼資料』本身跟呼叫端傳入的 props 有關（同一個元件的不同實例，因為 filter prop 不同，該回傳的 active 值也不同）時，就需要第二個參數 ownProps 讀到那些外部傳入的 props，兩者結合才能算出正確答案。",
+      "verify": {
+        "checks": [],
+        "manual": "react-redux 未安裝於本專案，connect() 的 ownProps 傳遞需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q18",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "依職責種類切資料夾 vs 依功能模組切資料夾",
+      "docs": "",
+      "story": "",
+      "prompt": "一個中小型 Redux 專案，常見的頂層資料夾規劃是 components/、containers/、actions/、reducers/、store/。這種切法背後的組織原則是什麼，隨專案變大會遇到什麼取捨？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "依『職責種類』切割，而不是依『功能模組』切割：所有呈現元件放一起、所有連接 Redux 的容器放一起、所有 action creator 放一起、所有 reducer 放一起——這對小型專案容易維護（跟 Redux 有關的東西都各自集中），但當專案變大、模組數量變多時，常常會遇到『改一個功能要在五個不同資料夾各自找一個檔案』的不便，這也是後來 Redux Toolkit 推薦『依功能切割（feature folders，每個功能自帶自己的 slice、元件）』興起的背景" },
+        { "id": "b", "text": "這種切法只適用於後端專案，前端 React 專案不應該這樣規劃" },
+        { "id": "c", "text": "components/、containers/、actions/、reducers/ 這幾個資料夾名稱是 Redux 強制規定、不能自訂的" },
+        { "id": "d", "text": "這種切法完全不會隨專案規模產生任何維護上的差異" }
+      ],
+      "answer": "a",
+      "explanation": "依職責種類切割（也叫 rails-style/type-based 結構）在專案還小時很直覺，但隨著功能數量增加，同一個功能的相關程式碼會散落在好幾個平行資料夾裡，改一個功能要在多處跳來跳去。這正是 Redux Toolkit 官方文件明確建議改用「feature folders」（依功能模組切割，每個功能資料夾內包含自己的 slice、元件、測試）的原因——兩種切法沒有絕對優劣，是專案規模帶來的取捨。",
+      "verify": {
+        "checks": [],
+        "manual": "屬專案架構規劃的推理題，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-4-q19",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "redux-saga：用 Generator 描述非同步流程與副作用",
+      "docs": "",
+      "story": "",
+      "prompt": "redux-saga 是什麼，主要用來解決什麼問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "redux-saga 是 Redux 的中介軟體，讓開發者可以用 JavaScript 的 Generator 函式（function*）描述複雜的非同步流程與副作用（例如 API 呼叫、需要被取消的長時間任務、多個非同步動作間的協調），比起 redux-thunk 用 Promise 處理非同步，Generator 讓這些流程更容易被『暫停、恢復、測試』" },
+        { "id": "b", "text": "redux-saga 是取代 React Router 的路由函式庫" },
+        { "id": "c", "text": "redux-saga 是一種 CSS-in-JS 方案，用來取代 styled-components" },
+        { "id": "d", "text": "redux-saga 是 Redux 官方內建的功能，不需要額外安裝套件" }
+      ],
+      "answer": "a",
+      "explanation": "redux-saga 的核心賣點是用 Generator 函式描述非同步邏輯：yield 出去的每一步都是「描述要做什麼」，而不是直接執行，這讓整個流程可以被 middleware 控制節奏（暫停、恢復、取消），也讓測試變得容易——斷言「這一步 yield 出了什麼描述物件」，不需要真的觸發網路請求。",
+      "verify": {
+        "checks": [],
+        "manual": "redux-saga 未安裝於本專案，Generator 驅動的非同步流程需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q20",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Saga 像一條能被外部控制的獨立執行緒",
+      "docs": "",
+      "story": "",
+      "prompt": "「Saga 就像應用程式裡一個獨立的背景執行緒」這個常見比喻，具體指的是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "saga 是用 Generator 函式描述的一段長時間執行流程，可以被 redux-saga 這個 middleware 用一般的 Redux action 啟動、暫停、或取消，過程中它能讀取完整的 Redux state、也能 dispatch action 回 store——這種『能被外部訊號控制生命週期、又能跟主應用程式雙向溝通』的特性，很像作業系統裡一個可以被啟動/終止的獨立執行緒，而不是一次性、跑完就結束的函式呼叫" },
+        { "id": "b", "text": "saga 真的會建立一個作業系統層級的執行緒，跟 JavaScript 單執行緒的限制無關" },
+        { "id": "c", "text": "saga 只是 reducer 的另一種稱呼，沒有任何額外能力" },
+        { "id": "d", "text": "saga 只能執行一次，執行完之後就無法再次被啟動" }
+      ],
+      "answer": "a",
+      "explanation": "這個比喻強調的是「生命週期可被外部控制」這個特性，而不是真的涉及作業系統層級的多執行緒（JavaScript 仍然是單執行緒）。redux-saga 提供 takeEvery/takeLatest/cancel 這類機制，讓一段 Generator 流程能被『像管理一個背景任務一樣』啟動、取消，這是它跟一次性 Promise 鏈最大的行為差異。",
+      "verify": {
+        "checks": [],
+        "manual": "redux-saga 未安裝於本專案，Generator 生命週期的控制機制需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q21",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "call() 與 put()：描述副作用，而不是立即執行",
+      "docs": "",
+      "story": "",
+      "prompt": "redux-saga 裡 call() 跟 put() 這兩個 effect creator，各自負責什麼？",
+      "code": "function* fetchUserSaga(action) {\n  const userData = yield call(api.fetchUser, action.userId);\n  yield put({ type: \"FETCH_USER_SUCCESS\", userData });\n}",
+      "options": [
+        { "id": "a", "text": "call(fn, ...args) 產生一個『指示 middleware 去呼叫某個函式（通常是回傳 Promise 的 API 呼叫）』的描述物件，middleware 收到後才真正執行並把結果餵回 yield 的位置；put(action) 產生一個『指示 middleware 去 dispatch 這個 action』的描述物件。兩者都只是『描述要做什麼』，不是立即執行，這讓 saga 的邏輯本身可以脫離真實的 side effect 被單獨測試（斷言『這段程式碼有沒有產生正確的描述物件』，不用真的發送網路請求）" },
+        { "id": "b", "text": "call() 用來呼叫 reducer，put() 用來呼叫 selector，兩者都跟非同步無關" },
+        { "id": "c", "text": "call() 和 put() 是同一個 effect 的兩種別名，沒有任何差異" },
+        { "id": "d", "text": "call() 只能呼叫同步函式，put() 只能呼叫非同步函式" }
+      ],
+      "answer": "a",
+      "explanation": "redux-saga 的一大特色是「effect 描述物件」：call()／put() 產生的都只是純資料物件，描述『middleware 該做什麼』，真正的執行交給 middleware 負責。這種「描述而非執行」的設計，讓 saga 的核心邏輯（該呼叫哪個 API、該 dispatch 哪個 action）可以在完全不碰真實網路的情況下被單元測試，只需要斷言 yield 出來的物件內容是否符合預期。",
+      "verify": {
+        "checks": [],
+        "manual": "redux-saga 未安裝於本專案，effect 描述物件的產生與執行需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q22",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "何時該從 thunk 升級到 saga：非同步流程複雜度是關鍵",
+      "docs": "",
+      "story": "",
+      "prompt": "團隊已經用 redux-thunk 處理大部分非同步邏輯，運作良好。什麼情境會讓團隊認真考慮改導入或補上 redux-saga？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "當非同步流程變得比『發一個請求、等結果』複雜很多時——例如需要『使用者打字時 debounce、只保留最後一次請求的結果』『長時間輪詢、且要能被使用者主動取消』『多個非同步動作需要嚴謹地依序協調、其中任何一步失敗要能整組復原』——這類流程用 Generator 描述、搭配 redux-saga 內建的取消、race、debounce 等 effect，通常比疊一堆巢狀 Promise/thunk 更容易維護與測試" },
+        { "id": "b", "text": "只要專案有任何一個 API 呼叫，就必須用 redux-saga，thunk 完全不能處理非同步" },
+        { "id": "c", "text": "改用 redux-saga 純粹是效能考量，thunk 在執行速度上一定比 saga 慢" },
+        { "id": "d", "text": "兩者無法在同一個專案裡共存，選了 thunk 就永遠不能再加入 saga" }
+      ],
+      "answer": "a",
+      "explanation": "thunk 用 Promise 處理『發請求、等結果』這種直線流程已經很夠用，也是多數團隊的預設選擇；saga 的優勢展現在流程本身變複雜的時候——debounce、可取消的長任務、多步驟協調復原，這些需求用 Generator 加上 redux-saga 內建的 effect 描述起來比手刻巢狀 Promise 更清楚。兩者也可以在同一個 store 裡共存，不是互斥的二選一。",
+      "verify": {
+        "checks": [],
+        "manual": "屬非同步架構選型的情境推理題，取決於實際流程複雜度，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-4-q23",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Redux DevTools 關注 state 如何隨 action 演變",
+      "docs": "",
+      "story": "",
+      "prompt": "Redux DevTools 是什麼，它跟 React DevTools 的 Profiler 有什麼不同的關注焦點？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "Redux DevTools 專注在『state 怎麼隨著 action 一步步變化』：它記錄每一次 dispatch 的 action 內容與對應的 state 快照，讓開發者能『時間旅行』回到任意一步驟重新檢視、甚至重播；React DevTools 的 Profiler 關注的是『元件渲染效能』（誰重繪了、花多久），兩者分別對應 Redux 應用程式裡『資料如何演變』跟『畫面如何渲染』這兩個不同的關注層面" },
+        { "id": "b", "text": "兩者完全是同一個工具，只是安裝的擴充功能名稱不同" },
+        { "id": "c", "text": "Redux DevTools 只能在正式環境（production）使用，開發環境無法啟用" },
+        { "id": "d", "text": "Redux DevTools 專門用來偵錯 CSS 樣式問題，跟 state 管理無關" }
+      ],
+      "answer": "a",
+      "explanation": "兩套 DevTools 分別對應應用程式的兩個不同層面：資料怎麼變（Redux DevTools）跟畫面怎麼畫（React DevTools Profiler），實務上除錯一個效能或邏輯問題時常常需要交叉參照兩者——先用 Redux DevTools 確認 state 有沒有依預期變化，再用 Profiler 確認畫面重繪是否正常。",
+      "verify": {
+        "checks": [],
+        "manual": "Redux DevTools 為瀏覽器擴充功能，需要真實瀏覽器環境才能操作，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q24",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "時間旅行除錯：取消某個 action、重新套用剩下的歷史",
+      "docs": "",
+      "story": "",
+      "prompt": "Redux DevTools 的「時間旅行除錯」具體能做到什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "可以在錄製下來的一連串 action 裡『取消』掉中間某一個 action，讓 DevTools 從初始狀態開始，重新依序套用剩下的 action、算出一份『假設那個 action 沒發生過』的新 state；也能重新編輯某個 reducer 的程式碼後，讓已經記錄的 action 全部重新套用一次，立刻看到修正後的邏輯對歷史操作的影響，不需要重新操作一次應用程式" },
+        { "id": "b", "text": "只能讓應用程式回到重新整理頁面前的畫面，跟 state 內容無關" },
+        { "id": "c", "text": "只能顯示目前這一刻的 state，看不到任何歷史紀錄" },
+        { "id": "d", "text": "時間旅行除錯需要連上真實的伺服器時鐘同步功能才能運作" }
+      ],
+      "answer": "a",
+      "explanation": "「時間旅行」這個名稱形容的正是：因為每個 state 都是前一個 state 加上一個 action 純函式運算出來的新物件（reducer 的不可變特性），DevTools 才能『從頭重新播放』整段歷史、甚至跳過某一步驟，算出假設性的另一種結果——這種除錯能力完全建立在 Redux「state 更新是純函式、可重複執行」這個核心設計之上。",
+      "verify": {
+        "checks": [],
+        "manual": "Redux DevTools 為瀏覽器擴充功能，時間旅行除錯需要真實瀏覽器環境才能操作，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q25",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Selector：把 state 的形狀跟元件的使用方式解耦",
+      "docs": "",
+      "story": "",
+      "prompt": "元件想讀取 state.user.profile.displayName 這一層很深的資料。與其在元件裡直接寫這串很長的路徑，改成呼叫一個 getDisplayName = (state) => state.user.profile.displayName 的 selector 函式，有什麼好處？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "把『state 的形狀（shape）』跟『元件怎麼使用這份資料』這兩件事解耦：之後如果重構 state 的結構（例如把 profile 移到別的位置），只需要修改這一個 selector 函式內部的路徑，所有呼叫這個 selector 的元件完全不用改；如果元件各自直接寫死很長的路徑，state 結構一改就要滿專案搜尋、逐一修改" },
+        { "id": "b", "text": "selector 唯一的好處是讓程式碼變短，跟未來的可維護性完全無關" },
+        { "id": "c", "text": "selector 只能讀取頂層的 state，不能讀取巢狀很深的資料" },
+        { "id": "d", "text": "使用 selector 之後，state 的結構就永遠不能再改變" }
+      ],
+      "answer": "a",
+      "explanation": "Selector 最根本的價值是一層間接層：元件只依賴 selector 這個「介面」，不直接依賴 state 內部的具體結構。這讓 state 的形狀可以隨著應用程式演進而調整，只要對應更新 selector 內部的邏輯，呼叫端的元件完全不受影響——這跟前面提到的記憶化（reselect／createSelector）是 selector 的兩個不同但可疊加的好處。",
+      "verify": {
+        "checks": [],
+        "manual": "屬程式碼組織與解耦設計的推理題，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-4-q26",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Redux Form 把高頻率本地狀態塞進全域 store 的代價",
+      "docs": "",
+      "story": "",
+      "prompt": "早期常見的 Redux Form 函式庫，把表單欄位的值也存進 Redux store 管理，每次按鍵都會 dispatch 一次 action。這種做法後來為什麼逐漸被 Formik、react-hook-form 這類「表單狀態留在元件本地」的方案取代？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "表單欄位值（例如使用者打字打到一半的內容）通常只有這個表單自己關心，不需要被其他元件共享，也不需要在整個應用程式生命週期持續存在；把每個按鍵都 dispatch 進 Redux store，等於讓一個高頻率變動、範圍侷限的本地狀態，繞了一大圈跑進全域狀態管理，多了不必要的效能開銷與樣板程式碼，這正好違反『只有真正需要共享的資料才放進 Redux』這個原則" },
+        { "id": "b", "text": "Redux Form 被取代純粹是因為授權條款出了問題，跟技術設計無關" },
+        { "id": "c", "text": "Formik、react-hook-form 其實內部還是用 Redux 實作，只是換了名字" },
+        { "id": "d", "text": "Redux Form 從技術上已經無法在任何現代瀏覽器執行" }
+      ],
+      "answer": "a",
+      "explanation": "這是「該不該放進 Redux」這條判斷原則（ri-4-q13 談過）在表單場景的具體案例：輸入框每一次按鍵都是高頻率、純粹侷限在表單內部的變動，讓它們都走一趟 dispatch → reducer → 訂閱通知的完整流程，是不必要的開銷。react-hook-form 這類方案改用 ref 搭配非受控元件、把重繪頻率降到最低，正是針對這個痛點的設計。",
+      "verify": {
+        "checks": [],
+        "manual": "屬表單狀態管理方案演進的推理題，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-4-q27",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Redux Form 內建的驗證與格式化能省下重複樣板",
+      "docs": "",
+      "story": "",
+      "prompt": "Redux Form 除了把欄位值存進 Redux，還內建了哪些跟表單相關的功能，讓開發者不用自己刻？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "同步／非同步驗證與提交狀態管理、欄位值的格式化與正規化（例如把使用者輸入的『1,234』轉成數字 1234 再存進 state）——這些是表單開發裡重複出現的樣板需求，Redux Form 把它們內建成宣告式的設定，減少每個表單都要手刻同一套驗證/格式化邏輯" },
+        { "id": "b", "text": "Redux Form 只負責畫面上的 CSS 樣式，不處理任何驗證或格式化邏輯" },
+        { "id": "c", "text": "Redux Form 只能搭配特定後端語言撰寫的專案使用" },
+        { "id": "d", "text": "Redux Form 內建了完整的路由功能，可以取代 React Router" }
+      ],
+      "answer": "a",
+      "explanation": "驗證（這欄位是不是必填、格式對不對）與格式化（顯示成什麼樣子、存進 state 時轉成什麼型別）是幾乎每個表單都會重複遇到的需求，Redux Form 把這些收斂成宣告式的設定選項，讓開發者不用每個表單都重寫一套類似的邏輯，這是它當年受歡迎的核心賣點，即使後來被更輕量的方案取代。",
+      "verify": {
+        "checks": [],
+        "manual": "Redux Form 未安裝於本專案，驗證與格式化行為需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q28",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "applyMiddleware 依序組成處理鏈，多個 middleware 可以並存",
+      "docs": "",
+      "story": "",
+      "prompt": "專案同時想用 redux-thunk 處理非同步、也想用 logger middleware 印出每次 dispatch 的內容方便除錯。這兩個 middleware 該怎麼一起套用到 store 上？",
+      "code": "import { createStore, applyMiddleware } from \"redux\";\n\nconst store = createStore(\n  rootReducer,\n  applyMiddleware(thunkMiddleware, loggerMiddleware)\n);",
+      "options": [
+        { "id": "a", "text": "applyMiddleware() 可以接收多個 middleware 當參數，依傳入順序組成一條處理鏈——每個 dispatch 出去的 action，會依序流過這條鏈上的每個 middleware（先流過 thunkMiddleware 判斷是不是函式型態的 thunk，再流過 loggerMiddleware 記錄），最後才真正送到 reducer；順序通常有意義，例如 logger 放在鏈的較後段才能記錄到『thunk 展開後』真正送進 reducer 的 action" },
+        { "id": "b", "text": "applyMiddleware() 一次只能接收一個 middleware，想用多個必須呼叫 createStore() 好幾次" },
+        { "id": "c", "text": "多個 middleware 之間互相衝突，同一個 store 不能同時使用兩個以上的 middleware" },
+        { "id": "d", "text": "middleware 的套用順序完全不重要，任何順序效果都一樣" }
+      ],
+      "answer": "a",
+      "explanation": "applyMiddleware() 的設計本來就支援組合多個 middleware，依參數順序串成一條處理鏈，每個 dispatch 都會依序流經。順序在某些情境下確實會影響行為——例如想讓 logger 印出「thunk 已經展開成真正 action」之後的內容，就得把 logger 排在 thunk 之後，這是實際串接多個 middleware 時需要留意的細節。",
+      "verify": {
+        "checks": [],
+        "manual": "Redux 未安裝於本專案，middleware 鏈的執行順序需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q29",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "createStore 的第二個參數：設定 preloaded 初始狀態",
+      "docs": "",
+      "story": "",
+      "prompt": "想讓 Redux store 一開始就帶有預設的 todos 清單（例如伺服器端渲染時已經準備好的資料），該怎麼設定？",
+      "code": "const initialState = {\n  todos: [{ id: 123, name: \"example\", completed: false }],\n};\n\nconst store = createStore(rootReducer, initialState);",
+      "options": [
+        { "id": "a", "text": "createStore(reducer, preloadedState) 的第二個參數就是用來設定初始狀態的；store 建立時會用這份 preloadedState 取代各個 reducer 自己宣告的預設值（reducer 參數列表裡 state = 預設值 那一段），常見情境是 SSR 把伺服器端已經準備好的資料，透過這個參數『餵』給用戶端剛建立的 store，避免用戶端重新抓一次資料" },
+        { "id": "b", "text": "初始狀態只能寫死在每個 reducer 的預設參數裡，createStore() 不能接收任何初始狀態" },
+        { "id": "c", "text": "createStore() 的第二個參數是用來指定 middleware 的，不能拿來設定初始狀態" },
+        { "id": "d", "text": "設定初始狀態需要額外安裝一個獨立的第三方套件" }
+      ],
+      "answer": "a",
+      "explanation": "createStore 的第二個參數（preloadedState）正是為了讓 store 一開始就帶有指定的初始資料，跟每個 reducer 各自宣告的預設值是兩層不同的機制——preloadedState 有值時會蓋過 reducer 自己的預設值。這在 SSR 場景特別關鍵：伺服器渲染時已經抓好的資料，透過這個參數傳給用戶端 hydrate 時建立的 store，用戶端不用重新請求一次同樣的資料。",
+      "verify": {
+        "checks": [],
+        "manual": "Redux 未安裝於本專案，preloadedState 的實際套用需要真實套件執行才能觀察，無法用 node 直接驗證。"
+      }
+    },
+    {
+      "id": "ri-4-q30",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Relay 專注伺服器 GraphQL 資料，Redux 是通用狀態容器",
+      "docs": "",
+      "story": "",
+      "prompt": "Relay 跟 Redux 都用「單一資料來源」的概念管理狀態，兩者最核心的差異是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "Relay 專門管理『源自伺服器、透過 GraphQL 查詢取得』的資料，資料的讀取（query）與寫入（mutation）都通過 GraphQL、由 Relay 自動處理快取與正規化；Redux 是一個通用的狀態容器，管理的狀態不限定來源（可能是伺服器資料、也可能是純粹的 UI 互動狀態），資料怎麼進到 store（用 fetch、用 GraphQL 都行）、reducer 怎麼寫，完全由開發者自己決定" },
+        { "id": "b", "text": "兩者完全是同一種技術，只是分別由不同公司命名" },
+        { "id": "c", "text": "Relay 只能管理 UI 互動狀態，不能處理任何伺服器資料" },
+        { "id": "d", "text": "Redux 只能搭配 REST API，技術上無法搭配 GraphQL 使用" }
+      ],
+      "answer": "a",
+      "explanation": "Relay 是針對「伺服器 GraphQL 資料」這個特定場景高度最佳化的框架，資料進出的方式（GraphQL 查詢與變更）幾乎是固定的；Redux 則是通用容器，不限定資料來源，也不限定跟後端溝通的協定，代價是這些整合細節（快取、正規化）需要開發者自己決定要不要做、怎麼做。",
+      "verify": {
+        "checks": [],
+        "manual": "屬資料層框架定位的比較推理題，無可執行程式碼。"
+      }
+    },
+    {
+      "id": "ri-4-q31",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "action 本質上是一個描述「發生了什麼事」的普通物件",
+      "docs": "",
+      "story": "",
+      "prompt": "Redux 裡的「action」，本質上是什麼？",
+      "code": "const action = {\n  type: \"ADD_TODO\",\n  text: \"Buy milk\",\n};\nstore.dispatch(action);",
+      "options": [
+        { "id": "a", "text": "一個普通的 JavaScript 物件，描述『發生了什麼事』，至少要有一個 type 欄位標明這是哪一種事件，其餘欄位放這個事件附帶的資料（payload）；action 本身不會做任何事，純粹是『一則通知』，真正決定 state 該怎麼變化的邏輯寫在 reducer 裡，action 只負責把『發生了什麼』這個資訊帶給 reducer" },
+        { "id": "b", "text": "action 是一個函式，直接負責修改 state 並回傳新的畫面" },
+        { "id": "c", "text": "action 是 Redux 內建的一種特殊資料庫連線物件" },
+        { "id": "d", "text": "action 只能是字串，不能攜帶任何額外資料" }
+      ],
+      "answer": "a",
+      "explanation": "action 是 Redux 資料流裡最基礎的單位：純粹的資料（一個帶 type 欄位的物件），不含任何邏輯。「發生了什麼」（action）跟「發生之後 state 該怎麼變」（reducer）是刻意分開的兩件事，這種分離讓 action 本身可以被記錄、重播、序列化，也是 Redux DevTools 時間旅行除錯得以運作的基礎。",
+      "verify": {
+        "checks": [
+          { "code": "const action = {\n  type: \"ADD_TODO\",\n  text: \"Buy milk\",\n};\nconsole.log(typeof action, action.type);", "expected": "object ADD_TODO" }
+        ]
+      }
+    }
+  ]
+}
