@@ -9,10 +9,10 @@
       "topic": "測行為，不測實作細節",
       "docs": "",
       "story": "",
-      "prompt": "一個計數器元件內部用 useState 維護 count。下面兩種測試寫法，哪一種比較不會在『重構了內部實作、但外部行為完全不變』時被誤判成失敗？",
+      "prompt": "一個計數器元件目前是用 class component 寫的，內部用 this.state 維護 count。下面兩種測試寫法，哪一種比較不會在『重構了內部實作、但外部行為完全不變』時被誤判成失敗？",
       "code": "// 寫法一：直接戳內部狀態\nconst wrapper = shallow(<Counter />);\nexpect(wrapper.state('count')).toBe(0);\n\n// 寫法二：只看使用者看得到、操作得到的畫面\nrender(<Counter />);\nexpect(screen.getByText('目前次數：0')).toBeInTheDocument();\nawait userEvent.click(screen.getByRole('button', { name: '加一' }));\nexpect(screen.getByText('目前次數：1')).toBeInTheDocument();",
       "options": [
-        { "id": "a", "text": "寫法二：只斷言使用者實際會看到、會操作的畫面內容（文字、按鈕），完全不理會元件內部是用 useState 還是 useReducer 管理資料；之後把實作換成 useReducer，只要畫面行為不變，測試依然通過。寫法一直接戳 wrapper.state('count')，一旦把 state 命名或管理方式換掉，測試就會跟著壞掉，即使使用者體驗完全沒變" },
+        { "id": "a", "text": "寫法二：只斷言使用者實際會看到、會操作的畫面內容（文字、按鈕），完全不理會元件內部是 class 的 this.state 還是 useState／useReducer 管理資料；之後把 Counter 從 class 改寫成函式元件（例如改用 useReducer），只要畫面行為不變，測試依然通過。寫法一直接戳 wrapper.state('count')，這個 API 本來就只對『class 元件、且真的有 this.state』有效，一旦把元件改寫成函式元件，this.state 根本不存在，測試會直接壞掉，即使使用者體驗完全沒變" },
         { "id": "b", "text": "寫法一：直接檢查內部 state 最精確，永遠不會誤判" },
         { "id": "c", "text": "兩種寫法效果完全一樣，選哪個都無所謂" },
         { "id": "d", "text": "寫法二有 bug，getByText 找不到文字時不會拋出任何錯誤" }

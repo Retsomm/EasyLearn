@@ -67,7 +67,7 @@
       "docs": "https://react.dev/reference/react/useState",
       "story": "",
       "prompt": "useState 回傳的結果用陣列解構語法 const [count, setCount] = useState(0) 取用，而不是物件解構（const { value, setValue } = ...）。這是為什麼？",
-      "code": "function useCounter() {\n  const result = useState(0);\n  console.log(Array.isArray(result), result.length);\n  return result;\n}\nuseCounter();",
+      "code": "function useCounter() {\n  const result = useState(0);\n  console.log(Array.isArray(result), result.length);\n  return result;\n}\nfunction Test() {\n  useCounter();\n  return null;\n}\nconsole.log(renderToStaticMarkup(<Test />));",
       "options": [
         { "id": "a", "text": "useState 回傳的其實就是一個長度固定為 2 的普通陣列 [目前值, setter函式]；用陣列解構的好處是呼叫端可以『自由重新命名』這兩個值（const [count, setCount]、const [name, setName]...），不像物件解構如果 useState 回傳固定的欄位名稱（例如 value、setValue），同一個元件裡用多次 useState 就會撞名，還得每次額外用 as 重新命名，陣列解構天生沒有這個困擾" },
         { "id": "b", "text": "useState 回傳的是一個物件，陣列解構語法只是巧合能正常運作" },
@@ -111,13 +111,13 @@
       "prompt": "如果把一個 .jsx 檔案的原始內容（未經轉譯）直接丟給瀏覽器的 <script type=\"text/javascript\"> 執行，會發生什麼事？",
       "code": "// 未轉譯的原始 JSX\nfunction App() {\n  return <h1>Hi</h1>;\n}",
       "options": [
-        { "id": "a", "text": "會拋出 JavaScript 語法錯誤：<h1>Hi</h1> 這種尖括號語法不是合法的 JavaScript 表達式，瀏覽器的 JS 引擎完全不認得 JSX 語法；JSX 必須先經過 Babel、esbuild、SWC 這類工具在建置階段轉譯成 React.createElement(...) 這種合法的 JavaScript 函式呼叫，瀏覽器實際執行的永遠是轉譯後的產物，從來不是原始 JSX 檔案本身" },
+        { "id": "a", "text": "會拋出 JavaScript 語法錯誤：<h1>Hi</h1> 這種尖括號語法不是合法的 JavaScript 表達式，瀏覽器的 JS 引擎完全不認得 JSX 語法；JSX 必須先經過 Babel、esbuild、SWC 這類工具在建置階段轉譯成合法的 JavaScript 函式呼叫——用『classic』轉譯模式會轉成 React.createElement(...)，而 React 17 之後預設、目前多數工具鏈採用的『automatic』轉譯模式，則是轉成從 react/jsx-runtime 匯入的 jsx／jsxs 呼叫；不論哪一種，瀏覽器實際執行的永遠是轉譯後的產物，從來不是原始 JSX 檔案本身" },
         { "id": "b", "text": "現代瀏覽器（Chrome、Firefox 最新版）已經原生支援直接解析 JSX 語法，不需要任何轉譯步驟" },
         { "id": "c", "text": "瀏覽器會把 JSX 當成一段 HTML 字串直接插入頁面，忽略外層的 function 宣告" },
         { "id": "d", "text": "只有 Safari 瀏覽器原生支援 JSX，其餘瀏覽器都需要轉譯" }
       ],
       "answer": "a",
-      "explanation": "JSX 從來不是瀏覽器原生理解的語法，這是需要建置工具介入的根本原因；每一個用 JSX 開發的 React 專案，背後都有一道轉譯步驟（不管是獨立呼叫 Babel、還是打包工具內建的轉譯 loader），把類 HTML 語法轉成 React.createElement 呼叫，瀏覽器實際看到、執行的永遠是轉譯後的純 JavaScript。",
+      "explanation": "JSX 從來不是瀏覽器原生理解的語法，這是需要建置工具介入的根本原因；每一個用 JSX 開發的 React 專案，背後都有一道轉譯步驟（不管是獨立呼叫 Babel、還是打包工具內建的轉譯 loader），把類 HTML 語法轉成合法的 JavaScript 呼叫，瀏覽器實際看到、執行的永遠是轉譯後的純 JavaScript。轉譯的目標會依採用的 JSX transform 而不同：舊式的 classic transform 轉成 React.createElement(...)；React 17 起、目前多數工具鏈預設的 automatic transform，則是轉成從 react/jsx-runtime 匯入的 jsx／jsxs 呼叫，不需要在每個檔案裡手動 import React。",
       "verify": { "checks": [], "manual": "瀏覽器直接執行未轉譯 JSX 會拋出語法錯誤，需要真實瀏覽器環境觀察錯誤訊息，此處著重原理陳述。" }
     },
     {

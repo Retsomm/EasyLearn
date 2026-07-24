@@ -107,13 +107,13 @@
       "prompt": "面對一段陌生的程式碼，想快速判斷它是 Action 還是 Calculation，該問自己哪個關鍵問題？",
       "code": "function getCurrentUser() { return currentLoggedInUser; }\nfunction double(x) { return x * 2; }",
       "options": [
-        { "id": "a", "text": "問「如果我現在呼叫它一次，跟等一下再呼叫一次，或者連續呼叫兩次，結果／造成的影響會不會不一樣？」——getCurrentUser() 這次跟下次呼叫可能因為使用者登入狀態改變而回傳不同結果，是 Action；double(x) 不管呼叫幾次、什麼時候呼叫，同樣的 x 永遠得到同樣的結果，是 Calculation" },
-        { "id": "b", "text": "問「這個函式的程式碼行數有沒有超過 10 行」，超過就是 Action，沒超過就是 Calculation" },
-        { "id": "c", "text": "問「這個函式有沒有回傳值」，有回傳值就是 Calculation，沒有就是 Action" },
-        { "id": "d", "text": "問「這個函式的名稱是不是動詞開頭」，是動詞開頭就是 Action" }
+        { "id": "a", "text": "問「這個函式的程式碼行數有沒有超過 10 行」，超過 10 行就歸類成 Action，沒超過就歸類成 Calculation，跟行數多寡直接掛鉤" },
+        { "id": "b", "text": "問「呼叫一次跟呼叫兩次、現在呼叫跟等一下呼叫，結果會不會不一樣？」——getCurrentUser() 可能因登入狀態改變而回傳不同結果，是 Action；double(x) 不管何時呼叫幾次，同樣的 x 永遠得到同樣結果，是 Calculation" },
+        { "id": "c", "text": "問「這個函式有沒有回傳值」，有回傳值一律歸類成 Calculation，沒有回傳值一律歸類成 Action，跟函式內部實際做了什麼無關" },
+        { "id": "d", "text": "問「這個函式的名稱是不是動詞開頭」，只要命名是動詞開頭，就直接判定它是 Action，不需要再看函式內部邏輯" }
       ],
-      "answer": "a",
-      "explanation": "「呼叫時機或次數會不會影響結果」是辨識 Action 最直接的判斷句：只要答案是「會」，就代表這個函式依賴或影響了某個會隨時間變化的外部狀態，是 Action；答案是「不會」，才有資格被歸類成 Calculation。程式碼行數、有沒有回傳值、命名風格都不是可靠的判斷依據。",
+      "answer": "b",
+      "explanation": "「呼叫時機或次數會不會影響結果」（如選項 b）是辨識 Action 最直接的判斷句：只要答案是「會」，就代表這個函式依賴或影響了某個會隨時間變化的外部狀態，是 Action；答案是「不會」，才有資格被歸類成 Calculation。程式碼行數、有沒有回傳值、命名風格都不是可靠的判斷依據。",
       "verify": { "manual": "概念題：辨識口訣搭配具體程式碼範例，無可執行程式碼。" }
     }
   ]

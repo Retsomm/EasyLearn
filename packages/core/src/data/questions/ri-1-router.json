@@ -208,16 +208,16 @@
       "topic": "v6 的 Routes 內建互斥比對，不再需要額外包 Switch",
       "docs": "",
       "story": "",
-      "prompt": "v5 若忘記把多個 <Route> 包在 <Switch> 裡，網址同時符合多個 Route 的 path 時，這些符合的 Route 會全部一起渲染出來，官方也因此會印出「Router may have only one child element」這類警告，提醒開發者記得包一層 Switch。改用 v6 的 <Routes> 之後，還需要自己額外注意「一定要包一層元件確保只渲染第一個符合的」嗎？",
+      "prompt": "v5 若把多個 <Route> 未經任何單一元素包裝、直接當成 <Router>（如 <BrowserRouter>）的子元素排開，因為 <Router> 規定只能接受一個子元素，官方會印出「Router may have only one child element」這類警告。這跟另一個獨立的問題——網址同時符合多個 Route 的 path 時，若沒有用 <Switch> 包住，這些符合的 Route 會全部一起渲染出來——是兩碼子事：只要用任一個元素（不限 <Switch>）包起來就能讓「only one child」警告消失，但只有 <Switch> 才會讓比對變成互斥、只渲染第一個符合的。改用 v6 的 <Routes> 之後，還需要自己額外處理這兩個問題嗎？",
       "code": "",
       "options": [
-        { "id": "a", "text": "不需要：v6 把『只渲染第一個符合的 Route』這個行為直接內建在 <Routes> 元件本身，不再需要像 v5 那樣額外包一層 <Switch>；<Routes> 底下所有 <Route> 天生就是互斥比對，同時符合多個 path 時也只會渲染最匹配的那一個，v5 常見的『忘記包 Switch』這類錯誤在 v6 已經不存在" },
+        { "id": "a", "text": "不需要：v6 的 <Routes> 本身就只接受 <Route> 作為子元素、天生保證互斥比對，同時符合多個 path 時也只會渲染最匹配的那一個；『子元素數量』與『只渲染第一個符合的』這兩件事都內建在 Routes 裡，不再需要像 v5 那樣額外包一層 <Switch> 才能解決" },
         { "id": "b", "text": "仍然需要，v6 只是把 Switch 改名成 Routes，行為完全一樣，一樣要手動確保只有一個包裝層" },
         { "id": "c", "text": "不需要，因為 v6 已經完全移除『只渲染一個 Route』這個概念，允許同時渲染所有符合的 Route" },
         { "id": "d", "text": "需要，但要改用 <Fragment> 包住所有 Route 才能達到互斥效果" }
       ],
       "answer": "a",
-      "explanation": "v6 把 Switch 的職責直接內建進 Routes：不是單純改名，而是把「只挑一個最匹配的 Route 渲染」這個規則變成 Routes 本身無條件保證的行為，也因此拿掉了「忘記包某個包裝元件」這種可能失手的步驟。這也是為什麼 v6 官方文件不再提供獨立的 Switch 元件——它的職責已經被合併吸收了。",
+      "explanation": "v5 的「Router may have only one child element」警告，根源只是 <Router> 規定子元素只能有一個——把多個 <Route> 未經包裝直接排開就會觸發，用任何單一元素包起來（哪怕只是一個 <div>）都能讓警告消失，這跟是不是用 <Switch> 沒有必然關係。但單純用 <div> 包起來並不會讓比對變成互斥：網址同時符合多個 <Route> 的 path 時，這些 Route 依然會全部一起渲染，要避免這個問題必須明確用 <Switch> 包住，因為「只挑第一個符合的渲染」是 Switch 自己的比對邏輯，不是子元素數量規則附帶的效果。v6 把這兩件事直接內建進 Routes：Routes 本身就只接受 Route 作為子元素、也保證只渲染第一個符合的，因此拿掉了「忘記包 Switch」這整類錯誤，官方文件也不再提供獨立的 Switch 元件。",
       "verify": {
         "checks": [],
         "manual": "react-router-dom 未安裝於本專案，Routes 的比對邏輯需要真實套件執行才能觀察，無法用 node 直接驗證。"
@@ -233,13 +233,13 @@
       "prompt": "送出表單後想跳到 /result 頁面，同時把表單送出後拿到的 response.data 一併帶過去，不想放進網址的 query string 裡（避免資料暴露在網址列、或資料太大不適合塞進 URL）。v6 的 useNavigate 該怎麼寫？",
       "code": "const navigate = useNavigate();\n\nfunction handleSubmit(response) {\n  navigate(\"/result\", {\n    state: { detail: response.data },\n  });\n}\n\n// 在 /result 頁面元件裡\nfunction ResultPage() {\n  const location = useLocation();\n  console.log(location.state); // ?\n}",
       "options": [
-        { "id": "a", "text": "{ detail: response.data }：navigate() 的第二個參數可以帶一個 state 物件，這份資料不會出現在網址列上（不像 query string），只會暫存在瀏覽器的 history entry 裡；目的頁面透過 useLocation().state 就能讀回這份資料，適合傳遞『不想被使用者看到網址、或不方便序列化進字串』的內容" },
+        { "id": "a", "text": "{ detail: response.data }：navigate() 的第二個參數可以帶一個 state 物件，這份資料會存在瀏覽器的 history entry 裡，不會出現在網址列上（不像 query string）；目的頁面透過 useLocation().state 就能讀回這份資料，適合傳遞『不想被使用者看到網址、或不方便序列化進字串』的內容" },
         { "id": "b", "text": "undefined：state 只能在 v5 的 class component 裡透過 this.props.history 存取，v6 已經移除這個功能" },
         { "id": "c", "text": "response.data 會被自動轉成 query string 附加在網址後面" },
         { "id": "d", "text": "程式會拋出例外，navigate() 的第二個參數只能是字串" }
       ],
       "answer": "a",
-      "explanation": "這是 v5 「history.push({ pathname, state })」這種寫法在 v6 的對應版本：navigate 的第二個參數物件裡的 state 欄位，會原封不動存進這筆瀏覽器歷史紀錄，不出現在網址上，目的頁面用 useLocation().state 讀回。要注意這份資料只存在瀏覽器的 session 記憶體裡，使用者重新整理頁面或直接貼網址造訪，state 就會是 undefined，不適合放「重新整理後也必須存在」的關鍵資料。",
+      "explanation": "這是 v5 「history.push({ pathname, state })」這種寫法在 v6 的對應版本：navigate 的第二個參數物件裡的 state 欄位，會原封不動存進這筆瀏覽器歷史紀錄，不出現在網址上，目的頁面用 useLocation().state 讀回。要注意這份資料存在『這筆 history entry』裡、不在網址裡，所以不會出現在分享出去的連結上，直接輸入網址造訪、開新分頁，或任何『重新產生一筆新 history entry』的情境，該筆新 entry 都不會帶有這份 state，讀到的會是 undefined；同一筆 entry 單純整頁重新整理時，state 是否還在則要看瀏覽器實作（多數現代瀏覽器會保留），不是「重新整理就一定會清掉」這種絕對規則。不適合放「必須可被分享連結、書籤或直接貼網址存取」的關鍵資料。",
       "verify": {
         "checks": [],
         "manual": "react-router-dom 未安裝於本專案，navigate 的 state 傳遞需要真實路由 context 才能觀察，無法用 node 直接驗證。"

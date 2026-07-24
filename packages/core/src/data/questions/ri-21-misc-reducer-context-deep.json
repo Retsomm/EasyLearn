@@ -44,7 +44,7 @@
       "docs": "https://react.dev/reference/react/useReducer",
       "story": "",
       "prompt": "這個計數器用 useReducer 管理。連續 dispatch 兩次 { type: \"increment\" } 之後，count 會是多少？",
-      "code": "function counterReducer(state, action) {\n  switch (action.type) {\n    case \"increment\": return { count: state.count + 1 };\n    case \"reset\": return { count: 0 };\n    default: return state;\n  }\n}\n\nfunction useCounter() {\n  const [state, dispatch] = useReducer(counterReducer, { count: 0 });\n  dispatch({ type: \"increment\" });\n  return state;\n}",
+      "code": "function counterReducer(state, action) {\n  switch (action.type) {\n    case \"increment\": return { count: state.count + 1 };\n    case \"reset\": return { count: 0 };\n    default: return state;\n  }\n}\n\nfunction useCounter() {\n  const [state, dispatch] = useReducer(counterReducer, { count: 0 });\n  const incrementTwice = () => {\n    dispatch({ type: \"increment\" });\n    dispatch({ type: \"increment\" });\n  };\n  return { state, incrementTwice }; // dispatch 改放進事件處理器裡呼叫，不是在 render body 直接呼叫\n}",
       "options": [
         {
           "id": "a",

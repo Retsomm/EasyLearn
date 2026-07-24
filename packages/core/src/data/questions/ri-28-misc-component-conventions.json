@@ -230,11 +230,11 @@
       "docs": "",
       "story": "",
       "prompt": "一個「送出訂單」按鈕，使用者手滑連續點擊了三下，結果送出了三筆重複的訂單。該怎麼防止同一個函式在短時間內被重複觸發？",
-      "code": "function OrderButton() {\n  const [isSubmitting, setIsSubmitting] = useState(false);\n\n  async function handleSubmit() {\n    if (isSubmitting) return; // 用旗標鎖住，避免重複觸發\n    setIsSubmitting(true);\n    await submitOrder();\n    setIsSubmitting(false);\n  }\n\n  return <button onClick={handleSubmit} disabled={isSubmitting}>送出訂單</button>;\n}",
+      "code": "function OrderButton() {\n  const [isSubmitting, setIsSubmitting] = useState(false);\n\n  async function handleSubmit() {\n    if (isSubmitting) return; // 用旗標鎖住，避免重複觸發\n    setIsSubmitting(true);\n    try {\n      await submitOrder();\n    } finally {\n      setIsSubmitting(false); // 無論成功或拋出例外都會執行，避免旗標卡在 true\n    }\n  }\n\n  return <button onClick={handleSubmit} disabled={isSubmitting}>送出訂單</button>;\n}",
       "options": [
         {
           "id": "a",
-          "text": "用一個『正在處理中』的旗標（這裡是 isSubmitting 這份 state）在函式一開頭就檢查，處理中就直接 return、不重複執行；同時搭配把按鈕 disabled 掉，從使用者互動的源頭就防止重複點擊。另一種常見手法是用 debounce（等使用者停止操作一段時間才真正執行一次）或 throttle（固定時間內最多執行一次），適合搜尋框打字這類高頻率觸發的場景，跟這裡『防止表單重複送出』的旗標鎖手法側重點略有不同"
+          "text": "用一個『正在處理中』的旗標（這裡是 isSubmitting 這份 state）在函式一開頭就檢查，處理中就直接 return、不重複執行；同時搭配把按鈕 disabled 掉，從使用者互動的源頭就防止重複點擊。另外要注意 await submitOrder() 這段要包在 try/finally 裡，把 setIsSubmitting(false) 放進 finally——這樣不管送出成功還是拋出例外，旗標都保證會被重置，不會因為送出失敗就讓按鈕永遠卡在 disabled 狀態。另一種常見手法是用 debounce（等使用者停止操作一段時間才真正執行一次）或 throttle（固定時間內最多執行一次），適合搜尋框打字這類高頻率觸發的場景，跟這裡『防止表單重複送出』的旗標鎖手法側重點略有不同"
         },
         {
           "id": "b",
@@ -250,7 +250,7 @@
         }
       ],
       "answer": "a",
-      "explanation": "「防止重複觸發」在不同情境下有不同的合適手法：表單送出這種『同一個操作不該重複執行』的場景，旗標鎖（搭配 disabled 按鈕）最直接；搜尋框打字這種『使用者操作結束後才需要真正執行一次』的場景，debounce 更合適；捲動、resize 這種『持續觸發，但只需要固定頻率反應』的場景，throttle 更合適。React 本身不會自動處理這些情境，需要開發者依實際需求選擇對應的手法。",
+      "explanation": "「防止重複觸發」在不同情境下有不同的合適手法：表單送出這種『同一個操作不該重複執行』的場景，旗標鎖（搭配 disabled 按鈕）最直接；搜尋框打字這種『使用者操作結束後才需要真正執行一次』的場景，debounce 更合適；捲動、resize 這種『持續觸發，但只需要固定頻率反應』的場景，throttle 更合適。React 本身不會自動處理這些情境，需要開發者依實際需求選擇對應的手法。另外旗標鎖本身也要注意一個細節：把重置旗標的程式碼放進 try/finally 的 finally 區塊，才能保證不管 submitOrder() 成功還是拋出例外，isSubmitting 都會被重置成 false；如果只在成功路徑（或 try 區塊結尾）重置，一旦送出失敗，旗標會卡在 true、按鈕永遠停在 disabled，使用者從此再也無法重新送出。",
       "verify": {
         "checks": [],
         "manual": "重複點擊防止需要真實瀏覽器連續點擊互動才能觀察效果，無法用 node 直接驗證。"

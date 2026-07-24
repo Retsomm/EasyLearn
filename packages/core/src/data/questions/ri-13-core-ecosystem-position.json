@@ -88,13 +88,13 @@
       "prompt": "renderToStaticMarkup 跟 renderToString 都能把 React 元件渲染成 HTML 字串，兩者最主要的差異是什麼？",
       "code": "function Greeting() {\n  return <p data-testid=\"greeting\">Hi</p>;\n}\n\nconsole.log(renderToStaticMarkup(<Greeting />));\nconsole.log(renderToString(<Greeting />));",
       "options": [
-        { "id": "a", "text": "renderToString 會在輸出的 HTML 裡額外附加一些 React 內部使用的標記屬性（用來讓後續用戶端 hydrate 時，能對應回同一批虛擬 DOM 節點）；renderToStaticMarkup 則不會附加這些額外標記，產生最精簡、乾淨的純 HTML 字串，但代價是這份輸出無法拿去讓用戶端 React 做 hydrate（因為缺少對應用的標記）。適合純粹當靜態頁面產生器（不需要之後在用戶端接手變成互動式應用）的情境" },
+        { "id": "a", "text": "兩者真正的差異不是輸出的字串長怎樣，而是這份輸出之後『能不能被用戶端 React 接手 hydrate』：renderToString 產生的 HTML 是設計給後續 hydrate 用的（讓用戶端接上事件監聽器、變成可互動的應用）；renderToStaticMarkup 產生的則是不打算被 hydrate 的純靜態輸出，用它的結果去 hydrate 是不被支援的行為。對這個沒有任何互動邏輯的簡單 Greeting 元件來說，兩者目前輸出的字串其實完全相同（如下方驗證所示）——差異在於用途與後續能不能安全 hydrate，不是『renderToString 一定會多印出看得到的標記屬性』" },
         { "id": "b", "text": "兩者輸出完全一樣，沒有任何差異，只是函式名稱不同" },
         { "id": "c", "text": "renderToStaticMarkup 只能渲染沒有任何 props 的元件" },
         { "id": "d", "text": "renderToString 只能在瀏覽器端執行，renderToStaticMarkup 只能在 Node.js 執行" }
       ],
       "answer": "a",
-      "explanation": "兩者的核心差異在於「輸出的 HTML 之後要不要在用戶端被 hydrate（接手成互動式 React 應用）」：renderToString 保留 hydrate 所需的內部標記；renderToStaticMarkup 拿掉這些標記換取更乾淨的輸出，代價是這份輸出只能單純當靜態 HTML 使用，不能再被同一份 React 應用 hydrate——這也是本次新增的 React Router／Modern React 章節裡大量驗證題選用 renderToStaticMarkup 的原因：只需要靜態渲染結果，不需要 hydrate。",
+      "explanation": "兩者的核心差異在於「輸出的 HTML 之後支不支援在用戶端被 hydrate（接手成互動式 React 應用）」：renderToString 產生的輸出是為了支援後續 hydrate 而設計；renderToStaticMarkup 產生的是不打算被 hydrate 的純靜態輸出。對這個沒有任何互動邏輯的簡單 Greeting 元件來說，兩個函式目前輸出的字串確實完全相同（如驗證程式所示），但這不代表兩者『一定』會產生不同的標記字串——差異的本質在於用途與後續能不能安全 hydrate，而不是『renderToString 一律會多附加看得到的標記屬性』這種簡化說法。這也是本次新增的 React Router／Modern React 章節裡大量驗證題選用 renderToStaticMarkup 的原因：只需要靜態渲染結果，不需要 hydrate。",
       "verify": {
         "checks": [
           { "jsx": "import { renderToStaticMarkup, renderToString } from 'react-dom/server'\nfunction Greeting() {\n  return <p>Hi</p>;\n}\nconsole.log(renderToStaticMarkup(<Greeting />) === renderToString(<Greeting />));", "expected": "true" }

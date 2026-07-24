@@ -12,7 +12,7 @@
       "prompt": "一個元件同時用 PropTypes 宣告 props 型別、專案也已經導入 TypeScript。呼叫端不小心傳錯型別時，這兩種機制分別在什麼時間點讓你發現問題？",
       "code": "MyButton.propTypes = {\n  label: PropTypes.string.isRequired,\n};\n\nfunction MyButton({ label }: { label: string }) {\n  return <button>{label}</button>;\n}\n\n// 呼叫端誤傳了數字\n<MyButton label={42} />",
       "options": [
-        { "id": "a", "text": "TypeScript 在『編譯期』（寫程式碼、build 的當下）就會標紅報錯，阻止這段程式碼被打包出去；PropTypes 是『執行期』檢查，只有這段程式碼真的被執行、元件真的渲染時，才會在 console 印出警告——如果剛好沒有使用者走到會觸發這個元件的路徑，PropTypes 的警告根本不會出現，問題可能一路帶到正式環境才被回報" },
+        { "id": "a", "text": "TypeScript 在『編譯期』（寫程式碼、型別檢查或 build 的當下）就會標紅報錯，讓問題在型別檢查或 build 階段就被攔截、開發者當下就看得到；PropTypes 是『執行期』檢查，只有這段程式碼真的被執行、元件真的渲染時，才會在 console 印出警告——如果剛好沒有使用者走到會觸發這個元件的路徑，PropTypes 的警告根本不會出現，問題可能一路帶到正式環境才被回報" },
         { "id": "b", "text": "兩者完全一樣，都只在執行期才會被發現" },
         { "id": "c", "text": "PropTypes 是編譯期檢查，TypeScript 只在執行期生效" },
         { "id": "d", "text": "只要用了 TypeScript，PropTypes 的宣告就會被自動忽略，不會有任何效果" }
@@ -142,7 +142,7 @@
       "docs": "",
       "story": "",
       "prompt": "一個 selector 每次都重新從 state 裡篩選、排序一份大清單，即使 state 根本沒變，元件依然每次重繪都重新算一次，效能有浪費。reselect（或 Redux Toolkit 內建的 createSelector）想解決的是什麼問題？",
-      "code": "// 沒有記憶化：每次呼叫都重新篩選＋排序\nconst getVisibleTodos = (state) =>\n  state.todos.filter((t) => !t.completed).sort((a, b) => a.priority - b.priority);\n\n// 用 createSelector 記憶化\nconst getVisibleTodos = createSelector(\n  (state) => state.todos,\n  (todos) => todos.filter((t) => !t.completed).sort((a, b) => a.priority - b.priority)\n);",
+      "code": "// 沒有記憶化：每次呼叫都重新篩選＋排序\nconst getVisibleTodosWithoutMemo = (state) =>\n  state.todos.filter((t) => !t.completed).sort((a, b) => a.priority - b.priority);\n\n// 用 createSelector 記憶化\nconst getVisibleTodos = createSelector(\n  (state) => state.todos,\n  (todos) => todos.filter((t) => !t.completed).sort((a, b) => a.priority - b.priority)\n);",
       "options": [
         { "id": "a", "text": "createSelector 會記住『輸入值（這裡是 state.todos）』跟『上一次算出的結果』，只有當輸入值真的變了（用參考相等比較）才會重新執行篩選＋排序這段運算，輸入沒變就直接回傳快取的舊結果；這樣即使元件因為其他不相干的 state 變化而重繪，也不會浪費算力重複做同一份昂貴運算" },
         { "id": "b", "text": "createSelector 只是把函式包一層 try/catch，跟效能沒有任何關係" },

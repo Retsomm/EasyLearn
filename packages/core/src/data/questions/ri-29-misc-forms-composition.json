@@ -116,7 +116,7 @@
       "options": [
         {
           "id": "a",
-          "text": "可以：React 把小寫、帶連字號命名的標籤（符合自訂元素命名慣例，如 fancy-slider）當成一般 DOM 標籤直接渲染，瀏覽器認得這是一個已註冊的自訂元素就會正確初始化它；但要留意前面 ri-6 章節談過的限制——React 傳給它的 props 主要走字串型別的 HTML attribute，複雜資料（物件、陣列、函式）或想監聽自訂事件，通常還是得透過 ref 拿到真實 DOM 節點手動處理，不能完全比照一般 React 元件的 props 傳遞方式"
+          "text": "可以：React 把小寫、帶連字號命名的標籤（符合自訂元素命名慣例，如 fancy-slider）當成一般 DOM 標籤直接渲染，瀏覽器認得這是一個已註冊的自訂元素就會正確初始化它。React 19 起，傳給自訂元素的 props 會依這個元素本身有沒有對應的同名『屬性（property）』決定走哪條路：如果這個自訂元素定義了對應的 property，React 會直接把 props 的值（包含物件、陣列、函式這類複雜型別）設成那個 DOM 節點的 property，不會被字串化；只有『元素本身沒有對應 property』的 props，才會退回設成 HTML attribute（這種情況下才只能是字串）。也就是說，能不能直接傳複雜資料，取決於這個自訂元素有沒有定義對應的 property，不是一律只能走字串 attribute。不過自訂事件的監聽仍可能需要額外處理（例如透過 ref 呼叫 addEventListener），這部分沒有改變"
         },
         {
           "id": "b",
@@ -132,7 +132,7 @@
         }
       ],
       "answer": "a",
-      "explanation": "這題呼應前面 ri-6 章節談過的 Web Components 整合限制：JSX 語法本身能直接寫自訂元素標籤，React 也會把它當成一般 DOM 元素處理，但『傳遞複雜資料、監聽自訂事件』這一層互通性的限制依然存在，這是自訂元素這套瀏覽器標準跟 React 元件模型交界處的已知落差，不是完全無縫的整合。",
+      "explanation": "JSX 語法本身能直接寫自訂元素標籤，React 也會把它當成一般 DOM 元素處理。React 19 對自訂元素 props 的實際規則是『看目的元素有沒有對應的 property』：有對應 property 就直接設成 property（物件、陣列、函式都能原樣傳過去，不會被字串化），沒有對應 property 才退回設成 HTML attribute。這跟『複雜資料一律得靠 ref』的舊印象不同——只要第三方自訂元素有把對應的 property 定義出來，React 就能直接傳。自訂事件的監聽則是另一回事，通常還是需要額外處理（例如透過 ref 手動 addEventListener），這部分不受這個 property/attribute 規則影響。",
       "verify": {
         "checks": [],
         "manual": "Web Components 自訂元素需要真實瀏覽器註冊自訂元素定義才能觀察渲染與互動行為，無法用 node -e 或 renderToStaticMarkup 驗證。"

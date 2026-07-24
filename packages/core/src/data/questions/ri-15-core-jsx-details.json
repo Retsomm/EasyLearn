@@ -87,7 +87,7 @@
         { "id": "d", "text": "這種寫法只在 TypeScript 專案裡才有效，純 JavaScript 專案的 PropTypes 不支援巢狀驗證" }
       ],
       "answer": "a",
-      "explanation": "arrayOf 與 shape 是 PropTypes 兩個可以組合巢狀使用的驗證子：arrayOf 描述『陣列＋元素型別』，shape 描述『物件＋各欄位型別』，兩者疊起來就能表達出「一份符合特定結構的物件清單」這種常見的資料形狀，比單純用 array 或 object 精確很多，這也是 PropTypes 執行期驗證能做到的合理深度（雖然仍然只在開發模式印警告，不阻斷渲染）。",
+      "explanation": "arrayOf 與 shape 是 PropTypes 兩個可以組合巢狀使用的驗證子：arrayOf 描述『陣列＋元素型別』，shape 描述『物件＋各欄位型別』，兩者疊起來就能表達出「一份符合特定結構的物件清單」這種常見的資料形狀，比單純用 array 或 object 精確很多，這也是 PropTypes 執行期驗證能做到的合理深度。不過這組驗證會不會真的生效，取決於 UserList 是什麼類型的元件：React 19 之後，propTypes 對『函式元件』已經完全失效（no-op，不管開發或正式環境都不會檢查、也不會警告），只有 class component 仍保留這個檢查機制；如果 UserList 是目前最常見的函式元件寫法，建議改用 TypeScript 或其他執行期驗證方案來檢查這些欄位型別。",
       "verify": { "checks": [], "manual": "PropTypes 未安裝於本專案，巢狀驗證邏輯需要真實套件執行才能觀察，無法用 node 直接驗證。" }
     },
     {
@@ -120,16 +120,16 @@
       "topic": "React（核心概念）與 ReactDOM（渲染到瀏覽器）是兩個獨立套件",
       "docs": "",
       "story": "",
-      "prompt": "一個新專案的 package.json 裡，react 跟 react-dom 是各自獨立列出的兩個依賴套件，版本號也可能不完全一樣。這反映了什麼？",
+      "prompt": "一個新專案的 package.json 裡，react 跟 react-dom 是各自獨立列出、各自發布版號的兩個依賴套件。這兩者的版本可以隨意混搭嗎？",
       "code": "",
       "options": [
-        { "id": "a", "text": "react 套件包含元件、Hooks、Context 這些核心、平台無關的概念；react-dom 是專門負責『把這些概念渲染到瀏覽器 DOM』的橋接套件，兩者是分開發布、各自有獨立版號的套件（前面 ri-13 章節已詳細解釋過這個架構分離的理由），這也是為什麼 React Native 專案裡看不到 react-dom，而是改用 react-native 這個對應原生渲染目標的套件" },
+        { "id": "a", "text": "不行：react 套件包含元件、Hooks、Context 這些核心、平台無關的概念；react-dom 是專門負責『把這些概念渲染到瀏覽器 DOM』的橋接套件，兩者雖然是分開發布、各自有獨立版號的套件（前面 ri-13 章節已詳細解釋過這個架構分離的理由），但彼此的版本必須保持相容／對齊——官方慣例是兩者同步發布、大版號一致（例如 react 19.x 搭配 react-dom 19.x），版本落差太大（尤其是主版號不同，例如 react 19 的 Hooks 搭配 react-dom 18，或反過來）可能導致執行期錯誤或行為不一致；這也是為什麼 React Native 專案裡看不到 react-dom，而是改用 react-native 這個對應原生渲染目標的套件" },
         { "id": "b", "text": "react 與 react-dom 其實是同一個套件，只是分別發布了兩份一模一樣的程式碼" },
         { "id": "c", "text": "react-dom 是給後端 Node.js 伺服器用的套件，跟瀏覽器渲染完全無關" },
         { "id": "d", "text": "只有其中一個套件是必要依賴，另一個可以隨意移除而不影響任何功能" }
       ],
       "answer": "a",
-      "explanation": "這題呼應前面 ri-13 章節談過的架構分離：react 是核心、react-dom／react-native／react-test-renderer 是各自對應不同渲染目標的橋接層。實務上這兩個套件通常需要保持相容的版本範圍一起升級，但它們確實是各自獨立發布、可以有不同版號的套件，不是同一份程式碼的重複發布。",
+      "explanation": "這題呼應前面 ri-13 章節談過的架構分離：react 是核心、react-dom／react-native／react-test-renderer 是各自對應不同渲染目標的橋接層。不過『分開發布』不等於『版本可以隨便搭配』：react 與 react-dom 雖然是各自獨立發布、各有版號的套件，但必須使用彼此相容的版本，官方慣例是兩者的大版號保持一致、同步發布，不是『大致相容就好』這種寬鬆關係。",
       "verify": { "checks": [], "manual": "屬套件架構與版本管理慣例的說明題，無可執行程式碼。" }
     },
     {

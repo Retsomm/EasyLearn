@@ -136,19 +136,19 @@
       "id": "ri-12-q7",
       "type": "concept",
       "difficulty": 3,
-      "topic": "PropTypes 驗證：型別不符時只在 console 印出警告，不會阻止渲染",
+      "topic": "React 19 之後，函式元件上的 PropTypes 已完全失效（no-op），不會有任何開發模式警告",
       "docs": "",
       "story": "",
-      "prompt": "Age 這個元件用 PropTypes 宣告 value 必須是 number，呼叫端卻傳了一個字串 \"25\"。畫面最終會顯示什麼？",
+      "prompt": "Age 是一個函式元件，額外掛了 Age.propTypes 宣告 value 必須是 number，呼叫端卻傳了一個字串 \"25\"。在目前的 React（19 版之後）裡，畫面最終會顯示什麼？",
       "code": "function Age({ value }) {\n  return <p>年齡：{value}</p>;\n}\nAge.propTypes = {\n  value: PropTypes.number.isRequired,\n};\n\n// 呼叫端傳了字串，不是數字\n<Age value=\"25\" />",
       "options": [
-        { "id": "a", "text": "畫面依然會正常顯示「年齡：25」：PropTypes 的型別檢查只在開發模式下，於 console 印出一則警告訊息，提醒開發者『這個 prop 的型別跟宣告不符』，並不會阻止元件渲染、也不會拋出例外中斷程式——這是它跟 TypeScript 編譯期檢查最根本的差異（前面 ri-6 章節已提過這組對比），PropTypes 純粹是執行期、非阻斷性的提醒" },
+        { "id": "a", "text": "畫面依然會正常顯示「年齡：25」，而且不會有任何型別警告：React 19 開始，指定在『函式元件』上的 propTypes 已經完全不會被檢查（no-op），不管開發模式還是正式環境都一樣，就算型別真的不符，也不會在 console 印出任何警告——這跟更早期 React（型別不符只在開發模式印警告、不阻斷渲染）的既有印象不同了；如果需要替函式元件的 props 做型別檢查，官方建議改用 TypeScript，或是自行在函式內寫執行期驗證邏輯" },
         { "id": "b", "text": "程式會直接拋出例外，渲染完全中斷，畫面上什麼都不會顯示" },
         { "id": "c", "text": "PropTypes 會自動把字串 \"25\" 轉型成數字 25 之後才渲染" },
         { "id": "d", "text": "畫面會顯示「年齡：undefined」，因為型別不符的 prop 會被自動清空" }
       ],
       "answer": "a",
-      "explanation": "PropTypes 的驗證是「軟性」的：型別不符只會在開發模式的 console 印警告，不會阻止渲染、不會自動轉型、也不會把值清空——這個值本身完全沒被動過，只是多了一則提醒。這也再次呼應「PropTypes 是執行期警告、不是編譯期阻斷」這個核心特性，跟 TypeScript 在寫程式碼當下就標紅報錯的機制完全不同。",
+      "explanation": "從 React 19 開始，React 已經移除對『函式元件』propTypes／defaultProps 的支援：即使宣告了 Age.propTypes，這段宣告只是一個沒有作用的靜態屬性，React 不會在任何模式下讀取或驗證它，也不會印出警告，畫面渲染完全不受影響、值本身也完全沒被動過。這跟舊版 React（型別不符只在開發模式印警告、不阻斷渲染）的行為不同——如果要在函式元件上做型別檢查，官方建議改用 TypeScript，或是自己在函式內寫執行期驗證。（注意：class component 的 propTypes 檢查機制不在此次變更範圍內，這裡討論的『no-op』只針對函式元件。）",
       "verify": {
         "checks": [
           { "jsx": "import { renderToStaticMarkup } from 'react-dom/server'\nfunction Age({ value }) {\n  return <p>年齡：{value}</p>;\n}\nconsole.log(renderToStaticMarkup(<Age value=\"25\" />));", "expected": "<p>年齡：25</p>" }

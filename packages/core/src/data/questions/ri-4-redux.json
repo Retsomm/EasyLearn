@@ -99,7 +99,7 @@
       "docs": "",
       "story": "",
       "prompt": "要發送一個非同步 API 請求，並依結果 dispatch 不同的 action（pending / fulfilled / rejected）。Redux Toolkit 建議的標準寫法是什麼？",
-      "code": "// 手刻 thunk（舊寫法，仍然合法，但要自己管三種狀態）\nfunction fetchUser(id) {\n  return async (dispatch) => {\n    dispatch({ type: \"user/pending\" });\n    try {\n      const res = await fetch(`/api/user/${id}`);\n      const data = await res.json();\n      dispatch({ type: \"user/fulfilled\", payload: data });\n    } catch (err) {\n      dispatch({ type: \"user/rejected\", error: err.message });\n    }\n  };\n}\n\n// Redux Toolkit 建議的寫法？\nconst fetchUser = createAsyncThunk(\"user/fetch\", async (id) => {\n  const res = await fetch(`/api/user/${id}`);\n  return res.json();\n});",
+      "code": "// 手刻 thunk（舊寫法，仍然合法，但要自己管三種狀態）\nfunction fetchUserLegacy(id) {\n  return async (dispatch) => {\n    dispatch({ type: \"user/pending\" });\n    try {\n      const res = await fetch(`/api/user/${id}`);\n      const data = await res.json();\n      dispatch({ type: \"user/fulfilled\", payload: data });\n    } catch (err) {\n      dispatch({ type: \"user/rejected\", error: err.message });\n    }\n  };\n}\n\n// Redux Toolkit 建議的寫法？\nconst fetchUser = createAsyncThunk(\"user/fetch\", async (id) => {\n  const res = await fetch(`/api/user/${id}`);\n  return res.json();\n});",
       "options": [
         { "id": "a", "text": "createAsyncThunk 會依你傳入的非同步函式回傳的 Promise 狀態，自動 dispatch 對應的 pending/fulfilled/rejected action（action type 自動用你傳入的字首加上固定後綴）；不需要像手刻 thunk 那樣自己手動管理三種狀態、自己組三個 action type 字串，樣板程式碼少很多，也比較不容易漏掉某個狀態" },
         { "id": "b", "text": "兩者完全等價，createAsyncThunk 只是換個名字，行為上沒有任何簡化" },
@@ -328,7 +328,7 @@
         { "id": "d", "text": "不能，因為 JavaScript 常數在執行期會被自動轉成字串，效果跟直接寫字串一樣" }
       ],
       "answer": "a",
-      "explanation": "字串字面值本身沒有任何拼字檢查機制，兩處各自手打完全一樣的字串，编譯器完全看不出差異；但把字串包成一個具名的匯出常數之後，「打錯常數名稱」變成一個「引用了不存在的變數」的錯誤，這種錯誤在純 JavaScript 下執行期就會拋出 ReferenceError／undefined 匯出，搭配 IDE 或 linter 甚至能在寫程式碼的當下就標紅，不需要等到 TypeScript 才生效。",
+      "explanation": "字串字面值本身沒有任何拼字檢查機制，兩處各自手打完全一樣的字串，編譯器完全看不出差異；但把字串包成一個具名的匯出常數之後，「打錯常數名稱」變成一個「引用了不存在的變數」的錯誤，這種錯誤在純 JavaScript 下執行期就會拋出 ReferenceError／undefined 匯出，搭配 IDE 或 linter 甚至能在寫程式碼的當下就標紅，不需要等到 TypeScript 才生效。",
       "verify": {
         "checks": [],
         "manual": "屬程式碼組織與型別安全的推理題，無可執行程式碼。"
@@ -350,7 +350,7 @@
         { "id": "d", "text": "效果一樣，但寫法二只能用在 TypeScript 專案" }
       ],
       "answer": "a",
-      "explanation": "connect() 對 mapDispatchToProps 這個參數做了型別判斷：傳函式就照函式的邏輯處理；傳一個『純粹由 action creator 組成的物件』，就自動幫每一個成員包上呼叫 dispatch 的那層包裝。兩種寫法最終呼叫端拿到的 props（addTodo）行為完全相同，物件簡寫只是省去重複样板的語法糖。",
+      "explanation": "connect() 對 mapDispatchToProps 這個參數做了型別判斷：傳函式就照函式的邏輯處理；傳一個『純粹由 action creator 組成的物件』，就自動幫每一個成員包上呼叫 dispatch 的那層包裝。兩種寫法最終呼叫端拿到的 props（addTodo）行為完全相同，物件簡寫只是省去重複樣板的語法糖。",
       "verify": {
         "checks": [],
         "manual": "react-redux 未安裝於本專案，connect() 的內部型別判斷需要真實套件執行才能觀察，無法用 node 直接驗證。"

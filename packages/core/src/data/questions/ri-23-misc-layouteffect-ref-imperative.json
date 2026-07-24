@@ -14,7 +14,7 @@
       "options": [
         {
           "id": "a",
-          "text": "能：useLayoutEffect 保證在瀏覽器『真正把畫面繪製到螢幕上』之前同步執行完畢，這裡在裡面量測 DOM 尺寸、呼叫 setTop 調整位置，會在使用者眼睛看到任何畫面之前就完成，因此不會有『先顯示錯誤位置、再跳到正確位置』這種閃爍；useEffect 則是在瀏覽器已經繪製完成『之後』才非同步執行，如果裡面也做了會改變版面的更新，使用者會先看到一次錯誤位置的畫面，才看到修正後的結果，這正是兩者最關鍵的時機差異"
+          "text": "能：useLayoutEffect 保證在瀏覽器『真正把畫面繪製到螢幕上』之前同步執行完畢，這裡在裡面量測 DOM 尺寸、呼叫 setTop 調整位置，會在使用者眼睛看到任何畫面之前就完成，因此不會有『先顯示錯誤位置、再跳到正確位置』這種閃爍；useEffect 則通常是在瀏覽器已經繪製完成『之後』才非同步執行（並非保證絕對如此——某些情況下瀏覽器實際排程仍可能讓它在下一次繪製前執行），如果裡面也做了會改變版面的更新，使用者通常會先看到一次錯誤位置的畫面，才看到修正後的結果，這正是兩者最關鍵的時機差異：useLayoutEffect 是『保證繪製前』，useEffect 則是『通常繪製後、但沒有像 useLayoutEffect 那樣的同步保證』"
         },
         {
           "id": "b",
@@ -172,12 +172,8 @@
       "answer": "a",
       "explanation": "這是「state vs ref」判斷準則（前面既有章節反覆談過）在一個具體案例上的應用：畫面完全不需要顯示的內部計數器，用 ref 記錄既能跨渲染保留、又不會製造不必要的重繪，是比 state 更貼切的選擇；若這個次數需要顯示在畫面上（例如提示『已送出 2 次』），才會需要改用 state。",
       "verify": {
-        "checks": [
-          {
-            "jsx": "import { useRef } from 'react'\nimport { renderToStaticMarkup } from 'react-dom/server'\nfunction Form() {\n  const submitCountRef = useRef(0);\n  submitCountRef.current += 1;\n  submitCountRef.current += 1;\n  return <p>{submitCountRef.current}</p>;\n}\nconsole.log(renderToStaticMarkup(<Form />));",
-            "expected": "<p>2</p>"
-          }
-        ]
+        "checks": [],
+        "manual": "原本的檢查直接在 Form 的 render body 裡連續累加 submitCountRef.current 兩次來湊出『2』這個結果，但這等於在渲染過程直接做 ref 的副作用寫入——跟題目本身『useRef 值該在事件處理器裡更新，不該寫在 render body』的重點矛盾（render 可能被 React 多次呼叫，例如開發模式的 StrictMode 雙重呼叫，會讓寫在 render body 的累加被多算）。要真正驗證『點擊 handleSubmit 兩次、ref 累加到 2，但不觸發重新渲染』，需要真實 DOM 環境搭配點擊互動（如 fireEvent.click／userEvent.click）並觀察渲染次數，本專案 verify 執行環境僅支援 react-dom/server 的單次靜態渲染、沒有 jsdom 或互動能力，無法用 node 直接驗證，需人工審核。"
       }
     },
     {

@@ -99,7 +99,7 @@
       "docs": "",
       "story": "",
       "prompt": "這個 App 用 cookie 記錄使用者選擇的語系。伺服器渲染階段直接讀 cookie 決定 locale；用戶端第一次 render 卻先用瀏覽器的 navigator.language 當預設值，等 useEffect 跑完才修正成 cookie 裡的值。使用者選的是 \"en\"、但瀏覽器語言是 \"zh-TW\"，重新整理頁面時最可能出現什麼症狀？",
-      "code": "// 伺服器端（依 cookie，得到 \"en\"）\nconst locale = getLocaleFromCookie(req);\n\n// 用戶端第一次 render（cookie 還沒讀到，先用瀏覽器語言）\nconst [locale, setLocale] = useState(navigator.language); // \"zh-TW\"\nuseEffect(() => {\n  setLocale(getLocaleFromCookie()); // 之後才修正成 \"en\"\n}, []);",
+      "code": "// 伺服器端（依 cookie，得到 \"en\"）\nconst serverLocale = getLocaleFromCookie(req);\n\n// 用戶端第一次 render（cookie 還沒讀到，先用瀏覽器語言）\nconst [locale, setLocale] = useState(navigator.language); // \"zh-TW\"\nuseEffect(() => {\n  setLocale(getLocaleFromCookie()); // 之後才修正成 \"en\"\n}, []);",
       "options": [
         { "id": "a", "text": "React 會在 console 印出 hydration mismatch 警告，畫面上也會看到文字先短暫顯示中文（用戶端第一次渲染的結果），再瞬間切換成英文（useEffect 修正之後）——因為伺服器渲染出的英文 HTML 跟用戶端第一次渲染的中文結果對不上" },
         { "id": "b", "text": "完全沒有任何差異，React 會自動偵測並同步兩邊的 locale，不會有任何警告或畫面閃爍" },

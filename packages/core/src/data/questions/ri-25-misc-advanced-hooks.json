@@ -112,11 +112,11 @@
       "id": "ri-25-q4",
       "type": "concept",
       "difficulty": 3,
-      "topic": "useEffectEvent（實驗性）：讓 effect 內部讀到「最新」的值，但不把它列進依賴陣列觸發重新執行",
+      "topic": "useEffectEvent（React 19.2 起為穩定 API）：讓 effect 內部讀到「最新」的值，但不把它列進依賴陣列觸發重新執行",
       "docs": "",
       "story": "",
-      "prompt": "一個聊天室連線的 effect，依賴陣列只想放 roomId（連線本身只跟房間有關），但 effect 內部想在收到訊息時，用『當下最新』的 theme 這個 state 決定通知樣式——theme 改變不該觸發重新連線，但也不想讀到過期的 theme 值。這個『既要最新值、又不想列入依賴觸發重新執行』的矛盾，實驗性的 useEffectEvent（或社群慣稱的 useEvent）想解決什麼？",
-      "code": "// 概念示意（實驗性 API，寫法可能隨版本調整）\nconst onMessage = useEffectEvent((message) => {\n  showNotification(message, theme); // 讀到的永遠是『最新』的 theme\n});\n\nuseEffect(() => {\n  const connection = createConnection(roomId);\n  connection.on(\"message\", onMessage);\n  return () => connection.disconnect();\n}, [roomId]); // 依賴陣列不需要放 theme，也不會讀到過期值",
+      "prompt": "一個聊天室連線的 effect，依賴陣列只想放 roomId（連線本身只跟房間有關），但 effect 內部想在收到訊息時，用『當下最新』的 theme 這個 state 決定通知樣式——theme 改變不該觸發重新連線，但也不想讀到過期的 theme 值。這個『既要最新值、又不想列入依賴觸發重新執行』的矛盾，React 19.2 起已穩定發布的 useEffectEvent（或社群慣稱的 useEvent）想解決什麼？",
+      "code": "// React 19.2 起為穩定、正式文件化的 API，可直接從 'react' 匯入\nconst onMessage = useEffectEvent((message) => {\n  showNotification(message, theme); // 讀到的永遠是『最新』的 theme\n});\n\nuseEffect(() => {\n  const connection = createConnection(roomId);\n  connection.on(\"message\", onMessage);\n  return () => connection.disconnect();\n}, [roomId]); // 依賴陣列不需要放 theme，也不會讀到過期值",
       "options": [
         {
           "id": "a",
@@ -132,14 +132,14 @@
         },
         {
           "id": "d",
-          "text": "useEffectEvent 是已經正式穩定發布的 API，跟 useEffect 一樣是每個專案的標準配置"
+          "text": "useEffectEvent 建立出來的函式可以在任何地方直接呼叫，包括直接寫在 render 過程或一般事件處理器（如 onClick）裡，沒有呼叫時機上的限制"
         }
       ],
       "answer": "a",
-      "explanation": "這個（撰寫本題時仍屬實驗性、API 名稱與細節可能隨版本調整）Hook 想解決的是 useEffect 依賴陣列一個長期的兩難：『只放真正該觸發重新執行的依賴』與『effect 內部不該讀到過期閉包值』這兩個目標有時會衝突。它不是要取代 useEffect，也不會讓依賴陣列本身變得不重要——真正該觸發重新連線的 roomId 仍然要放在依賴陣列裡，只是把『讀最新值但不觸發重新執行』的那部分邏輯，抽出來用專屬機制處理。",
+      "explanation": "這個 Hook 想解決的是 useEffect 依賴陣列一個長期的兩難：『只放真正該觸發重新執行的依賴』與『effect 內部不該讀到過期閉包值』這兩個目標有時會衝突。它不是要取代 useEffect，也不會讓依賴陣列本身變得不重要——真正該觸發重新連線的 roomId 仍然要放在依賴陣列裡，只是把『讀最新值但不觸發重新執行』的那部分邏輯，抽出來用專屬機制處理。useEffectEvent 從 React 19.2 起已經是穩定、正式文件化的官方 API，不再是實驗性功能，可以直接從 'react' 匯入使用。使用上有幾個限制：Effect Event 要在元件內呼叫 useEffectEvent(...) 建立（呼叫時機跟其他 Hook 一樣，位於元件的渲染範圍內），但建立出來的這個函式本身只能在 effect 內部呼叫、或是被另一個 Effect Event 呼叫——不能直接從 render 過程或一般事件處理器（如 onClick）呼叫；也正因為它讀到的永遠是最新值，通常不需要（也不應該）被放進呼叫端 effect 的依賴陣列。",
       "verify": {
         "checks": [],
-        "manual": "useEffectEvent／useEvent 為實驗性 API，本專案安裝的 React 版本可能尚未穩定支援，行為需要對應版本的真實執行環境才能驗證，無法用 node 直接驗證。"
+        "manual": "useEffectEvent 為 React 19.2 起的穩定官方 API，但其『讀到最新閉包值、且只能從 effect 內呼叫』的行為仍需要多輪真實渲染與 effect 觸發才能觀察，無法用單次 node 執行完整驗證。"
       }
     },
     {

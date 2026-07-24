@@ -43,7 +43,7 @@
       "topic": "Error Boundary 攔不到的幾種情境：事件處理器、非同步程式碼、SSR、自己拋的錯",
       "docs": "",
       "story": "",
-      "prompt": "團隊在整個應用程式外層包了一個 Error Boundary，以為所有錯誤都會被攔截、顯示成統一的錯誤畫面。結果一個按鈕的 onClick 事件處理器裡拋出的錯誤，完全沒有被攔到，直接讓整個頁面卡死、console 出現未捕捉的錯誤。為什麼 Error Boundary 沒有生效？",
+      "prompt": "團隊在整個應用程式外層包了一個 Error Boundary，以為所有錯誤都會被攔截、顯示成統一的錯誤畫面。結果一個按鈕的 onClick 事件處理器裡拋出的錯誤，完全沒有被攔到——只是這次點擊觸發的 handleClick 執行到一半中斷，console 出現一個未捕捉的例外，畫面其他部分仍正常運作，也沒有出現任何 Error Boundary 的備援畫面。為什麼 Error Boundary 沒有生效？",
       "code": "function Button() {\n  function handleClick() {\n    throw new Error(\"boom\"); // 事件處理器裡拋出的錯誤\n  }\n  return <button onClick={handleClick}>點我</button>;\n}",
       "options": [
         {
