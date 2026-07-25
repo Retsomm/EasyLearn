@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { DEFAULT_THEME_ID, isValidThemeId } from '@/lib/themes'
+import { DEFAULT_THEME_ID, isValidThemeId, type ThemeId } from '@/lib/themes'
 
 const STORAGE_KEY = 'easylearn-theme-v1'
 
-const load = (): string => {
+const load = (): ThemeId => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     return raw && isValidThemeId(raw) ? raw : DEFAULT_THEME_ID
@@ -13,17 +13,19 @@ const load = (): string => {
   }
 }
 
-const applyToDocument = (theme: string) => {
+const applyToDocument = (theme: ThemeId) => {
   document.documentElement.dataset.theme = theme
 }
 
-const postJson = async (url: string, body: unknown): Promise<string> => {
+const postJson = async (url: string, body: unknown): Promise<ThemeId> => {
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
-  const data = (await res.json()) as { theme: string }
+  if (!res.ok) throw new Error(`theme request failed: ${res.status}`)
+  const data = (await res.json()) as { theme?: string }
+  if (!data.theme || !isValidThemeId(data.theme)) throw new Error('invalid theme response')
   return data.theme
 }
 
@@ -61,27 +63,34 @@ export const useTheme = () => {
       return
     }
     if (syncedRef.current) return
+    let cancelled = false
     ;(async () => {
       try {
         const res = await fetch('/api/theme')
         if (!res.ok) throw new Error(`theme fetch failed: ${res.status}`)
-        const data = (await res.json()) as { theme: string }
+        const data = (await res.json()) as { theme?: string }
+        const remoteTheme = data.theme && isValidThemeId(data.theme) ? data.theme : DEFAULT_THEME_ID
         const localTheme = load()
         const resolved =
-          data.theme === DEFAULT_THEME_ID && localTheme !== DEFAULT_THEME_ID
+          remoteTheme === DEFAULT_THEME_ID && localTheme !== DEFAULT_THEME_ID
             ? await postJson('/api/theme', { theme: localTheme })
-            : data.theme
+            : remoteTheme
+        if (cancelled) return
         setThemeState(resolved)
         applyToDocument(resolved)
         syncedRef.current = true
       } catch (err) {
-        console.error('theme load/sync failed', err)
+        if (!cancelled) console.error('theme load/sync failed', err)
       }
     })()
+    return () => {
+      cancelled = true
+    }
   }, [isLoaded, isSignedIn, hydrated])
 
   const setTheme = (next: string) => {
     if (!isValidThemeId(next)) return
+    localStorage.setItem(STORAGE_KEY, next)
     setThemeState(next)
     applyToDocument(next)
     if (isSignedIn) {

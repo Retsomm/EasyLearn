@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import { ClerkProvider } from '@clerk/nextjs'
+import { THEMES } from '@/lib/themes'
 import '@/index.css'
 
 export const metadata: Metadata = {
@@ -30,10 +31,13 @@ export const viewport: Viewport = {
 // 在 hydrate 前就先把使用者選過的主題套到 <html data-theme>，避免畫面先閃一下預設主題
 // 才變成使用者實際選的主題。<html> 因此需要 suppressHydrationWarning：這個 script 執行完
 // 之後 <html> 的屬性會跟伺服器端算出來的初始 HTML 不一樣，那是預期中的行為。
+const enabledThemeIds = THEMES.filter((t) => t.enabled).map((t) => t.id)
+
 const themeInitScript = `
 try {
   var t = localStorage.getItem('easylearn-theme-v1');
-  if (t) document.documentElement.dataset.theme = t;
+  var enabled = ${JSON.stringify(enabledThemeIds)};
+  if (t && enabled.indexOf(t) !== -1) document.documentElement.dataset.theme = t;
 } catch (e) {}
 `
 

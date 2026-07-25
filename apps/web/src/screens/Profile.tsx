@@ -60,6 +60,22 @@ const Profile = ({ progress, onClearLocalData, theme, onThemeChange }: ProfilePr
 
   if (!isLoaded) return null
 
+  const themeSwatchGrid = (
+    <div className="theme-swatch-grid">
+      {THEMES.filter((t) => t.enabled).map((t) => (
+        <button
+          key={t.id}
+          className={`theme-swatch${theme === t.id ? ' is-active' : ''}`}
+          aria-pressed={theme === t.id}
+          onClick={() => onThemeChange(t.id)}
+        >
+          <span className="theme-swatch-dot" style={{ background: t.swatch, color: t.swatch }} />
+          {t.label}
+        </button>
+      ))}
+    </div>
+  )
+
   if (!isSignedIn) {
     return (
       <div className="screen login-screen">
@@ -148,18 +164,7 @@ const Profile = ({ progress, onClearLocalData, theme, onThemeChange }: ProfilePr
       </div>
 
       <h3 className="section-title">外觀主題</h3>
-      <div className="theme-swatch-grid">
-        {THEMES.filter((t) => t.enabled).map((t) => (
-          <button
-            key={t.id}
-            className={`theme-swatch${theme === t.id ? ' is-active' : ''}`}
-            onClick={() => onThemeChange(t.id)}
-          >
-            <span className="theme-swatch-dot" style={{ background: t.swatch, color: t.swatch }} />
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {themeSwatchGrid}
 
       <h3 className="section-title">帳號設定</h3>
       <div className="account-list">

@@ -22,7 +22,12 @@ export const POST = async (request: Request) => {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-  const { theme } = (await request.json()) as { theme?: string }
+  let theme: string | undefined
+  try {
+    ;({ theme } = (await request.json()) as { theme?: string })
+  } catch {
+    theme = undefined
+  }
   if (!theme || !isValidThemeId(theme)) {
     return NextResponse.json({ error: 'invalid theme' }, { status: 400 })
   }

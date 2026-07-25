@@ -1,5 +1,7 @@
+export type ThemeId = 'default' | '1a' | '1b' | '1c' | '1e' | '1f'
+
 export interface ThemeOption {
-  id: string
+  id: ThemeId
   label: string
   swatch: string
   enabled: boolean
@@ -15,6 +17,7 @@ export const THEMES: ThemeOption[] = [
   { id: '1f', label: '霓虹星際', swatch: '#00e5ff', enabled: true },
 ]
 
-export const DEFAULT_THEME_ID = 'default'
+export const DEFAULT_THEME_ID: ThemeId = 'default'
 
-export const isValidThemeId = (id: string): boolean => THEMES.some((t) => t.id === id && t.enabled)
+export const isValidThemeId = (id: string): id is ThemeId =>
+  THEMES.some((t) => t.id === id && t.enabled)
