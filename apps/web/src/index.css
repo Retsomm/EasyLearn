@@ -2013,3 +2013,37 @@ html[data-theme='1c'] {
     radial-gradient(ellipse 300px 200px at 90% 15%, rgba(167, 139, 250, 0.2), transparent 70%);
   --bg-pattern-size: 100% 100%;
 }
+
+/* ══════════════════════════════════════════════════════════
+   主題：星圖 Constellation（data-theme="1e"）
+   靛藍夜空＋金色連線星座，古典優雅、儀式感
+   ══════════════════════════════════════════════════════════ */
+html[data-theme='1e'] {
+  --bg: #0d1128;
+  --bg-rgb: 13, 17, 40;
+  --card: #141a38;
+  --panel-alt: #10152e;
+  --ink: #f2ecd6;
+  --ink-rgb: 242, 236, 214;
+  --ink-strong: #ffffff;
+  --primary: #f2dba0;
+  --primary-rgb: 242, 219, 160;
+  --primary-deep: #c2af80;
+  --primary-panel: #282936;
+  --on-primary: #241a04;
+  --on-primary-alt: #241a04;
+  --cyan: #e9c982;
+  --cyan-rgb: 233, 201, 130;
+  --wrong: #ff8a80;
+  --wrong-rgb: 255, 138, 128;
+  --wrong-panel: #2a2033;
+  --option-bg: #1a2142;
+  --card-clip: none;
+  --btn-clip: none;
+  --radius: 18px;
+  --font-mono: 'Cinzel', 'SF Mono', Menlo, Consolas, serif;
+  --bg-pattern: radial-gradient(1px 1px at 60px 80px, rgba(233, 201, 130, 0.5), transparent),
+    radial-gradient(1px 1px at 300px 200px, rgba(233, 201, 130, 0.4), transparent),
+    radial-gradient(1px 1px at 550px 100px, rgba(233, 201, 130, 0.35), transparent),
+    radial-gradient(1px 1px at 700px 300px, rgba(233, 201, 130, 0.3), transparent);
+}

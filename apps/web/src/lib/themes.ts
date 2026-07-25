@@ -10,7 +10,7 @@ export const THEMES: ThemeOption[] = [
   { id: 'default', label: '太空艙 HUD', swatch: '#5ff0e0', enabled: true },
   { id: '1a', label: '深空星雲', swatch: '#c9a8ff', enabled: true },
   { id: '1c', label: '極光玻璃', swatch: '#5eead4', enabled: true },
-  { id: '1e', label: '星圖', swatch: '#e9c982', enabled: false },
+  { id: '1e', label: '星圖', swatch: '#e9c982', enabled: true },
   { id: '1f', label: '霓虹星際', swatch: '#00e5ff', enabled: false },
 ]
 
