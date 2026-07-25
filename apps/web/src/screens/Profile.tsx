@@ -155,7 +155,7 @@ const Profile = ({ progress, onClearLocalData, theme, onThemeChange }: ProfilePr
             className={`theme-swatch${theme === t.id ? ' is-active' : ''}`}
             onClick={() => onThemeChange(t.id)}
           >
-            <span className="theme-swatch-dot" style={{ background: t.swatch }} />
+            <span className="theme-swatch-dot" style={{ background: t.swatch, color: t.swatch }} />
             {t.label}
           </button>
         ))}

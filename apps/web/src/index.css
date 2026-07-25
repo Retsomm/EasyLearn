@@ -59,6 +59,7 @@
     radial-gradient(1px 1px at 500px 260px, rgba(var(--cyan-rgb), 0.4), transparent),
     radial-gradient(1px 1px at 650px 120px, rgba(var(--cyan-rgb), 0.3), transparent),
     radial-gradient(1px 1px at 90px 340px, rgba(var(--cyan-rgb), 0.3), transparent);
+  --bg-pattern-size: 400px 400px;
   --chart-count: var(--primary);
   --chart-accuracy: var(--cyan);
   --heat-0: rgba(var(--cyan-rgb), 0.08);
@@ -90,7 +91,7 @@ body::before {
   z-index: 0;
   pointer-events: none;
   background-image: var(--bg-pattern);
-  background-size: 400px 400px;
+  background-size: var(--bg-pattern-size);
 }
 
 body::after {
@@ -1944,4 +1945,38 @@ button {
   .profile-stat-label {
     order: -1;
   }
+}
+
+/* ══════════════════════════════════════════════════════════
+   主題：深空星雲 Nebula Glass（data-theme="1a"）
+   紫粉星雲光暈＋玻璃卡片，柔和夢幻
+   ══════════════════════════════════════════════════════════ */
+html[data-theme='1a'] {
+  --bg: #0b0a1a;
+  --bg-rgb: 11, 10, 26;
+  --card: #150f2c;
+  --panel-alt: #120b26;
+  --ink: #f1e9ff;
+  --ink-rgb: 225, 214, 255;
+  --ink-strong: #ffffff;
+  --primary: #ec4899;
+  --primary-rgb: 236, 72, 153;
+  --primary-deep: #bd3a7a;
+  --primary-panel: #261129;
+  --on-primary: #2a0d4a;
+  --on-primary-alt: #2a0d4a;
+  --cyan: #c9a8ff;
+  --cyan-rgb: 201, 168, 255;
+  --wrong: #ff6b81;
+  --wrong-rgb: 255, 107, 129;
+  --wrong-panel: #281626;
+  --option-bg: #1a1338;
+  --card-clip: none;
+  --btn-clip: none;
+  --radius: 24px;
+  --font-mono: 'Space Grotesk', 'SF Mono', Menlo, Consolas, monospace;
+  --bg-pattern: radial-gradient(circle at 18% 8%, rgba(201, 168, 255, 0.32), transparent 42%),
+    radial-gradient(circle at 85% 0%, rgba(236, 72, 153, 0.24), transparent 46%),
+    radial-gradient(circle at 55% 105%, rgba(94, 234, 212, 0.16), transparent 55%);
+  --bg-pattern-size: 100% 100%;
 }
