@@ -139,7 +139,7 @@ button {
   align-items: center;
   gap: 1px;
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: 0.5px;
   color: var(--ink-strong);
@@ -172,7 +172,7 @@ button {
   border: 1px solid transparent;
   color: rgba(95, 240, 224, 0.55);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 700;
   letter-spacing: 0.5px;
   padding: 9px 16px;
@@ -226,7 +226,7 @@ button {
     flex-direction: column;
     gap: 4px;
     padding: 9px 2px;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0;
     border-width: 0;
     border-top: 2px solid transparent;
@@ -248,7 +248,7 @@ button {
 
 .page-title {
   font-family: var(--font-mono);
-  font-size: 22px;
+  font-size: 25px;
   font-weight: 700;
   color: var(--ink-strong);
   margin: 0 0 16px;
@@ -256,7 +256,7 @@ button {
 
 .section-title {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 700;
   letter-spacing: 1.5px;
   color: rgba(95, 240, 224, 0.65);
@@ -265,7 +265,7 @@ button {
 
 .section-hint {
   margin: -8px 0 12px;
-  font-size: 12px;
+  font-size: 13.5px;
   line-height: 1.6;
   color: var(--ink-faint);
 }
@@ -273,7 +273,7 @@ button {
 /* ── 首頁 ─────────────────────────── */
 .app-title {
   font-family: var(--font-mono);
-  font-size: 34px;
+  font-size: 38px;
   margin: 0;
   letter-spacing: 1px;
 }
@@ -281,7 +281,7 @@ button {
 .app-subtitle {
   color: var(--ink-soft);
   margin: 6px 0 24px;
-  font-size: 15px;
+  font-size: 17px;
 }
 
 .streak-card {
@@ -297,7 +297,7 @@ button {
   display: flex;
   justify-content: space-between;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 13.5px;
   color: rgba(95, 240, 224, 0.6);
   letter-spacing: 0.5px;
   margin-bottom: 10px;
@@ -308,7 +308,7 @@ button {
   align-items: center;
   gap: 8px;
   font-family: var(--font-mono);
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 800;
   color: var(--primary);
   text-shadow: 0 0 16px rgba(255, 180, 84, 0.5);
@@ -329,7 +329,7 @@ button {
   height: 30px;
   border-radius: 0;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 13.5px;
   background: rgba(95, 240, 224, 0.08);
   color: rgba(95, 240, 224, 0.55);
   border: 1px solid rgba(95, 240, 224, 0.18);
@@ -368,7 +368,7 @@ button {
   align-items: center;
   justify-content: space-between;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12.5px;
   letter-spacing: 0.5px;
   color: rgba(95, 240, 224, 0.55);
 }
@@ -379,14 +379,14 @@ button {
 
 .stat-card-value {
   font-family: var(--font-mono);
-  font-size: 26px;
+  font-size: 29px;
   font-weight: 800;
   color: var(--cyan);
   margin-top: 8px;
 }
 
 .stat-card-hint {
-  font-size: 12px;
+  font-size: 13.5px;
   color: var(--ink-faint);
   margin-top: 4px;
 }
@@ -433,7 +433,7 @@ button {
 }
 
 .mascot-emoji {
-  font-size: 96px;
+  font-size: 108px;
   line-height: 1.2;
   filter: drop-shadow(0 0 14px rgba(95, 240, 224, 0.25));
   animation: bob 2.4s ease-in-out infinite;
@@ -456,7 +456,7 @@ button {
 .mascot-name {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 18px;
+  font-size: 20px;
   color: var(--ink-strong);
   margin-top: 8px;
 }
@@ -479,7 +479,7 @@ button {
 
 .mascot-hint {
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: 14.5px;
   margin-top: 8px;
 }
 
@@ -495,7 +495,7 @@ button {
   clip-path: polygon(var(--notch-sm) 0, 100% 0, 100% calc(100% - var(--notch-sm)), calc(100% - var(--notch-sm)) 100%, 0 100%, 0 var(--notch-sm));
   padding: 16px 32px;
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.5px;
   transition: filter 0.1s;
@@ -516,7 +516,7 @@ button {
   border-radius: var(--radius);
   padding: 13px 28px;
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
 }
 
@@ -536,7 +536,7 @@ button {
   gap: 8px;
   background: var(--card);
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: 14.5px;
   border: 1px solid rgba(95, 240, 224, 0.15);
   border-radius: var(--radius);
   padding: 12px 16px;
@@ -555,7 +555,7 @@ button {
   border: none;
   color: var(--primary);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 700;
   text-decoration: none;
   padding: 4px;
@@ -567,7 +567,7 @@ button {
 
 .storage-note {
   margin-top: 20px;
-  font-size: 12px;
+  font-size: 13.5px;
   color: var(--ink-soft);
 }
 
@@ -581,7 +581,7 @@ button {
 
 .screen-header h2 {
   margin: 0;
-  font-size: 17px;
+  font-size: 19px;
 }
 
 .back-btn {
@@ -647,14 +647,14 @@ button {
 }
 
 .chapter-name {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--ink);
 }
 
 .chapter-progress {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12.5px;
   color: rgba(95, 240, 224, 0.4);
 }
 
@@ -691,7 +691,7 @@ button {
   border-radius: var(--radius);
   padding: 16px 18px;
   margin-bottom: 10px;
-  font-size: 15px;
+  font-size: 17px;
   text-align: left;
 }
 
@@ -729,7 +729,7 @@ button {
 
 .level-record {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--ink-faint);
   flex-shrink: 0;
 }
@@ -740,7 +740,7 @@ button {
 
 .book-empty {
   color: var(--ink-soft);
-  font-size: 14px;
+  font-size: 16px;
   text-align: center;
   margin-top: 40px;
 }
@@ -761,7 +761,7 @@ button {
   flex-wrap: wrap;
   gap: 10px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--ink-faint);
   margin: -4px 0 14px;
 }
@@ -810,13 +810,13 @@ button {
   gap: 8px;
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 12px;
+  font-size: 13.5px;
   color: rgba(95, 240, 224, 0.6);
   flex-shrink: 0;
 }
 
 .quiz-pet {
-  font-size: 26px;
+  font-size: 29px;
   line-height: 1;
   flex-shrink: 0;
 }
@@ -882,19 +882,19 @@ button {
   color: var(--primary);
   border: 1px solid rgba(255, 180, 84, 0.4);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   border-radius: var(--radius);
   padding: 5px 10px;
 }
 
 .topic-label {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ink-soft);
 }
 
 .question-prompt {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--ink-strong);
   line-height: 1.6;
@@ -907,7 +907,7 @@ button {
   border: 1px solid rgba(95, 240, 224, 0.15);
   border-radius: var(--radius);
   padding: 16px;
-  font-size: 13px;
+  font-size: 14.5px;
   line-height: 1.8;
   overflow-x: auto;
   margin: 0 0 16px;
@@ -930,7 +930,7 @@ button {
   border: 1px solid var(--option-border);
   border-radius: var(--radius);
   padding: 14px 16px;
-  font-size: 14.5px;
+  font-size: 16px;
   text-align: left;
   line-height: 1.5;
   color: var(--ink);
@@ -994,7 +994,7 @@ button {
   gap: 8px;
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15.5px;
   margin-bottom: 10px;
 }
 
@@ -1007,9 +1007,9 @@ button {
 }
 
 .feedback-explanation {
-  font-size: 13.5px;
+  font-size: 15.5px;
   line-height: 1.8;
-  color: var(--ink-soft);
+  color: var(--ink-strong);
   margin: 0 0 12px;
 }
 
@@ -1017,7 +1017,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--cyan);
   margin-bottom: 14px;
 }
@@ -1025,7 +1025,7 @@ button {
 .next-btn {
   width: 100%;
   padding: 14px;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 /* ── 結算 ────────────────────────── */
@@ -1067,13 +1067,13 @@ button {
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--ink-soft);
 }
 
 .stat-row strong {
   font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: 17px;
   color: var(--cyan);
 }
 
@@ -1083,7 +1083,7 @@ button {
 
 .result-hint {
   color: var(--ink-soft);
-  font-size: 14px;
+  font-size: 16px;
   margin-bottom: 24px;
 }
 
@@ -1118,7 +1118,7 @@ button {
   align-items: center;
   gap: 10px;
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -1133,7 +1133,7 @@ button {
 }
 
 .note-card-count {
-  font-size: 13px;
+  font-size: 14.5px;
   color: var(--ink-soft);
   margin: 8px 0 16px;
 }
@@ -1146,7 +1146,7 @@ button {
   border-radius: var(--radius);
   padding: 11px 22px;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 700;
 }
 
@@ -1191,7 +1191,7 @@ button {
 
 .stat-tile-label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12.5px;
   color: rgba(95, 240, 224, 0.55);
 }
 
@@ -1201,7 +1201,7 @@ button {
 
 .stat-tile-value {
   font-family: var(--font-mono);
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 800;
   color: var(--cyan);
   display: flex;
@@ -1211,7 +1211,7 @@ button {
 
 .stat-tile-wide .stat-tile-value {
   color: var(--primary);
-  font-size: 22px;
+  font-size: 25px;
 }
 
 .stat-tile-value .icon {
@@ -1232,7 +1232,7 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 14.5px;
   color: var(--ink-soft);
   margin-bottom: 10px;
 }
@@ -1271,7 +1271,7 @@ button {
 
 .mini-bar-value {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--ink-faint);
   height: 14px;
 }
@@ -1292,7 +1292,7 @@ button {
 
 .mini-bar-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--ink-faint);
   margin-top: 6px;
 }
@@ -1329,7 +1329,7 @@ button {
   height: 11px;
   line-height: 11px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   color: var(--ink-faint);
 }
 
@@ -1360,7 +1360,7 @@ button {
   width: 11px;
   flex-shrink: 0;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   color: var(--ink-faint);
   white-space: nowrap;
   overflow: visible;
@@ -1415,7 +1415,7 @@ button {
   gap: 4px;
   margin-top: 10px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--ink-faint);
 }
 
@@ -1435,7 +1435,7 @@ button {
 .chapter-stat-head {
   display: flex;
   justify-content: space-between;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--ink);
   margin-bottom: 10px;
@@ -1448,7 +1448,7 @@ button {
 
 .chapter-stat-sub {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--ink-faint);
   margin-top: 6px;
 }
@@ -1472,14 +1472,10 @@ button {
 }
 
 .hero-xp-icon {
-  width: 56px;
-  height: 56px;
   flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  border: 2px solid var(--primary);
-  box-shadow: 0 0 14px rgba(255, 180, 84, 0.35);
-  background: radial-gradient(circle at 30% 20%, rgba(95, 240, 224, 0.35), transparent 60%), #0d1116;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hero-xp-icon .mascot {
@@ -1487,7 +1483,8 @@ button {
 }
 
 .hero-xp-icon .mascot-emoji {
-  font-size: 32px;
+  font-size: 36px;
+  line-height: 1;
   animation: none;
   filter: none;
 }
@@ -1507,13 +1504,13 @@ button {
 .hero-xp-name {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--primary);
 }
 
 .hero-xp-count {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--ink-soft);
   white-space: nowrap;
 }
@@ -1599,10 +1596,15 @@ button {
 }
 
 .growth-history-emoji {
-  font-size: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 25px;
   width: 28px;
+  height: 28px;
   flex-shrink: 0;
   text-align: center;
+  line-height: 1;
 }
 
 .growth-history-info {
@@ -1612,14 +1614,14 @@ button {
 }
 
 .growth-history-name {
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 600;
   color: var(--ink);
 }
 
 .growth-history-xp {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--ink-faint);
 }
 
@@ -1639,7 +1641,7 @@ button {
   border-bottom: 1px solid rgba(95, 240, 224, 0.12);
   border-radius: 0;
   padding: 16px 18px;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--ink);
   text-align: left;
 }
@@ -1699,7 +1701,7 @@ button {
 }
 
 .login-desc {
-  font-size: 13px;
+  font-size: 14.5px;
   line-height: 1.7;
   color: var(--ink-soft);
   margin: 0 0 12px;
@@ -1762,7 +1764,7 @@ button {
 .account-avatar-initial {
   font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 26px;
+  font-size: 29px;
   color: var(--cyan);
 }
 
@@ -1822,13 +1824,13 @@ button {
 }
 
 .account-name {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--ink);
 }
 
 .account-name-input {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   border: 1px solid var(--option-border);
   border-radius: var(--radius);
@@ -1857,13 +1859,13 @@ button {
 
 .profile-stat-value {
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
   color: var(--cyan);
 }
 
 .profile-stat-label {
-  font-size: 12px;
+  font-size: 13.5px;
   color: var(--ink-faint);
 }
 
