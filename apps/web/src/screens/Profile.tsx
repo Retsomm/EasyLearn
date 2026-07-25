@@ -4,14 +4,17 @@ import AccountHeader from '@/components/AccountHeader'
 import GrowthHistory from '@/components/GrowthHistory'
 import Mascot from '@/components/Mascot'
 import Icon from '@/components/Icons'
+import { THEMES } from '@/lib/themes'
 import { chapters, getStage, getNextStage, type Progress } from '@easylearn/core'
 
 interface ProfileProps {
   progress: Progress
   onClearLocalData: () => void
+  theme: string
+  onThemeChange: (theme: string) => void
 }
 
-const Profile = ({ progress, onClearLocalData }: ProfileProps) => {
+const Profile = ({ progress, onClearLocalData, theme, onThemeChange }: ProfileProps) => {
   const [showGrowth, setShowGrowth] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const { user, isSignedIn, isLoaded } = useUser()
@@ -142,6 +145,20 @@ const Profile = ({ progress, onClearLocalData }: ProfileProps) => {
           <span className="profile-stat-value">{totalAnswered}</span>
           <span className="profile-stat-label">累計答題</span>
         </div>
+      </div>
+
+      <h3 className="section-title">外觀主題</h3>
+      <div className="theme-swatch-grid">
+        {THEMES.filter((t) => t.enabled).map((t) => (
+          <button
+            key={t.id}
+            className={`theme-swatch${theme === t.id ? ' is-active' : ''}`}
+            onClick={() => onThemeChange(t.id)}
+          >
+            <span className="theme-swatch-dot" style={{ background: t.swatch }} />
+            {t.label}
+          </button>
+        ))}
       </div>
 
       <h3 className="section-title">帳號設定</h3>

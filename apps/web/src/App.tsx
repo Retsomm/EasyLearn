@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useProgress } from '@/hooks/useProgress'
+import { useTheme } from '@/hooks/useTheme'
 import {
   getLevel,
   getWrongQuestions,
@@ -49,6 +50,7 @@ const navGroupOfChapter = (levelId: string): string | null =>
 const App = () => {
   const { progress, answerQuestion, toggleSaved, finishLevel, finishReview, resetLocalProgress } =
     useProgress()
+  const { theme, setTheme } = useTheme()
   const [view, setView] = useState<View>({ name: 'home' })
 
   const startLevel = (levelId: string) => {
@@ -189,7 +191,14 @@ const App = () => {
       case 'stats':
         return <Stats progress={progress} />
       case 'profile':
-        return <Profile progress={progress} onClearLocalData={resetLocalProgress} />
+        return (
+          <Profile
+            progress={progress}
+            onClearLocalData={resetLocalProgress}
+            theme={theme}
+            onThemeChange={setTheme}
+          />
+        )
       default:
         return (
           <Home
