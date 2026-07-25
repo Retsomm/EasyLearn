@@ -1980,3 +1980,36 @@ html[data-theme='1a'] {
     radial-gradient(circle at 55% 105%, rgba(94, 234, 212, 0.16), transparent 55%);
   --bg-pattern-size: 100% 100%;
 }
+
+/* ══════════════════════════════════════════════════════════
+   主題：極光玻璃 Aurora Glass（data-theme="1c"）
+   深藍夜空＋薄玻璃卡片，極光漸層作點綴線條
+   ══════════════════════════════════════════════════════════ */
+html[data-theme='1c'] {
+  --bg: #0a1128;
+  --bg-rgb: 10, 17, 40;
+  --card: #111d3a;
+  --panel-alt: #0d1730;
+  --ink: #eef4ff;
+  --ink-rgb: 238, 244, 255;
+  --ink-strong: #ffffff;
+  --primary: #a78bfa;
+  --primary-rgb: 167, 139, 250;
+  --primary-deep: #866fc8;
+  --primary-panel: #1d2041;
+  --on-primary: #07211d;
+  --on-primary-alt: #07211d;
+  --cyan: #5eead4;
+  --cyan-rgb: 94, 234, 212;
+  --wrong: #f472b6;
+  --wrong-rgb: 244, 114, 182;
+  --wrong-panel: #261d39;
+  --option-bg: #16224a;
+  --card-clip: none;
+  --btn-clip: none;
+  --radius: 22px;
+  --font-mono: 'Space Grotesk', 'SF Mono', Menlo, Consolas, monospace;
+  --bg-pattern: radial-gradient(ellipse 320px 220px at 10% 0%, rgba(94, 234, 212, 0.22), transparent 70%),
+    radial-gradient(ellipse 300px 200px at 90% 15%, rgba(167, 139, 250, 0.2), transparent 70%);
+  --bg-pattern-size: 100% 100%;
+}
