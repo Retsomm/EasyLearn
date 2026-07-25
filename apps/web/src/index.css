@@ -2047,3 +2047,40 @@ html[data-theme='1e'] {
     radial-gradient(1px 1px at 550px 100px, rgba(233, 201, 130, 0.35), transparent),
     radial-gradient(1px 1px at 700px 300px, rgba(233, 201, 130, 0.3), transparent);
 }
+
+/* ══════════════════════════════════════════════════════════
+   主題：霓虹星際 Retro Neon Space（data-theme="1f"）
+   合成波地平線＋螢光洋紅/青，大膽張揚、遊戲感
+   （切角卡片跟預設主題一樣沿用 --card-clip/--btn-clip 的預設切角，不覆寫）
+   ══════════════════════════════════════════════════════════ */
+html[data-theme='1f'] {
+  --bg: #160821;
+  --bg-rgb: 22, 8, 33;
+  --card: #20092e;
+  --panel-alt: #1a0720;
+  --ink: #ffffff;
+  --ink-rgb: 255, 255, 255;
+  --ink-strong: #ffffff;
+  --primary: #ff2e88;
+  --primary-rgb: 255, 46, 136;
+  --primary-deep: #cc256d;
+  --primary-panel: #320d2d;
+  --on-primary: #1a0311;
+  --on-primary-alt: #1a0311;
+  --cyan: #00e5ff;
+  --cyan-rgb: 0, 229, 255;
+  --wrong: #ff2e88;
+  --wrong-rgb: 255, 46, 136;
+  --wrong-panel: #320d2d;
+  --option-bg: #2a0a1f;
+  --font-mono: 'Orbitron', 'SF Mono', Menlo, Consolas, monospace;
+  --bg-pattern: repeating-linear-gradient(
+      90deg,
+      rgba(255, 46, 136, 0.2) 0,
+      rgba(255, 46, 136, 0.2) 1px,
+      transparent 1px,
+      transparent 24px
+    ),
+    radial-gradient(circle at 15% 10%, rgba(0, 229, 255, 0.22), transparent 50%);
+  --bg-pattern-size: 100% 100%;
+}
