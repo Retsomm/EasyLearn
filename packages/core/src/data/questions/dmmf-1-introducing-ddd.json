@@ -1,0 +1,128 @@
+{
+  "id": "dmmf-1",
+  "title": "Ch1：領域驅動設計導論",
+  "questions": [
+    {
+      "id": "dmmf-1-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "共通語言：程式碼裡的名稱跟業務專家講的名稱一致",
+      "docs": "",
+      "story": "",
+      "prompt": "業務專家講「訂單」時說的是「客戶下的購買請求」，工程師如果把這個概念寫成程式碼裡叫做 PurchaseRequestEntity，跟業務專家對話時卻還是說「訂單」，會發生什麼問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "每次工程師和業務專家溝通，都要在腦中做一次「訂單 ↔ PurchaseRequestEntity」的翻譯，翻譯次數一多就容易出錯、也容易讓兩邊對同一個詞其實想的是不完全一樣的東西——共通語言（Ubiquitous Language）主張直接讓程式碼裡的命名跟業務語言一致（例如就叫 Order），省掉這一層翻譯，讓「講的」跟「寫的」是同一套詞彙" },
+        { "id": "b", "text": "這完全不是問題，只要工程師自己心裡記得對照表就好，跟程式碼品質無關" },
+        { "id": "c", "text": "共通語言指的是全公司必須統一使用同一種程式語言，跟命名用詞無關" },
+        { "id": "d", "text": "PurchaseRequestEntity 這種命名方式比較嚴謹，應該要求業務專家改口配合工程師的說法" }
+      ],
+      "answer": "a",
+      "explanation": "共通語言（Ubiquitous Language）的核心主張，是讓程式碼裡的命名直接採用業務專家平常講的詞彙（這裡就該叫 Order，不是 PurchaseRequestEntity），省掉工程師和業務專家溝通時「腦內翻譯」這一層——翻譯次數越多、討論同一個詞時兩邊實際想的東西產生落差的風險就越高。",
+      "verify": { "manual": "概念題：以具體命名對照取代抽象共通語言定義，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-1-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Bounded Context：同一個詞在不同情境下代表不同的東西",
+      "docs": "",
+      "story": "",
+      "prompt": "「客戶」這個詞，在「業務銷售」情境裡代表「有信用額度、下過哪些訂單的人」，在「客服支援」情境裡代表「有哪些待處理工單的人」。如果整個系統只用一個 Customer model 同時裝這兩種情境的欄位，會有什麼問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "這個 Customer model 會變成一個什麼都裝、卻沒有一個情境真正說得清楚它代表什麼的大雜燴——業務銷售情境不需要知道工單數量，客服情境不需要知道信用額度，硬把兩者塞進同一個 model，會讓兩邊的工程師都得面對一堆自己情境用不到、卻可能被誤用或需要維護的欄位。Bounded Context 主張先劃出「這個詞在這個範圍內只有一種意思」的邊界，業務銷售情境跟客服情境各自維護自己版本的 Customer model，欄位跟意義不用互相遷就" },
+        { "id": "b", "text": "不會有任何問題，欄位越多的 model 代表功能越完整、越應該被鼓勵" },
+        { "id": "c", "text": "這種情況下應該把「客戶」這個詞從系統裡完全移除，改用別的名稱" },
+        { "id": "d", "text": "Bounded Context 主張的是全公司只能有一個 Customer model，不同情境的欄位差異應該用註解說明就好" }
+      ],
+      "answer": "a",
+      "explanation": "把兩種情境的欄位硬塞進同一個 Customer model，會產生一個誰都不完全需要、卻誰都要面對的大雜燴。Bounded Context 的做法是先承認「客戶」這個詞在不同情境下代表不同東西，替每個情境劃出自己的邊界，各自維護符合自己情境需求的 model，不用勉強遷就對方情境的欄位。",
+      "verify": { "manual": "概念題：以客戶一詞跨情境衝突的具體例子取代抽象 Bounded Context 定義，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-1-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "沒有 Bounded Context 邊界的後果：跨情境欄位互相干擾",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "sendInvoice 是業務銷售情境的功能，只應該關心信用額度夠不夠；但因為大家共用同一個 Customer model，這段程式碼不小心把客服情境的欄位也算了進去。這段程式碼有什麼問題？",
+      "code": "function sendInvoice(customer, amount) {\n  const canAfford = customer.creditLimit >= amount;\n  const isPriority = customer.openSupportTickets > 0;\n  if (canAfford && !isPriority) {\n    return `寄出 ${amount} 元的請款單`;\n  }\n  return '暫不寄出請款單';\n}\n\nconsole.log(sendInvoice({ creditLimit: 1000, openSupportTickets: 2 }, 500));",
+      "options": [
+        { "id": "a", "text": "sendInvoice 是業務銷售的功能，理論上只該檢查 creditLimit 夠不夠，卻因為兩個情境共用同一個 Customer model，混進了 openSupportTickets（客服情境的欄位）這個跟「能不能請款」毫無關係的判斷——導致一個信用額度明明夠、卻只因為有未結工單就暫緩請款的錯誤商業邏輯，這正是缺乏 Bounded Context 邊界時，兩個情境的欄位容易互相污染彼此邏輯的具體後果" },
+        { "id": "b", "text": "這段程式碼完全正確，客服工單數量本來就該影響請款決策" },
+        { "id": "c", "text": "問題出在 creditLimit 這個欄位命名不夠清楚" },
+        { "id": "d", "text": "問題出在 amount 這個參數傳遞的方式，跟 Bounded Context 無關" }
+      ],
+      "answer": "a",
+      "explanation": "這段程式碼示範了缺乏 Bounded Context 邊界的具體後果：openSupportTickets 明明是客服情境的欄位，卻被寫進了業務銷售情境的請款邏輯裡，導致「信用額度夠、卻因為有未結工單就不寄請款單」這種不屬於業務銷售這個 Bounded Context 該考慮的判斷混了進來。如果業務銷售有自己獨立的 Customer model（只含 creditLimit），這種跨情境污染就不會發生。",
+      "verify": {
+        "checks": [
+          { "code": "function sendInvoice(customer, amount) {\n  const canAfford = customer.creditLimit >= amount;\n  const isPriority = customer.openSupportTickets > 0;\n  if (canAfford && !isPriority) {\n    return `寄出 ${amount} 元的請款單`;\n  }\n  return '暫不寄出請款單';\n}\nconsole.log(sendInvoice({ creditLimit: 1000, openSupportTickets: 2 }, 500));", "expected": "暫不寄出請款單" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-1-q4",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "業務事件：workflow 因為「發生了什麼事」而啟動，不是排程觸發",
+      "docs": "",
+      "story": "",
+      "prompt": "「訂單已下訂」（OrderPlaced）這種業務事件，觸發了後續一連串處理（確認庫存、通知倉庫、寄送確認信）。這種「因為事件發生而啟動流程」的建模方式，跟「排程每小時檢查一次資料庫」比起來，好處是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "事件驅動的建模直接反映了業務上「真實發生的那個時刻」——OrderPlaced 這個名字本身就在說「有一件事剛剛真的發生了」，後續流程可以立即對這件事做出反應；排程檢查則是每隔一段時間才「回頭問一次」有沒有新東西，中間有延遲，而且程式碼裡看不出「這個流程是為了回應哪一個具體業務事件」，只看得到「每小時執行一次」這種跟業務語言脫節的技術細節" },
+        { "id": "b", "text": "兩種方式在建模上完全等價，只是實作的技術選型不同，跟業務語言沒有關係" },
+        { "id": "c", "text": "事件驅動建模的唯一好處是程式碼行數比較少" },
+        { "id": "d", "text": "排程檢查一定比事件驅動更即時，因為排程可以設定得很頻繁" }
+      ],
+      "answer": "a",
+      "explanation": "用業務事件（像 OrderPlaced）建模，讓程式碼直接反映「業務上真實發生的那個時刻」，跟業務專家講的話對得起來；排程檢查則是技術上的「定期回頭問一次」，程式碼裡完全看不出這個流程是為了回應哪個具體業務事件，跟共通語言想達成的「講的」和「寫的」一致這個目標背道而馳。",
+      "verify": { "manual": "概念題：以事件驅動 vs 排程檢查的具體對照取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-1-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "業務事件作為資料：用 type 欄位分派後續處理",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "把業務事件表示成帶有 type 欄位的資料，讓 handleEvent 依照 type 分派到對應的處理邏輯。這段程式會印出什麼？",
+      "code": "function handleEvent(event) {\n  if (event.type === 'OrderPlaced') {\n    return `確認訂單 ${event.orderId}，通知倉庫準備出貨`;\n  }\n  if (event.type === 'OrderCancelled') {\n    return `取消訂單 ${event.orderId}，釋放已保留的庫存`;\n  }\n  return '未知事件，忽略';\n}\n\nconsole.log(handleEvent({ type: 'OrderPlaced', orderId: 'A100' }));\nconsole.log(handleEvent({ type: 'OrderCancelled', orderId: 'A100' }));",
+      "options": [
+        { "id": "a", "text": "確認訂單 A100，通知倉庫準備出貨\n取消訂單 A100，釋放已保留的庫存" },
+        { "id": "b", "text": "確認訂單 A100，通知倉庫準備出貨\n確認訂單 A100，通知倉庫準備出貨" },
+        { "id": "c", "text": "未知事件，忽略\n未知事件，忽略" },
+        { "id": "d", "text": "取消訂單 A100，釋放已保留的庫存\n確認訂單 A100，通知倉庫準備出貨" }
+      ],
+      "answer": "a",
+      "explanation": "handleEvent 依照 event.type 分派到對應的處理邏輯——這正是把「業務事件」表示成一份帶標籤的資料，再依標籤分派處理方式，跟依標籤分派資料型別是同一種手法，只是這裡的標籤代表的是「發生了什麼業務事件」，不是資料型別。",
+      "verify": {
+        "checks": [
+          { "code": "function handleEvent(event) {\n  if (event.type === 'OrderPlaced') {\n    return `確認訂單 ${event.orderId}，通知倉庫準備出貨`;\n  }\n  if (event.type === 'OrderCancelled') {\n    return `取消訂單 ${event.orderId}，釋放已保留的庫存`;\n  }\n  return '未知事件，忽略';\n}\nconsole.log(handleEvent({ type: 'OrderPlaced', orderId: 'A100' }));\nconsole.log(handleEvent({ type: 'OrderCancelled', orderId: 'A100' }));", "expected": "確認訂單 A100，通知倉庫準備出貨\n取消訂單 A100，釋放已保留的庫存" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-1-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "子領域劃分：不是每個業務能力都值得投入同樣多的複雜度",
+      "docs": "",
+      "story": "",
+      "prompt": "「訂單定價邏輯」是這家電商公司最核心、最能創造差異化競爭力的部分；「寄送 email 通知」則是隨便找一套現成服務都能做到的通用功能。把整個領域拆分成子領域，對這兩者的建模投入程度，會建議怎麼做？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "核心子領域（像訂單定價邏輯）值得投入最多心力做精細的領域建模，因為那是公司真正的競爭優勢所在；通用子領域（像寄送 email 通知）則可以盡量選用現成的服務或簡單實作，不需要為它花費太多設計成本——把心力集中在真正創造價值的地方，而不是每個角落都用同樣高的規格對待" },
+        { "id": "b", "text": "每個子領域都必須投入完全相同的建模心力，不應該有任何差別待遇" },
+        { "id": "c", "text": "應該把最多心力花在寄送 email 通知這種功能上，因為它是每天都會被呼叫最多次的功能" },
+        { "id": "d", "text": "子領域劃分完全不影響應該投入多少建模心力，純粹只是程式碼檔案的分類方式" }
+      ],
+      "answer": "a",
+      "explanation": "子領域劃分的價值之一，就是幫助團隊判斷「哪裡才是真正值得投入精細建模心力的地方」——核心子領域承載著公司的競爭優勢，值得仔細雕琢；通用子領域可以用現成方案打發，不需要跟核心子領域一樣講究。這種分辨，避免把有限的心力平均攤在所有角落，導致真正重要的核心邏輯反而沒有得到足夠的關注。",
+      "verify": { "manual": "概念題：以核心子領域與通用子領域的具體對照取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "id": "dmmf-10",
+  "title": "Ch10：實作 — 處理錯誤",
+  "questions": [
+    {
+      "id": "dmmf-10-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Result 型別：把錯誤明確寫進回傳型別，解決前一章的形狀問題",
+      "docs": "",
+      "story": "",
+      "prompt": "前一章卡住的問題是「有些步驟可能失敗、形狀因此多包一層 tag，跟其他步驟對不起來」。如果每個可能失敗的步驟，統一都回傳 { tag: 'Ok', value } 或 { tag: 'Error', error } 這種叫做 Result 的固定形狀，解決了什麼問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "讓「可能失敗」這件事變成一種統一、可預期的形狀：只要是可能失敗的步驟，回傳的永遠是同一種 Result 形狀，不會有的步驟包一層、有的步驟不包，這樣才有辦法寫出通用的組合邏輯，一次處理好「怎麼把一連串可能失敗的步驟串接起來」，不用為每個步驟量身訂做組合方式" },
+        { "id": "b", "text": "Result 型別只是把錯誤處理的程式碼變多，並沒有解決任何實際問題" },
+        { "id": "c", "text": "只有第一個步驟需要用 Result 包裝，後面的步驟不需要" },
+        { "id": "d", "text": "Result 型別要求所有步驟必須永遠成功，不能表示失敗的情況" }
+      ],
+      "answer": "a",
+      "explanation": "用統一的 Result 形狀表示「可能失敗」，讓所有可能失敗的步驟都遵守同一種約定，不會有的步驟包一層、有的步驟不包。這種一致性才有辦法寫出通用的組合邏輯，一次處理好「怎麼把一連串可能失敗的步驟正確串接起來」，不需要為每個步驟各自量身訂做組合方式。",
+      "verify": { "manual": "概念題：呼應前一章形狀不一致問題，以 Result 統一形狀取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-10-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "bind：串接兩個都可能失敗的步驟，一失敗就跳過後面",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "bind 接收一個「可能失敗的函式」和一個「已經是 Result 的值」，只有在 Result 是 Ok 時才把裡面的值丟給函式繼續處理，是 Error 就直接跳過、原封不動往下傳。這段程式會印出什麼？",
+      "code": "function bind(fn, result) {\n  if (result.tag === 'Error') return result;\n  return fn(result.value);\n}\n\nfunction half(n) {\n  return n % 2 === 0 ? { tag: 'Ok', value: n / 2 } : { tag: 'Error', error: `${n} 不是偶數` };\n}\n\nconst step1 = bind(half, { tag: 'Ok', value: 8 });\nconst step2 = bind(half, step1);\nconsole.log(step2);\n\nconst stepA = bind(half, { tag: 'Ok', value: 7 });\nconst stepB = bind(half, stepA);\nconsole.log(stepB);",
+      "options": [
+        { "id": "a", "text": "{ tag: 'Ok', value: 2 }\n{ tag: 'Error', error: '7 不是偶數' }" },
+        { "id": "b", "text": "{ tag: 'Ok', value: 2 }\n{ tag: 'Ok', value: 2 }" },
+        { "id": "c", "text": "{ tag: 'Error', error: '7 不是偶數' }\n{ tag: 'Error', error: '7 不是偶數' }" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "8 連續除以 2 兩次都能整除，兩步都成功，最後得到 { tag: 'Ok', value: 2 }；7 第一次呼叫 half 就不是偶數，直接回傳 Error，第二次 bind 檢查到收到的是 Error，直接原封不動往下傳，half 完全不會被呼叫第二次——這正是 bind 的行為：一旦進入失敗狀態，後面的步驟會被自動跳過，不需要每個步驟自己判斷「前面是不是已經失敗了」。",
+      "verify": {
+        "checks": [
+          { "code": "function bind(fn, result) {\n  if (result.tag === 'Error') return result;\n  return fn(result.value);\n}\nfunction half(n) {\n  return n % 2 === 0 ? { tag: 'Ok', value: n / 2 } : { tag: 'Error', error: `${n} 不是偶數` };\n}\nconst step1 = bind(half, { tag: 'Ok', value: 8 });\nconst step2 = bind(half, step1);\nconsole.log(step2);\nconst stepA = bind(half, { tag: 'Ok', value: 7 });\nconst stepB = bind(half, stepA);\nconsole.log(stepB);", "expected": "{ tag: 'Ok', value: 2 }\n{ tag: 'Error', error: '7 不是偶數' }" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-10-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "鐵路導向程式設計：成功軌道與失敗軌道，一旦轉軌就一路到底",
+      "docs": "",
+      "story": "",
+      "prompt": "「鐵路導向程式設計」（Railway-Oriented Programming）把整個 pipeline 想像成有兩條並行的軌道——「成功軌道」跟「失敗軌道」。一旦某個步驟讓火車轉進了失敗軌道，後面的步驟會發生什麼事？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "後面所有步驟都會被自動跳過，火車會一路沿著失敗軌道直接開到終點站（最終的錯誤結果），不會有任何一個後續步驟會被執行——這正是 bind 用「檢查到 Error 就直接原封不動往下傳」實現的效果，讓開發者不用在每個步驟裡手動寫「如果前面失敗了就跳過我」這種重複的判斷邏輯" },
+        { "id": "b", "text": "火車會在下一個步驟自動切回成功軌道，繼續正常執行" },
+        { "id": "c", "text": "失敗軌道只會影響當下這一個步驟，後面的步驟完全不受影響，會照常執行" },
+        { "id": "d", "text": "鐵路導向程式設計要求開發者在每一個步驟手動判斷前面是否失敗，跟 bind 沒有任何關係" }
+      ],
+      "answer": "a",
+      "explanation": "鐵路導向程式設計的核心比喻，就是一旦轉進失敗軌道，火車會一路開到底，不會再切回成功軌道——後面所有原本設計給成功情況走的步驟都會被自動跳過。這正是 bind 這種組合方式帶來的效果：一旦某一步驟回傳 Error，後面的步驟完全不會被執行，開發者不用在每個步驟裡手動重複寫「檢查前面是否已經失敗」這種邏輯。",
+      "verify": { "manual": "概念題：以鐵路雙軌比喻取代抽象組合機制敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-10-q4",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "串接三個步驟：中間失敗，第三步完全不會執行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "用 bind 依序串接三個步驟，第二步刻意設計成一定會失敗。這段程式會印出什麼？",
+      "code": "function bind(fn, result) {\n  return result.tag === 'Error' ? result : fn(result.value);\n}\n\nlet step3Called = false;\n\nfunction step1(order) { return { tag: 'Ok', value: { ...order, validated: true } }; }\nfunction step2() { return { tag: 'Error', error: '庫存不足' }; }\nfunction step3(order) {\n  step3Called = true;\n  return { tag: 'Ok', value: { ...order, priced: true } };\n}\n\nlet result = { tag: 'Ok', value: { id: 'A1' } };\nresult = bind(step1, result);\nresult = bind(step2, result);\nresult = bind(step3, result);\n\nconsole.log(result);\nconsole.log('step3 有沒有被呼叫：', step3Called);",
+      "options": [
+        { "id": "a", "text": "{ tag: 'Error', error: '庫存不足' }\nstep3 有沒有被呼叫： false" },
+        { "id": "b", "text": "{ tag: 'Error', error: '庫存不足' }\nstep3 有沒有被呼叫： true" },
+        { "id": "c", "text": "{ tag: 'Ok', value: { id: 'A1', validated: true, priced: true } }\nstep3 有沒有被呼叫： true" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "step1 成功、把訂單標記為已驗證；step2 刻意設計成無條件回傳 Error（模擬庫存不足）；到了 bind(step3, result) 這一步，bind 檢查到 result 已經是 Error，直接把它原封不動往下傳，根本沒有呼叫 step3 這個函式——所以 step3Called 維持 false，最終結果停留在 step2 產生的 Error，沒有被 step3 覆蓋或處理。",
+      "verify": {
+        "checks": [
+          { "code": "function bind(fn, result) {\n  return result.tag === 'Error' ? result : fn(result.value);\n}\nlet step3Called = false;\nfunction step1(order) { return { tag: 'Ok', value: { ...order, validated: true } }; }\nfunction step2() { return { tag: 'Error', error: '庫存不足' }; }\nfunction step3(order) {\n  step3Called = true;\n  return { tag: 'Ok', value: { ...order, priced: true } };\n}\nlet result = { tag: 'Ok', value: { id: 'A1' } };\nresult = bind(step1, result);\nresult = bind(step2, result);\nresult = bind(step3, result);\nconsole.log(result);\nconsole.log('step3 有沒有被呼叫：', step3Called);", "expected": "{ tag: 'Error', error: '庫存不足' }\nstep3 有沒有被呼叫： false" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-10-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "map vs bind：處理「不會失敗」的函式，不要多包一層",
+      "docs": "",
+      "story": "",
+      "prompt": "formatPrice(x) 是一個永遠不會失敗的普通函式（number => string），如果直接用 bind(formatPrice, result) 去串接，會遇到什麼問題？應該改用 map 還是繼續用 bind？",
+      "code": "// formatPrice: number => string，永遠成功，不會回傳 Result\n// bind 預期傳進去的函式『本身』就要回傳 Result 形狀",
+      "options": [
+        { "id": "a", "text": "應該改用 map：bind 預期傳進去的函式本身就要回傳一個 Result 形狀，但 formatPrice 直接回傳一個普通字串，不是 Result，如果硬用 bind，取出來的結果形狀會跟預期對不上；map 則是設計來處理「這個函式本身不會失敗、直接回傳普通值」的情況——map 會自動把普通函式的回傳值包回 Result 裡，不需要 formatPrice 自己知道 Result 這件事" },
+        { "id": "b", "text": "兩者用起來完全一樣，選哪一個都沒有差別" },
+        { "id": "c", "text": "應該把 formatPrice 改寫成回傳 Result 形狀，才能使用 bind 或 map 中的任何一個" },
+        { "id": "d", "text": "map 只能用在陣列上，不能用在 Result 型別上" }
+      ],
+      "answer": "a",
+      "explanation": "bind 預期傳進去的函式本身就要回傳 Result 形狀，formatPrice 卻是一個永遠成功、直接回傳普通字串的函式——這種情況該用 map，map 會自動把 formatPrice 的普通回傳值包回 Result（{ tag: 'Ok', value: 格式化後的字串 }），formatPrice 完全不需要知道 Result 這件事、不用自己去包裝。bind 跟 map 分別對應「這個函式本身會不會失敗」這兩種不同情況，選對工具才能正確組合。",
+      "verify": { "manual": "概念題：以 formatPrice 永不失敗的具體例子取代抽象 map/bind 區分敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-10-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "加上非同步效果：一個步驟同時「可能失敗」又「需要等待」",
+      "docs": "",
+      "story": "",
+      "prompt": "「檢查商品庫存」這個步驟，除了「可能失敗（庫存不足）」之外，還需要「打一次遠端 API、等待回應」（非同步）。這個步驟的回傳型別，該怎麼同時表達「可能失敗」跟「需要等待」這兩件事？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "需要把 Result 和 Promise 兩種效果疊在一起：函式回傳一個 Promise，這個 Promise resolve 之後拿到的值才是 Result——也就是「Promise 包著 Result」這種疊起來的形狀，表達「這件事需要等待，等到之後可能成功、也可能失敗」，組合這種步驟時，bind／map 也要跟著調整成能同時處理「等待」跟「可能失敗」兩件事的版本" },
+        { "id": "b", "text": "非同步效果跟「可能失敗」這件事完全無法同時表達，只能二選一" },
+        { "id": "c", "text": "應該完全忽略非同步這件事，把打 API 的邏輯直接寫成同步程式碼" },
+        { "id": "d", "text": "只要函式名稱裡有 async 這個字，就自動具備了表達「可能失敗」的能力" }
+      ],
+      "answer": "a",
+      "explanation": "「可能失敗」跟「需要等待」是兩種各自獨立的效果，可以疊在一起表達：函式回傳一個 Promise，這個 Promise resolve 之後拿到的才是 Result——也就是 Promise 包著 Result 這種疊起來的形狀，同時表達「這件事需要等待」跟「等到之後可能成功、也可能失敗」。組合這種步驟時，原本處理「可能失敗」的 bind／map，也需要跟著調整，讓它們能同時處理「等待」跟「可能失敗」這兩層效果。",
+      "verify": { "manual": "概念題：以 Promise 疊加 Result 的具體形狀取代抽象非同步效果敘述，無可執行程式碼。" }
+    }
+  ]
+}

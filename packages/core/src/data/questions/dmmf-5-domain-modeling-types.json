@@ -1,0 +1,128 @@
+{
+  "id": "dmmf-5",
+  "title": "Ch5：用型別建模領域",
+  "questions": [
+    {
+      "id": "dmmf-5-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "簡單值也要建模：用外殼型別包住原始值，避免不同種類的 ID 混用",
+      "docs": "",
+      "story": "",
+      "prompt": "系統裡 OrderId 和 CustomerId 如果都只是「一個字串」，函式簽章看起來完全一樣（都是 string），這會有什麼風險？",
+      "code": "function cancelOrder(orderId) { /* ... */ }\n\ncancelOrder(customerId); // 型別上完全合法，因為兩者都只是 string",
+      "options": [
+        { "id": "a", "text": "因為兩者在型別系統看來都只是普通的 string，完全沒有任何機制能阻止把 customerId 誤傳進只該接受 orderId 的函式——如果改用各自獨立的外殼型別包住原始字串（即使底層都只是包了一個字串），型別檢查就能在這種誤用發生時直接報錯，而不是要等到執行期才發現資料兜不起來" },
+        { "id": "b", "text": "這種情況完全不會有任何風險，只要變數命名夠清楚，型別系統不需要額外幫忙" },
+        { "id": "c", "text": "只要兩個 id 長度不同，程式就能自動分辨誰是誰" },
+        { "id": "d", "text": "應該把所有 id 都改成數字型別，字串型別天生就無法區分不同種類的 id" }
+      ],
+      "answer": "a",
+      "explanation": "如果 OrderId、CustomerId 都只是普通的 string，型別系統完全看不出兩者的差異，任何地方誤傳一個換成另一個都不會被型別檢查擋下來。用各自獨立的外殼型別包住原始字串，讓型別系統本身就能分辨「這是 OrderId 還是 CustomerId」，把這種誤用提前在型別檢查階段就攔下來，不用等到執行期才發現資料兜不起來。",
+      "verify": { "manual": "概念題：以 orderId／customerId 混用風險取代抽象外殼型別敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-5-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "混用不同種類的 ID：型別是同一種字串，不代表可以互換使用",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "cancelOrder 預期收到的是 orderId，但呼叫端不小心傳成了 customerId。因為兩者在 JS 裡都只是普通字串，這段程式碼不會報任何錯，卻取消了完全錯誤的訂單。這說明了什麼問題？",
+      "code": "const ordersById = { 'ORD-1': { status: 'active' }, 'ORD-2': { status: 'active' } };\n\nfunction cancelOrder(orderId) {\n  if (ordersById[orderId]) {\n    ordersById[orderId].status = 'cancelled';\n    return `已取消訂單 ${orderId}`;\n  }\n  return `找不到訂單 ${orderId}`;\n}\n\nconst customerId = 'ORD-2';\nconsole.log(cancelOrder(customerId));",
+      "options": [
+        { "id": "a", "text": "因為 orderId 和 customerId 在 JS 裡都只是普通字串，型別系統完全沒有能力分辨「這個字串應該代表訂單編號還是客戶編號」——即使變數名稱明明寫的是 customerId，只要它的值恰好符合訂單編號的格式，cancelOrder 依然會照常執行、取消一筆完全不相干的訂單，而且不會有任何警訊" },
+        { "id": "b", "text": "這段程式碼完全正確，只要值符合格式，用哪個變數名稱呼叫都沒有差別" },
+        { "id": "c", "text": "問題出在 ordersById 這個物件的命名不夠清楚" },
+        { "id": "d", "text": "問題出在 status 欄位使用字串 'cancelled'，應該改用布林值" }
+      ],
+      "answer": "a",
+      "explanation": "因為 orderId 和 customerId 在 JS 裡都只是普通字串，型別系統完全沒有能力分辨「這個字串應該代表訂單編號還是客戶編號」——即使變數名稱明明寫的是 customerId，只要它的值恰好符合訂單編號的格式，cancelOrder 依然會照常執行、取消一筆完全不相干的訂單，而且不會有任何警訊。這正是「原始型別偏執」的具體風險：用外殼型別包住不同種類的 id，才能讓這種誤用在型別檢查階段就被攔下來。",
+      "verify": {
+        "checks": [
+          { "code": "const ordersById = { 'ORD-1': { status: 'active' }, 'ORD-2': { status: 'active' } };\nfunction cancelOrder(orderId) {\n  if (ordersById[orderId]) {\n    ordersById[orderId].status = 'cancelled';\n    return `已取消訂單 ${orderId}`;\n  }\n  return `找不到訂單 ${orderId}`;\n}\nconst customerId = 'ORD-2';\nconsole.log(cancelOrder(customerId));", "expected": "已取消訂單 ORD-2" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-5-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Value Object：靠內容判斷身分，不靠是不是同一個物件實例",
+      "docs": "",
+      "story": "",
+      "prompt": "兩個 Address 值物件，欄位內容完全一樣（同樣的街道、城市、郵遞區號），但分別是程式裡不同時間點各自建立出來的兩個物件實例。從「Value Object」的角度來看，這兩者算不算是同一個地址？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "算：Value Object 判斷身分的方式是看「內容是否相同」，不是看「是不是記憶體裡同一個物件實例」——只要兩個 Address 的欄位內容一模一樣，就該被視為同一個、可以互相替換使用的地址，即使它們是分別獨立建立出來的兩個物件實例" },
+        { "id": "b", "text": "不算，因為它們是記憶體裡不同的兩個物件，Value Object 一定要用 === 比對是不是同一個實例才算相同" },
+        { "id": "c", "text": "只有其中一個是「正本」，另一個建立出來的就自動變成無效的地址" },
+        { "id": "d", "text": "Value Object 完全不需要考慮「兩者是否相同」這個問題" }
+      ],
+      "answer": "a",
+      "explanation": "Value Object 的身分判斷方式是「看內容」，不是「看是不是同一個物件實例」——只要兩個 Address 的欄位內容完全相同，就該被當成同一個地址看待，可以互相替換使用。這跟接下來會談到的 Entity（要看一個持續性的識別碼，不是看內容）是完全不同的身分判斷方式。",
+      "verify": { "manual": "概念題：以兩個內容相同的 Address 物件取代抽象 Value Object 定義，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-5-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "值相等 vs 參照相等：兩個地址物件實例不同，但內容相同",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function sameAddress(a, b) {\n  return JSON.stringify(a) === JSON.stringify(b);\n}\n\nconst address1 = { street: '中山路 1 號', city: '台北', zip: '100' };\nconst address2 = { street: '中山路 1 號', city: '台北', zip: '100' };\n\nconsole.log(address1 === address2, sameAddress(address1, address2));",
+      "options": [
+        { "id": "a", "text": "false true" },
+        { "id": "b", "text": "true true" },
+        { "id": "c", "text": "true false" },
+        { "id": "d", "text": "false false" }
+      ],
+      "answer": "a",
+      "explanation": "address1 === address2 是 false，因為 === 比較的是「是不是同一個物件實例」，這是兩個各自獨立建立出來的物件；sameAddress 改用內容（序列化後的字串）比較，兩者欄位內容完全一樣，所以是 true。這正是 Value Object 該用的身分判斷方式：看內容，不是看是不是同一個物件實例。",
+      "verify": {
+        "checks": [
+          { "code": "function sameAddress(a, b) {\n  return JSON.stringify(a) === JSON.stringify(b);\n}\nconst address1 = { street: '中山路 1 號', city: '台北', zip: '100' };\nconst address2 = { street: '中山路 1 號', city: '台北', zip: '100' };\nconsole.log(address1 === address2, sameAddress(address1, address2));", "expected": "false true" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-5-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Entity：靠持續性的識別碼判斷身分，內容變了還是同一個",
+      "docs": "",
+      "story": "",
+      "prompt": "一位客戶把姓名從「陳小明」改成「陳大明」（結婚改名），地址也搬家換了。這位客戶的 Entity 身分有沒有因此改變？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "沒有改變：Entity 判斷身分的方式是靠一個持續性的識別碼（例如 customerId），不是靠目前的欄位內容——即使姓名、地址這些欄位內容整個換掉，只要 customerId 沒變，系統裡依然把它視為「同一位客戶」；這跟 Value Object「內容不同就不是同一個」的判斷方式完全相反" },
+        { "id": "b", "text": "改變了，因為姓名和地址都不一樣了，應該被當成一位全新的客戶" },
+        { "id": "c", "text": "Entity 沒有身分的概念，每次欄位內容改變都要建立一筆全新的紀錄" },
+        { "id": "d", "text": "只有姓名改變才會影響身分，地址改變不影響身分" }
+      ],
+      "answer": "a",
+      "explanation": "Entity 的身分判斷方式，靠的是一個持續性的識別碼（像 customerId），不是目前的欄位內容——姓名、地址這些欄位隨時間改變，只要識別碼沒變，系統依然視為「同一位客戶」。這跟 Value Object 完全相反：Value Object 內容一變就不是同一個了，Entity 則是內容可以變、身分卻能維持不變。",
+      "verify": { "manual": "概念題：以客戶改名搬家的具體情境取代抽象 Entity 定義，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-5-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "Aggregate：外部只透過 root 存取，內部的部分不能被單獨繞過去改",
+      "docs": "",
+      "story": "",
+      "prompt": "一張訂單（Order，作為 Aggregate Root）裡面包含好幾個訂單項目（OrderLine，各自是內部的一部分）。如果外部程式碼想修改某個 OrderLine 的數量，比較好的做法是「直接找到那個 OrderLine 物件、改它的數量欄位」，還是「呼叫 Order 提供的方法，例如 order.changeLineQuantity(lineId, newQty)」？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "應該呼叫 Order（Aggregate Root）提供的方法：Aggregate 的核心規則是「外部只能透過 root 存取和修改內部的東西」，這樣 Order 才能在每次修改時，順便檢查、維護整個訂單的一致性規則（例如所有項目加總金額有沒有超過信用額度）——如果外部程式碼可以直接找到內部的 OrderLine 物件繞過 Order 直接改，Order 就沒有機會確保這些跨欄位、跨項目的一致性規則" },
+        { "id": "b", "text": "應該直接找到 OrderLine 物件修改，這樣比較有效率，跟一致性規則無關" },
+        { "id": "c", "text": "OrderLine 應該完全獨立於 Order 之外運作，兩者不需要有任何關聯" },
+        { "id": "d", "text": "Aggregate 只是一種文件命名慣例，實際上外部程式碼想怎麼存取內部物件都沒差" }
+      ],
+      "answer": "a",
+      "explanation": "Aggregate 的核心規則是「外部只能透過 root（這裡是 Order）存取和修改內部的東西」，讓 root 有機會在每次修改時，順便檢查跟維護整個 Aggregate 內部該遵守的一致性規則。如果外部程式碼可以繞過 root、直接找到內部的 OrderLine 修改，這些一致性規則就沒有任何機會被檢查，Aggregate 想保護的一致性邊界就形同虛設。",
+      "verify": { "manual": "概念題：以訂單與訂單項目的具體例子取代抽象 Aggregate 定義，無可執行程式碼。" }
+    }
+  ]
+}

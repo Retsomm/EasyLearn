@@ -69,6 +69,19 @@ import sicp52 from './questions/sicp-5-2-register-machine-simulator.json'
 import sicp53 from './questions/sicp-5-3-storage-gc.json'
 import sicp54 from './questions/sicp-5-4-explicit-control-evaluator.json'
 import sicp55 from './questions/sicp-5-5-compilation.json'
+import dmmf1 from './questions/dmmf-1-introducing-ddd.json'
+import dmmf2 from './questions/dmmf-2-understanding-domain.json'
+import dmmf3 from './questions/dmmf-3-functional-architecture.json'
+import dmmf4 from './questions/dmmf-4-understanding-types.json'
+import dmmf5 from './questions/dmmf-5-domain-modeling-types.json'
+import dmmf6 from './questions/dmmf-6-integrity-consistency.json'
+import dmmf7 from './questions/dmmf-7-workflows-as-pipelines.json'
+import dmmf8 from './questions/dmmf-8-understanding-functions.json'
+import dmmf9 from './questions/dmmf-9-composing-pipeline.json'
+import dmmf10 from './questions/dmmf-10-working-with-errors.json'
+import dmmf11 from './questions/dmmf-11-serialization.json'
+import dmmf12 from './questions/dmmf-12-persistence.json'
+import dmmf13 from './questions/dmmf-13-evolving-design.json'
 import ri1 from './questions/ri-1-router.json'
 import ri2 from './questions/ri-2-i18n.json'
 import ri3 from './questions/ri-3-testing.json'
@@ -144,6 +157,15 @@ export const chapters: Chapter[] = [
       sicp31, sicp32, sicp33, sicp34, sicp35,
       sicp41, sicp42, sicp43, sicp44,
       sicp51, sicp52, sicp53, sicp54, sicp55,
+    ].map(asLevel),
+  },
+  {
+    id: 'dmmf',
+    title: '領域驅動的函數式設計（Domain Modeling Made Functional）',
+    icon: 'shuffle',
+    levels: [
+      dmmf1, dmmf2, dmmf3, dmmf4, dmmf5, dmmf6, dmmf7,
+      dmmf8, dmmf9, dmmf10, dmmf11, dmmf12, dmmf13,
     ].map(asLevel),
   },
   {

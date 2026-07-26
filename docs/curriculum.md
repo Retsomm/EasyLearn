@@ -78,6 +78,29 @@
 | 5.4 The Explicit-Control Evaluator | sicp-5-4 顯式控制直譯器 | ✅ |
 | 5.5 Compilation | sicp-5-5 編譯 | ✅ |
 
+## 第五章 Domain Modeling Made Functional（Scott Wlaschin）
+
+> 全書 3 大 Part、13 個 Chapter，沒有像 SICP JS 那種「章.節」數字編號，關卡對照書中每個數字 Chapter，
+> 一章一關；Chapter 底下無編號的小節標題，分散變成該關 6 題的各個子主題，不再往下拆更多關卡。
+> 內容原著以 F#／DDD 為主，題目一律翻譯成 JS 可執行的等價寫法（tagged union、Result 型別等），
+> 不要求讀者背過書中章節。
+
+| 書中章節 | 關卡 | 狀態 |
+|:--|:--|:--|
+| Part 1: Understanding the Domain / Chapter 1: Introducing Domain-Driven Design | dmmf-1 領域驅動設計導論 | ✅ |
+| Chapter 2: Understanding the Domain | dmmf-2 理解領域 | ✅ |
+| Chapter 3: A Functional Architecture | dmmf-3 函數式架構 | ✅ |
+| Part 2: Modeling the Domain / Chapter 4: Understanding Types | dmmf-4 理解型別 | ✅ |
+| Chapter 5: Domain Modeling with Types | dmmf-5 用型別建模領域 | ✅ |
+| Chapter 6: Integrity and Consistency in the Domain | dmmf-6 領域中的完整性與一致性 | ✅ |
+| Chapter 7: Modeling Workflows as Pipelines | dmmf-7 把 Workflow 建模成 Pipeline | ✅ |
+| Part 3: Implementing the Model / Chapter 8: Understanding Functions | dmmf-8 理解函式 | ✅ |
+| Chapter 9: Implementation: Composing a Pipeline | dmmf-9 實作 — 組裝 Pipeline | ✅ |
+| Chapter 10: Implementation: Working with Errors | dmmf-10 實作 — 處理錯誤（Railway-Oriented Programming） | ✅ |
+| Chapter 11: Serialization | dmmf-11 序列化 | ✅ |
+| Chapter 12: Persistence | dmmf-12 持久化 | ✅ |
+| Chapter 13: Evolving a Design and Keeping It Clean | dmmf-13 演進設計，保持乾淨 | ✅ |
+
 ## 產題規則備忘
 
 - **以書籍為知識依據的章節**（目前是 `fp`、`sicp`；未來若再新增其他書籍章節比照辦理）：這些書不是官方線上

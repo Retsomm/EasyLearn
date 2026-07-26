@@ -1,0 +1,128 @@
+{
+  "id": "dmmf-4",
+  "title": "Ch4：理解型別",
+  "questions": [
+    {
+      "id": "dmmf-4-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "型別即文件：函式簽章直接說明輸入輸出的形狀",
+      "docs": "",
+      "story": "",
+      "prompt": "一個函式的簽章是 validateOrder(unvalidatedOrder): ValidatedOrder | ValidationError，不需要另外寫註解說明「這個函式做什麼」。這是為什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "簽章本身已經直接說明了「輸入是還沒驗證過的訂單，輸出不是驗證通過的訂單、就是驗證錯誤」——型別本身就是一種可以被型別檢查器強制檢查的文件，比起用文字寫的註解，型別文件不會因為程式改了、註解忘了同步更新而說謊，是一種「活的」文件" },
+        { "id": "b", "text": "型別簽章只是裝飾用的語法，跟函式實際做什麼完全無關，還是需要另外寫大量註解" },
+        { "id": "c", "text": "只有函式名稱重要，型別簽章對理解函式的用途沒有任何幫助" },
+        { "id": "d", "text": "型別簽章必須配合詳細的中文註解才看得懂，本身完全無法傳達任何資訊" }
+      ],
+      "answer": "a",
+      "explanation": "型別簽章本身就直接說明了「輸入是什麼形狀、輸出是什麼形狀」，是一種型別檢查器會強制檢查的文件——跟寫在旁邊、程式改了卻可能忘記更新的文字註解不同，型別簽章一旦跟實際程式碼不符，型別檢查馬上就會報錯，不會有「文件說謊」的風險。",
+      "verify": { "manual": "概念題：以具體函式簽章取代抽象型別即文件敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-4-q2",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "AND 型別：必須同時擁有好幾個欄位才算完整",
+      "docs": "",
+      "story": "",
+      "prompt": "一個人的全名（PersonalName）必須同時擁有 firstName「和」lastName 才算完整，缺一個就不算一個合法的全名。這種「必須同時具備好幾樣東西」的型別，叫做什麼？",
+      "code": "const name = { firstName: '小明', lastName: '陳' };",
+      "options": [
+        { "id": "a", "text": "AND 型別（也稱為 product type）：代表這個型別的一個值，必須「同時」擁有它組成部分的每一項（firstName AND lastName），少了任何一項，就不算是一個合法完整的值——JS 裡最常見的實作方式就是物件，把所有必要欄位都放進同一個物件裡" },
+        { "id": "b", "text": "OR 型別：代表這個型別的值只需要 firstName 或 lastName 兩者擇一即可，不需要同時擁有" },
+        { "id": "c", "text": "AND 型別是指這個型別必須同時符合好幾種完全不同的資料格式（例如同時是字串又是數字）" },
+        { "id": "d", "text": "AND 型別只存在於理論討論裡，實際程式語言沒有對應的實作方式" }
+      ],
+      "answer": "a",
+      "explanation": "AND 型別（product type）描述的是「必須同時擁有每一個組成部分」的資料——PersonalName 需要同時有 firstName「和」lastName，兩者缺一不可，才算一個合法完整的全名。JS 裡最自然的實作方式就是把所有必要欄位放進同一個物件。",
+      "verify": { "manual": "概念題：以全名的具體例子取代抽象 AND 型別定義，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-4-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "OR 型別：代表「只會是這幾種情況裡的其中一種」",
+      "docs": "",
+      "story": "",
+      "prompt": "一筆訂單的付款方式，實際上只會是「現金」「信用卡」「支票」三選一，不可能同時是好幾種。這種「只會是列舉出來的其中一種情況」的型別，叫做什麼？跟前一題的 AND 型別差在哪？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "OR 型別（也稱為 sum type 或 discriminated union）：代表這個型別的一個值，永遠「只會是」列出的其中一種情況（現金、信用卡、支票三選一），不會同時是好幾種——這跟 AND 型別「必須同時擁有每一項」剛好相反，OR 型別強調的是「彼此互斥、只能選一個」" },
+        { "id": "b", "text": "OR 型別和 AND 型別完全是同一種東西，只是取名字不同" },
+        { "id": "c", "text": "OR 型別代表這筆訂單可以同時用現金、信用卡、支票一起付款" },
+        { "id": "d", "text": "OR 型別只能用來表示布林值（true 或 false），不能表示三種以上的情況" }
+      ],
+      "answer": "a",
+      "explanation": "OR 型別（discriminated union）表達的是「彼此互斥、只能是其中一種」的關係——付款方式只會是現金、信用卡、支票三者之一，不會同時是好幾種。這跟 AND 型別「必須同時擁有每一項」剛好相反：AND 型別要求「都要有」，OR 型別要求「只能選一個」。",
+      "verify": { "manual": "概念題：以付款方式的具體例子對照 AND 型別，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-4-q4",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "反面案例：用一堆可為 null 的欄位表示 OR 型別，允許不合法的組合",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/join",
+      "story": "",
+      "prompt": "用一個物件塞進 cashAmount、cardNumber、checkNumber 三個可為 null 的欄位，來表示「三選一」的付款方式，結果這段程式碼建立出了一筆同時填了現金和信用卡欄位的付款紀錄。這說明了什麼問題？",
+      "code": "function describePayment(payment) {\n  const methods = [];\n  if (payment.cashAmount !== null) methods.push('現金');\n  if (payment.cardNumber !== null) methods.push('信用卡');\n  if (payment.checkNumber !== null) methods.push('支票');\n  return methods.join('、');\n}\n\nconst invalidPayment = { cashAmount: 100, cardNumber: '1234', checkNumber: null };\nconsole.log(describePayment(invalidPayment));",
+      "options": [
+        { "id": "a", "text": "用一堆可為 null 的獨立欄位表示「三選一」，型別本身完全沒有阻止「同時填兩個欄位」這種業務上不該存在的組合——invalidPayment 同時有 cashAmount 和 cardNumber，明明業務上付款方式只能選一種，程式卻能建立出這種矛盾的資料，describePayment 也只能無奈地印出「現金、信用卡」這種語意矛盾的結果，因為型別設計上根本沒有排除這種不合法組合的可能性" },
+        { "id": "b", "text": "這段程式碼完全沒有問題，一筆付款本來就可以同時用現金和信用卡各付一部分" },
+        { "id": "c", "text": "問題出在 describePayment 使用了 join('、') 這個方法，跟欄位設計無關" },
+        { "id": "d", "text": "問題出在 invalidPayment 這個變數命名，只要改個名字問題就解決了" }
+      ],
+      "answer": "a",
+      "explanation": "用一堆各自可為 null 的獨立欄位模擬「三選一」，型別本身完全沒辦法阻止「同時填了兩個欄位」這種業務上不該出現的矛盾組合——invalidPayment 就是這種矛盾資料的具體例子，describePayment 印出「現金、信用卡」這種語意上不該存在的結果，根本原因是型別設計沒有把「只能三選一」這個規則刻進資料結構本身。",
+      "verify": {
+        "checks": [
+          { "code": "function describePayment(payment) {\n  const methods = [];\n  if (payment.cashAmount !== null) methods.push('現金');\n  if (payment.cardNumber !== null) methods.push('信用卡');\n  if (payment.checkNumber !== null) methods.push('支票');\n  return methods.join('、');\n}\nconst invalidPayment = { cashAmount: 100, cardNumber: '1234', checkNumber: null };\nconsole.log(describePayment(invalidPayment));", "expected": "現金、信用卡" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-4-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "讓不合法的狀態沒辦法被表示出來",
+      "docs": "",
+      "story": "",
+      "prompt": "如果改用「一個帶標籤的物件，tag 只能是 'Cash'、'Card'、'Check' 三選一，每個 tag 各自帶著自己需要的欄位」來表示付款方式，取代上一題那種一堆可為 null 欄位的設計，能解決什麼問題？",
+      "code": "const payment1 = { tag: 'Cash', amount: 100 };\nconst payment2 = { tag: 'Card', cardNumber: '1234' };\n// 沒有辦法建立出「tag 是 Cash，卻又同時帶著 cardNumber」這種矛盾資料",
+      "options": [
+        { "id": "a", "text": "這種設計讓「同時填兩種付款方式」這種矛盾狀態，從資料結構上就沒辦法被建立出來——每一個值永遠只有一個 tag，對應到的欄位也只有那個 tag 專屬的欄位，不可能出現「tag 是 Cash 卻又帶著 cardNumber」這種矛盾組合。這正是「讓不合法的狀態沒辦法被表示出來」：與其寫程式碼去檢查、防堵不合法的組合，不如讓型別設計本身就不允許這種組合存在" },
+        { "id": "b", "text": "這種設計沒辦法解決任何問題，跟上一題可為 null 欄位的設計效果完全一樣" },
+        { "id": "c", "text": "這種設計需要額外寫更多執行期檢查程式碼，才能防止不合法組合，型別本身幫不上忙" },
+        { "id": "d", "text": "這種設計只是把問題延後到執行期才發現，跟原本的設計沒有本質差異" }
+      ],
+      "answer": "a",
+      "explanation": "這正是全書最重要的一句口號：「讓不合法的狀態沒辦法被表示出來」。用 tagged union 表示付款方式後，每個值永遠只對應一個 tag 和它專屬的欄位，根本沒有辦法建立出「tag 是 Cash 又同時帶著 cardNumber」這種矛盾資料——不是靠執行期寫更多 if 檢查去防堵，而是讓型別設計從根本上就不允許這種組合存在。",
+      "verify": { "manual": "概念題：呼應上一題反面案例，以 tagged union 解法取代抽象口號敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-4-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "用 tagged union 表示可能不存在的值，取代 null",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "用 { tag: 'Some', value } 或 { tag: 'None' } 表示「可能有值、也可能沒有值」，取代直接用 null。這段程式會印出什麼？",
+      "code": "function describeOptional(opt) {\n  if (opt.tag === 'Some') return `有值：${opt.value}`;\n  return '沒有值';\n}\n\nconst middleName1 = { tag: 'Some', value: '大' };\nconst middleName2 = { tag: 'None' };\n\nconsole.log(describeOptional(middleName1));\nconsole.log(describeOptional(middleName2));",
+      "options": [
+        { "id": "a", "text": "有值：大\n沒有值" },
+        { "id": "b", "text": "有值：undefined\n沒有值" },
+        { "id": "c", "text": "沒有值\n有值：大" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "describeOptional 依照 tag 分派：tag 是 'Some' 就知道 value 欄位一定存在、可以安全讀取；tag 是 'None' 就知道這裡沒有值，連 value 這個欄位都不用去嘗試讀取。跟直接用 null 表示「沒有值」比起來，這種寫法逼著使用者先檢查 tag、才能安全地拿到 value，不會漏掉「可能是 null」的檢查而導致執行期錯誤。",
+      "verify": {
+        "checks": [
+          { "code": "function describeOptional(opt) {\n  if (opt.tag === 'Some') return `有值：${opt.value}`;\n  return '沒有值';\n}\nconst middleName1 = { tag: 'Some', value: '大' };\nconst middleName2 = { tag: 'None' };\nconsole.log(describeOptional(middleName1));\nconsole.log(describeOptional(middleName2));", "expected": "有值：大\n沒有值" }
+        ]
+      }
+    }
+  ]
+}

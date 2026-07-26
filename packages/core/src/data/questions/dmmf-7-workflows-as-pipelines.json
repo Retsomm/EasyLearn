@@ -1,0 +1,128 @@
+{
+  "id": "dmmf-7",
+  "title": "Ch7：把 Workflow 建模成 Pipeline",
+  "questions": [
+    {
+      "id": "dmmf-7-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "訂單作為一組狀態：每個階段有自己專屬的型別，不是一個共用物件加狀態旗標",
+      "docs": "",
+      "story": "",
+      "prompt": "訂單依序會經過「未驗證」「已驗證」「已計價」「已確認」這幾個階段。建議用「四種各自獨立的型別」表示，還是用「一個 Order 物件，裡面有個 status 欄位，加上每個階段各自需要、其餘階段可為 null 的欄位」表示？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "用四種各自獨立的型別表示：每個型別只包含那個階段真正該有的欄位（例如 UnvalidatedOrder 完全沒有 price 欄位，因為那個階段根本還沒計價），型別系統本身就能保證「你不可能在還沒驗證的訂單上存取到驗證後才有的欄位」；用一個共用物件加狀態旗標，則每個欄位理論上任何階段都拿得到（即使值是 null），型別系統沒辦法阻止在錯誤的階段誤用還不該存在的欄位" },
+        { "id": "b", "text": "兩種表示方式完全等價，選哪一種都沒有差別" },
+        { "id": "c", "text": "應該只用一種型別 Order，完全不需要區分不同階段" },
+        { "id": "d", "text": "用四種型別表示會讓程式碼變得無法維護，應該永遠避免" }
+      ],
+      "answer": "a",
+      "explanation": "用四種各自獨立的型別，每個型別只包含那個階段真正該有的欄位，讓型別系統本身就能保證「不可能在還沒驗證的訂單上存取到驗證後才有的欄位」——用一個共用物件加狀態旗標的做法，每個欄位理論上任何階段都能被存取（即使值是 null），型別系統完全沒辦法阻止在錯誤階段誤用還不該存在的欄位，這種錯誤只能等到執行期才會被發現。",
+      "verify": { "manual": "概念題：以訂單四階段型別的具體對照取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-7-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "共用物件加狀態旗標的代價：在錯誤的階段存取到不該存在的欄位",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Template_literals",
+      "story": "",
+      "prompt": "printReceipt 想印出訂單的價格，卻不小心在訂單「還沒計價」的階段就被呼叫了。這段程式碼有什麼問題？",
+      "code": "function printReceipt(order) {\n  return `總金額：${order.price} 元`;\n}\n\nconst order = { status: 'unvalidated', customerId: 'C1' };\nconsole.log(printReceipt(order));",
+      "options": [
+        { "id": "a", "text": "order 用「一個共用物件加狀態旗標」表示，price 欄位在 unvalidated 階段根本不存在，但型別上完全沒有阻止 printReceipt 去存取它——結果印出「總金額：undefined 元」這種明顯錯誤卻不會讓程式當掉的結果。如果訂單改用「每個階段各自獨立型別」表示，UnvalidatedOrder 型別上根本沒有 price 這個欄位，這種誤用會在型別檢查階段就被攔下來" },
+        { "id": "b", "text": "這段程式碼完全正確，price 是 undefined 代表這筆訂單免費" },
+        { "id": "c", "text": "問題出在 printReceipt 使用了範本字面值，應該改用字串相加" },
+        { "id": "d", "text": "問題出在 customerId 這個欄位，跟 price 沒有任何關係" }
+      ],
+      "answer": "a",
+      "explanation": "order 用「共用物件加狀態旗標」表示，price 欄位在 unvalidated 階段根本還不存在，但型別上完全沒有阻止 printReceipt 去存取它，結果印出「總金額：undefined 元」這種明顯錯誤卻不會讓程式當掉的結果。如果改用「每個階段各自獨立型別」表示，UnvalidatedOrder 型別上根本沒有 price 這個欄位，這種誤用會在型別檢查階段就被攔下來。",
+      "verify": {
+        "checks": [
+          { "code": "function printReceipt(order) {\n  return `總金額：${order.price} 元`;\n}\nconst order = { status: 'unvalidated', customerId: 'C1' };\nconsole.log(printReceipt(order));", "expected": "總金額：undefined 元" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-7-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "每個步驟都是一個輸入輸出清楚的函式：只關心自己那一階段的轉換",
+      "docs": "",
+      "story": "",
+      "prompt": "validateOrder 這個函式的簽章是 (unvalidatedOrder) => validatedOrder，它只需要知道怎麼把「未驗證訂單」轉換成「已驗證訂單」。這個函式需不需要知道「計價」或「保留庫存」這些後續步驟的細節？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "完全不需要：validateOrder 只需要專心處理「未驗證訂單 → 已驗證訂單」這一段轉換，計價、保留庫存是完全獨立的步驟，各自有自己的函式負責——這種把整個 workflow 拆成一連串「輸入輸出型別清楚、各自獨立」的步驟，讓每個步驟都可以獨立理解、獨立測試，不需要理解整個 workflow 才能看懂其中一步在做什麼" },
+        { "id": "b", "text": "validateOrder 必須同時知道計價規則和庫存邏輯，否則沒辦法正確驗證訂單" },
+        { "id": "c", "text": "應該把驗證、計價、保留庫存全部寫進同一個函式裡，才能確保邏輯正確" },
+        { "id": "d", "text": "validateOrder 的輸入輸出型別不重要，只要函式名稱清楚就好" }
+      ],
+      "answer": "a",
+      "explanation": "把整個 workflow 拆成一連串「輸入輸出型別清楚、各自獨立」的步驟，每個步驟都不需要知道其他步驟的細節，只需要專心把自己那一段的轉換做對。這種拆解方式讓每個步驟都可以獨立理解、獨立測試，不需要理解整個 workflow 才能看懂某一步在做什麼。",
+      "verify": { "manual": "概念題：以 validateOrder 的具體職責範圍取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-7-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "把依賴當成參數：讓函式簽章誠實反映它需要什麼外部協助",
+      "docs": "",
+      "story": "",
+      "prompt": "validateOrder 驗證訂單時，需要呼叫一個外部服務確認「這個商品編號真的存在」。比較好的做法是「在 validateOrder 內部直接呼叫這個外部服務」，還是「把『檢查商品是否存在』這個函式當成參數傳進 validateOrder」？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "把「檢查商品是否存在」當成參數傳進去：這種寫法讓函式簽章誠實反映出「這個函式需要依賴一個外部檢查功能才能運作」，測試的時候可以傳一個假的檢查函式進去，不需要真的打外部服務；如果外部服務呼叫寫死在函式內部，函式簽章看起來只是單純的資料轉換，卻偷偷依賴了外部世界，測試起來也得真的觸發外部呼叫" },
+        { "id": "b", "text": "應該把外部服務呼叫直接寫死在 validateOrder 內部，這樣程式碼比較簡潔" },
+        { "id": "c", "text": "兩種做法在可測試性上完全沒有差異" },
+        { "id": "d", "text": "只要外部服務夠穩定，就不需要考慮把依賴當成參數傳遞" }
+      ],
+      "answer": "a",
+      "explanation": "把「檢查商品是否存在」這種依賴當成參數傳進 validateOrder，讓函式簽章誠實反映出它實際上依賴了什麼外部功能，測試時可以傳入假的檢查函式，不需要真的觸發外部服務呼叫。如果外部服務呼叫寫死在函式內部，函式簽章看起來只是單純的資料轉換，實際上卻偷偷依賴了外部世界，這種「隱藏起來的依賴」會讓函式難以獨立測試。",
+      "verify": { "manual": "概念題：以依賴注入的具體對照取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-7-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "組合 workflow 步驟：串接各自獨立的轉換函式",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "用 pipe 把 validateOrder、priceOrder、confirmOrder 這幾個各自獨立的步驟串接起來，組成完整的下訂單 workflow。這段程式會印出什麼？",
+      "code": "function pipe(...fns) {\n  return (input) => fns.reduce((acc, fn) => fn(acc), input);\n}\n\nfunction validateOrder(order) { return { ...order, validated: true }; }\nfunction priceOrder(order) { return { ...order, price: 100 }; }\nfunction confirmOrder(order) { return { ...order, confirmed: true }; }\n\nconst placeOrder = pipe(validateOrder, priceOrder, confirmOrder);\n\nconsole.log(placeOrder({ customerId: 'C1' }));",
+      "options": [
+        { "id": "a", "text": "{ customerId: 'C1', validated: true, price: 100, confirmed: true }" },
+        { "id": "b", "text": "{ customerId: 'C1', validated: true }" },
+        { "id": "c", "text": "{ customerId: 'C1', confirmed: true, price: 100, validated: true }" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "pipe 把三個步驟串起來，讓輸出依序流入下一個函式的輸入：先驗證（加上 validated）、再計價（加上 price）、最後確認（加上 confirmed），最終物件同時擁有這三個步驟各自添加的欄位。這正是「組合 workflow 步驟」的具體做法：每個步驟只管好自己的轉換，靠 pipe 這種通用組合工具把它們串成完整的 workflow，不需要另外寫一個大函式把三段邏輯攪在一起。",
+      "verify": {
+        "checks": [
+          { "code": "function pipe(...fns) {\n  return (input) => fns.reduce((acc, fn) => fn(acc), input);\n}\nfunction validateOrder(order) { return { ...order, validated: true }; }\nfunction priceOrder(order) { return { ...order, price: 100 }; }\nfunction confirmOrder(order) { return { ...order, confirmed: true }; }\nconst placeOrder = pipe(validateOrder, priceOrder, confirmOrder);\nconsole.log(placeOrder({ customerId: 'C1' }));", "expected": "{ customerId: 'C1', validated: true, price: 100, confirmed: true }" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-7-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "長時間執行的 workflow：需要把「目前走到哪個狀態」存起來，之後才能接著執行",
+      "docs": "",
+      "story": "",
+      "prompt": "「等待客戶付款」這個 workflow 步驟，客戶可能要等好幾天才會真的付款，系統不可能讓一個函式呼叫「掛著等」好幾天。實務上會怎麼處理這種長時間執行的 workflow？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "把「目前這筆訂單走到了 workflow 的哪個狀態」明確存進資料庫（例如目前狀態是「等待付款」），而不是讓一個函式呼叫從頭執行到尾、中途「掛著等」。之後收到「客戶已付款」這個事件時，系統會讀出這筆訂單目前的狀態，再繼續往下一個步驟推進——workflow 本身被拆成可以分段執行、中途可以暫停等待事件、之後再恢復繼續的一連串狀態轉換，而不是一次執行到底的單一函式呼叫" },
+        { "id": "b", "text": "讓程式的函式呼叫直接同步等待好幾天，直到客戶付款為止" },
+        { "id": "c", "text": "長時間執行的 workflow 沒辦法用程式正確處理，只能靠人工手動追蹤" },
+        { "id": "d", "text": "應該強制要求客戶必須在 5 秒內完成付款，否則就不需要處理長時間執行的情況" }
+      ],
+      "answer": "a",
+      "explanation": "面對可能要等好幾天的步驟，系統不會讓一個函式呼叫「掛著」等那麼久，而是把「這筆訂單目前走到 workflow 的哪個狀態」明確存進資料庫，之後靠事件（像收到付款通知）觸發，讀出目前狀態、繼續推進到下一步——整個長時間執行的 workflow，被拆解成可以分段執行、中途暫停、之後恢復的一連串狀態轉換，而不是一次從頭跑到尾的單一函式呼叫。",
+      "verify": { "manual": "概念題：以等待付款情境取代抽象長時間執行 workflow 敘述，無可執行程式碼。" }
+    }
+  ]
+}

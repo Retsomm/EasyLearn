@@ -1,0 +1,128 @@
+{
+  "id": "dmmf-3",
+  "title": "Ch3：函數式架構",
+  "questions": [
+    {
+      "id": "dmmf-3-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Bounded Context 作為自主元件：可以獨立部署、獨立改動",
+      "docs": "",
+      "story": "",
+      "prompt": "「訂單處理」和「出貨」是兩個不同的 Bounded Context。如果「出貨」這個 BC 想要新增一個欄位，卻因為兩者共用同一張資料庫表，必須先跟「訂單處理」團隊協調、一起排改版時程，這說明了什麼問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "兩個 BC 共用同一張資料庫表，等於把它們綁死在一起，任何一邊想獨立改動都得先跟對方協調——這違反了 Bounded Context 應該是「自主元件」的精神：理想情況下，每個 BC 應該能獨立部署、獨立修改內部實作，不需要因為另一個 BC 也在用同一份底層資料而綁手綁腳" },
+        { "id": "b", "text": "這是完全正常且值得鼓勵的做法，共用資料庫表能節省儲存空間" },
+        { "id": "c", "text": "這種協調成本只在小公司才會發生，跟 Bounded Context 設計無關" },
+        { "id": "d", "text": "只要兩個團隊坐在同一個辦公室，共用資料庫表就完全不會有任何問題" }
+      ],
+      "answer": "a",
+      "explanation": "兩個 Bounded Context 共用同一張資料庫表，等於讓它們的內部實作綁死在一起，任何一方想獨立修改都得先跟對方協調——這正好違反了「Bounded Context 應該是自主元件」的精神：理想上每個 BC 應該擁有自己的資料儲存，能獨立部署、獨立演化內部實作，不需要因為共用底層資料而被另一個 BC 拖住改版節奏。",
+      "verify": { "manual": "概念題：以共用資料庫表的協調成本取代抽象自主元件敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-3-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "跨 Bounded Context 溝通：靠訊息／事件，不是直接呼叫對方內部函式",
+      "docs": "",
+      "story": "",
+      "prompt": "「訂單處理」BC 想通知「出貨」BC「有新訂單需要出貨」，比較好的做法，是直接 import 出貨 BC 內部的 createShipment() 函式來呼叫，還是發送一個 OrderReadyToShip 的訊息／事件讓出貨 BC 自己接收處理？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "應該發送訊息／事件：讓「出貨」BC 自己決定收到這個事件之後要做什麼，「訂單處理」BC 完全不需要知道出貨內部是怎麼實作的（甚至不需要知道 createShipment 這個函式存在）——直接 import 對方內部函式呼叫，等於讓兩個 BC 的內部實作直接耦合在一起，違反了「各自自主」的設計" },
+        { "id": "b", "text": "應該直接 import 對方的內部函式呼叫，這樣效率比較好，跟耦合程度無關" },
+        { "id": "c", "text": "兩種做法完全等價，選哪一種都不會影響系統設計" },
+        { "id": "d", "text": "訊息／事件這種溝通方式只適合用在完全不同公司的系統之間，同公司內部的 BC 之間不需要用" }
+      ],
+      "answer": "a",
+      "explanation": "用訊息／事件溝通，讓「訂單處理」BC 只需要負責「發出 OrderReadyToShip 這個事件」，完全不用知道「出貨」BC 內部怎麼實作、甚至不需要知道對方有沒有 createShipment 這個函式；「出貨」BC 收到事件後自己決定要怎麼處理。如果直接 import 對方的內部函式呼叫，等於讓兩個 BC 的內部實作直接綁在一起，任何一方改了內部實作都可能牽連對方，違反了「各自自主」的核心精神。",
+      "verify": { "manual": "概念題：以事件溝通 vs 直接呼叫的具體對照取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-3-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "違反自主性：訂單處理直接讀取出貨 BC 的內部資料結構",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "「訂單處理」BC 想知道某張訂單出貨了沒，卻直接讀取「出貨」BC 內部用來追蹤進度的原始資料結構，而不是透過出貨 BC 提供的查詢介面。這段程式碼有什麼問題？",
+      "code": "function isShipped(order) {\n  return shippingInternalState[order.id]?.internalStatusCode === 3;\n}\n\nconst shippingInternalState = { 'A100': { internalStatusCode: 3 } };\nconsole.log(isShipped({ id: 'A100' }));",
+      "options": [
+        { "id": "a", "text": "isShipped 直接讀取了出貨 BC 內部的原始資料結構（shippingInternalState），還寫死了「internalStatusCode === 3 代表已出貨」這個只有出貨 BC 自己該知道的內部細節——一旦出貨 BC 改變內部狀態碼的定義，訂單處理 BC 這段程式碼會悄悄壞掉，卻完全不會有任何警訊，因為它跳過了出貨 BC 應該提供的正式查詢介面" },
+        { "id": "b", "text": "這段程式碼完全沒有問題，直接讀取內部狀態比呼叫介面函式更有效率" },
+        { "id": "c", "text": "問題出在 internalStatusCode 這個屬性命名不夠清楚" },
+        { "id": "d", "text": "問題出在 order.id 這個參數傳遞方式，跟跨 BC 存取無關" }
+      ],
+      "answer": "a",
+      "explanation": "isShipped 跳過了出貨 BC 應該對外提供的正式查詢介面，直接讀取並理解出貨 BC 內部的原始資料結構跟狀態碼定義——這正是違反「各自自主」的具體例子：出貨 BC 之後如果改變內部狀態碼的定義，訂單處理 BC 這段程式碼會悄悄壞掉，卻不會有任何警訊，因為兩者的耦合完全繞過了正式的介面邊界。",
+      "verify": {
+        "checks": [
+          { "code": "function isShipped(order) {\n  return shippingInternalState[order.id]?.internalStatusCode === 3;\n}\nconst shippingInternalState = { 'A100': { internalStatusCode: 3 } };\nconsole.log(isShipped({ id: 'A100' }));", "expected": "true" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-3-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Bounded Context 之間的契約：交換的訊息格式要維持穩定",
+      "docs": "",
+      "story": "",
+      "prompt": "「出貨」BC 對外送出 OrderShipped 這個事件，格式是 { orderId, shippedDate }。如果「出貨」BC 內部把「訂單」的表示法整個換掉，但 OrderShipped 事件的格式維持不變，會發生什麼事？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "依賴這個事件的其他 BC（例如負責寄送出貨通知信的 BC）完全不受影響，因為它們只在乎 OrderShipped 這個事件本身的格式（契約），不在乎「出貨」BC 內部怎麼表示訂單——只要對外交換的契約格式維持穩定，BC 內部想怎麼重構、怎麼換內部型別都是自己的自由，這正是「契約」把「內部實作」和「對外溝通格式」分開的價值" },
+        { "id": "b", "text": "只要出貨 BC 內部型別一換，所有依賴 OrderShipped 事件的其他 BC 都會立刻壞掉" },
+        { "id": "c", "text": "事件格式必須跟出貨 BC 內部的型別定義完全一致，不能有任何差異" },
+        { "id": "d", "text": "契約只是一種文件說明，跟程式碼實際執行的行為沒有任何關係" }
+      ],
+      "answer": "a",
+      "explanation": "「契約」的核心價值，就是把「BC 內部怎麼實作」跟「BC 對外交換的訊息格式」徹底分開——只要 OrderShipped 事件的格式維持穩定，出貨 BC 內部想怎麼重構、換成什麼樣的內部型別，都不會影響其他依賴這個事件的 BC，因為它們只認得契約本身，完全不知道也不需要知道出貨 BC 內部長什麼樣子。",
+      "verify": { "manual": "概念題：以契約穩定性隔絕內部實作變動的具體例子取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-3-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "轉換層：把內部型別轉換成對外契約格式，不直接曝露內部型別",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "toOrderShippedEvent 負責把出貨 BC 內部的 InternalShipment 型別，轉換成對外的 OrderShipped 契約格式，只挑出契約需要的欄位。這段程式會印出什麼？",
+      "code": "function toOrderShippedEvent(internalShipment) {\n  return {\n    orderId: internalShipment.orderRef,\n    shippedDate: internalShipment.dispatchedAt,\n  };\n}\n\nconst internalShipment = {\n  orderRef: 'A100',\n  dispatchedAt: '2026-01-10',\n  warehouseInternalCode: 'WH-99',\n};\n\nconsole.log(toOrderShippedEvent(internalShipment));",
+      "options": [
+        { "id": "a", "text": "{ orderId: 'A100', shippedDate: '2026-01-10' }" },
+        { "id": "b", "text": "{ orderId: 'A100', shippedDate: '2026-01-10', warehouseInternalCode: 'WH-99' }" },
+        { "id": "c", "text": "{ orderRef: 'A100', dispatchedAt: '2026-01-10' }" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "toOrderShippedEvent 只挑出契約需要的兩個欄位（orderId、shippedDate），並且把內部的欄位名稱（orderRef、dispatchedAt）轉換成契約約定的名稱——warehouseInternalCode 這種只有出貨 BC 內部才需要知道的細節，完全不會出現在對外的契約格式裡。這正是轉換層（有時稱為 anti-corruption layer）的作用：確保內部型別的變動不會直接洩漏到對外契約上。",
+      "verify": {
+        "checks": [
+          { "code": "function toOrderShippedEvent(internalShipment) {\n  return {\n    orderId: internalShipment.orderRef,\n    shippedDate: internalShipment.dispatchedAt,\n  };\n}\nconst internalShipment = {\n  orderRef: 'A100',\n  dispatchedAt: '2026-01-10',\n  warehouseInternalCode: 'WH-99',\n};\nconsole.log(toOrderShippedEvent(internalShipment));", "expected": "{ orderId: 'A100', shippedDate: '2026-01-10' }" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-3-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "BC 內部的程式碼結構：一個 workflow 對應一個有清楚輸入輸出的函式",
+      "docs": "",
+      "story": "",
+      "prompt": "「下訂單」這整個 workflow（驗證 → 計算金額 → 保留庫存 → 產生確認結果），在程式碼結構上，建議用什麼方式組織？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "用一個清楚對應這個 workflow 的頂層函式（例如 placeOrder(unvalidatedOrder)），內部依序呼叫驗證、計算金額、保留庫存這些步驟，函式簽章本身就直接反映了「這個 workflow 的輸入是什麼、輸出是什麼」——讓程式碼結構跟業務上「這是一個獨立的 workflow」這個概念直接對應，而不是把這些步驟的程式碼散落在專案各處，靠開發者自己記得哪些片段屬於同一個 workflow" },
+        { "id": "b", "text": "應該把驗證、計算金額、保留庫存這些步驟各自寫成獨立的 API 端點，讓前端自己依序呼叫，不需要在後端組成一個完整的 workflow 函式" },
+        { "id": "c", "text": "workflow 的步驟應該隨機散落在專案的不同檔案裡，方便不同工程師各自認領其中一小段" },
+        { "id": "d", "text": "只要函式名稱裡有 workflow 這個字，程式碼實際上怎麼組織都沒有關係" }
+      ],
+      "answer": "a",
+      "explanation": "把整個 workflow 對應到一個清楚的頂層函式，讓函式簽章本身直接反映「這是一個獨立的業務 workflow，輸入是什麼、輸出是什麼」——這讓程式碼結構跟業務概念直接對應，之後回頭看程式碼時，能一眼看出「這裡有一個下訂單的 workflow」，不需要在專案裡到處尋找、拼湊哪些程式碼片段共同組成了這個 workflow。",
+      "verify": { "manual": "概念題：以下訂單 workflow 的具體函式結構取代抽象程式碼組織敘述，無可執行程式碼。" }
+    }
+  ]
+}

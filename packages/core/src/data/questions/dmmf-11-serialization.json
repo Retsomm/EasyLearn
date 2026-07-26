@@ -1,0 +1,128 @@
+{
+  "id": "dmmf-11",
+  "title": "Ch11：序列化",
+  "questions": [
+    {
+      "id": "dmmf-11-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "持久化 vs 序列化：兩件常被搞混、其實不同的事",
+      "docs": "",
+      "story": "",
+      "prompt": "「出貨」BC 把 OrderShipped 這個事件透過訊息佇列送給另一個 BC，過程中把事件轉換成 JSON 字串傳輸——這個過程有沒有牽涉到「持久化」（存進資料庫）？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "沒有：這個過程只牽涉到「序列化」（把記憶體裡的資料轉換成可以傳輸的格式，例如 JSON），完全沒有把資料存進任何資料庫——序列化指的是「轉換成可傳輸/可儲存的格式」這件事本身，持久化則專指「存進資料庫等長期儲存媒介」，兩者是相關但不同的概念，序列化不一定伴隨持久化，反過來持久化也不一定需要先序列化成 JSON 這種格式" },
+        { "id": "b", "text": "兩者完全是同一件事，只是使用了不同的名稱" },
+        { "id": "c", "text": "序列化一定等於把資料存進資料庫，沒有例外" },
+        { "id": "d", "text": "這個過程牽涉到持久化，因為訊息佇列本身就是一種資料庫" }
+      ],
+      "answer": "a",
+      "explanation": "序列化指的是「把記憶體裡的資料轉換成可以傳輸或儲存的格式」這件事本身，持久化則專指「把資料存進資料庫這種長期儲存媒介」——這個例子裡的事件只是被序列化成 JSON 拿去傳輸給另一個 BC，完全沒有牽涉到存進任何資料庫，所以只有序列化、沒有持久化。兩者是相關但不同的概念，不能混為一談。",
+      "verify": { "manual": "概念題：以事件透過訊息佇列傳輸的具體例子取代抽象定義區分，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-11-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "為序列化而設計：領域型別不見得能直接對應成乾淨的 JSON",
+      "docs": "",
+      "story": "",
+      "prompt": "領域裡的付款方式用 tagged union 表示（{ tag: 'Cash', amount } 或 { tag: 'Card', cardNumber }），如果直接把這個領域型別原封不動序列化成 JSON 送給前端，會遇到什麼問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "直接把內部領域型別的形狀曝露成對外的 JSON 契約，等於讓「領域內部怎麼設計」跟「對外交換的資料格式」綁死在一起——之後領域型別內部想調整，對外的 JSON 契約也會跟著意外改變，破壞跟前端或其他系統之間的約定。更好的做法是設計一組獨立的 DTO（Data Transfer Object），專門負責「對外交換的資料長什麼樣子」，跟領域型別內部設計脫鉤" },
+        { "id": "b", "text": "領域型別永遠可以直接序列化成 JSON，不需要另外設計 DTO" },
+        { "id": "c", "text": "DTO 只是領域型別的另一個名稱，兩者必須永遠保持完全一致" },
+        { "id": "d", "text": "tagged union 沒有辦法被序列化成任何格式，一定要先轉換成純數字才能傳輸" }
+      ],
+      "answer": "a",
+      "explanation": "把領域內部的型別原封不動序列化成對外的 JSON，等於讓「領域內部怎麼設計」跟「對外交換的資料契約」綁在一起——領域型別之後想調整內部設計，對外契約也會跟著意外改變。設計一組獨立的 DTO，讓「對外交換格式」跟「領域內部設計」脫鉤，才能讓兩邊各自獨立演化，這跟先前談過的 Bounded Context 契約道理相通。",
+      "verify": { "manual": "概念題：以付款方式 tagged union 序列化情境取代抽象 DTO 敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-11-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "領域型別轉換成 DTO：把 tagged union 攤平成前端好處理的格式",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify",
+      "story": "",
+      "prompt": "toDto 把領域內部的付款方式 tagged union，轉換成前端習慣的攤平格式；fromDto 則反過來還原。這段程式會印出什麼？",
+      "code": "function toDto(payment) {\n  if (payment.tag === 'Cash') return { type: 'cash', amount: payment.amount };\n  return { type: 'card', cardNumber: payment.cardNumber };\n}\nfunction fromDto(dto) {\n  if (dto.type === 'cash') return { tag: 'Cash', amount: dto.amount };\n  return { tag: 'Card', cardNumber: dto.cardNumber };\n}\n\nconst original = { tag: 'Cash', amount: 500 };\nconst dto = toDto(original);\nconst restored = fromDto(dto);\n\nconsole.log(dto);\nconsole.log(JSON.stringify(original) === JSON.stringify(restored));",
+      "options": [
+        { "id": "a", "text": "{ type: 'cash', amount: 500 }\ntrue" },
+        { "id": "b", "text": "{ type: 'cash', amount: 500 }\nfalse" },
+        { "id": "c", "text": "{ tag: 'Cash', amount: 500 }\ntrue" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "toDto 把領域內部用 tag 表示的付款方式，轉換成前端習慣的 { type, ... } 攤平格式；fromDto 反過來把 DTO 還原成領域型別，還原後的 restored 跟原本的 original 內容完全一致。這正是 DTO 轉換層的作用：領域型別跟對外格式可以各自用最適合自己的方式設計，靠 toDto／fromDto 這兩個轉換函式互相搭起橋樑。",
+      "verify": {
+        "checks": [
+          { "code": "function toDto(payment) {\n  if (payment.tag === 'Cash') return { type: 'cash', amount: payment.amount };\n  return { type: 'card', cardNumber: payment.cardNumber };\n}\nfunction fromDto(dto) {\n  if (dto.type === 'cash') return { tag: 'Cash', amount: dto.amount };\n  return { tag: 'Card', cardNumber: dto.cardNumber };\n}\nconst original = { tag: 'Cash', amount: 500 };\nconst dto = toDto(original);\nconst restored = fromDto(dto);\nconsole.log(dto);\nconsole.log(JSON.stringify(original) === JSON.stringify(restored));", "expected": "{ type: 'cash', amount: 500 }\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-11-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "序列化接上 workflow：進來要驗證（可能失敗），出去不會失敗",
+      "docs": "",
+      "story": "",
+      "prompt": "把 DTO 轉換成領域型別（資料從外部進來）、跟把領域型別轉換成 DTO（資料要送出去），這兩個方向在「會不會失敗」這件事上，有什麼不對稱？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "DTO 轉領域型別（進來的方向）可能會失敗：外部傳進來的 DTO 有可能格式不對、缺欄位、數值不合法，這個轉換本質上是一種驗證，失敗是完全正常且該被明確處理的情況；領域型別轉 DTO（送出去的方向）通常不會失敗，因為領域型別本身已經是驗證通過、合法的資料，只是單純換成另一種格式" },
+        { "id": "b", "text": "兩個方向都一定不會失敗，因為都只是格式轉換" },
+        { "id": "c", "text": "兩個方向都一定會失敗，因為任何轉換都有風險" },
+        { "id": "d", "text": "只有領域型別轉 DTO 這個方向可能失敗，DTO 轉領域型別永遠不會失敗" }
+      ],
+      "answer": "a",
+      "explanation": "這兩個方向並不對稱：外部傳進來的 DTO 有可能格式不對、缺欄位，把它轉換成領域型別的過程本質上是一種驗證，失敗是完全正常且該被明確處理的情況；反過來，領域型別轉成 DTO 通常不會失敗，因為領域型別本身已經是驗證合格的資料，只是換一種格式表示，理論上每一筆合法資料都能順利轉出去。",
+      "verify": { "manual": "概念題：以進出兩個方向的不對稱性取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-11-q5",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "跳過驗證的代價：直接信任外部傳進來的 DTO",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Template_literals",
+      "story": "",
+      "prompt": "fromDtoUnsafe 直接把外部傳進來的 DTO 內容原封不動當成合法的領域資料使用，完全沒有驗證。這段程式碼有什麼問題？",
+      "code": "function fromDtoUnsafe(dto) {\n  return { tag: 'Cash', amount: dto.amount };\n}\n\nfunction describe(payment) {\n  return `付款金額：${payment.amount} 元`;\n}\n\nconst maliciousDto = { amount: '不是數字，是字串' };\nconsole.log(describe(fromDtoUnsafe(maliciousDto)));",
+      "options": [
+        { "id": "a", "text": "fromDtoUnsafe 完全信任外部傳進來的 dto.amount，沒有驗證它是不是真的是數字——maliciousDto.amount 其實是一個字串，卻被原封不動當成合法的付款金額使用，describe 印出「付款金額：不是數字，是字串 元」這種明顯不合理的結果。DTO 轉領域型別這一步理應做驗證，一旦跳過驗證，任何外部傳進來的髒資料都會被當成合法的領域資料到處流通" },
+        { "id": "b", "text": "這段程式碼完全沒有問題，amount 欄位本來就可以是任何型別" },
+        { "id": "c", "text": "問題出在 describe 使用了範本字面值，跟驗證無關" },
+        { "id": "d", "text": "問題出在 maliciousDto 這個變數命名，只要改個名字問題就解決了" }
+      ],
+      "answer": "a",
+      "explanation": "fromDtoUnsafe 完全信任外部傳進來的 dto.amount，沒有驗證它是不是真的是數字——maliciousDto.amount 其實是一個字串，卻被原封不動當成合法的付款金額使用，describe 印出「付款金額：不是數字，是字串 元」這種明顯不合理的結果。DTO 轉領域型別這一步理應做驗證，一旦跳過驗證，任何外部傳進來的髒資料都會被當成合法的領域資料到處流通，跟先前談過「建構時驗證」的精神背道而馳。",
+      "verify": {
+        "checks": [
+          { "code": "function fromDtoUnsafe(dto) {\n  return { tag: 'Cash', amount: dto.amount };\n}\nfunction describe(payment) {\n  return `付款金額：${payment.amount} 元`;\n}\nconst maliciousDto = { amount: '不是數字，是字串' };\nconsole.log(describe(fromDtoUnsafe(maliciousDto)));", "expected": "付款金額：不是數字，是字串 元" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-11-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "DTO 應該是「笨」資料：不該帶任何業務邏輯",
+      "docs": "",
+      "story": "",
+      "prompt": "如果有人在 PaymentDto 這個型別上加了一個方法 isValidAmount()，用來檢查金額合不合理，這種做法違反了 DTO 該扮演的角色嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "違反了：DTO 的角色應該只是「忠實反映對外交換格式長什麼樣子」的單純資料容器，不該帶任何業務邏輯或驗證規則——業務規則應該屬於領域型別建構時該做的驗證，不是 DTO 的責任。把業務邏輯加進 DTO，會讓「單純的資料格式」跟「業務規則」這兩件事混在一起，模糊了 DTO 原本該扮演的單純角色" },
+        { "id": "b", "text": "完全沒有違反，DTO 本來就應該帶著所有跟資料相關的業務邏輯" },
+        { "id": "c", "text": "DTO 和領域型別本來就是同一種東西，加不加方法都沒有差別" },
+        { "id": "d", "text": "isValidAmount() 這種方法只能寫在資料庫層，不能寫在 DTO 或領域型別的任何一層" }
+      ],
+      "answer": "a",
+      "explanation": "DTO 的角色應該只是「忠實反映對外交換格式長什麼樣子」的單純資料容器，不該帶任何業務邏輯——業務規則屬於領域型別建構時該做的驗證，不是 DTO 的責任。把業務邏輯加進 DTO，會讓「單純的資料格式」跟「業務規則」混在一起，模糊了 DTO 跟領域型別各自該扮演的角色。",
+      "verify": { "manual": "概念題：以 PaymentDto 加方法的具體情境取代抽象 DTO 角色敘述，無可執行程式碼。" }
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "id": "dmmf-6",
+  "title": "Ch6：領域中的完整性與一致性",
+  "questions": [
+    {
+      "id": "dmmf-6-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "簡單值的完整性：在建構時就驗證，之後永遠不用再懷疑",
+      "docs": "",
+      "story": "",
+      "prompt": "如果 EmailAddress 只能透過一個會先檢查格式的建構函式建立（格式不對就直接拋出錯誤、根本建立不出這個值），跟「隨便一個字串都可以直接當作 EmailAddress 使用，每個用到的地方各自檢查格式」比起來，差在哪？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "如果驗證只發生在建構的那一刻，之後只要程式裡任何地方拿到一個 EmailAddress 型別的值，就可以完全信任它一定是格式正確的，不需要每個使用的地方都重新檢查一次格式——「隨便字串都能當 EmailAddress」的做法，則讓每個使用的地方都得自己決定要不要驗證，容易漏掉某個角落忘記檢查，之後才在意想不到的地方壞掉" },
+        { "id": "b", "text": "兩種做法完全等價，驗證發生在哪個時間點都沒有差別" },
+        { "id": "c", "text": "在建構時驗證會讓程式效能大幅下降，應該盡量避免" },
+        { "id": "d", "text": "應該完全不驗證 email 格式，反正使用者輸入錯了是他們自己的問題" }
+      ],
+      "answer": "a",
+      "explanation": "只在建構的那一刻驗證，之後整個系統裡任何拿到 EmailAddress 型別的地方，都可以直接信任它已經是驗證過的合法值，不用每個使用點各自重複檢查——這叫「smart constructor」模式。相反地，如果隨便一個字串都能被當成 EmailAddress 使用，驗證責任就分散到每個使用點，很容易有某個角落忘記驗證，之後才在意想不到的地方因為格式不對而壞掉。",
+      "verify": { "manual": "概念題：以 smart constructor 模式的具體對照取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-6-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "沒有在建構時驗證的代價：不合法的值一路流到下游才爆炸",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/split",
+      "story": "",
+      "prompt": "sendWelcomeEmail 假設收到的 email 一定是合法格式，直接抓 @ 後面當網域名稱使用，卻沒有人在資料進來的源頭驗證過格式。這段程式碼有什麼問題？",
+      "code": "function sendWelcomeEmail(email) {\n  const domain = email.split('@')[1];\n  return `寄送歡迎信到網域 ${domain}`;\n}\n\nconst userInput = '沒有小老鼠符號的字串';\nconsole.log(sendWelcomeEmail(userInput));",
+      "options": [
+        { "id": "a", "text": "sendWelcomeEmail 假設收到的一定是合法 email，卻沒有任何機制在資料進入系統的源頭就驗證格式——userInput 根本不含 @ 符號，split('@')[1] 直接變成 undefined，程式沒有報錯、卻悄悄印出「寄送歡迎信到網域 undefined」這種明顯錯誤的結果。如果 email 只能透過會先驗證格式的建構函式建立，這種不合法的值根本不會流到 sendWelcomeEmail 這一層" },
+        { "id": "b", "text": "這段程式碼完全正確，split('@')[1] 一定會拿到正確的網域名稱" },
+        { "id": "c", "text": "問題出在 sendWelcomeEmail 的函式名稱取得不夠清楚" },
+        { "id": "d", "text": "問題出在範本字面值的用法，跟資料有沒有驗證過無關" }
+      ],
+      "answer": "a",
+      "explanation": "sendWelcomeEmail 完全信任收到的是合法 email，卻沒有任何機制確保這件事——userInput 根本不含 @ 符號，split('@')[1] 直接變成 undefined，程式不會報錯，卻悄悄印出「寄送歡迎信到網域 undefined」這種錯誤結果。如果一開始就用會驗證格式的建構函式建立 EmailAddress，這種不合法的值根本沒有機會流到 sendWelcomeEmail 這一層。",
+      "verify": {
+        "checks": [
+          { "code": "function sendWelcomeEmail(email) {\n  const domain = email.split('@')[1];\n  return `寄送歡迎信到網域 ${domain}`;\n}\nconst userInput = '沒有小老鼠符號的字串';\nconsole.log(sendWelcomeEmail(userInput));", "expected": "寄送歡迎信到網域 undefined" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-6-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "度量單位：型別上區分公斤跟公尺，避免亂加一通",
+      "docs": "",
+      "story": "",
+      "prompt": "weightInKg + distanceInMeters 這種運算在數學上完全沒有意義（重量不能跟距離相加），但如果兩者在程式裡都只是普通數字（number），程式會怎麼處理這種相加？",
+      "code": "const weightInKg = 70;\nconst distanceInMeters = 100;\nconsole.log(weightInKg + distanceInMeters); // 170，一個沒有任何意義的數字",
+      "options": [
+        { "id": "a", "text": "程式會照樣算出 170 這個數字，不會有任何警訊，因為兩者在型別系統看來都只是普通的 number——如果替不同單位建立各自的型別，型別檢查就能在「把公斤跟公尺相加」這種語意上不合理的運算發生時直接報錯，而不是安靜地算出一個沒有意義的數字" },
+        { "id": "b", "text": "程式會自動偵測到單位不同，拒絕執行這個相加運算並拋出例外" },
+        { "id": "c", "text": "這種相加運算在數學上完全合理，170 這個結果是有意義的" },
+        { "id": "d", "text": "只要變數命名裡有標明單位，程式就會自動依照命名做正確的單位轉換" }
+      ],
+      "answer": "a",
+      "explanation": "只要兩者在型別系統看來都是普通的 number，程式完全不會阻止「公斤加公尺」這種語意上不合理的運算，會照樣算出 170 這個沒有任何意義的數字。替不同單位各自建立獨立的型別，能讓型別檢查在編譯期就攔下這種混用不同單位的錯誤，不用等到執行期才發現數字兜不起來卻不知道為什麼。",
+      "verify": { "manual": "概念題：以公斤加公尺的具體例子取代抽象度量單位敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-6-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "用標籤區分度量單位：加法只允許同單位相加",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Error",
+      "story": "",
+      "prompt": "addSameUnit 只允許兩個標籤相同的度量值相加，標籤不同就拋出錯誤。這段程式會印出什麼？",
+      "code": "function kg(value) { return { unit: 'kg', value }; }\nfunction meter(value) { return { unit: 'm', value }; }\n\nfunction addSameUnit(a, b) {\n  if (a.unit !== b.unit) {\n    throw new Error(`無法把 ${a.unit} 跟 ${b.unit} 相加`);\n  }\n  return { unit: a.unit, value: a.value + b.value };\n}\n\ntry {\n  console.log(addSameUnit(kg(70), meter(100)));\n} catch (e) {\n  console.log(e.message);\n}",
+      "options": [
+        { "id": "a", "text": "無法把 kg 跟 m 相加" },
+        { "id": "b", "text": "{ unit: 'kg', value: 170 }" },
+        { "id": "c", "text": "170" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "kg(70) 跟 meter(100) 帶著不同的 unit 標籤（'kg' 跟 'm'），addSameUnit 檢查到兩者標籤不一致，直接拋出錯誤「無法把 kg 跟 m 相加」，不會讓這種語意上不合理的相加悄悄發生、算出一個沒有意義的數字。這正是用型別（這裡簡化成標籤）表達度量單位的價值：讓「單位不一致」這種錯誤在執行期就能被明確攔截、給出清楚的錯誤訊息，而不是安靜地算出一個乍看正常、實際上毫無意義的結果。",
+      "verify": {
+        "checks": [
+          { "code": "function kg(value) { return { unit: 'kg', value }; }\nfunction meter(value) { return { unit: 'm', value }; }\nfunction addSameUnit(a, b) {\n  if (a.unit !== b.unit) {\n    throw new Error(`無法把 ${a.unit} 跟 ${b.unit} 相加`);\n  }\n  return { unit: a.unit, value: a.value + b.value };\n}\ntry {\n  console.log(addSameUnit(kg(70), meter(100)));\n} catch (e) {\n  console.log(e.message);\n}", "expected": "無法把 kg 跟 m 相加" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-6-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "把業務規則刻進型別：不同商品種類的數量規則不一樣",
+      "docs": "",
+      "story": "",
+      "prompt": "業務規則規定「Widget（一般商品）的訂購數量只能是整數；Gizmo（散裝商品）的訂購數量可以是小數（例如 2.5 公斤）」。如果只用一個共用的 quantity: number 欄位表示所有商品的數量，這條業務規則要怎麼確保被遵守？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "只用一個共用的 number 欄位，型別本身完全沒辦法區分「這是 Widget 的數量（該是整數）」還是「這是 Gizmo 的數量（可以是小數）」，只能在執行期另外寫檢查程式碼去驗證——更好的做法是替兩種商品各自定義專屬的數量型別，讓型別系統直接反映這條業務規則，而不是把規則寫成散落各處、容易被忘記檢查的執行期驗證邏輯" },
+        { "id": "b", "text": "只用一個共用的 number 欄位完全沒有問題，執行期驗證跟型別設計是兩件互不相關的事" },
+        { "id": "c", "text": "這條業務規則沒辦法用型別系統表達，只能永遠靠執行期檢查" },
+        { "id": "d", "text": "應該把 Gizmo 的數量也強制改成整數，跳過這條業務規則的差異" }
+      ],
+      "answer": "a",
+      "explanation": "只用一個共用的 number 欄位，型別系統完全看不出「這是哪種商品的數量、該遵守哪一種規則」，這條業務規則只能靠散落在各處的執行期檢查來維持，容易在某個角落被遺漏。替不同商品種類各自定義專屬的數量型別，讓「Widget 只能是整數、Gizmo 可以是小數」這條業務規則直接體現在型別設計裡，是把業務規則「刻進型別」的具體做法。",
+      "verify": { "manual": "概念題：以商品數量規則的具體例子取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-6-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "一致性的範圍：Aggregate 內部要求即時一致，跨 Aggregate／BC 可以允許暫時不同步",
+      "docs": "",
+      "story": "",
+      "prompt": "「訂單裡所有項目的金額加總，不能超過信用額度」這條規則，跟「訂單出貨後，出貨 BC 的庫存數字要跟訂單處理 BC 的庫存數字保持一致」這件事，在「一致性」的要求程度上，建議分別怎麼處理？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "前者（同一個 Aggregate 內部的規則）應該要求「即時」一致：修改的當下就必須確保這條規則成立，不允許有任何時間點是違反的；後者（跨 Bounded Context 之間的資料）通常可以接受「最終」一致：允許兩邊的數字在極短時間內暫時不同步，只要最終會透過事件同步到一致的狀態即可，不需要強求每一毫秒都完全同步" },
+        { "id": "b", "text": "兩者都必須要求「即時」一致，完全不允許有任何暫時不同步的情況" },
+        { "id": "c", "text": "兩者都可以接受「最終」一致，同一個 Aggregate 內部的規則不需要即時檢查" },
+        { "id": "d", "text": "一致性的要求程度跟這件事屬於 Aggregate 內部還是跨 BC 完全無關，應該一律採用同一套標準" }
+      ],
+      "answer": "a",
+      "explanation": "一致性的要求程度，會因為「這件事發生在哪個邊界內」而不同：同一個 Aggregate 內部的規則通常要求「即時」一致，修改當下就必須確保成立，因為 Aggregate 本來就是被設計成「一次要嘛整個改對、要嘛完全不改」的一致性單位；跨 Bounded Context 之間的資料同步，因為牽涉到不同系統、不同時間點各自處理事件，通常只能接受「最終」一致——這種取捨讓系統設計不需要為了追求「處處都即時同步」，而付出不合理的複雜度或效能代價。",
+      "verify": { "manual": "概念題：以信用額度規則與跨 BC 庫存同步的對照取代抽象一致性敘述，無可執行程式碼。" }
+    }
+  ]
+}
