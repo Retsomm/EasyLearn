@@ -1,0 +1,132 @@
+{
+  "id": "sicp-5-5",
+  "title": "5.5 編譯",
+  "questions": [
+    {
+      "id": "sicp-5-5-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "編譯 vs 直譯：只分析一次結構，之後重複執行不用再重新分析",
+      "docs": "",
+      "story": "",
+      "prompt": "myEval（直譯器）每次執行 ['+', 2, ['*', 3, 4]] 都要重新檢查一次「這是加法還是乘法」；compile 則是「先把結構分析一次、轉換成扁平指令」，之後 run 可以重複執行同一份指令，不用再檢查一次原始結構。這個差異的價值是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "如果同一段運算式要被執行很多次（例如迴圈裡反覆呼叫同一個函式），編譯的做法只需要在第一次「分析結構、轉換成指令」，之後每次執行都直接跑已經轉換好的扁平指令，不用每次都重新檢查「這是加法還是乘法」這種結構性判斷——直譯器則是每次執行都要重新分析一次原始結構，多做了很多重複的工作" },
+        { "id": "b", "text": "編譯完全不會影響效能，跟直譯器執行速度永遠一樣" },
+        { "id": "c", "text": "編譯之後，程式的執行結果會跟直譯器不一樣，因為指令的執行順序整個改變了" },
+        { "id": "d", "text": "直譯器每次執行都比編譯後的指令更快，因為不需要額外的編譯步驟" }
+      ],
+      "answer": "a",
+      "explanation": "編譯的核心價值在於「把分析結構這件事，從『每次執行都要做』搬到『只在編譯的時候做一次』」。如果同一段程式碼會被執行很多次，直譯器每次都要重新檢查一次運算式的結構，編譯後的版本則只需要在第一次編譯時分析過一次，之後每次執行都直接跑已經轉換好的扁平指令，省下大量重複的結構分析工作。",
+      "verify": { "manual": "概念題：以重複執行情境對照編譯與直譯的差異，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-5-5-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "組合指令序列：把兩段分別編譯好的指令接在一起",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      "story": "",
+      "prompt": "compileAdd 把兩段各自獨立 compile 出來的指令序列接在一起，最後補上一個 '+' 指令。這段程式會印出什麼？",
+      "code": "function compile(expr, instructions = []) {\n  if (typeof expr === 'number') {\n    instructions.push({ op: 'push', value: expr });\n    return instructions;\n  }\n  const [op, left, right] = expr;\n  compile(left, instructions);\n  compile(right, instructions);\n  instructions.push({ op });\n  return instructions;\n}\n\nfunction run(instructions) {\n  const stack = [];\n  for (const instr of instructions) {\n    if (instr.op === 'push') stack.push(instr.value);\n    else {\n      const b = stack.pop();\n      const a = stack.pop();\n      stack.push(instr.op === '+' ? a + b : a * b);\n    }\n  }\n  return stack.pop();\n}\n\nfunction compileAdd(leftExpr, rightExpr) {\n  const leftInstructions = compile(leftExpr);\n  const rightInstructions = compile(rightExpr);\n  return [...leftInstructions, ...rightInstructions, { op: '+' }];\n}\n\nconst instructions = compileAdd(['*', 2, 3], ['*', 4, 5]);\nconsole.log(run(instructions));",
+      "options": [
+        { "id": "a", "text": "26" },
+        { "id": "b", "text": "20" },
+        { "id": "c", "text": "6" },
+        { "id": "d", "text": "9" }
+      ],
+      "answer": "a",
+      "explanation": "leftInstructions 算的是 2*3、rightInstructions 算的是 4*5，compileAdd 只是把這兩段各自獨立產生的指令序列串接起來、最後補上一個 '+' 指令。執行時堆疊依序算出 6 和 20，最後 '+' 指令把兩者相加得到 26——這正是「組合指令序列」的做法：每一段子運算式各自編譯成一段指令，彼此獨立，最後只要正確拼接、補上外層運算子的指令，就能組成完整程式，不需要重新分析整體結構。",
+      "verify": {
+        "checks": [
+          { "code": "function compile(expr, instructions = []) {\n  if (typeof expr === 'number') {\n    instructions.push({ op: 'push', value: expr });\n    return instructions;\n  }\n  const [op, left, right] = expr;\n  compile(left, instructions);\n  compile(right, instructions);\n  instructions.push({ op });\n  return instructions;\n}\nfunction run(instructions) {\n  const stack = [];\n  for (const instr of instructions) {\n    if (instr.op === 'push') stack.push(instr.value);\n    else {\n      const b = stack.pop();\n      const a = stack.pop();\n      stack.push(instr.op === '+' ? a + b : a * b);\n    }\n  }\n  return stack.pop();\n}\nfunction compileAdd(leftExpr, rightExpr) {\n  const leftInstructions = compile(leftExpr);\n  const rightInstructions = compile(rightExpr);\n  return [...leftInstructions, ...rightInstructions, { op: '+' }];\n}\nconst instructions = compileAdd(['*', 2, 3], ['*', 4, 5]);\nconsole.log(run(instructions));", "expected": "26" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-5-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "詞法定址：編譯時就算好變數在哪一層第幾格，執行時不用再查名字",
+      "docs": "",
+      "story": "",
+      "prompt": "metacircular evaluator 的 myEval 用 env[expr] 這種方式查變數的值，執行期每次都要用名字字串去查表。「詞法定址」（lexical addressing）想在編譯階段先算出什麼，讓執行期不用再查名字？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "編譯時先分析出「這個變數在環境鏈的第幾層、那一層的第幾個位置」（例如 { depth: 1, index: 0 }），執行期只需要拿這組座標直接去對應層、對應位置取值，變成單純的陣列索引，不用再逐一比對變數名稱字串——把「查名字」這種執行期才做的工作，提前搬到編譯期做一次就好" },
+        { "id": "b", "text": "詞法定址完全不會影響變數查詢的效率，只是換一種寫法而已" },
+        { "id": "c", "text": "詞法定址要求執行期還是要用名字字串去查表，只是把查表函式換了個名字" },
+        { "id": "d", "text": "詞法定址只能用在只有一層環境的程式裡，遇到巢狀環境就沒辦法使用" }
+      ],
+      "answer": "a",
+      "explanation": "詞法定址的核心想法，是把「這個變數到底在哪一層、哪個位置」這個資訊提前在編譯期算好（因為變數的巢狀位置在程式寫好的當下就已經固定，不需要等到執行期才知道），變成一組座標（層數、位置）。執行期只需要拿這組座標直接定位，變成單純的陣列索引存取，不用再逐一比對變數名稱字串，比起執行期才臨時查名字快得多。",
+      "verify": { "manual": "概念題：呼應環境模型，以編譯期預先定位取代執行期查名字，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-5-5-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用詞法定址查變數：depth 決定往外找幾層，index 決定第幾格",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      "story": "",
+      "prompt": "請填入正確的索引，讓 lookupByAddress 依照 depth 往外找到正確的那一層 frame，再用 index 取出那一格的值。",
+      "code": "function lookupByAddress(frames, address) {\n  const frame = frames[address.depth];\n  return frame[____];\n}\n\nconst frames = [\n  ['inner-a', 'inner-b'],\n  ['outer-x', 'outer-y', 'outer-z'],\n];\n\nconsole.log(lookupByAddress(frames, { depth: 1, index: 2 }));",
+      "options": [
+        { "id": "a", "text": "address.index" },
+        { "id": "b", "text": "address.depth" },
+        { "id": "c", "text": "0" },
+        { "id": "d", "text": "frames.length" }
+      ],
+      "answer": "a",
+      "explanation": "frame 已經靠 address.depth 找到正確的那一層（這裡是 depth 1，也就是外層 frame），接下來要用 address.index 取出那一層裡第幾個位置的值，所以要填 address.index。frames[1] 是 ['outer-x', 'outer-y', 'outer-z']，index 2 對應到 'outer-z'。",
+      "verify": {
+        "checks": [
+          { "code": "function lookupByAddress(frames, address) {\n  const frame = frames[address.depth];\n  return frame[address.index];\n}\nconst frames = [\n  ['inner-a', 'inner-b'],\n  ['outer-x', 'outer-y', 'outer-z'],\n];\nconsole.log(lookupByAddress(frames, { depth: 1, index: 2 }));", "expected": "outer-z" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-5-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "詞法定址：同一個 frame 鏈，不同座標對應不同變數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function lookupByAddress(frames, address) {\n  const frame = frames[address.depth];\n  return frame[address.index];\n}\n\nconst frames = [\n  ['a', 'b'],\n  ['x', 'y', 'z'],\n];\n\nconsole.log(lookupByAddress(frames, { depth: 0, index: 1 }));\nconsole.log(lookupByAddress(frames, { depth: 1, index: 0 }));",
+      "options": [
+        { "id": "a", "text": "b\nx" },
+        { "id": "b", "text": "a\nx" },
+        { "id": "c", "text": "b\ny" },
+        { "id": "d", "text": "x\nb" }
+      ],
+      "answer": "a",
+      "explanation": "{ depth: 0, index: 1 } 找的是最內層（depth 0）的第 1 個位置，也就是 'b'；{ depth: 1, index: 0 } 找的是往外一層（depth 1）的第 0 個位置，也就是 'x'。詞法定址就是靠這組固定的座標，不管變數叫什麼名字，直接用陣列索引定位到正確的值。",
+      "verify": {
+        "checks": [
+          { "code": "function lookupByAddress(frames, address) {\n  const frame = frames[address.depth];\n  return frame[address.index];\n}\nconst frames = [\n  ['a', 'b'],\n  ['x', 'y', 'z'],\n];\nconsole.log(lookupByAddress(frames, { depth: 0, index: 1 }));\nconsole.log(lookupByAddress(frames, { depth: 1, index: 0 }));", "expected": "b\nx" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-5-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "編譯碼與直譯器互通：兩種執行方式可以並存、互相呼叫",
+      "docs": "",
+      "story": "",
+      "prompt": "編譯出來的指令序列，如果需要呼叫一個「還沒被編譯、只能用直譯器執行」的函式，這代表編譯和直譯這兩種執行方式必須怎麼共存？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "兩者需要有一套共通的呼叫約定（例如都用同一種方式傳遞引數、都用同一種方式回傳結果），這樣編譯出來的程式碼才能正確呼叫直譯執行的函式，直譯器執行的程式碼也才能正確呼叫編譯出來的程式碼——編譯不是要「取代」直譯器，而是讓同一個系統裡，程式的不同部分可以自由選擇要編譯執行還是直譯執行，只要遵守同一套介面約定就能互相合作" },
+        { "id": "b", "text": "編譯出來的程式碼完全不可能呼叫任何直譯執行的函式，兩者是完全隔離、互不相通的兩個世界" },
+        { "id": "c", "text": "一旦系統裡有任何一段編譯過的程式碼，其他所有程式碼都必須跟著被編譯，不能保留直譯執行的部分" },
+        { "id": "d", "text": "這種情況在實務上不可能發生，一個系統裡不會同時存在編譯和直譯兩種執行方式" }
+      ],
+      "answer": "a",
+      "explanation": "這正是「介面」思維在編譯器設計上的體現：只要編譯出來的程式碼跟直譯器執行的程式碼，共用同一套呼叫約定（怎麼傳引數、怎麼回傳結果），兩者就能自由互相呼叫，不需要整個系統統一用同一種執行方式。這跟資料抽象的「抽象屏障」精神一致：只要遵守同一組介面約定，底下用什麼方式實作（編譯或直譯）可以是彼此獨立、可以並存的選擇。",
+      "verify": { "manual": "概念題：呼應抽象屏障主題，以編譯／直譯共存取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

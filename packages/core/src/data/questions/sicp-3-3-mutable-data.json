@@ -1,0 +1,140 @@
+{
+  "id": "sicp-3-3",
+  "title": "3.3 用可變資料建模",
+  "questions": [
+    {
+      "id": "sicp-3-3-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "可變資料的別名問題：同一個陣列，兩個名字",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      "story": "",
+      "prompt": "y 沒有複製 x 的內容，只是指向同一個陣列。這段程式會印出什麼？",
+      "code": "const x = [1, 2, 3];\nconst y = x;\ny.push(4);\nconsole.log(x);",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3, 4 ]" },
+        { "id": "b", "text": "[ 1, 2, 3 ]" },
+        { "id": "c", "text": "[ 4 ]" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "const y = x 只是讓 y 這個名字指向跟 x 一樣的那個陣列，並沒有複製一份新的陣列。y.push(4) 直接修改了這個共用的陣列本體，所以透過 x 這個名字看到的內容也跟著變成 [1, 2, 3, 4]——這正是可變資料結構的「別名」（aliasing）問題：兩個看起來不同的變數名稱，背後其實是同一份資料。",
+      "verify": {
+        "checks": [
+          { "code": "const x = [1, 2, 3];\nconst y = x;\ny.push(4);\nconsole.log(x);", "expected": "[ 1, 2, 3, 4 ]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-3-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "identity vs equality：內容相同不代表是同一份資料",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Strict_equality",
+      "story": "",
+      "prompt": "a 和 b 的內容看起來一模一樣。這段程式會印出什麼？",
+      "code": "const a = [1, 2, 3];\nconst b = [1, 2, 3];\nconsole.log(a === b, JSON.stringify(a) === JSON.stringify(b));",
+      "options": [
+        { "id": "a", "text": "false true" },
+        { "id": "b", "text": "true true" },
+        { "id": "c", "text": "true false" },
+        { "id": "d", "text": "false false" }
+      ],
+      "answer": "a",
+      "explanation": "a === b 印出 false，因為 === 比較的是「是不是同一份記憶體裡的資料（identity）」，a 跟 b 是兩個各自獨立建立的陣列，即使內容相同也不是同一份；JSON.stringify(a) === JSON.stringify(b) 印出 true，因為這裡比較的是「內容是否相等（equality）」，兩者序列化後的字串一樣。可變資料結構讓「identity」變成一個必須額外考慮的問題：改動 a 不會影響 b，即使兩者內容曾經完全一樣。",
+      "verify": {
+        "checks": [
+          { "code": "const a = [1, 2, 3];\nconst b = [1, 2, 3];\nconsole.log(a === b, JSON.stringify(a) === JSON.stringify(b));", "expected": "false true" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-3-q3",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "結構共享的風險：改動共用的子結構，牽連看似無關的另一份清單",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      "story": "",
+      "prompt": "z1 是用展開運算子複製 shared 的內容組成的，z2 則是直接把 shared 這個陣列本體放進去。這段程式會印出什麼？",
+      "code": "const shared = ['b', 'c'];\nconst z1 = ['a', ...shared];\nconst z2 = [shared, 'd'];\n\nshared.push('X');\nconsole.log(z1);\nconsole.log(z2);",
+      "options": [
+        { "id": "a", "text": "[ 'a', 'b', 'c' ]\n[ [ 'b', 'c', 'X' ], 'd' ]" },
+        { "id": "b", "text": "[ 'a', 'b', 'c', 'X' ]\n[ [ 'b', 'c' ], 'd' ]" },
+        { "id": "c", "text": "[ 'a', 'b', 'c' ]\n[ [ 'b', 'c' ], 'd' ]" },
+        { "id": "d", "text": "[ 'a', 'b', 'c', 'X' ]\n[ [ 'b', 'c', 'X' ], 'd' ]" }
+      ],
+      "answer": "a",
+      "explanation": "z1 用展開運算子 ...shared 在當下把 shared 現有的元素複製進一個新陣列，之後 shared 再被修改，z1 完全不受影響，維持 ['a','b','c']。但 z2 = [shared, 'd'] 是直接把 shared 這個陣列「本體」（不是複製內容）放進 z2 裡面，之後對 shared 呼叫 push('X')，z2 裡那個位置看到的就是被改動後的 shared，變成 [['b','c','X'], 'd']——同一個 shared 陣列，一個地方用複製、一個地方用參照共享，改動的影響完全不同，這正是可變資料結構最容易踩到的陷阱。",
+      "verify": {
+        "checks": [
+          { "code": "const shared = ['b', 'c'];\nconst z1 = ['a', ...shared];\nconst z2 = [shared, 'd'];\nshared.push('X');\nconsole.log(z1);\nconsole.log(z2);", "expected": "[ 'a', 'b', 'c' ]\n[ [ 'b', 'c', 'X' ], 'd' ]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-3-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "佇列：先進先出的可變資料結構",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/shift",
+      "story": "",
+      "prompt": "請填入正確的方法，讓 dequeue 從佇列最前面取出一個元素（先進先出）。",
+      "code": "function makeQueue() {\n  const items = [];\n  return {\n    enqueue(x) { items.push(x); },\n    dequeue() { return items.____(); },\n  };\n}\n\nconst q = makeQueue();\nq.enqueue('a');\nq.enqueue('b');\nq.enqueue('c');\nconsole.log(q.dequeue(), q.dequeue());",
+      "options": [
+        { "id": "a", "text": "shift" },
+        { "id": "b", "text": "pop" },
+        { "id": "c", "text": "push" },
+        { "id": "d", "text": "slice" }
+      ],
+      "answer": "a",
+      "explanation": "佇列是「先進先出」（FIFO），先 enqueue 進去的元素要最先被 dequeue 出來。items.shift() 會移除並回傳陣列「最前面」的元素，符合先進先出；items.pop() 移除的是最後面的元素，那是堆疊（LIFO）的行為，不是佇列。q.dequeue() 兩次會依序拿到 'a'、'b'。",
+      "verify": {
+        "checks": [
+          { "code": "function makeQueue() {\n  const items = [];\n  return {\n    enqueue(x) { items.push(x); },\n    dequeue() { return items.shift(); },\n  };\n}\nconst q = makeQueue();\nq.enqueue('a');\nq.enqueue('b');\nq.enqueue('c');\nconsole.log(q.dequeue(), q.dequeue());", "expected": "a b" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-3-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "表格：可變的鍵值儲存，重複 put 會覆蓋",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function makeTable() {\n  const data = {};\n  return {\n    put(key, value) { data[key] = value; },\n    get(key) { return data[key]; },\n  };\n}\n\nconst t = makeTable();\nt.put('a', 1);\nt.put('b', 2);\nt.put('a', 99);\nconsole.log(t.get('a'), t.get('b'));",
+      "options": [
+        { "id": "a", "text": "99 2" },
+        { "id": "b", "text": "1 2" },
+        { "id": "c", "text": "1 99" },
+        { "id": "d", "text": "undefined undefined" }
+      ],
+      "answer": "a",
+      "explanation": "t.put('a', 99) 對已經存在的 key 'a' 再次呼叫 put，會直接覆蓋掉原本的值 1，變成 99；'b' 沒有被再次 put，維持原本的 2。這正是「可變」表格的行為：同一個 key 被 put 多次時，後面的呼叫會覆蓋前面留下的值，跟不可變資料（每次都產生新副本、不覆寫）是相反的取捨。",
+      "verify": {
+        "checks": [
+          { "code": "function makeTable() {\n  const data = {};\n  return {\n    put(key, value) { data[key] = value; },\n    get(key) { return data[key]; },\n  };\n}\nconst t = makeTable();\nt.put('a', 1);\nt.put('b', 2);\nt.put('a', 99);\nconsole.log(t.get('a'), t.get('b'));", "expected": "99 2" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-3-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "可變性的代價：改一個地方，牽連到看似無關的另一處",
+      "docs": "",
+      "story": "",
+      "prompt": "前面幾題示範了「別名」「結構共享」這些現象。整體來看，允許資料被直接修改（mutation），比起每次修改都回傳新副本的不可變資料，最主要多付出的代價是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "一旦兩個地方共享同一份可變資料（不管是變數別名還是巢狀結構共享），在其中一個地方做的修改就可能「隔空」影響到另一個看似完全獨立的地方——這種「改一處、牽連他處」的風險，在使用不可變資料（每次修改都產生新副本）時是不存在的，因為沒有人共享同一份可以被改動的資料" },
+        { "id": "b", "text": "可變資料結構完全沒有任何額外代價，效能和安全性都優於不可變資料" },
+        { "id": "c", "text": "只有陣列會有這種問題，物件不會有別名或共享的風險" },
+        { "id": "d", "text": "這種風險只在程式碼行數超過 1000 行時才會發生，小型程式不需要考慮" }
+      ],
+      "answer": "a",
+      "explanation": "允許直接修改資料，最大的代價就是一旦出現「共享」（不管是像變數別名，還是像巢狀結構共享），修改一處就可能意外影響到另一個看起來完全無關的地方，很難光看某一段程式碼就推理出它會不會被別的地方影響。不可變資料因為「每次修改都回傳新副本、原本的不會被動到」，天生就不會有這種「隔空」互相影響的風險——這是兩種設計哲學各自的取捨，物件、陣列都同樣會遇到這個問題，跟程式碼長短無關。",
+      "verify": { "manual": "概念題：以具體別名與結構共享情境取代抽象代價敘述，無可執行程式碼。" }
+    }
+  ]
+}

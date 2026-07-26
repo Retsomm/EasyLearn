@@ -1,0 +1,132 @@
+{
+  "id": "sicp-2-3",
+  "title": "2.3 符號資料",
+  "questions": [
+    {
+      "id": "sicp-2-3-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "符號資料：比較符號本身，而非求值結果",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Strict_equality",
+      "story": "",
+      "prompt": "符號資料處理的是「符號本身」這個標籤，例如比較兩個字串是不是同一個符號用 ===，不是去計算它們代表的意思。這段程式會印出什麼？",
+      "code": "const a = 'plus';\nconst b = 'plus';\nconst c = 'minus';\nconsole.log(a === b, a === c);",
+      "options": [
+        { "id": "a", "text": "true false" },
+        { "id": "b", "text": "false true" },
+        { "id": "c", "text": "true true" },
+        { "id": "d", "text": "false false" }
+      ],
+      "answer": "a",
+      "explanation": "符號資料比較的是「這兩個字串標籤是不是完全一樣」，不是去計算或求值它們代表什麼意思。'plus' === 'plus' 是同一個符號所以是 true，'plus' === 'minus' 是不同符號所以是 false。",
+      "verify": {
+        "checks": [
+          { "code": "const a = 'plus';\nconst b = 'plus';\nconst c = 'minus';\nconsole.log(a === b, a === c);", "expected": "true false" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-3-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "符號微分：把數學運算式當成資料處理",
+      "docs": "",
+      "story": "",
+      "prompt": "要對數學運算式做符號微分，不會去「計算」這個運算式的值，而是把運算式本身表示成一份資料（例如 ['+', 'x', 3] 代表 x + 3），再寫一個函式操作這份資料、產生代表導函式的另一份資料。這反映了什麼設計思路？",
+      "code": "const expr = ['+', 'x', 3]; // 代表 x + 3 這個運算式本身，不是求值結果",
+      "options": [
+        { "id": "a", "text": "把「一個數學運算式長什麼樣子」本身視為可以被操作、轉換的資料，而不是急著求出它的數值結果——符號微分程式讀的是這份資料的結構（是加法還是乘法、運算元是誰），輸出的也是另一份代表導函式的資料，全程不需要真的代入任何數字去計算" },
+        { "id": "b", "text": "這只是把運算式寫成陣列比較好看，跟資料處理的設計思路無關" },
+        { "id": "c", "text": "符號微分一定要先把 x 代入一個實際數字才能進行" },
+        { "id": "d", "text": "['+', 'x', 3] 這種寫法在 JavaScript 裡會被當成語法錯誤" }
+      ],
+      "answer": "a",
+      "explanation": "符號微分的核心是「把數學運算式當成資料來操作」：['+', 'x', 3] 這份資料只是描述「這是一個加法、兩個運算元分別是 x 和 3」，微分函式讀的是這個結構本身（是加法就套用和的微分規則、是乘法就套用積的微分規則），完全不需要知道 x 實際上等於多少。這是「資料可以代表程式本身」這個更廣主題的具體例子。",
+      "verify": { "manual": "概念題：以具體運算式資料表示取代抽象設計思路敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-2-3-q3",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "微分規則：和的導數等於導數的和",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Recursion",
+      "story": "",
+      "prompt": "這個簡化版 deriv 只處理「常數」「變數」「加法運算式 ['+', a, b]」三種情況。請填入正確的判斷式，讓 deriv 正確辨認加法運算式。",
+      "code": "function deriv(expr, v) {\n  if (typeof expr === 'number') return 0;\n  if (typeof expr === 'string') return expr === v ? 1 : 0;\n  if (____) {\n    return deriv(expr[1], v) + deriv(expr[2], v);\n  }\n  throw new Error('unsupported expression');\n}\n\nconsole.log(deriv(['+', 'x', 3], 'x'));",
+      "options": [
+        { "id": "a", "text": "expr[0] === '+'" },
+        { "id": "b", "text": "expr.length === 3" },
+        { "id": "c", "text": "expr[1] === '+'" },
+        { "id": "d", "text": "typeof expr === 'object'" }
+      ],
+      "answer": "a",
+      "explanation": "要先確認這份資料代表的是「加法運算式」，也就是第 0 個位置放的運算子是 '+'，才能套用「和的導數等於導數的和」這條規則往下遞迴。deriv(['+', 'x', 3], 'x') 會拆成 deriv('x', 'x') + deriv(3, 'x') = 1 + 0 = 1（x + 3 對 x 微分結果是 1）。",
+      "verify": {
+        "checks": [
+          { "code": "function deriv(expr, v) {\n  if (typeof expr === 'number') return 0;\n  if (typeof expr === 'string') return expr === v ? 1 : 0;\n  if (expr[0] === '+') {\n    return deriv(expr[1], v) + deriv(expr[2], v);\n  }\n  throw new Error('unsupported expression');\n}\nconsole.log(deriv(['+', 'x', 3], 'x'));", "expected": "1" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-3-q4",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "集合表示法一：無序清單",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/includes",
+      "story": "",
+      "prompt": "把集合表示成「無重複、順序不重要」的陣列，adjoinSet 加入元素前要先檢查是否已存在，避免重複。這段程式會印出什麼？",
+      "code": "function elementOfSet(x, set) { return set.includes(x); }\nfunction adjoinSet(x, set) { return elementOfSet(x, set) ? set : [x, ...set]; }\n\nlet s = [1, 2, 3];\ns = adjoinSet(2, s);\ns = adjoinSet(4, s);\nconsole.log(s);",
+      "options": [
+        { "id": "a", "text": "[ 4, 1, 2, 3 ]" },
+        { "id": "b", "text": "[ 1, 2, 3, 4 ]" },
+        { "id": "c", "text": "[ 1, 2, 3, 2, 4 ]" },
+        { "id": "d", "text": "[ 4, 4, 1, 2, 3 ]" }
+      ],
+      "answer": "a",
+      "explanation": "adjoinSet(2, s) 檢查到 2 已經在集合裡，直接回傳原本的 s（不重複加入）；adjoinSet(4, s) 檢查到 4 不存在，才把它加到最前面，結果變成 [4, 1, 2, 3]。用無序陣列表示集合時，「加入前先檢查是否存在」是避免重複的關鍵，但這個檢查本身要掃過整個陣列。",
+      "verify": {
+        "checks": [
+          { "code": "function elementOfSet(x, set) { return set.includes(x); }\nfunction adjoinSet(x, set) { return elementOfSet(x, set) ? set : [x, ...set]; }\nlet s = [1, 2, 3];\ns = adjoinSet(2, s);\ns = adjoinSet(4, s);\nconsole.log(s);", "expected": "[ 4, 1, 2, 3 ]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-3-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "集合表示法二：有序清單能提早結束搜尋",
+      "docs": "",
+      "story": "",
+      "prompt": "如果把集合改成「由小到大排序」的陣列，elementOfSet 在找的過程中，一旦遇到比目標值還大的元素，就能提早回傳 false、不用繼續往後找。這種寫法比無序清單的版本快在哪裡？",
+      "code": "function elementOfSetOrdered(x, set) {\n  for (const item of set) {\n    if (item === x) return true;\n    if (item > x) return false; // 已經超過 x，後面不可能再出現，提早結束\n  }\n  return false;\n}",
+      "options": [
+        { "id": "a", "text": "無序清單一定要掃過「整個」陣列才能確定某個值不存在（因為不存在的值可能出現在任何位置）；有序清單只要掃到第一個「比目標值大」的元素就能確定後面不會再出現目標值，平均只需要掃過大約一半的元素，不用整個掃完" },
+        { "id": "b", "text": "兩者速度完全一樣，排序與否不影響搜尋速度" },
+        { "id": "c", "text": "有序清單一定要先掃過整個陣列才能開始搜尋，比無序清單還慢" },
+        { "id": "d", "text": "有序清單的優勢只出現在集合是空陣列的時候" }
+      ],
+      "answer": "a",
+      "explanation": "排序後的集合有一個關鍵性質：一旦目前檢查的元素已經比目標值大，因為後面的元素只會更大，目標值不可能再出現，可以直接提早回傳 false，不需要像無序清單那樣一定要掃到最後一個元素才能確定「找不到」。這是「善用資料本身有沒有額外性質（這裡是排序）」換取效率的經典例子。",
+      "verify": { "manual": "概念題：以搜尋提早結束的具體邏輯取代抽象效率敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-2-3-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Huffman 編碼：常見符號給短碼、少見符號給長碼",
+      "docs": "",
+      "story": "",
+      "prompt": "Huffman 編碼樹依照符號出現頻率建構——出現頻率越高的符號，離樹根越近、對應的編碼越短；頻率越低的符號離樹根越遠、編碼越長。這種設計的目的是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "讓整體編碼後的位元總長度最短：常出現的符號用短碼、少出現的符號才用長碼，平均下來整份訊息用掉的位元數會比「所有符號都用一樣長度的碼」還少——這是一種按使用頻率分配資源的取捨" },
+        { "id": "b", "text": "讓每個符號的編碼長度都完全相同，方便一次讀取固定長度的位元" },
+        { "id": "c", "text": "跟壓縮效率無關，只是為了讓樹的形狀看起來平衡美觀" },
+        { "id": "d", "text": "頻率越高的符號應該給越長的編碼，才能凸顯它的重要性" }
+      ],
+      "answer": "a",
+      "explanation": "Huffman 編碼的核心取捨是：把「短編碼」這個稀缺資源優先分配給最常出現的符號，因為它們在整份訊息裡出現次數最多，用短碼能帶來最大的整體節省；不常出現的符號就算編碼長一點，因為出現次數少，對整體長度影響也小。這跟「所有符號給一樣長度」的固定長度編碼完全是不同的設計目標。",
+      "verify": { "manual": "概念題：以編碼長度與頻率的取捨說明設計目的，無可執行程式碼。" }
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+{
+  "id": "sicp-5-3",
+  "title": "5.3 儲存配置與垃圾回收",
+  "questions": [
+    {
+      "id": "sicp-5-3-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "記憶體即向量：pair 底層其實是兩個平行陣列",
+      "docs": "",
+      "story": "",
+      "prompt": "第 2 章用 pair(x, y) 這種抽象操作處理資料，完全不用管它底層怎麼存。如果拆到記憶體層級，pair 其實是怎麼實作出來的？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "用兩個平行的向量（陣列）實作：一個叫 car-vector 存每個 pair 的第一個值，另一個叫 cdr-vector 存第二個值，同一個 pair 在兩個向量裡有相同的索引（位址）——car(p) 就是去 car-vector[p] 查值，cdr(p) 就是去 cdr-vector[p] 查值，pair 本身只是這個索引（位址）" },
+        { "id": "b", "text": "pair 在記憶體層級跟在高階語言裡完全一樣，也是一個叫 pair 的內建型別，沒有更底層的實作方式" },
+        { "id": "c", "text": "pair 底層是用一份很長的字串實作，car 跟 cdr 靠切割字串取值" },
+        { "id": "d", "text": "pair 底層完全不需要記憶體，是一種抽象概念，不佔用任何實際儲存空間" }
+      ],
+      "answer": "a",
+      "explanation": "這是「資料抽象」往下拆到最底層的具體樣貌：pair 這個高階抽象，底層可以用兩個平行的向量（car-vector、cdr-vector）實作，pair 本身就是這兩個向量裡「同一個索引」——car(p) 只是去 car-vector 查第 p 個位置的值，cdr(p) 查 cdr-vector 第 p 個位置。呼叫者用 pair/car/cdr 完全不需要知道這一層，正是抽象屏障發揮作用的地方。",
+      "verify": { "manual": "概念題：呼應第 2 章資料抽象，往下拆到記憶體向量層級，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-5-3-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "用平行陣列與 free 指標實作 cons/car/cdr",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      "story": "",
+      "prompt": "free 這個指標記錄「下一個還沒被用過的位址」，每次 cons 都佔用一個新位址、把 free 往後推進一格。這段程式會印出什麼？",
+      "code": "const carVector = [];\nconst cdrVector = [];\nlet free = 0;\n\nfunction cons(x, y) {\n  const address = free;\n  carVector[address] = x;\n  cdrVector[address] = y;\n  free += 1;\n  return address;\n}\nfunction car(p) { return carVector[p]; }\nfunction cdr(p) { return cdrVector[p]; }\n\nconst p1 = cons(1, 2);\nconst p2 = cons(3, p1);\nconsole.log(car(p2), car(cdr(p2)), cdr(cdr(p2)));",
+      "options": [
+        { "id": "a", "text": "3 1 2" },
+        { "id": "b", "text": "1 2 3" },
+        { "id": "c", "text": "0 1 2" },
+        { "id": "d", "text": "3 0 2" }
+      ],
+      "answer": "a",
+      "explanation": "cons 每次呼叫都佔用 free 目前指向的位址，把 x、y 分別存進 carVector、cdrVector 的那個位址，再把 free 往後推一格準備給下一次 cons 用。p2 的 car 是 3；p2 的 cdr 是 p1（也就是位址 0）；car(cdr(p2)) 等於 car(p1) = 1；cdr(cdr(p2)) 等於 cdr(p1) = 2。整條鏈完全靠位址（陣列索引）串起來。",
+      "verify": {
+        "checks": [
+          { "code": "const carVector = [];\nconst cdrVector = [];\nlet free = 0;\nfunction cons(x, y) {\n  const address = free;\n  carVector[address] = x;\n  cdrVector[address] = y;\n  free += 1;\n  return address;\n}\nfunction car(p) { return carVector[p]; }\nfunction cdr(p) { return cdrVector[p]; }\nconst p1 = cons(1, 2);\nconst p2 = cons(3, p1);\nconsole.log(car(p2), car(cdr(p2)), cdr(cdr(p2)));", "expected": "3 1 2" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-3-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "無窮記憶體的幻覺：GC 讓程式可以假裝記憶體用不完",
+      "docs": "",
+      "story": "",
+      "prompt": "free 指標只會往前推進，實際的記憶體卻是有限的。垃圾回收（garbage collection）扮演了什麼角色，讓程式可以一直安心呼叫 cons，好像記憶體真的用不完一樣？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "GC 會定期找出「已經沒有任何地方還參照得到」的 pair（垃圾），把它們佔用的位址回收、重新標記成可以再次分配給新的 cons 呼叫使用——如果沒有 GC，free 指標會一路往前推到記憶體真的用完為止；有了 GC，程式可以持續呼叫 cons，製造出「記憶體好像無窮無盡」的假象，實際上背後一直在回收不再需要的空間重複利用" },
+        { "id": "b", "text": "GC 會讓實體記憶體變成真正無限大，跟回收空間完全無關" },
+        { "id": "c", "text": "GC 只在程式明確呼叫某個函式時才會執行，其他時候完全不運作" },
+        { "id": "d", "text": "只要不呼叫 cons，就完全不需要任何形式的垃圾回收" }
+      ],
+      "answer": "a",
+      "explanation": "GC 的核心工作是找出「已經沒有任何路徑能再參照到」的 pair，把它們佔用的位址回收再利用，而不是真的讓記憶體變成無限大。正因為有這個回收機制，程式可以持續呼叫 cons 而不用擔心記憶體被耗盡，製造出「彷彿記憶體用不完」的假象——這正是「幻覺」這個詞想表達的意思：底層資源明明有限，GC 讓上層看起來像是無限的。",
+      "verify": { "manual": "概念題：以 free 指標與回收機制的具體對照取代抽象幻覺敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-5-3-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "標記可達性：從 root 出發，找出所有還連得到的位址",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Set",
+      "story": "",
+      "prompt": "請填入正確的遞迴呼叫，讓 markReachable 從根節點出發，把所有走得到的位址都標記進 reachable 集合裡。",
+      "code": "const graph = { 0: [1], 1: [2], 2: [], 3: [4], 4: [] };\n\nfunction markReachable(node, reachable) {\n  if (reachable.has(node)) return;\n  reachable.add(node);\n  for (const neighbor of graph[node]) {\n    ____;\n  }\n}\n\nconst reachable = new Set();\nmarkReachable(0, reachable);\nconsole.log([...reachable].sort());",
+      "options": [
+        { "id": "a", "text": "markReachable(neighbor, reachable)" },
+        { "id": "b", "text": "reachable.add(neighbor)" },
+        { "id": "c", "text": "markReachable(node, reachable)" },
+        { "id": "d", "text": "graph[neighbor]" }
+      ],
+      "answer": "a",
+      "explanation": "要把「可達」的範圍正確地往外擴散，每個鄰居也要遞迴呼叫 markReachable（用同一份 reachable 集合），而不是只把鄰居直接加進集合卻不繼續往下追蹤它自己的鄰居——不然像 1 能不能連到 2 這種更深一層的關係就會漏掉。從 0 出發，走訪順序是 0 → 1 → 2，reachable 最後是 [0, 1, 2]，3 和 4 因為跟 0 完全沒有路徑相連，永遠不會被標記到，會被視為垃圾回收掉。",
+      "verify": {
+        "checks": [
+          { "code": "const graph = { 0: [1], 1: [2], 2: [], 3: [4], 4: [] };\nfunction markReachable(node, reachable) {\n  if (reachable.has(node)) return;\n  reachable.add(node);\n  for (const neighbor of graph[node]) {\n    markReachable(neighbor, reachable);\n  }\n}\nconst reachable = new Set();\nmarkReachable(0, reachable);\nconsole.log([...reachable].sort());", "expected": "[ 0, 1, 2 ]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-3-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "垃圾回收：把不可達的位址排除在保留範圍之外",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/filter",
+      "story": "",
+      "prompt": "這段程式用上一題算出的 reachable 集合，篩出「垃圾回收後應該保留的位址」。這段程式會印出什麼？",
+      "code": "const graph = { 0: [1], 1: [2], 2: [], 3: [4], 4: [] };\nfunction markReachable(node, reachable) {\n  if (reachable.has(node)) return;\n  reachable.add(node);\n  for (const neighbor of graph[node]) {\n    markReachable(neighbor, reachable);\n  }\n}\n\nconst reachable = new Set();\nmarkReachable(0, reachable);\n\nconst allAddresses = [0, 1, 2, 3, 4];\nconst kept = allAddresses.filter((addr) => reachable.has(addr));\nconst collected = allAddresses.filter((addr) => !reachable.has(addr));\n\nconsole.log('保留：', kept);\nconsole.log('回收：', collected);",
+      "options": [
+        { "id": "a", "text": "保留： [ 0, 1, 2 ]\n回收： [ 3, 4 ]" },
+        { "id": "b", "text": "保留： [ 3, 4 ]\n回收： [ 0, 1, 2 ]" },
+        { "id": "c", "text": "保留： [ 0, 1, 2, 3, 4 ]\n回收： []" },
+        { "id": "d", "text": "保留： []\n回收： [ 0, 1, 2, 3, 4 ]" }
+      ],
+      "answer": "a",
+      "explanation": "從根節點 0 出發走訪得到 reachable = {0, 1, 2}，3 和 4 因為跟 0 完全沒有任何路徑相連，不在 reachable 集合裡。垃圾回收要保留的就是「還可達」的位址（0, 1, 2），可以安全回收、重新分配給之後 cons 呼叫使用的就是「不可達」的位址（3, 4）。",
+      "verify": {
+        "checks": [
+          { "code": "const graph = { 0: [1], 1: [2], 2: [], 3: [4], 4: [] };\nfunction markReachable(node, reachable) {\n  if (reachable.has(node)) return;\n  reachable.add(node);\n  for (const neighbor of graph[node]) {\n    markReachable(neighbor, reachable);\n  }\n}\nconst reachable = new Set();\nmarkReachable(0, reachable);\nconst allAddresses = [0, 1, 2, 3, 4];\nconst kept = allAddresses.filter((addr) => reachable.has(addr));\nconst collected = allAddresses.filter((addr) => !reachable.has(addr));\nconsole.log('保留：', kept);\nconsole.log('回收：', collected);", "expected": "保留： [ 0, 1, 2 ]\n回收： [ 3, 4 ]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-3-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "垃圾回收呼應第 3 章：只要還有一個地方參照得到，就不是垃圾",
+      "docs": "",
+      "story": "",
+      "prompt": "第 3 章討論過「別名」和「結構共享」——同一份資料可能同時被好幾個地方參照。這對「怎麼判斷一塊記憶體是不是垃圾」有什麼影響？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "判斷一塊記憶體是不是垃圾，看的是「有沒有任何一條可達路徑還連得到它」，不是「原本建立它的那個變數還在不在」——即使某個變數已經不再指向它，只要還有另一個地方（例如另一份共享結構）透過別的路徑參照得到它，這塊記憶體就還不算垃圾，不能被回收；必須所有指向它的路徑都斷了，才能安全回收" },
+        { "id": "b", "text": "只要建立這塊記憶體的那一行程式碼執行完畢，這塊記憶體就一定會被當成垃圾回收，跟有沒有其他地方參照它無關" },
+        { "id": "c", "text": "結構共享會讓垃圾回收器整個當機，沒辦法正確判斷任何記憶體" },
+        { "id": "d", "text": "只要一塊記憶體曾經被參照過一次，之後就永遠不會被當成垃圾，即使沒有任何地方還連得到它" }
+      ],
+      "answer": "a",
+      "explanation": "這正是第 3 章「別名」「結構共享」在垃圾回收裡的具體體現：判斷垃圾與否，靠的是「有沒有任何可達路徑」，不是「哪一個變數建立了它」。因為資料可能同時被好幾個地方共享參照，垃圾回收器必須確認所有路徑都斷了（完全不可達）才能安全回收這塊記憶體，光是某一個變數不再指向它並不足以判定它是垃圾。",
+      "verify": { "manual": "概念題：呼應第 3 章結構共享，以可達性判斷取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

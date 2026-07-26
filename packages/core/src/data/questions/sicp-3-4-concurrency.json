@@ -1,0 +1,128 @@
+{
+  "id": "sicp-3-4",
+  "title": "3.4 併行：時間是關鍵",
+  "questions": [
+    {
+      "id": "sicp-3-4-q1",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "併行的風險：兩個操作「同時」存取共享狀態",
+      "docs": "",
+      "story": "",
+      "prompt": "兩個提款操作同時對同一個帳戶操作：都先讀出目前餘額，各自扣款後再寫回去。如果兩個操作的「讀」「寫」步驟交錯執行，可能發生什麼問題？",
+      "code": "// 概念示意：兩個提款操作各自的步驟\n// 操作 A：讀 balance（100）→ 算出 100-30=70 → 寫回 70\n// 操作 B：讀 balance（100）→ 算出 100-40=60 → 寫回 60",
+      "options": [
+        { "id": "a", "text": "如果操作 A 和 B 都先「讀」到還沒被對方改過的 balance（100），各自根據這個舊值算出結果再寫回去，後寫回的那個操作會直接覆蓋掉先寫回的結果——最終餘額只反映其中一筆提款，另一筆提款「憑空消失」，即使兩筆提款各自看起來邏輯完全正確" },
+        { "id": "b", "text": "兩個操作不管怎麼交錯執行，最終餘額一定都會是 100 - 30 - 40 = 30，不會有任何問題" },
+        { "id": "c", "text": "只要兩個操作使用不同的變數名稱，就不會互相影響" },
+        { "id": "d", "text": "這種情況只會發生在真正的多核心平行運算，單一執行緒的程式不可能發生" }
+      ],
+      "answer": "a",
+      "explanation": "問題不在單一操作的邏輯錯不錯（A、B 各自看都對），而在於「讀取」和「寫回」之間如果被另一個操作插隊，會用到過時的舊值。A 讀到 100、B 也讀到 100（B 還沒看到 A 的結果），A 寫回 70、B 之後寫回 60——B 是根據還沒被 A 改過的舊值算的，寫回時直接蓋掉 A 的結果，30 這筆提款完全沒有真正反映在最終餘額裡。這就是「時間交錯」帶來的經典併行問題。",
+      "verify": { "manual": "概念題：以具體讀寫交錯步驟取代抽象併行風險敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-3-4-q2",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "用 async/await 重現交錯執行造成的遺失更新",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/async_function",
+      "story": "",
+      "prompt": "兩個 async 函式都「先讀 balance、等一下、再寫回扣款後的值」，await 讓出執行權，讓兩者交錯執行。這段程式會印出什麼？",
+      "code": "let balance = 100;\n\nasync function withdraw(amount) {\n  const current = balance;\n  await Promise.resolve();\n  balance = current - amount;\n}\n\nasync function main() {\n  await Promise.all([withdraw(30), withdraw(40)]);\n  console.log(balance);\n}\n\nmain();",
+      "options": [
+        { "id": "a", "text": "60" },
+        { "id": "b", "text": "70" },
+        { "id": "c", "text": "30" },
+        { "id": "d", "text": "100" }
+      ],
+      "answer": "a",
+      "explanation": "withdraw(30) 和 withdraw(40) 都在還沒被對方改過之前就讀到 balance = 100（各自的 current 都是 100）。await 讓兩者交錯執行：withdraw(30) 先恢復，把 balance 寫成 70；接著 withdraw(40) 恢復，但它手上的 current 早就定格在 100，寫回 100-40=60，直接覆蓋掉剛剛的 70。最終 balance 只反映了 40 這筆提款，30 那筆提款完全「憑空消失」——即使 JavaScript 是單一執行緒，await 造成的交錯一樣會產生跟真正平行執行一模一樣的遺失更新問題。",
+      "verify": {
+        "checks": [
+          { "code": "let balance = 100;\nasync function withdraw(amount) {\n  const current = balance;\n  await Promise.resolve();\n  balance = current - amount;\n}\nasync function main() {\n  await Promise.all([withdraw(30), withdraw(40)]);\n  console.log(balance);\n}\nmain();", "expected": "60" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-4-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "併行問題不是邏輯錯誤，是時間交錯造成的",
+      "docs": "",
+      "story": "",
+      "prompt": "上一題的 withdraw 函式，單獨拿出來看邏輯完全正確（讀、算、寫都沒有寫錯）。那遺失更新的問題到底出在哪裡？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "問題出在「執行的時間點」被交錯排列了，不是函式本身的邏輯寫錯——withdraw 的程式碼本身完全正確，但如果不保證「讀取到寫回」這整個過程不會被其他操作插隊，兩個各自正確的操作放在一起執行，結果就可能不正確。這是併行系統特有的問題類別，跟單一函式邏輯對不對是完全不同層次的問題" },
+        { "id": "b", "text": "問題出在 amount 這個參數傳錯了數字" },
+        { "id": "c", "text": "只要把 async 函式改成一般函式，這個問題就會自動消失" },
+        { "id": "d", "text": "這是 JavaScript 語言本身的 bug，跟程式邏輯或執行順序都無關" }
+      ],
+      "answer": "a",
+      "explanation": "這正是併行系統要處理的核心問題類別：每個操作單獨看邏輯都對，但一旦允許「讀取到寫回」這段過程被另一個操作插隊執行，兩個各自正確的操作合在一起，結果可能不正確。這跟「這個函式寫錯了」是完全不同的問題——沒辦法只靠檢查單一函式的邏輯發現它，必須考慮「操作彼此執行的時間交錯方式」，也就是「時間是關鍵」這句話真正想強調的重點。",
+      "verify": { "manual": "概念題：以具體交錯執行情境取代抽象問題類別敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-3-4-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "序列化：保證一段操作不會被打斷插隊",
+      "docs": "",
+      "story": "",
+      "prompt": "「序列化」（serialization）保證被序列化包住的一段程式碼，在執行完之前不會被同一組序列化保護的其他操作插隊執行。如果把 withdraw 的「讀、算、寫」整個包進同一個序列化區塊，能解決什麼問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "能解決遺失更新的問題：只要兩個 withdraw 呼叫都被同一個序列化機制保護，就能保證其中一個呼叫的「讀取到寫回」整個過程執行完畢之前，另一個呼叫不能插隊進來讀取到還沒更新的舊值——等於把原本會交錯執行的兩段程式碼，改成保證不會交錯、一個完整做完才輪到下一個" },
+        { "id": "b", "text": "序列化會讓兩個操作同時執行得更快，但不影響正確性" },
+        { "id": "c", "text": "序列化只能用在讀取操作上，寫入操作沒辦法被序列化保護" },
+        { "id": "d", "text": "序列化之後，兩個操作永遠會依照呼叫的順序先後完成，但跟哪個操作先讀到舊值完全無關" }
+      ],
+      "answer": "a",
+      "explanation": "序列化的核心保證是「被保護的一段操作，執行到一半不會被另一個受同樣保護的操作插隊」——這正好對症下藥：只要 withdraw 的讀、算、寫整個過程被同一個序列化機制包住，任何時刻最多只有一個 withdraw 呼叫在進行中，不會再發生「兩個呼叫都讀到同一份舊值、各自寫回、後者覆蓋前者」的遺失更新問題。",
+      "verify": { "manual": "概念題：以序列化的具體保證取代抽象機制敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-3-4-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "序列化的簡易示範：一次只做一個，不交錯",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/async_function",
+      "story": "",
+      "prompt": "這次改成依序 await 每一個 withdraw，不再讓兩者同時交錯執行。這段程式會印出什麼？",
+      "code": "let balance = 100;\n\nasync function withdraw(amount) {\n  const current = balance;\n  await Promise.resolve();\n  balance = current - amount;\n}\n\nasync function main() {\n  await withdraw(30);\n  await withdraw(40);\n  console.log(balance);\n}\n\nmain();",
+      "options": [
+        { "id": "a", "text": "30" },
+        { "id": "b", "text": "60" },
+        { "id": "c", "text": "70" },
+        { "id": "d", "text": "100" }
+      ],
+      "answer": "a",
+      "explanation": "這次用 await withdraw(30) 等它完全執行完（讀、算、寫都做完），才開始執行 withdraw(40)，兩者不再交錯。withdraw(40) 讀到的 current 已經是被 withdraw(30) 更新過的 70，扣掉 40 之後正確得到 30——兩筆提款都確實反映在最終餘額裡，沒有任何一筆「憑空消失」。這就是序列化（這裡用最簡單的依序 await 示範）解決遺失更新問題的效果。",
+      "verify": {
+        "checks": [
+          { "code": "let balance = 100;\nasync function withdraw(amount) {\n  const current = balance;\n  await Promise.resolve();\n  balance = current - amount;\n}\nasync function main() {\n  await withdraw(30);\n  await withdraw(40);\n  console.log(balance);\n}\nmain();", "expected": "30" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-4-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "時間的角色不只發生在多核心平行運算",
+      "docs": "",
+      "story": "",
+      "prompt": "JavaScript 主執行緒本質上是單一執行緒，同一時間只有一行程式碼在跑。為什麼前面示範的遺失更新問題還是會發生？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "因為問題的根源是「操作能不能被交錯執行」，不是「有沒有真正同時（多核心）執行」——await 讓一個 async 函式在某個時間點暫停、把控制權讓給其他程式碼，其他程式碼可以在這段空檔插進來執行。只要存在「操作 A 還沒做完、操作 B 就有機會插進來動到同一份共享狀態」這種交錯的可能性，就會有遺失更新這類問題，跟是不是多核心平行執行無關" },
+        { "id": "b", "text": "這個問題只可能發生在有多核心 CPU 的環境，單執行緒的 JavaScript 引擎完全不會發生" },
+        { "id": "c", "text": "await 保證程式碼一定會依照撰寫順序執行完，不可能被其他程式碼插隊" },
+        { "id": "d", "text": "這只是這幾道題目刻意設計出來的巧合，實務上 async 函式不會有這種風險" }
+      ],
+      "answer": "a",
+      "explanation": "「時間是關鍵」講的其實是「操作彼此有沒有機會交錯執行」，跟是不是有多顆 CPU 核心真的同時執行無關。JavaScript 雖然單執行緒，但 await 會讓一個 async 函式在某個時間點暫停、讓出控制權，這段空檔讓其他程式碼有機會插進來動到同一份共享狀態——只要有這種交錯的可能性，遺失更新這類併行問題就可能發生，這也是為什麼即使沒有真正的多核心平行，非同步程式碼一樣需要認真考慮執行順序交錯的風險。",
+      "verify": { "manual": "概念題：釐清時間交錯與多核心平行的差異，無可執行程式碼。" }
+    }
+  ]
+}

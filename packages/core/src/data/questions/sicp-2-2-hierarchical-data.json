@@ -1,0 +1,132 @@
+{
+  "id": "sicp-2-2",
+  "title": "2.2 階層式資料與封閉性質",
+  "questions": [
+    {
+      "id": "sicp-2-2-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "封閉性質：pair 可以再包 pair",
+      "docs": "",
+      "story": "",
+      "prompt": "pair(1, pair(2, pair(3, null))) 這樣層層包裹就能表示一份清單。這說明了 pair 的什麼性質，讓資料結構可以無限往上疊？",
+      "code": "function pair(x, y) { return [x, y]; }\nconst list123 = pair(1, pair(2, pair(3, null)));",
+      "options": [
+        { "id": "a", "text": "「封閉性質」（closure property）：pair combine 出來的結果本身還是一個可以再被 pair 起來的值，所以可以把 pair 的結果當成另一個 pair 的元素，一層層疊出任意深度的巢狀結構——list、樹狀結構都是靠這個性質建構出來的" },
+        { "id": "b", "text": "pair 只能包裝兩個數字，不能把 pair 的結果再放進另一個 pair 裡面" },
+        { "id": "c", "text": "list123 這樣寫會導致無窮遞迴，永遠不會執行完" },
+        { "id": "d", "text": "封閉性質指的是 pair 建立後就不能再被讀取，是一種唯寫的資料結構" }
+      ],
+      "answer": "a",
+      "explanation": "pair(x, y) 回傳的東西本身也是一個可以被當成 x 或 y 傳給另一個 pair 呼叫的值，這種「combine 出來的結果本身也能拿去再 combine」的性質就是封閉性質（closure property）——正因為有這個性質，才能用同一個 pair 原語疊出任意深度的清單、樹狀結構等複雜資料。",
+      "verify": { "manual": "概念題：以具體 pair 巢狀範例取代抽象性質定義，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-2-2-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "用 pair 鏈打造清單",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function pair(x, y) { return [x, y]; }\nfunction listRef(lst, n) {\n  return n === 0 ? lst[0] : listRef(lst[1], n - 1);\n}\n\nconst lst = pair(1, pair(2, pair(3, null)));\nconsole.log(listRef(lst, 0), listRef(lst, 1), listRef(lst, 2));",
+      "options": [
+        { "id": "a", "text": "1 2 3" },
+        { "id": "b", "text": "3 2 1" },
+        { "id": "c", "text": "1 1 1" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "listRef 沿著 pair 鏈往下走 n 步：第 0 步直接取 lst[0]，之後每一步都往 lst[1]（也就是「其餘的清單」）繼續找，直到 n 變成 0 為止。lst 是 pair(1, pair(2, pair(3, null)))，所以 listRef(lst, 0) = 1、listRef(lst, 1) = 2、listRef(lst, 2) = 3。",
+      "verify": {
+        "checks": [
+          { "code": "function pair(x, y) { return [x, y]; }\nfunction listRef(lst, n) {\n  return n === 0 ? lst[0] : listRef(lst[1], n - 1);\n}\nconst lst = pair(1, pair(2, pair(3, null)));\nconsole.log(listRef(lst, 0), listRef(lst, 1), listRef(lst, 2));", "expected": "1 2 3" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-2-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "階層式資料：清單的長度 vs 葉節點總數",
+      "docs": "",
+      "story": "",
+      "prompt": "樹狀結構可以用巢狀陣列表示，例如 [[1, 2], 3, [4, [5, 6]]]。這個結構最上層的「長度」跟「總葉節點數」分別是多少？",
+      "code": "const tree = [[1, 2], 3, [4, [5, 6]]];",
+      "options": [
+        { "id": "a", "text": "最上層長度是 3（[1,2]、3、[4,[5,6]] 這三個元素），但總葉節點數是 6（1,2,3,4,5,6 這些不能再往下展開的數字）——「長度」只看最外層有幾個元素，「葉節點數」要遞迴展開每一層巢狀結構才能數完" },
+        { "id": "b", "text": "兩者是同一件事，長度就是葉節點數，都是 3" },
+        { "id": "c", "text": "長度是 6，葉節點數是 3，跟正確答案剛好相反" },
+        { "id": "d", "text": "這個結構沒有辦法定義長度或葉節點數，因為裡面有巢狀陣列" }
+      ],
+      "answer": "a",
+      "explanation": "tree.length 這種「最上層長度」只看最外層陣列有幾個元素，不管每個元素本身是不是還能再展開；「葉節點數」則要遞迴地一路展開到不能再展開的值為止才數得完。同一份資料，「淺層結構」跟「完全展開後的內容」是兩種不同的度量，不能混為一談。",
+      "verify": { "manual": "概念題：以具體巢狀陣列比較長度與葉節點數，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-2-2-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "遞迴數葉節點：countLeaves",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Recursion",
+      "story": "",
+      "prompt": "請填入正確的引數，讓 countLeaves 能正確算出巢狀陣列裡所有葉節點（不是陣列的值）的總數。",
+      "code": "function countLeaves(tree) {\n  if (!Array.isArray(tree)) return 1;\n  if (tree.length === 0) return 0;\n  return countLeaves(____) + countLeaves(tree.slice(1));\n}\n\nconsole.log(countLeaves([[1, 2], 3, [4, [5, 6]]]));",
+      "options": [
+        { "id": "a", "text": "tree[0]" },
+        { "id": "b", "text": "tree" },
+        { "id": "c", "text": "tree.slice(0)" },
+        { "id": "d", "text": "tree[1]" }
+      ],
+      "answer": "a",
+      "explanation": "tree[0] 是這一層陣列的第一個元素（可能還是巢狀陣列，也可能是葉節點），tree.slice(1) 是「扣掉第一個之後剩下的部分」，兩邊分別遞迴呼叫 countLeaves 再相加，就能把整個巢狀結構攤平數完。countLeaves([[1,2],3,[4,[5,6]]]) 最後會數出 6 個葉節點（1,2,3,4,5,6）。",
+      "verify": {
+        "checks": [
+          { "code": "function countLeaves(tree) {\n  if (!Array.isArray(tree)) return 1;\n  if (tree.length === 0) return 0;\n  return countLeaves(tree[0]) + countLeaves(tree.slice(1));\n}\nconsole.log(countLeaves([[1, 2], 3, [4, [5, 6]]]));", "expected": "6" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-2-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "序列作為慣用介面：串接 map／filter／reduce 處理樹狀資料",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "SICP 主張把資料處理拆成「enumerate（展開成序列）→ filter（篩選）→ map（轉換）→ accumulate（收斂）」這幾個標準步驟串接起來，不管資料原本是陣列還是樹。這段程式會印出什麼？",
+      "code": "function enumerateTree(tree) {\n  if (!Array.isArray(tree)) return [tree];\n  return tree.reduce((acc, sub) => acc.concat(enumerateTree(sub)), []);\n}\n\nconst tree = [[1, 2], 3, [4, [5, 6]]];\nconst result = enumerateTree(tree)\n  .filter((x) => x % 2 === 1)\n  .map((x) => x * x)\n  .reduce((sum, x) => sum + x, 0);\n\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "35" },
+        { "id": "b", "text": "21" },
+        { "id": "c", "text": "91" },
+        { "id": "d", "text": "15" }
+      ],
+      "answer": "a",
+      "explanation": "enumerateTree 先把巢狀樹「展開」成一份扁平序列 [1,2,3,4,5,6]；filter 篩出奇數 [1,3,5]；map 平方成 [1,9,25]；reduce 加總成 35。重點是 filter/map/reduce 這三個標準介面完全不需要知道資料原本是巢狀樹還是平面陣列——只要先展開成序列，後面的處理邏輯就能重用同一套慣用介面，這正是「序列作為慣用介面」的核心價值。",
+      "verify": {
+        "checks": [
+          { "code": "function enumerateTree(tree) {\n  if (!Array.isArray(tree)) return [tree];\n  return tree.reduce((acc, sub) => acc.concat(enumerateTree(sub)), []);\n}\nconst tree = [[1, 2], 3, [4, [5, 6]]];\nconst result = enumerateTree(tree)\n  .filter((x) => x % 2 === 1)\n  .map((x) => x * x)\n  .reduce((sum, x) => sum + x, 0);\nconsole.log(result);", "expected": "35" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-2-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "慣用介面為什麼能跨資料來源重用",
+      "docs": "",
+      "story": "",
+      "prompt": "不管原始資料是一棵樹、一段數字範圍、還是一份手動列出的陣列，只要能先展開成一份序列，就能接上同一套 filter/map/reduce 管線處理。這種可重用性的根本原因是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "因為 enumerate 這一步把「資料原本長什麼樣子」的差異都吸收掉了，只要輸出統一都是「一份序列（陣列）」，後面的 filter/map/reduce 就只需要認得「序列」這一種介面，不需要為樹、範圍、手動陣列分別寫一套處理邏輯——這正是封閉性質（序列可以任意組合、嵌套）加上約定介面共同帶來的重用性" },
+        { "id": "b", "text": "因為 filter、map、reduce 底層會自動判斷資料原本是樹還是陣列，分別執行不同的程式碼" },
+        { "id": "c", "text": "這只是巧合，樹狀資料剛好也能用陣列的方法，不是刻意設計出來的" },
+        { "id": "d", "text": "因為 JavaScript 規定所有資料結構都必須先轉換成樹狀結構才能處理" }
+      ],
+      "answer": "a",
+      "explanation": "關鍵在 enumerate 這一步：不管資料原本是樹、範圍還是手動陣列，enumerate 之後統一變成「一份序列」，後面的 filter/map/reduce 只需要認得序列這一種介面就好，不用為每種資料來源分別寫專屬的處理邏輯。這是「封閉性質」（序列可以任意組合、拿去餵給下一個處理步驟）加上「約定介面」共同帶來的重用性，不是巧合也不是語言底層的特殊判斷。",
+      "verify": { "manual": "概念題：以具體管線範例說明可重用性成因，無可執行程式碼。" }
+    }
+  ]
+}

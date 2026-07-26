@@ -1,0 +1,136 @@
+{
+  "id": "sicp-1-1",
+  "title": "1.1 程式的元素：代換模型與黑盒抽象",
+  "questions": [
+    {
+      "id": "sicp-1-1-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "程序作為黑盒抽象",
+      "docs": "",
+      "story": "",
+      "prompt": "你要在自己的程式裡呼叫 square(5)，但完全沒看過 square 的原始碼，只知道它「輸入一個數字、回傳這個數字的平方」。下列何者最符合「把 square 當成黑盒抽象使用」的意思？",
+      "code": "function square(x) {\n  return x * x;\n}\n\nfunction sumOfSquares(a, b) {\n  return square(a) + square(b);\n}",
+      "options": [
+        { "id": "a", "text": "sumOfSquares 完全不需要知道 square 內部是用 x * x 還是 Math.pow(x, 2) 實作，只要知道「給定輸入 x，回傳 x 的平方」這個行為約定，就能正確使用它——這就是把 square 當成黑盒抽象" },
+        { "id": "b", "text": "sumOfSquares 必須先讀過 square 內部用了哪個運算子，才能保證呼叫結果正確" },
+        { "id": "c", "text": "只要函式名稱取得夠清楚（例如叫 square），呼叫者就不需要知道輸入輸出的行為約定" },
+        { "id": "d", "text": "「黑盒抽象」的意思是這個函式的原始碼被刻意隱藏起來、禁止任何人閱讀" }
+      ],
+      "answer": "a",
+      "explanation": "黑盒抽象的重點不是「藏起來不給看」，而是使用者不需要知道實作細節（x * x 或 Math.pow）就能正確使用它，只要知道輸入輸出的行為約定即可。這讓 sumOfSquares 這一層可以專心處理自己的邏輯，不用同時操心 square 內部怎麼算。",
+      "verify": { "manual": "概念題：以具體函式呼叫取代抽象定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-1-1-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "代換模型：一步步展開函式呼叫",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions",
+      "story": "",
+      "prompt": "用「代換模型」思考——把每個函式呼叫替換成它的函式本體、參數換成實際傳入的值，一路展開到只剩下運算式為止。這段程式會印出什麼？",
+      "code": "function square(x) {\n  return x * x;\n}\nfunction sumOfSquares(a, b) {\n  return square(a) + square(b);\n}\nfunction f(a) {\n  return sumOfSquares(a + 1, a * 2);\n}\n\nconsole.log(f(5));",
+      "options": [
+        { "id": "a", "text": "136" },
+        { "id": "b", "text": "121" },
+        { "id": "c", "text": "56" },
+        { "id": "d", "text": "30" }
+      ],
+      "answer": "a",
+      "explanation": "代換模型：f(5) 先把 a 換成 5，變成 sumOfSquares(6, 10)；再把 sumOfSquares 展開成 square(6) + square(10)；最後展開成 6*6 + 10*10 = 36 + 100 = 136。每一步都只是「把函式呼叫換成函式本體」，不用真的追蹤變數怎麼變。",
+      "verify": {
+        "checks": [
+          { "code": "function square(x) {\n  return x * x;\n}\nfunction sumOfSquares(a, b) {\n  return square(a) + square(b);\n}\nfunction f(a) {\n  return sumOfSquares(a + 1, a * 2);\n}\nconsole.log(f(5));", "expected": "136" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-1-1-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "參數名稱是局部的（黑盒抽象的必要條件）",
+      "docs": "",
+      "story": "",
+      "prompt": "下面兩個函式定義，除了參數名稱不同（一個用 x，一個用 a），其他完全一樣。這說明了「黑盒抽象」的哪個必要性質？",
+      "code": "function square1(x) {\n  return x * x;\n}\nfunction square2(a) {\n  return a * a;\n}\n\nconsole.log(square1(7) === square2(7));",
+      "options": [
+        { "id": "a", "text": "兩者行為完全相同（都印出 true），因為參數名稱只是函式內部的局部命名，呼叫者從外部看不到、也不需要在意這個名稱叫 x 還是 a——這正是黑盒抽象要求的：實作細節（包含參數怎麼命名）不該影響呼叫者能不能正確使用它" },
+        { "id": "b", "text": "square2 會出錯，因為呼叫時傳入的是 7 這個數字，但函式參數名稱是 a 不是 x，型別對不起來" },
+        { "id": "c", "text": "兩者是不同的抽象層級，square1 是黑盒、square2 不是，因為只有用 x 當參數名稱才算標準寫法" },
+        { "id": "d", "text": "===  在這裡一定回傳 false，因為兩個函式是分別定義的，函式本身不可能相等" }
+      ],
+      "answer": "a",
+      "explanation": "square1(7) === square2(7) 印出 true——兩者都回傳 49，因為參數名稱（x 或 a）只是函式內部的局部細節，不影響外部呼叫者看到的行為。如果換個參數名稱就會改變呼叫結果，那才是抽象漏了洞（leaky abstraction）。",
+      "verify": { "manual": "概念題：以具體比較取代抽象性質敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-1-1-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "把重複邏輯抽成子程序（黑盒抽象的實作手法）",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Recursion",
+      "story": "",
+      "prompt": "goodEnough 檢查猜測值夠不夠精確、improve 用平均法改進猜測值，兩者被抽成獨立的黑盒子程序，sqrtIter 只需要呼叫它們、不用管內部怎麼算。請填入正確的呼叫，讓 sqrtIter 能遞迴逼近平方根。",
+      "code": "function goodEnough(guess, x) {\n  return Math.abs(guess * guess - x) < 0.001;\n}\nfunction improve(guess, x) {\n  return (guess + x / guess) / 2;\n}\nfunction sqrtIter(guess, x) {\n  if (goodEnough(guess, x)) {\n    return guess;\n  }\n  return sqrtIter(____, x);\n}\n\nconsole.log(sqrtIter(1, 9).toFixed(2));",
+      "options": [
+        { "id": "a", "text": "improve(guess, x)" },
+        { "id": "b", "text": "guess" },
+        { "id": "c", "text": "goodEnough(guess, x)" },
+        { "id": "d", "text": "improve(x, guess)" }
+      ],
+      "answer": "a",
+      "explanation": "sqrtIter 只需要知道「improve 能把猜測值變得更好」這個約定，不需要知道 improve 內部用的是牛頓法還是其他公式——這正是黑盒抽象的價值：sqrtIter 只要呼叫 improve(guess, x) 拿到更好的猜測值，繼續遞迴逼近，直到 goodEnough 判斷夠精確為止。",
+      "verify": {
+        "checks": [
+          { "code": "function goodEnough(guess, x) {\n  return Math.abs(guess * guess - x) < 0.001;\n}\nfunction improve(guess, x) {\n  return (guess + x / guess) / 2;\n}\nfunction sqrtIter(guess, x) {\n  if (goodEnough(guess, x)) {\n    return guess;\n  }\n  return sqrtIter(improve(guess, x), x);\n}\nconsole.log(sqrtIter(1, 9).toFixed(2));", "expected": "3.00" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-1-1-q5",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "抽象漏洞：內部細節洩漏到外部",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "團隊想把 makeCounter 當成黑盒抽象使用——外部只透過 increment() 拿到目前計數，不該有別的方式能影響或讀到內部狀態。下面這個實作有什麼問題，違反了黑盒抽象的原則？",
+      "code": "function makeCounter() {\n  const state = { count: 0 };\n  return {\n    increment() {\n      state.count += 1;\n      return state.count;\n    },\n    state,\n  };\n}\n\nconst counter = makeCounter();\ncounter.increment();\ncounter.state.count = 999;\nconsole.log(counter.increment());",
+      "options": [
+        { "id": "a", "text": "makeCounter 把內部的 state 物件直接暴露在回傳值上（counter.state），外部程式碼可以繞過 increment() 直接竄改 count，導致「呼叫者只透過約定的介面使用黑盒」這個前提被破壞——印出的是 1000 而不是預期的 2，因為狀態在外部被直接改過" },
+        { "id": "b", "text": "這段程式完全沒有問題，increment() 本來就應該讓外部可以直接修改內部狀態" },
+        { "id": "c", "text": "問題出在 state.count += 1 這一行的運算子用錯了，應該用 count = count + 2" },
+        { "id": "d", "text": "問題是 makeCounter 少了 return 關鍵字，所以整個函式其實沒有回傳任何東西" }
+      ],
+      "answer": "a",
+      "explanation": "把 state 整包暴露出去，等於把「應該只能透過 increment() 存取」的內部細節洩漏給了外部，外部可以繞過約定的介面直接竄改狀態（counter.state.count = 999），這正是「抽象漏洞」：使用者本來只該依賴 increment() 這個黑盒介面，卻能摸到並改動不該碰的內部實作細節。修法是只回傳 { increment }，不要把 state 放進回傳物件。",
+      "verify": {
+        "checks": [
+          { "code": "function makeCounter() {\n  const state = { count: 0 };\n  return {\n    increment() {\n      state.count += 1;\n      return state.count;\n    },\n    state,\n  };\n}\nconst counter = makeCounter();\ncounter.increment();\ncounter.state.count = 999;\nconsole.log(counter.increment());", "expected": "1000" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-1-1-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "條件式的求值：只有符合的分支會執行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/if...else",
+      "story": "",
+      "prompt": "SICP 的 cond 依序檢查每個判斷式、只執行第一個成立分支對應的內容，後面的分支完全不會被求值。JS 的 if / else if / else 是同一種求值規則。這段程式會印出什麼？",
+      "code": "function classify(x) {\n  if (x > 0) {\n    console.log('positive branch ran');\n    return 'positive';\n  } else if (x === 0) {\n    console.log('zero branch ran');\n    return 'zero';\n  } else {\n    console.log('negative branch ran');\n    return 'negative';\n  }\n}\n\nconsole.log(classify(-3));",
+      "options": [
+        { "id": "a", "text": "negative branch ran\nnegative" },
+        { "id": "b", "text": "positive branch ran\nzero branch ran\nnegative branch ran\nnegative" },
+        { "id": "c", "text": "negative" },
+        { "id": "d", "text": "zero branch ran\nnegative" }
+      ],
+      "answer": "a",
+      "explanation": "classify(-3) 依序檢查 x > 0（不成立）、x === 0（不成立），到 else 才成立，所以只有 else 分支裡的 console.log 跟 return 會執行，其他分支完全不會被求值——這正是條件式求值的關鍵性質：不成立的分支連內容都不會被執行，不是先全部跑過一遍再挑結果。",
+      "verify": {
+        "checks": [
+          { "code": "function classify(x) {\n  if (x > 0) {\n    console.log('positive branch ran');\n    return 'positive';\n  } else if (x === 0) {\n    console.log('zero branch ran');\n    return 'zero';\n  } else {\n    console.log('negative branch ran');\n    return 'negative';\n  }\n}\nconsole.log(classify(-3));", "expected": "negative branch ran\nnegative" }
+        ]
+      }
+    }
+  ]
+}

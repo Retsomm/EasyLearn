@@ -48,7 +48,42 @@
 | Extracting State Logic into a Reducer／Passing Data Deeply with Context | react-10 Reducer 與 Context | ✅ |
 | Manipulating the DOM with Refs／Referencing Values with Refs | react-11 refs | ✅ |
 
+## 第四章 SICP JS（Structure and Interpretation of Computer Programs, JavaScript Edition）
+
+> 全書 5 章，關卡對照書中「章.節」（X.Y）的小節結構，一節一關；ch 3～5 涉及暫存器機器、直譯器等實作，
+> 用 JS 小型模擬範例取代真正的完整實作，題目一律不要求讀者背過書中章節，直接用具體程式碼推理作答。
+
+| 書中小節 | 關卡 | 狀態 |
+|:--|:--|:--|
+| 1.1 The Elements of Programming | sicp-1-1 程式的元素：代換模型與黑盒抽象 | ✅ |
+| 1.2 Functions and the Processes They Generate | sicp-1-2 函式與它們產生的計算過程 | ✅ |
+| 1.3 Formulating Abstractions with Higher-Order Functions | sicp-1-3 用高階函式構造抽象 | ✅ |
+| 2.1 Introduction to Data Abstraction | sicp-2-1 資料抽象導論 | ✅ |
+| 2.2 Hierarchical Data and the Closure Property | sicp-2-2 階層式資料與封閉性質 | ✅ |
+| 2.3 Symbolic Data | sicp-2-3 符號資料 | ✅ |
+| 2.4 Multiple Representations for Abstract Data | sicp-2-4 抽象資料的多重表示法 | ✅ |
+| 2.5 Systems with Generic Operations | sicp-2-5 具有泛用操作的系統 | ✅ |
+| 3.1 Assignment and Local State | sicp-3-1 賦值與區域狀態 | ✅ |
+| 3.2 The Environment Model of Evaluation | sicp-3-2 求值的環境模型 | ✅ |
+| 3.3 Modeling with Mutable Data | sicp-3-3 用可變資料建模 | ✅ |
+| 3.4 Concurrency: Time Is of the Essence | sicp-3-4 併行：時間是關鍵 | ✅ |
+| 3.5 Streams | sicp-3-5 Stream | ✅ |
+| 4.1 The Metacircular Evaluator | sicp-4-1 Metacircular 直譯器 | ✅ |
+| 4.2 Lazy Evaluation | sicp-4-2 惰性求值 | ✅ |
+| 4.3 Nondeterministic Computing | sicp-4-3 非決定性計算 | ✅ |
+| 4.4 Logic Programming | sicp-4-4 邏輯式程式設計 | ✅ |
+| 5.1 Designing Register Machines | sicp-5-1 設計暫存器機器 | ✅ |
+| 5.2 A Register-Machine Simulator | sicp-5-2 暫存器機器模擬器 | ✅ |
+| 5.3 Storage Allocation and Garbage Collection | sicp-5-3 儲存配置與垃圾回收 | ✅ |
+| 5.4 The Explicit-Control Evaluator | sicp-5-4 顯式控制直譯器 | ✅ |
+| 5.5 Compilation | sicp-5-5 編譯 | ✅ |
+
 ## 產題規則備忘
+
+- **以書籍為知識依據的章節**（目前是 `fp`、`sicp`；未來若再新增其他書籍章節比照辦理）：這些書不是官方線上
+  文件，沒有 MDN／react.dev 那種可以附的連結。`concept` 題型（純粹考書中設計概念）`docs` 留空、`verify` 用
+  `manual` 註記；若題目本質是在考「真正會執行的 JS 語法／內建方法」（例如 SICP JS 很多題目其實是可執行的
+  closure、recursion、generator），才用 `predict-output`/`fill-in`，這時 `docs` 一樣只能是 MDN 連結。
 
 - **題池抽題制**：每關的 questions 是「題池」，進關時隨機抽 `QUIZ_SIZE`（6）題、
   依難度排序作答（`src/utils/quiz.js`）——題池大於 6 題後，重玩才會遇到不同題。

@@ -1,0 +1,132 @@
+{
+  "id": "sicp-5-2",
+  "title": "5.2 暫存器機器模擬器",
+  "questions": [
+    {
+      "id": "sicp-5-2-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "模擬器：讀一份「機器規格」資料，照著執行",
+      "docs": "",
+      "story": "",
+      "prompt": "上一節那台迷你機器的 program 是一個陣列，裡面每個元素都是描述指令的物件（例如 { op: 'mod', ... }）。模擬器（simulator）做的事情，跟前面哪個主題最像？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "跟符號微分、metacircular 直譯器一樣，都是「把某種結構（這裡是機器指令）表示成資料，再寫一個通用的程式讀這份資料、依照資料裡的內容決定要做什麼」——模擬器本質上就是一個「讀機器規格資料、依照規格執行」的直譯器，只是它讀的資料剛好描述的是暫存器機器的指令，不是數學運算式" },
+        { "id": "b", "text": "模擬器跟前面任何章節談過的主題都沒有關聯，是全新獨立的技巧" },
+        { "id": "c", "text": "模擬器只能處理寫死在程式碼裡的固定邏輯，沒辦法讀取任何外部資料" },
+        { "id": "d", "text": "模擬器執行時完全不會檢查指令的 op 欄位是什麼" }
+      ],
+      "answer": "a",
+      "explanation": "這正是「把程式（或機器規格）當成資料」這個主題的延伸：跟符號微分讀運算式資料、metacircular evaluator 讀程式碼資料一樣，暫存器機器模擬器讀的是「機器指令」這種資料，再依照每條指令的 op 欄位決定要執行哪一種操作。模擬器本質上也是一種直譯器，只是它解讀的資料格式換成了機器指令。",
+      "verify": { "manual": "概念題：連結先前資料表示主題，取代抽象模擬器定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-5-2-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "組譯：把標籤解析成實際的指令位置",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "這段程式先建立一份「標籤 → 指令位置」的對照表（組譯），再依照這份對照表把 jump 指令的標籤換成實際位置去執行。這段程式會印出什麼？",
+      "code": "const program = [\n  { label: 'loop', op: 'test-zero', reg: 'b', jumpToLabel: 'done' },\n  { op: 'mod', dest: 'a', src1: 'a', src2: 'b' },\n  { op: 'swap', reg1: 'a', reg2: 'b' },\n  { op: 'jump', toLabel: 'loop' },\n  { label: 'done', op: 'done' },\n];\n\nconst labelTable = {};\nprogram.forEach((instr, i) => {\n  if (instr.label) labelTable[instr.label] = i;\n});\n\nconst registers = { a: 12, b: 18 };\nlet pc = labelTable['loop'];\nwhile (program[pc].op !== 'done') {\n  const instr = program[pc];\n  if (instr.op === 'test-zero') {\n    pc = registers[instr.reg] === 0 ? labelTable[instr.jumpToLabel] : pc + 1;\n  } else if (instr.op === 'mod') {\n    registers[instr.dest] = registers[instr.src1] % registers[instr.src2];\n    pc += 1;\n  } else if (instr.op === 'swap') {\n    [registers[instr.reg1], registers[instr.reg2]] = [registers[instr.reg2], registers[instr.reg1]];\n    pc += 1;\n  } else if (instr.op === 'jump') {\n    pc = labelTable[instr.toLabel];\n  }\n}\n\nconsole.log(registers.a);",
+      "options": [
+        { "id": "a", "text": "6" },
+        { "id": "b", "text": "12" },
+        { "id": "c", "text": "18" },
+        { "id": "d", "text": "0" }
+      ],
+      "answer": "a",
+      "explanation": "labelTable 把 'loop' 和 'done' 這兩個標籤分別對應到它們在 program 陣列裡的實際位置（組譯這一步做的事），之後執行時 jump／test-zero 指令都靠查這份表格找到真正該跳去的位置，不用在程式碼裡寫死數字索引。整個流程一樣是歐幾里得演算法，12 和 18 的最大公因數是 6。",
+      "verify": {
+        "checks": [
+          { "code": "const program = [\n  { label: 'loop', op: 'test-zero', reg: 'b', jumpToLabel: 'done' },\n  { op: 'mod', dest: 'a', src1: 'a', src2: 'b' },\n  { op: 'swap', reg1: 'a', reg2: 'b' },\n  { op: 'jump', toLabel: 'loop' },\n  { label: 'done', op: 'done' },\n];\nconst labelTable = {};\nprogram.forEach((instr, i) => {\n  if (instr.label) labelTable[instr.label] = i;\n});\nconst registers = { a: 12, b: 18 };\nlet pc = labelTable['loop'];\nwhile (program[pc].op !== 'done') {\n  const instr = program[pc];\n  if (instr.op === 'test-zero') {\n    pc = registers[instr.reg] === 0 ? labelTable[instr.jumpToLabel] : pc + 1;\n  } else if (instr.op === 'mod') {\n    registers[instr.dest] = registers[instr.src1] % registers[instr.src2];\n    pc += 1;\n  } else if (instr.op === 'swap') {\n    [registers[instr.reg1], registers[instr.reg2]] = [registers[instr.reg2], registers[instr.reg1]];\n    pc += 1;\n  } else if (instr.op === 'jump') {\n    pc = labelTable[instr.toLabel];\n  }\n}\nconsole.log(registers.a);", "expected": "6" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-2-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "模擬器內部也是依標籤分派：每種指令對應一段執行邏輯",
+      "docs": "",
+      "story": "",
+      "prompt": "模擬器裡那個 while 迴圈，依照 instr.op 是 'test-zero'、'mod'、'swap' 還是 'jump'，分別執行不同的邏輯。這跟複數運算「依標籤分派」的技巧有什麼關聯？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "完全是同一種技巧的重複應用：instr.op 就是這裡的「標籤」，模擬器依照這個標籤挑選對應的執行邏輯——如果之後想替機器新增一種指令（例如 'add'），只需要在模擬器裡多加一個 op === 'add' 的分支（或改成查表版本），不需要更動其他指令的處理邏輯，這正是依標籤分派帶來的可加性" },
+        { "id": "b", "text": "這兩者是完全無關的兩種技巧，只是剛好都用到 if-else" },
+        { "id": "c", "text": "模擬器不應該檢查 instr.op，應該不管是什麼指令都執行同一段邏輯" },
+        { "id": "d", "text": "依標籤分派只能用在資料型別（像複數）上，不能用在指令這種東西上" }
+      ],
+      "answer": "a",
+      "explanation": "instr.op 扮演的角色就是「標籤」，模擬器依照這個標籤決定要執行哪一段對應的邏輯——這跟複數運算依標籤分派選擇實作，是同一種設計技巧的不同應用場景。新增一種指令時，也只需要新增對應的處理分支，其他指令的邏輯完全不用改動。",
+      "verify": { "manual": "概念題：連結依標籤分派主題，以指令 op 欄位取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-5-2-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "組譯：建立「標籤 → 位置」對照表",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach",
+      "story": "",
+      "prompt": "請填入正確的索引，讓 labelTable 正確記錄每個標籤對應到 program 陣列裡的哪個位置。",
+      "code": "const program = [\n  { label: 'start', op: 'noop' },\n  { op: 'noop' },\n  { label: 'middle', op: 'noop' },\n  { op: 'noop' },\n  { label: 'end', op: 'done' },\n];\n\nconst labelTable = {};\nprogram.forEach((instr, i) => {\n  if (instr.label) labelTable[instr.label] = ____;\n});\n\nconsole.log(labelTable);",
+      "options": [
+        { "id": "a", "text": "i" },
+        { "id": "b", "text": "instr" },
+        { "id": "c", "text": "instr.label" },
+        { "id": "d", "text": "0" }
+      ],
+      "answer": "a",
+      "explanation": "forEach 的第二個參數 i 就是目前元素在陣列裡的位置（索引），要把標籤對應到「這個標籤所在的位置」，所以要填 i。跑完之後 labelTable 會是 { start: 0, middle: 2, end: 4 }，之後 jump 指令只要查這份表格，就能找到標籤真正對應的位置，不用在程式碼裡直接寫死數字。",
+      "verify": {
+        "checks": [
+          { "code": "const program = [\n  { label: 'start', op: 'noop' },\n  { op: 'noop' },\n  { label: 'middle', op: 'noop' },\n  { op: 'noop' },\n  { label: 'end', op: 'done' },\n];\nconst labelTable = {};\nprogram.forEach((instr, i) => {\n  if (instr.label) labelTable[instr.label] = i;\n});\nconsole.log(labelTable);", "expected": "{ start: 0, middle: 2, end: 4 }" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-2-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "用標籤位置正確執行跳轉迴圈",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "這段程式用組譯出來的 labelTable 執行一個簡單的倒數迴圈。這段程式會印出什麼？",
+      "code": "const program = [\n  { label: 'loop', op: 'test-zero', reg: 'n', jumpToLabel: 'done' },\n  { op: 'print' },\n  { op: 'decrement', reg: 'n' },\n  { op: 'jump', toLabel: 'loop' },\n  { label: 'done', op: 'done' },\n];\nconst labelTable = {};\nprogram.forEach((instr, i) => { if (instr.label) labelTable[instr.label] = i; });\n\nconst registers = { n: 3 };\nconst output = [];\nlet pc = labelTable['loop'];\nwhile (program[pc].op !== 'done') {\n  const instr = program[pc];\n  if (instr.op === 'test-zero') {\n    pc = registers[instr.reg] === 0 ? labelTable[instr.jumpToLabel] : pc + 1;\n  } else if (instr.op === 'print') {\n    output.push(registers.n);\n    pc += 1;\n  } else if (instr.op === 'decrement') {\n    registers[instr.reg] -= 1;\n    pc += 1;\n  } else if (instr.op === 'jump') {\n    pc = labelTable[instr.toLabel];\n  }\n}\n\nconsole.log(output);",
+      "options": [
+        { "id": "a", "text": "[ 3, 2, 1 ]" },
+        { "id": "b", "text": "[ 2, 1, 0 ]" },
+        { "id": "c", "text": "[ 3, 2, 1, 0 ]" },
+        { "id": "d", "text": "[ 1, 2, 3 ]" }
+      ],
+      "answer": "a",
+      "explanation": "迴圈從 n=3 開始，每次先印出目前的 n、再遞減，直到 test-zero 偵測到 n 變成 0 才跳到 done 結束，所以印出的順序是 3, 2, 1（n 變成 0 那一輪不會再印，因為 test-zero 先擋下來、直接跳去 done）。整個跳轉流程完全靠 labelTable 查出 'loop' 和 'done' 對應的實際位置。",
+      "verify": {
+        "checks": [
+          { "code": "const program = [\n  { label: 'loop', op: 'test-zero', reg: 'n', jumpToLabel: 'done' },\n  { op: 'print' },\n  { op: 'decrement', reg: 'n' },\n  { op: 'jump', toLabel: 'loop' },\n  { label: 'done', op: 'done' },\n];\nconst labelTable = {};\nprogram.forEach((instr, i) => { if (instr.label) labelTable[instr.label] = i; });\nconst registers = { n: 3 };\nconst output = [];\nlet pc = labelTable['loop'];\nwhile (program[pc].op !== 'done') {\n  const instr = program[pc];\n  if (instr.op === 'test-zero') {\n    pc = registers[instr.reg] === 0 ? labelTable[instr.jumpToLabel] : pc + 1;\n  } else if (instr.op === 'print') {\n    output.push(registers.n);\n    pc += 1;\n  } else if (instr.op === 'decrement') {\n    registers[instr.reg] -= 1;\n    pc += 1;\n  } else if (instr.op === 'jump') {\n    pc = labelTable[instr.toLabel];\n  }\n}\nconsole.log(output);", "expected": "[ 3, 2, 1 ]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-2-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "監控機器效能：實際數出指令執行了幾次",
+      "docs": "",
+      "story": "",
+      "prompt": "如果在模擬器的 while 迴圈裡，每執行一條指令就把一個計數器加 1，這能讓第 1 章討論的「成長量級」變成什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "變成一個可以實際測量出來的具體數字：不再只是理論上說「這個演算法大約要 O(n) 步」，而是真的能讓模擬器告訴你「這次輸入實際執行了幾條指令」，可以直接拿不同大小的輸入去實測，觀察執行的指令數量隨輸入怎麼成長，驗證理論分析對不對" },
+        { "id": "b", "text": "這個計數器只能用來偵錯程式碼有沒有寫錯語法，跟效能分析無關" },
+        { "id": "c", "text": "加了計數器之後，模擬器執行的結果會因此改變，變得不正確" },
+        { "id": "d", "text": "這種做法只在暫存器機器上可行，沒辦法用類似的方式測量高階語言函式的效能" }
+      ],
+      "answer": "a",
+      "explanation": "這正是「監控機器效能」的實用價值：把「這個演算法大約要多少步」這種理論分析，變成可以實際測量、觀察的具體數字——透過在模擬器裡加一個指令計數器，餵不同大小的輸入進去，就能實際觀察執行的指令數量怎麼隨輸入成長，拿真實測量結果驗證第 1 章討論的成長量級分析對不對。",
+      "verify": { "manual": "概念題：呼應第 1 章成長量級討論，以實測計數取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

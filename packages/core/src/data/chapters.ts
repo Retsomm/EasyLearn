@@ -47,6 +47,28 @@ import fp16 from './questions/fp-16-sharing-resources.json'
 import fp17 from './questions/fp-17-coordinating-timelines.json'
 import fp18 from './questions/fp-18-reactive-onion.json'
 import fp19 from './questions/fp-19-road-ahead.json'
+import sicp11 from './questions/sicp-1-1-elements-of-programming.json'
+import sicp12 from './questions/sicp-1-2-processes-and-recursion.json'
+import sicp13 from './questions/sicp-1-3-higher-order-functions.json'
+import sicp21 from './questions/sicp-2-1-data-abstraction.json'
+import sicp22 from './questions/sicp-2-2-hierarchical-data.json'
+import sicp23 from './questions/sicp-2-3-symbolic-data.json'
+import sicp24 from './questions/sicp-2-4-multiple-representations.json'
+import sicp25 from './questions/sicp-2-5-generic-operations.json'
+import sicp31 from './questions/sicp-3-1-assignment-local-state.json'
+import sicp32 from './questions/sicp-3-2-environment-model.json'
+import sicp33 from './questions/sicp-3-3-mutable-data.json'
+import sicp34 from './questions/sicp-3-4-concurrency.json'
+import sicp35 from './questions/sicp-3-5-streams.json'
+import sicp41 from './questions/sicp-4-1-metacircular-evaluator.json'
+import sicp42 from './questions/sicp-4-2-lazy-evaluation.json'
+import sicp43 from './questions/sicp-4-3-nondeterministic-computing.json'
+import sicp44 from './questions/sicp-4-4-logic-programming.json'
+import sicp51 from './questions/sicp-5-1-register-machines.json'
+import sicp52 from './questions/sicp-5-2-register-machine-simulator.json'
+import sicp53 from './questions/sicp-5-3-storage-gc.json'
+import sicp54 from './questions/sicp-5-4-explicit-control-evaluator.json'
+import sicp55 from './questions/sicp-5-5-compilation.json'
 import ri1 from './questions/ri-1-router.json'
 import ri2 from './questions/ri-2-i18n.json'
 import ri3 from './questions/ri-3-testing.json'
@@ -110,6 +132,18 @@ export const chapters: Chapter[] = [
     levels: [
       fp1, fp2, fp3, fp4, fp5, fp6, fp7, fp8, fp9, fp10,
       fp11, fp12, fp13, fp14, fp15, fp16, fp17, fp18, fp19,
+    ].map(asLevel),
+  },
+  {
+    id: 'sicp',
+    title: '計算機程式的構造和解釋（SICP JS）',
+    icon: 'star',
+    levels: [
+      sicp11, sicp12, sicp13,
+      sicp21, sicp22, sicp23, sicp24, sicp25,
+      sicp31, sicp32, sicp33, sicp34, sicp35,
+      sicp41, sicp42, sicp43, sicp44,
+      sicp51, sicp52, sicp53, sicp54, sicp55,
     ].map(asLevel),
   },
   {
