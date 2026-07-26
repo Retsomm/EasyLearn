@@ -1,0 +1,128 @@
+{
+  "id": "fljs-5",
+  "title": "Ch5：減少副作用",
+  "questions": [
+    {
+      "id": "fljs-5-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "隱藏的成因：函式的輸出取決於參數列表看不到的東西",
+      "docs": "",
+      "story": "",
+      "prompt": "getDiscountedPrice(price) 內部讀取一個外部變數 currentPromotion 來決定打幾折，這個變數完全沒有出現在函式的參數列表裡。這種情況說明了什麼？",
+      "code": "let currentPromotion = 0.9;\nfunction getDiscountedPrice(price) {\n  return price * currentPromotion;\n}",
+      "options": [
+        { "id": "a", "text": "getDiscountedPrice 的輸出有一個「隱藏的成因」：currentPromotion 這個外部變數會影響輸出，卻完全沒有出現在函式簽章裡——呼叫者光看 getDiscountedPrice(100) 這個呼叫式，猜不出結果會是多少，因為還缺一個看不到的因素，這正是副作用讓函式變得難以預測的具體原因" },
+        { "id": "b", "text": "這種寫法完全不會造成任何問題，函式的輸出永遠只取決於明確寫出來的參數" },
+        { "id": "c", "text": "currentPromotion 這個變數本身就算是函式的正式參數，只是寫在函式外面而已" },
+        { "id": "d", "text": "只要 currentPromotion 這個變數命名夠清楚，隱藏成因這個問題就會自動消失" }
+      ],
+      "answer": "a",
+      "explanation": "getDiscountedPrice 的輸出有一個「隱藏的成因」——currentPromotion 這個外部變數會影響結果，卻沒有出現在參數列表裡。呼叫者光看呼叫式猜不出結果，因為還缺一個看不到的因素。這正是副作用讓函式難以預測的具體原因：函式簽章沒有誠實反映出它實際依賴了什麼。",
+      "verify": { "manual": "概念題：以 getDiscountedPrice 依賴外部變數的具體例子取代抽象隱藏成因敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-5-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "隱藏成因的具體示範：同樣的呼叫式，因為外部變數改變而印出不同結果",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "這段程式對 getDiscountedPrice(100) 呼叫了兩次，中間 currentPromotion 被改變過。這段程式會印出什麼？",
+      "code": "let currentPromotion = 0.9;\nfunction getDiscountedPrice(price) {\n  return price * currentPromotion;\n}\n\nconsole.log(getDiscountedPrice(100));\ncurrentPromotion = 0.7;\nconsole.log(getDiscountedPrice(100));",
+      "options": [
+        { "id": "a", "text": "90\n70" },
+        { "id": "b", "text": "90\n90" },
+        { "id": "c", "text": "70\n70" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "兩次呼叫的引數完全一樣（都是 100），卻印出不同的結果——因為 getDiscountedPrice 依賴的 currentPromotion 這個外部變數在兩次呼叫之間被改變過。這正是「隱藏成因」的具體展現：同樣的呼叫式，因為函式偷偷依賴的外部狀態不同，得到了不一樣的結果。",
+      "verify": {
+        "checks": [
+          { "code": "let currentPromotion = 0.9;\nfunction getDiscountedPrice(price) {\n  return price * currentPromotion;\n}\nconsole.log(getDiscountedPrice(100));\ncurrentPromotion = 0.7;\nconsole.log(getDiscountedPrice(100));", "expected": "90\n70" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-5-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "冪等性：數學定義（做兩次跟做一次一樣）vs 程式設計裡「安全重複執行」的用法",
+      "docs": "",
+      "story": "",
+      "prompt": "數學上的冪等性，指的是 f(f(x)) 跟 f(x) 結果完全一樣。「把使用者的年齡設成 25」跟「把使用者的年齡加 1」，哪一個操作是冪等的？",
+      "code": "// 操作一：setAge(user, 25)\n// 操作二：incrementAge(user)",
+      "options": [
+        { "id": "a", "text": "setAge(user, 25) 是冪等的：不管呼叫一次還是連續呼叫十次，user 的年齡最終都會是 25，重複執行不會累積出不同的結果；incrementAge(user) 不是冪等的：每呼叫一次年齡就多加 1，連續呼叫十次會得到跟只呼叫一次完全不同的結果——這正是判斷一個操作是否冪等的關鍵：重複執行會不會累積出不一樣的最終狀態" },
+        { "id": "b", "text": "兩個操作都是冪等的，因為兩者都只影響同一個使用者的年齡欄位" },
+        { "id": "c", "text": "兩個操作都不是冪等的，因為兩者都會改變 user 這個物件的狀態" },
+        { "id": "d", "text": "incrementAge 才是冪等的，因為每次呼叫增加的量固定都是 1" }
+      ],
+      "answer": "a",
+      "explanation": "setAge(user, 25) 不管呼叫幾次，最終結果都固定是「年齡等於 25」，重複執行不會累積出不同結果，是冪等操作；incrementAge(user) 每呼叫一次年齡就往上加 1，連續呼叫多次會累積出跟只呼叫一次完全不同的結果，不是冪等操作。判斷冪等性的關鍵，就是看「重複執行會不會讓最終狀態繼續改變」。",
+      "verify": { "manual": "概念題：以 setAge 與 incrementAge 的具體對照取代抽象冪等性定義，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-5-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "數學冪等性的具體示範：Math.abs 做兩次跟做一次結果一樣",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Math/abs",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function increment(x) { return x + 1; }\n\nconsole.log(Math.abs(Math.abs(-5)), Math.abs(-5));\nconsole.log(increment(increment(0)), increment(0));",
+      "options": [
+        { "id": "a", "text": "5 5\n2 1" },
+        { "id": "b", "text": "5 5\n2 2" },
+        { "id": "c", "text": "5 4\n2 1" },
+        { "id": "d", "text": "5 5\n1 1" }
+      ],
+      "answer": "a",
+      "explanation": "Math.abs 對已經是正數的結果再取一次絕對值，結果完全不變（5 跟 5 一樣），符合數學冪等性的定義：f(f(x)) === f(x)；increment 每呼叫一次就會累加 1，連續呼叫兩次得到 2，只呼叫一次得到 1，兩者不一樣，不符合冪等性——這正是「做兩次跟做一次結果一樣」這個數學定義的具體對照。",
+      "verify": {
+        "checks": [
+          { "code": "function increment(x) { return x + 1; }\nconsole.log(Math.abs(Math.abs(-5)), Math.abs(-5));\nconsole.log(increment(increment(0)), increment(0));", "expected": "5 5\n2 1" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-5-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "在心裡透明：能不能把函式呼叫直接換成它的回傳值",
+      "docs": "",
+      "story": "",
+      "prompt": "square(4) 這個呼叫式，能不能在程式碼裡的任何地方直接用 16 這個數字取代，而不改變整個程式的行為？這種「呼叫式可以放心被它的回傳值取代」的性質，叫做什麼？",
+      "code": "function square(x) { return x * x; }\n// square(4) 可以被 16 直接取代嗎？",
+      "options": [
+        { "id": "a", "text": "可以：square 是純函式，square(4) 永遠等於 16，把程式裡任何一處 square(4) 換成 16，整個程式的行為完全不會改變——這種性質叫做「參照透明」（referential transparency），是純函式才具備的特性，一旦函式依賴外部可變狀態，這種替換就不再安全" },
+        { "id": "b", "text": "不可以，因為 square(4) 跟 16 是兩種完全不同型別的東西，不能互相替換" },
+        { "id": "c", "text": "只有字串型別的回傳值才能被直接替換，數字型別不行" },
+        { "id": "d", "text": "這種性質叫做「型別安全」，跟函式是否為純函式無關" }
+      ],
+      "answer": "a",
+      "explanation": "square 是純函式，square(4) 永遠算出 16，把程式裡任何一處 square(4) 換成 16，整個程式的行為完全不會改變——這種性質叫做「參照透明」，只有純函式才具備。一旦函式依賴外部可變狀態，這種呼叫式跟回傳值互相替換的安全性就會被破壞，因為同樣的呼叫式在不同時間點可能算出不同結果。",
+      "verify": { "manual": "概念題：以 square(4) 替換成 16 的具體例子取代抽象參照透明定義，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-5-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "淨化：把不純的呼叫改成明確的參數，讓函式變回純函式",
+      "docs": "",
+      "story": "",
+      "prompt": "isExpired(coupon) 內部直接呼叫 Date.now() 判斷優惠券過期了沒，這讓 isExpired 變成不純的函式。要怎麼修改，才能讓這個判斷邏輯變回純函式？",
+      "code": "function isExpired(coupon) {\n  return Date.now() > coupon.expiresAt;\n}",
+      "options": [
+        { "id": "a", "text": "把「目前時間」改成一個明確的參數傳進去（例如 isExpired(coupon, now)），呼叫端自己決定要傳 Date.now() 還是任何其他固定的時間值——這樣一來，isExpired 本身只是單純比較兩個傳入值的大小，變回一個純函式；呼叫 Date.now() 這個真正「不純」的動作，被推到呼叫端去做，isExpired 內部完全不用再依賴它" },
+        { "id": "b", "text": "應該完全刪除 Date.now() 這一行，讓 isExpired 永遠回傳 true" },
+        { "id": "c", "text": "isExpired 沒有辦法被改寫成純函式，判斷「是否過期」這件事一定要依賴不純的時間呼叫" },
+        { "id": "d", "text": "應該把 Date.now() 換成一個隨機數字產生器，這樣就能讓函式變純" }
+      ],
+      "answer": "a",
+      "explanation": "把「目前時間」改成一個明確的參數，呼叫端自己決定要傳 Date.now() 或任何固定值——isExpired 本身現在只是單純比較兩個傳入值，變回一個純函式；真正「不純」的動作被推到呼叫端去做，isExpired 內部完全不再依賴它。這正是「淨化」的具體做法：把不純的部分往外推、留下的核心邏輯變成純函式。",
+      "verify": { "manual": "概念題：以 isExpired 淨化前後的具體對照取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

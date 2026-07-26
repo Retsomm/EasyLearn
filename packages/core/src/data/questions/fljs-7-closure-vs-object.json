@@ -1,0 +1,128 @@
+{
+  "id": "fljs-7",
+  "title": "Ch7：Closure 對比物件",
+  "questions": [
+    {
+      "id": "fljs-7-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Closure 和物件是同一件事的兩種寫法：都能把狀態和操作綁在一起",
+      "docs": "",
+      "story": "",
+      "prompt": "用 closure 實作的計數器跟用物件實作的計數器，兩者都能做到「記住一個數字、提供操作它的方法」。這說明了 closure 和物件之間有什麼關係？",
+      "code": "// closure 版本\nfunction makeCounterClosure() {\n  let count = 0;\n  return () => ++count;\n}\n\n// 物件版本\nfunction makeCounterObject() {\n  return { count: 0, increment() { return ++this.count; } };\n}",
+      "options": [
+        { "id": "a", "text": "兩者是同一個底層能力（把狀態跟能操作這個狀態的行為綁在一起）的兩種不同表示方式：closure 靠函式作用域記住狀態、透過回傳的函式操作它；物件靠屬性記住狀態、透過方法操作它——這種「同一件事、兩種不同語法外觀」的關係稱為同構（isomorphic），選哪一種只是風格上的選擇，不是能力上的差異" },
+        { "id": "b", "text": "closure 和物件是完全無關、能力上也完全不同的兩種技術，沒辦法互相取代" },
+        { "id": "c", "text": "只有物件才能記住狀態，closure 沒辦法記住任何東西" },
+        { "id": "d", "text": "只有 closure 才能提供操作狀態的行為，物件沒有方法這種概念" }
+      ],
+      "answer": "a",
+      "explanation": "closure 版本靠函式作用域記住 count、透過回傳的函式操作它；物件版本靠屬性記住 count、透過方法操作它——兩者做的其實是同一件事，只是語法外觀不同。這種「同一件事、兩種寫法」的關係稱為同構，選用哪一種通常只是風格或情境上的偏好，不是能力上有誰做得到、誰做不到的差異。",
+      "verify": { "manual": "概念題：以 closure 與物件兩種計數器實作對照取代抽象同構定義，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-7-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "closure 版本與物件版本的計數器：行為完全一致",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "這段程式分別用 closure 和物件實作計數器，各自呼叫兩次。這段程式會印出什麼？",
+      "code": "function makeCounterClosure() {\n  let count = 0;\n  return () => ++count;\n}\nfunction makeCounterObject() {\n  return { count: 0, increment() { return ++this.count; } };\n}\n\nconst c1 = makeCounterClosure();\nconsole.log(c1(), c1());\n\nconst c2 = makeCounterObject();\nconsole.log(c2.increment(), c2.increment());",
+      "options": [
+        { "id": "a", "text": "1 2\n1 2" },
+        { "id": "b", "text": "1 2\n0 1" },
+        { "id": "c", "text": "0 1\n1 2" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "closure 版本跟物件版本各自呼叫兩次，都從 0 開始累加，印出的結果完全一樣：1 2。兩種寫法在外部觀察者眼中的行為完全一致，只是內部用來記住這個數字的機制不同（closure 變數 vs 物件屬性）。",
+      "verify": {
+        "checks": [
+          { "code": "function makeCounterClosure() {\n  let count = 0;\n  return () => ++count;\n}\nfunction makeCounterObject() {\n  return { count: 0, increment() { return ++this.count; } };\n}\nconst c1 = makeCounterClosure();\nconsole.log(c1(), c1());\nconst c2 = makeCounterObject();\nconsole.log(c2.increment(), c2.increment());", "expected": "1 2\n1 2" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-7-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "隱私性的差異：closure 變數真的藏得住，物件屬性預設藏不住",
+      "docs": "",
+      "story": "",
+      "prompt": "closure 版本裡的 count 變數，外部程式碼有沒有辦法繞過呼叫，直接讀取或修改它？物件版本裡的 count 屬性呢？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "closure 版本的 count 完全藏在函式作用域裡，外部程式碼沒有任何辦法直接存取或修改它，只能透過呼叫回傳的函式間接影響它——這是真正的隱私；物件版本的 count 只是一個普通屬性，預設情況下外部程式碼可以直接讀取或竄改它，完全繞過 increment() 這個方法，物件屬性預設沒有真正的隱私保護" },
+        { "id": "b", "text": "兩者的隱私性完全一樣，外部都無法存取內部的計數" },
+        { "id": "c", "text": "物件版本的隱私性比 closure 版本更強，外部完全無法讀取物件的屬性" },
+        { "id": "d", "text": "closure 版本的內部變數可以直接被外部程式碼用點記法讀取" }
+      ],
+      "answer": "a",
+      "explanation": "closure 版本的 count 完全藏在函式作用域裡，外部沒有任何辦法直接存取，只能透過呼叫回傳的函式間接影響它——這是真正的隱私。物件版本的 count 只是一個普通屬性，預設情況下外部程式碼可以直接讀取或竄改它，完全繞過 increment() 這個方法。這是兩者實務上一個真實的差異，即使它們在「能不能記住狀態」這件事上是同構的。",
+      "verify": { "manual": "概念題：以 count 存取方式對照取代抽象隱私性差異敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-7-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：物件屬性可以被外部直接竄改，closure 變數不行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "這段程式示範外部程式碼直接竄改物件版本的 count，跟嘗試存取 closure 版本的 count（會拿到 undefined，因為根本沒有這個屬性）。這段程式會印出什麼？",
+      "code": "function makeCounterClosure() {\n  let count = 0;\n  return () => ++count;\n}\nfunction makeCounterObject() {\n  return { count: 0, increment() { return ++this.count; } };\n}\n\nconst c1 = makeCounterClosure();\nconst c2 = makeCounterObject();\n\nc2.count = 999;\nconsole.log(c2.increment());\nconsole.log(c1.count);",
+      "options": [
+        { "id": "a", "text": "1000\nundefined" },
+        { "id": "b", "text": "1\nundefined" },
+        { "id": "c", "text": "1000\n0" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "c2.count = 999 直接竄改了物件的屬性，完全繞過 increment() 這個「正式」的操作管道，之後呼叫 increment() 是在被竄改過的基礎上繼續累加，變成 1000；c1.count 則是嘗試存取一個 closure 版本的函式物件上根本不存在的屬性，只會拿到 undefined——closure 內部的 count 變數完全不會、也不可能透過這種方式被外部碰到。",
+      "verify": {
+        "checks": [
+          { "code": "function makeCounterClosure() {\n  let count = 0;\n  return () => ++count;\n}\nfunction makeCounterObject() {\n  return { count: 0, increment() { return ++this.count; } };\n}\nconst c1 = makeCounterClosure();\nconst c2 = makeCounterObject();\nc2.count = 999;\nconsole.log(c2.increment());\nconsole.log(c1.count);", "expected": "1000\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-7-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "結構可變性：物件可以動態增加新屬性，closure 沒辦法事後多關住一個新變數",
+      "docs": "",
+      "story": "",
+      "prompt": "物件建立之後，可以隨時動態新增一個原本沒有的屬性；closure 版本的函式，能不能在定義結束之後，事後再讓它「多記住」一個原本沒宣告過的新變數？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不能：closure 能記住的變數，在函式定義的當下就已經固定了，沒辦法在事後動態新增一個原本沒宣告過的新變數讓它一起被記住；物件則可以隨時動態新增、刪除屬性，這種「結構本身可以事後改變」的彈性，是 closure 天生沒有的" },
+        { "id": "b", "text": "closure 也可以像物件一樣隨時動態新增新的變數進去" },
+        { "id": "c", "text": "物件一旦建立完成，也沒辦法再動態新增任何新屬性" },
+        { "id": "d", "text": "這種差異只存在於理論討論，實務上兩者的彈性完全相同" }
+      ],
+      "answer": "a",
+      "explanation": "closure 能記住的變數，在函式定義的當下就已經固定了，沒辦法事後動態新增一個原本沒宣告過的新變數讓它一起被記住；物件則可以隨時動態新增、刪除屬性，結構本身可以事後改變。這種「結構可變性」上的差異，是 closure 與物件雖然同構、卻在實務彈性上不完全等價的地方之一。",
+      "verify": { "manual": "概念題：以動態新增屬性的具體對照取代抽象結構可變性敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-7-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "同構：選 closure 還是物件，是風格選擇，不是能力落差",
+      "docs": "",
+      "story": "",
+      "prompt": "既然 closure 和物件在「記住狀態＋提供操作行為」這件事上是同構的，那實務上該怎麼決定一段程式碼要用 closure 寫，還是用物件寫？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "依照當下更看重哪一種特性來選：需要真正的隱私就傾向用 closure；需要動態增減欄位、或需要跟其他慣用物件導向 API 互動，就傾向用物件——兩者沒有絕對誰更好，是根據當下情境裡看重的特性做選擇，不是能力上有一種做得到、另一種做不到" },
+        { "id": "b", "text": "應該永遠只用 closure，物件在任何情況下都是比較差的選擇" },
+        { "id": "c", "text": "應該永遠只用物件，closure 在任何情況下都是比較差的選擇" },
+        { "id": "d", "text": "這個選擇完全隨機，兩者在任何情境下的表現都毫無差異" }
+      ],
+      "answer": "a",
+      "explanation": "因為 closure 和物件是同構的，實務上的選擇通常依照當下更看重哪一種特性：需要真正的隱私就傾向 closure；需要動態增減欄位、或要跟慣用物件導向 API 搭配，就傾向物件。這不是「誰天生比較好」的問題，而是「這個情境下，哪一種語法外觀的特性剛好符合需求」的務實選擇。",
+      "verify": { "manual": "概念題：以選用時機的具體考量取代抽象同構結論敘述，無可執行程式碼。" }
+    }
+  ]
+}

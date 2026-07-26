@@ -1,0 +1,128 @@
+{
+  "id": "fljs-13",
+  "title": "附錄 B：謙遜的 Monad",
+  "questions": [
+    {
+      "id": "fljs-13-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Monad 沒有那麼神秘：就是一種有 of／chain 的型別",
+      "docs": "",
+      "story": "",
+      "prompt": "常常被講得很神秘的「Monad」，最基本的樣子其實只是「一個型別，提供兩個操作：of(value)（把一個普通值包進這個型別）、chain(fn)（把包住的值拿出來、丟給 fn，fn 本身也要回傳同一種被包住的型別）」。這種描述方式，想淡化 Monad 的什麼刻板印象？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "想淡化「Monad 是一種只有精通範疇論或進階數學的人才懂的深奧概念」這種印象——把它拆解成「一個型別 + 兩個操作」這麼具體、平實的樣子，任何寫過陣列 .map()／.reduce() 的開發者，都能理解並且動手實作出一個最簡單的 Monad，不需要先修過任何數學理論" },
+        { "id": "b", "text": "這種描述方式想強調 Monad 只能用在數學運算上，跟一般應用程式開發無關" },
+        { "id": "c", "text": "of 和 chain 只是裝飾用的名稱，Monad 實際上是一種完全無法具體描述的抽象概念" },
+        { "id": "d", "text": "這種描述方式想說明 Monad 比陣列的 map、reduce 複雜太多，一般開發者不可能理解" }
+      ],
+      "answer": "a",
+      "explanation": "把 Monad 拆解成「一個型別 + of／chain 兩個操作」這麼具體平實的描述，正是想淡化「Monad 是深奧數學概念、只有專家才懂」的刻板印象——任何寫過陣列 map/reduce 的開發者，都能理解並動手實作出一個最簡單的 Monad，不需要任何進階數學背景，這也是「謙遜的 Monad」這個標題想傳達的態度。",
+      "verify": { "manual": "概念題：以 of/chain 具體拆解取代抽象 Monad 刻板印象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-13-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "實作一個最簡單的 Maybe：of 包裝值，chain 串接可能「沒有值」的操作",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "Maybe 型別用 { tag: 'Just', value } 代表有值、{ tag: 'Nothing' } 代表沒有值。chain 只有在 Just 的情況下才把值丟給下一個函式。這段程式會印出什麼？",
+      "code": "function of(value) { return { tag: 'Just', value }; }\nconst nothing = { tag: 'Nothing' };\n\nfunction chain(maybe, fn) {\n  return maybe.tag === 'Just' ? fn(maybe.value) : nothing;\n}\n\nfunction safeDivide(x, y) {\n  return y === 0 ? nothing : of(x / y);\n}\n\nconst result1 = chain(of(20), (x) => safeDivide(x, 4));\nconst result2 = chain(of(20), (x) => safeDivide(x, 0));\n\nconsole.log(result1);\nconsole.log(result2);",
+      "options": [
+        { "id": "a", "text": "{ tag: 'Just', value: 5 }\n{ tag: 'Nothing' }" },
+        { "id": "b", "text": "{ tag: 'Just', value: 5 }\n{ tag: 'Just', value: 5 }" },
+        { "id": "c", "text": "{ tag: 'Nothing' }\n{ tag: 'Nothing' }" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "chain 檢查 maybe 是不是 Just，是的話才把裡面的值丟給 fn 繼續處理——result1 一路算下去成功除出 5，得到 { tag: 'Just', value: 5 }；result2 因為除數是 0，safeDivide 回傳 nothing，整個鏈就停在 Nothing。這正是 Monad 的 chain 操作最基本的行為：只在「有值」的情況下才繼續往下一步，遇到「沒有值」就直接短路。",
+      "verify": {
+        "checks": [
+          { "code": "function of(value) { return { tag: 'Just', value }; }\nconst nothing = { tag: 'Nothing' };\nfunction chain(maybe, fn) {\n  return maybe.tag === 'Just' ? fn(maybe.value) : nothing;\n}\nfunction safeDivide(x, y) {\n  return y === 0 ? nothing : of(x / y);\n}\nconst result1 = chain(of(20), (x) => safeDivide(x, 4));\nconst result2 = chain(of(20), (x) => safeDivide(x, 0));\nconsole.log(result1);\nconsole.log(result2);", "expected": "{ tag: 'Just', value: 5 }\n{ tag: 'Nothing' }" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-13-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "chain 會攤平，map 不會：避免包出兩層 Maybe",
+      "docs": "",
+      "story": "",
+      "prompt": "如果 fn 這個函式本身就會回傳一個 Maybe，用 map（只是單純套用 fn、再把結果包回 Maybe）跟用 chain（套用 fn 之後，直接把 fn 回傳的 Maybe 原封不動當作結果）比起來，會有什麼差異？",
+      "code": "// 用 map：會變成 { tag: 'Just', value: { tag: 'Just', value: 5 } }，多包了一層\n// 用 chain：會拿到 { tag: 'Just', value: 5 }，只有一層",
+      "options": [
+        { "id": "a", "text": "用 map 會產生「兩層 Maybe 疊在一起」的結果，因為 map 只是機械式地把 fn 的回傳值直接塞進新的 Just 包裝裡，卻沒發現 fn 回傳的東西本身已經是一個 Maybe 了；chain 則會把 fn 回傳的 Maybe「攤平」，直接當作最終結果使用，不會多包一層——這正是 chain 用來串接「本身也會回傳同一種 Monad」的函式時該用的操作" },
+        { "id": "b", "text": "map 和 chain 在這種情境下產生的結果完全一樣，沒有任何差異" },
+        { "id": "c", "text": "chain 會產生兩層 Maybe 疊在一起，map 才會正確攤平成一層" },
+        { "id": "d", "text": "兩者都會導致程式直接報錯，沒辦法處理這種情境" }
+      ],
+      "answer": "a",
+      "explanation": "用 map 會把 fn 的回傳值機械式地塞進新的 Just 包裝，卻沒發現 fn 回傳的東西本身已經是一個 Maybe，導致「兩層 Maybe 疊在一起」；chain 則會把 fn 回傳的 Maybe 直接「攤平」當作最終結果，不會多包一層。這正是為什麼串接「本身也會回傳同一種 Monad」的函式時，要用 chain 而不是 map。",
+      "verify": { "manual": "概念題：以雙層包裝的具體例子取代抽象 map 與 chain 差異敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-13-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：用 map 串接會產生兩層包裝，用 chain 只有一層",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "這段程式對照示範用「錯誤的 map 方式」跟「正確的 chain 方式」串接 safeDivide。這段程式會印出什麼？",
+      "code": "function of(value) { return { tag: 'Just', value }; }\nconst nothing = { tag: 'Nothing' };\n\nfunction mapMaybe(maybe, fn) {\n  return maybe.tag === 'Just' ? of(fn(maybe.value)) : nothing;\n}\nfunction chain(maybe, fn) {\n  return maybe.tag === 'Just' ? fn(maybe.value) : nothing;\n}\n\nfunction safeDivide(x, y) {\n  return y === 0 ? nothing : of(x / y);\n}\n\nconst withMap = mapMaybe(of(20), (x) => safeDivide(x, 4));\nconst withChain = chain(of(20), (x) => safeDivide(x, 4));\n\nconsole.log(withMap);\nconsole.log(withChain);",
+      "options": [
+        { "id": "a", "text": "{ tag: 'Just', value: { tag: 'Just', value: 5 } }\n{ tag: 'Just', value: 5 }" },
+        { "id": "b", "text": "{ tag: 'Just', value: 5 }\n{ tag: 'Just', value: 5 }" },
+        { "id": "c", "text": "{ tag: 'Just', value: { tag: 'Just', value: 5 } }\n{ tag: 'Just', value: { tag: 'Just', value: 5 } }" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "mapMaybe 把 fn(20) 算出來的結果（本身已經是一個 Just）又用 of() 多包了一層，變成「Just 包著 Just」這種兩層疊在一起的結構；chain 則是直接把 fn(20) 的結果當成最終答案，只有一層。這正是 map 跟 chain 在串接「本身也會回傳同一種型別」的函式時，會產生不同結果的具體示範——想要正確攤平，該用的是 chain。",
+      "verify": {
+        "checks": [
+          { "code": "function of(value) { return { tag: 'Just', value }; }\nconst nothing = { tag: 'Nothing' };\nfunction mapMaybe(maybe, fn) {\n  return maybe.tag === 'Just' ? of(fn(maybe.value)) : nothing;\n}\nfunction chain(maybe, fn) {\n  return maybe.tag === 'Just' ? fn(maybe.value) : nothing;\n}\nfunction safeDivide(x, y) {\n  return y === 0 ? nothing : of(x / y);\n}\nconst withMap = mapMaybe(of(20), (x) => safeDivide(x, 4));\nconst withChain = chain(of(20), (x) => safeDivide(x, 4));\nconsole.log(withMap);\nconsole.log(withChain);", "expected": "{ tag: 'Just', value: { tag: 'Just', value: 5 } }\n{ tag: 'Just', value: 5 }" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-13-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "鬆散的介面：JavaScript 沒有強制規定唯一的 Monad 標準，各家函式庫命名不同",
+      "docs": "",
+      "story": "",
+      "prompt": "有些函式庫把「串接、攤平」這個操作叫做 chain，有些叫做 flatMap，有些叫做 bind。JavaScript 本身有沒有強制規定一個官方的、唯一的「Monad」介面，要求所有函式庫都遵守同一套命名？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "沒有：JavaScript 語言本身不像某些強型別語言有一個內建、強制的 Monad 介面規範，不同函式庫可能用不同名稱稱呼同一種操作——這是一種「鬆散的介面」，重點是背後的行為模式（攤平巢狀包裝、依序串接可能失敗的操作）一致，不是名稱本身" },
+        { "id": "b", "text": "有，JavaScript 語言規格強制要求所有函式庫都必須把這個方法命名為 chain" },
+        { "id": "c", "text": "有，ECMAScript 規格裡明確定義了 Monad 這個內建型別，所有函式庫都必須繼承它" },
+        { "id": "d", "text": "這種命名差異代表不同函式庫實作的其實是完全不同、互不相容的概念" }
+      ],
+      "answer": "a",
+      "explanation": "JavaScript 語言本身沒有強制規定一個官方、唯一的 Monad 介面——不同函式庫可能用 chain、flatMap、bind 等不同名稱稱呼同一種「攤平巢狀包裝、依序串接可能失敗的操作」的行為模式。這是一種鬆散的介面：重點是背後的行為模式一致，不是方法名稱本身，這也是為什麼認識這個模式比死記某個特定函式庫的 API 名稱更重要。",
+      "verify": { "manual": "概念題：以不同函式庫命名差異的具體例子取代抽象鬆散介面敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-13-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "謙遜的 Monad：它只是一種處理「可能沒有正常結果」操作的實用工具",
+      "docs": "",
+      "story": "",
+      "prompt": "讀完這個附錄後，回頭看 Maybe 這種 Monad，它本質上想解決的問題，跟本書前面章節哪個主題最接近？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "跟「用明確的資料表示可能失敗、可能沒有值的情況」這個主題最接近——Maybe 用 Just/Nothing 表示「可能有值、可能沒有值」，跟前面強調「不要用隱藏的例外或 null 表示特殊情況，改用明確的資料結構表示」是同一種精神，只是多了 chain 這個能把一連串這樣的操作串接起來、自動處理短路的通用機制——Monad 不是什麼特殊魔法，只是這種模式的一種通用命名" },
+        { "id": "b", "text": "跟本書完全無關的全新主題，前面章節沒有任何鋪陳" },
+        { "id": "c", "text": "Monad 只跟遞迴這個主題有關，跟錯誤處理或可選值完全無關" },
+        { "id": "d", "text": "Monad 是一種只存在於理論上、實務上完全不會被使用的概念" }
+      ],
+      "answer": "a",
+      "explanation": "Maybe 這種 Monad，本質上就是「用明確的資料表示可能失敗、可能沒有值的情況」，這跟前面談過「不要用隱藏的例外或 null 表示特殊情況，改用明確的資料結構表示」是同一種精神，只是多了 chain 這個能把一連串這樣的操作串接起來、自動處理短路的通用機制。Monad 不是什麼特殊魔法，只是這種常見模式的一個通用稱呼——這正是「謙遜的 Monad」這個標題想傳達的態度：平常心看待它。",
+      "verify": { "manual": "概念題：總結 Monad 與明確表示失敗情境主題的呼應，無可執行程式碼。" }
+    }
+  ]
+}

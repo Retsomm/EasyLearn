@@ -1,0 +1,132 @@
+{
+  "id": "fljs-6",
+  "title": "Ch6：值的不可變性",
+  "questions": [
+    {
+      "id": "fljs-6-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "原始值的不可變性：字串、數字本身沒辦法被「改變」",
+      "docs": "",
+      "story": "",
+      "prompt": "字串在 JavaScript 裡是原始值（primitive），一旦建立出來，它本身沒有任何方法可以「就地修改」它的內容。str.toUpperCase() 這種呼叫，實際上做的是什麼？",
+      "code": "const str = 'hello';\nconst upper = str.toUpperCase();\nconsole.log(str, upper);",
+      "options": [
+        { "id": "a", "text": "toUpperCase() 不會、也沒辦法改動 str 這個字串本身（字串是不可變的原始值），它會建立並回傳一份全新的大寫字串，原本的 str 內容完全沒有被動過——這就是為什麼呼叫完之後 str 還是印出 'hello'，要用 upper 這個新變數才拿得到轉換後的結果" },
+        { "id": "b", "text": "toUpperCase() 會直接把 str 變數指向的字串內容原地改成大寫，呼叫完之後 str 也會變成大寫" },
+        { "id": "c", "text": "呼叫 toUpperCase() 之後，str 這個變數會被自動刪除" },
+        { "id": "d", "text": "字串在 JavaScript 裡跟陣列一樣是可變的，可以被就地修改" }
+      ],
+      "answer": "a",
+      "explanation": "字串是不可變的原始值，toUpperCase() 沒辦法、也不會改動 str 本身，它建立並回傳一份全新的大寫字串——原本的 str 完全沒被動過，呼叫完之後印出來還是 'hello'，要透過 upper 這個新變數才能拿到轉換後的結果。這正是「原始值不可變」的具體展現：任何看起來像是「修改字串」的操作，其實都是在產生一份新的字串。",
+      "verify": { "manual": "概念題：以 toUpperCase 的具體行為取代抽象原始值不可變定義，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-6-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "字串方法不會修改原字串，永遠回傳新字串",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/toUpperCase",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "const str = 'hello';\nconst upper = str.toUpperCase();\nconsole.log(str, upper);",
+      "options": [
+        { "id": "a", "text": "hello HELLO" },
+        { "id": "b", "text": "HELLO HELLO" },
+        { "id": "c", "text": "hello hello" },
+        { "id": "d", "text": "HELLO hello" }
+      ],
+      "answer": "a",
+      "explanation": "str.toUpperCase() 回傳一份全新的大寫字串（存進 upper），完全沒有改動 str 本身，所以印出來 str 還是 'hello'、upper 是 'HELLO'。字串方法看起來像是「處理」字串，但實際上都是回傳新值，不會就地修改原本的字串。",
+      "verify": {
+        "checks": [
+          { "code": "const str = 'hello';\nconst upper = str.toUpperCase();\nconsole.log(str, upper);", "expected": "hello HELLO" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-6-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "重新賦值 vs 修改內容：const 只鎖住變數綁定，不鎖住物件內容",
+      "docs": "",
+      "story": "",
+      "prompt": "const arr = [1, 2, 3]; arr.push(4)，這行程式碼會不會因為 arr 是用 const 宣告而報錯？",
+      "code": "const arr = [1, 2, 3];\narr.push(4);",
+      "options": [
+        { "id": "a", "text": "不會報錯：const 限制的是「arr 這個變數名稱不能再被重新賦值指向另一個陣列」，不是「這個陣列的內容不能被修改」——push 是直接修改陣列本身的內容，並沒有把 arr 重新指向一個新的陣列，所以完全不違反 const 的限制，只有像 arr = [] 這種重新賦值才會被 const 擋下來" },
+        { "id": "b", "text": "會報錯，因為 const 宣告的變數，內容永遠不能有任何改變" },
+        { "id": "c", "text": "不會報錯，因為 const 對陣列完全沒有任何限制，跟 let 效果一模一樣" },
+        { "id": "d", "text": "會報錯，因為 push 這個方法只能用在 let 宣告的陣列上" }
+      ],
+      "answer": "a",
+      "explanation": "const 限制的只是「這個變數名稱不能再被重新指向另一個值」，不是「這個值的內容不能被修改」。push 是直接修改陣列內容，並沒有把 arr 重新指向另一個陣列，所以不違反 const 的限制；只有 arr = [] 這種想讓 arr 重新指向另一個陣列的操作，才會被 const 擋下來報錯。這是很多人對 const 常見的誤解。",
+      "verify": { "manual": "概念題：以 const 陣列 push 的具體例子取代抽象重新賦值與修改內容的區分，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-6-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：const 陣列可以 push，但不能重新賦值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/const",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "const arr = [1, 2, 3];\narr.push(4);\nconsole.log(arr);\n\ntry {\n  arr = ['x'];\n} catch (e) {\n  console.log(e.constructor.name);\n}",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3, 4 ]\nTypeError" },
+        { "id": "b", "text": "[ 1, 2, 3 ]\nTypeError" },
+        { "id": "c", "text": "[ 1, 2, 3, 4 ]\nundefined" },
+        { "id": "d", "text": "報錯，程式無法執行到底" }
+      ],
+      "answer": "a",
+      "explanation": "arr.push(4) 成功修改了陣列內容，變成 [1, 2, 3, 4]；但緊接著想把 arr 重新賦值成 ['x']，違反了 const「變數名稱不能重新綁定」的限制，丟出 TypeError，被 catch 接住並印出錯誤類型名稱。這證明了「修改內容」跟「重新賦值」是兩件不同的事，const 只擋下後者。",
+      "verify": {
+        "checks": [
+          { "code": "const arr = [1, 2, 3];\narr.push(4);\nconsole.log(arr);\ntry {\n  arr = ['x'];\n} catch (e) {\n  console.log(e.constructor.name);\n}", "expected": "[ 1, 2, 3, 4 ]\nTypeError" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-6-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Object.freeze 只凍結第一層：巢狀物件依然可以被修改",
+      "docs": "",
+      "story": "",
+      "prompt": "Object.freeze(user) 之後，user 這個物件本身的屬性沒辦法再被修改。但如果 user.address 是一個巢狀物件，user.address.city 還能不能被修改？",
+      "code": "const user = Object.freeze({ name: '小明', address: { city: '台北' } });",
+      "options": [
+        { "id": "a", "text": "還可以被修改：Object.freeze 只凍結「傳進去的那個物件本身的第一層」，user.name = '大明' 這種直接改第一層屬性的操作會被擋下來，但 user.address 這個巢狀物件本身並沒有被凍結，user.address.city = '高雄' 這種深入到第二層的修改依然會成功——這是 Object.freeze 常被誤解的地方：它是淺層的凍結，不會自動遞迴凍結巢狀物件" },
+        { "id": "b", "text": "完全不能被修改，Object.freeze 會自動遞迴凍結所有巢狀層級的物件" },
+        { "id": "c", "text": "Object.freeze 對巢狀物件完全沒有任何作用，連第一層都不會被凍結" },
+        { "id": "d", "text": "只有巢狀物件裡的字串屬性會被凍結，數字屬性不會" }
+      ],
+      "answer": "a",
+      "explanation": "Object.freeze 只凍結「傳進去的那個物件本身的第一層」——user.name 這種第一層屬性的修改會被擋下來，但 user.address 這個巢狀物件本身沒有被凍結，深入到 user.address.city 的修改依然會成功。這是 Object.freeze 常被誤解的地方：它是淺層凍結，想要完整的深層不可變，得自己遞迴凍結每一層。",
+      "verify": { "manual": "概念題：以 user.address 巢狀物件的具體例子取代抽象淺層凍結敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-6-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證 Object.freeze 的淺層限制",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "'use strict';\nconst user = Object.freeze({ name: '小明', address: { city: '台北' } });\n\ntry {\n  user.name = '大明';\n} catch (e) {\n  console.log('第一層修改失敗：', e.constructor.name);\n}\n\nuser.address.city = '高雄';\nconsole.log(user.address.city);",
+      "options": [
+        { "id": "a", "text": "第一層修改失敗： TypeError\n高雄" },
+        { "id": "b", "text": "第一層修改失敗： TypeError\n台北" },
+        { "id": "c", "text": "台北\n高雄" },
+        { "id": "d", "text": "第一層修改失敗： TypeError\n第一層修改失敗： TypeError" }
+      ],
+      "answer": "a",
+      "explanation": "user 被 Object.freeze 凍結，嚴格模式下直接修改第一層屬性 user.name 會拋出 TypeError，被 catch 接住印出訊息；但 user.address 這個巢狀物件本身沒有被凍結，user.address.city = '高雄' 修改成功，之後印出 user.address.city 得到 '高雄'——證實了 Object.freeze 只凍結第一層，巢狀物件依然可變。",
+      "verify": {
+        "checks": [
+          { "code": "'use strict';\nconst user = Object.freeze({ name: '小明', address: { city: '台北' } });\ntry {\n  user.name = '大明';\n} catch (e) {\n  console.log('第一層修改失敗：', e.constructor.name);\n}\nuser.address.city = '高雄';\nconsole.log(user.address.city);", "expected": "第一層修改失敗： TypeError\n高雄" }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "id": "fljs-1",
+  "title": "Ch1：為什麼要函數式？",
+  "questions": [
+    {
+      "id": "fljs-1-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "信心：純函式的行為可以完全預測",
+      "docs": "",
+      "story": "",
+      "prompt": "一個純函式，只要輸入一樣，不管在程式的哪個地方、被呼叫幾次，輸出永遠一樣。這種「可預測性」為什麼會讓開發者對程式碼比較有信心？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "因為不用擔心「這次呼叫會不會因為某個看不到的外部狀態而得到不一樣的結果」——只要確認過一組輸入對應的輸出是對的，之後不管在哪裡呼叫這個函式、呼叫幾次，都可以放心相信它的行為，不需要每次都重新驗證或擔心隱藏的副作用會不會這次突然發作" },
+        { "id": "b", "text": "純函式的信心來自於它的程式碼行數比較少，跟輸出是否可預測無關" },
+        { "id": "c", "text": "純函式只是理論上的說法，實務上跟一般函式的信心程度完全一樣" },
+        { "id": "d", "text": "純函式沒辦法被測試，所以反而讓人比較沒信心" }
+      ],
+      "answer": "a",
+      "explanation": "純函式最大的價值就是「可預測性」：只要輸入一樣，輸出永遠一樣，不用擔心某次呼叫因為看不到的外部狀態而得到不同結果。這種可預測性讓開發者一旦驗證過某組輸入輸出是對的，就能放心在程式的任何地方重複使用這個函式，不需要每次都重新擔心它會不會這次表現不一樣。",
+      "verify": { "manual": "概念題：以純函式可預測性的具體說明取代抽象信心敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-1-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "純函式的行為不受呼叫順序或位置影響",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions",
+      "story": "",
+      "prompt": "這段程式呼叫同一個純函式 double 三次，順序、位置都不同。這段程式會印出什麼？",
+      "code": "function double(x) {\n  return x * 2;\n}\n\nconsole.log(double(5));\nconst arr = [1, 2, 3].map(double);\nconsole.log(arr);\nconsole.log(double(5));",
+      "options": [
+        { "id": "a", "text": "10\n[ 2, 4, 6 ]\n10" },
+        { "id": "b", "text": "10\n[ 2, 4, 6 ]\n20" },
+        { "id": "c", "text": "10\n[ 1, 2, 3 ]\n10" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "double 是純函式，不管在哪裡呼叫（單獨呼叫、或當作 map 的轉換函式）、呼叫幾次，同樣的輸入 5 永遠得到同樣的輸出 10。第一次和最後一次呼叫 double(5) 印出的結果完全一致，中間拿去餵給 map 也完全不影響它本身的行為——這正是純函式「可預測」的具體展現。",
+      "verify": {
+        "checks": [
+          { "code": "function double(x) {\n  return x * 2;\n}\nconsole.log(double(5));\nconst arr = [1, 2, 3].map(double);\nconsole.log(arr);\nconsole.log(double(5));", "expected": "10\n[ 2, 4, 6 ]\n10" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-1-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "溝通：宣告式程式碼直接表達「做什麼」，不是「怎麼做」",
+      "docs": "",
+      "story": "",
+      "prompt": "用 for 迴圈手寫「找出陣列裡所有偶數」，跟直接呼叫 arr.filter(isEven)，兩者執行結果一樣。從「溝通」的角度來看，兩者傳達給讀者的資訊有什麼差別？",
+      "code": "// 版本一：命令式\nconst result1 = [];\nfor (let i = 0; i < arr.length; i++) {\n  if (arr[i] % 2 === 0) result1.push(arr[i]);\n}\n\n// 版本二：宣告式\nconst result2 = arr.filter((x) => x % 2 === 0);",
+      "options": [
+        { "id": "a", "text": "filter(isEven) 直接把「意圖」（篩選出偶數）攤在讀者眼前，讀者一眼就能看出「這裡在做篩選」；for 迴圈版本則是把「怎麼一步步做到篩選」的實作細節攤開來，讀者得自己在腦中執行這段邏輯、才能反推出背後的目的——宣告式寫法直接溝通目的，命令式寫法只呈現步驟，讀者得自己推導目的是什麼" },
+        { "id": "b", "text": "兩種寫法傳達的資訊完全一樣，沒有任何差別" },
+        { "id": "c", "text": "for 迴圈版本比較容易讓讀者看出這段程式碼的意圖是什麼" },
+        { "id": "d", "text": "filter 版本沒有辦法讓讀者理解程式碼在做什麼，只有 for 迴圈才能清楚溝通" }
+      ],
+      "answer": "a",
+      "explanation": "filter(isEven) 直接把「意圖」攤在讀者眼前：這裡在做篩選。for 迴圈版本則是攤開「怎麼一步步做到篩選」的實作細節，讀者得自己在腦中執行這段邏輯、反推出背後的目的是什麼。宣告式寫法直接溝通「做什麼」，命令式寫法只呈現「怎麼做」，這正是「溝通」這個價值的具體意思。",
+      "verify": { "manual": "概念題：以 filter vs for 迴圈的具體對照取代抽象溝通敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-1-q4",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "宣告式與命令式：結果一樣，溝通效果不同",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/filter",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "const arr = [1, 2, 3, 4, 5, 6];\n\nconst result1 = [];\nfor (let i = 0; i < arr.length; i++) {\n  if (arr[i] % 2 === 0) result1.push(arr[i]);\n}\n\nconst result2 = arr.filter((x) => x % 2 === 0);\n\nconsole.log(result1);\nconsole.log(result2);\nconsole.log(JSON.stringify(result1) === JSON.stringify(result2));",
+      "options": [
+        { "id": "a", "text": "[ 2, 4, 6 ]\n[ 2, 4, 6 ]\ntrue" },
+        { "id": "b", "text": "[ 2, 4, 6 ]\n[ 2, 4, 6 ]\nfalse" },
+        { "id": "c", "text": "[ 1, 3, 5 ]\n[ 2, 4, 6 ]\nfalse" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "兩種寫法產生的結果完全一樣，都是 [2, 4, 6]——差別不在「結果對不對」，而在「讀這段程式碼的人，要花多少力氣才能看懂這裡在做什麼」。filter 版本直接溝通意圖，for 迴圈版本則要讀者自己執行、推導意圖。",
+      "verify": {
+        "checks": [
+          { "code": "const arr = [1, 2, 3, 4, 5, 6];\nconst result1 = [];\nfor (let i = 0; i < arr.length; i++) {\n  if (arr[i] % 2 === 0) result1.push(arr[i]);\n}\nconst result2 = arr.filter((x) => x % 2 === 0);\nconsole.log(result1);\nconsole.log(result2);\nconsole.log(JSON.stringify(result1) === JSON.stringify(result2));", "expected": "[ 2, 4, 6 ]\n[ 2, 4, 6 ]\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-1-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "視角：同一段程式碼，換個角度看會發現不同的處理方式",
+      "docs": "",
+      "story": "",
+      "prompt": "一段「先過濾出符合條件的訂單、再加總金額」的程式碼，如果只從「怎麼把迴圈寫對」的角度想，容易寫成一個大迴圈邊過濾邊加總；如果換成「這是兩個獨立的資料轉換步驟：先篩選、再收斂成一個值」的角度想，會怎麼寫？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "會傾向拆成兩個獨立步驟：先用 filter 篩出符合條件的訂單，再用 reduce 把這份清單收斂成總金額——換一個角度看同一個問題，看到的是「這其實是兩個可以分開命名、各自獨立驗證的轉換步驟」，而不是一個混在一起、不好單獨測試哪一部分出錯的大迴圈" },
+        { "id": "b", "text": "換角度思考完全不會影響寫出來的程式碼長什麼樣子" },
+        { "id": "c", "text": "應該永遠用大迴圈邊過濾邊加總，這樣執行效率最好，跟角度無關" },
+        { "id": "d", "text": "「視角」只是一個抽象的哲學名詞，跟實際寫程式碼的方式沒有關係" }
+      ],
+      "answer": "a",
+      "explanation": "換一個角度看同一個問題（把它看成「先篩選、再收斂」這兩個各自獨立的資料轉換步驟，而不是一個混在一起的大迴圈），容易讓程式碼自然拆成 filter + reduce 這種各自可以獨立理解、獨立測試的組合，而不是一段從頭到尾攪在一起、出錯了不容易定位是哪一部分邏輯壞掉的大迴圈。這正是「換個視角看程式碼」帶來的實際好處。",
+      "verify": { "manual": "概念題：以訂單篩選加總的具體例子取代抽象視角敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-1-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "找到平衡：函數式輕量（Functional-Light）不是要求全面純函數式",
+      "docs": "",
+      "story": "",
+      "prompt": "「Functional-Light JavaScript」這個書名裡的「Light」是什麼意思？是不是代表這本書認為應該盡量避免使用函數式技巧？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "「Light」代表務實地挑選函數式技巧裡對這段程式碼真正有幫助的部分來用（例如純函式、不可變性、組合），不強求整個程式碼庫都要遵守嚴格的純函數式規範——重點是「在恰當的地方，用恰當的技巧」，不是全有或全無的教條式選擇" },
+        { "id": "b", "text": "「Light」代表這本書認為應該完全避免使用任何函數式技巧，回歸傳統命令式寫法" },
+        { "id": "c", "text": "「Light」只是行銷用詞，跟書的實際內容沒有任何關聯" },
+        { "id": "d", "text": "「Light」代表這本書只適合初學者閱讀，進階開發者不需要理解這些技巧" }
+      ],
+      "answer": "a",
+      "explanation": "「Light」代表務實、有選擇性地使用函數式技巧——挑選對這段程式碼真正有幫助的部分來用，不強求整個程式碼庫都要遵守嚴格的純函數式教條。這種「在恰當的地方用恰當技巧」的務實態度，正是貫穿全書的核心立場，也是跟很多強調純粹函數式的書籍最大的不同之處。",
+      "verify": { "manual": "概念題：以書名 Light 的實際意涵取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

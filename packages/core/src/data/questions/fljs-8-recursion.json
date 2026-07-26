@@ -1,0 +1,128 @@
+{
+  "id": "fljs-8",
+  "title": "Ch8：遞迴",
+  "questions": [
+    {
+      "id": "fljs-8-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "相互遞迴：兩個函式輪流呼叫對方",
+      "docs": "",
+      "story": "",
+      "prompt": "isEven(n) 呼叫 isOdd(n-1)，isOdd(n) 又呼叫 isEven(n-1)，兩者輪流呼叫對方，直到 n 變成 0 為止。這種「兩個函式互相呼叫」的遞迴叫做什麼？",
+      "code": "function isEven(n) {\n  if (n === 0) return true;\n  return isOdd(n - 1);\n}\nfunction isOdd(n) {\n  if (n === 0) return false;\n  return isEven(n - 1);\n}",
+      "options": [
+        { "id": "a", "text": "相互遞迴（mutual recursion）：不是同一個函式直接呼叫自己，而是兩個（或更多）函式輪流呼叫對方，把問題逐步簡化，直到碰到某個函式裡的基本情況為止——這是遞迴的一種變化型，遞迴呼叫的對象不一定要是自己，也可以是另一個函式，只要最終能收斂到基本情況" },
+        { "id": "b", "text": "這種寫法不算遞迴，因為每個函式呼叫的是另一個函式，不是自己" },
+        { "id": "c", "text": "相互遞迴一定會導致無窮迴圈，永遠不會停止" },
+        { "id": "d", "text": "相互遞迴只能有兩個函式互相呼叫，不能超過兩個" }
+      ],
+      "answer": "a",
+      "explanation": "相互遞迴指的是不同函式輪流呼叫對方，把問題逐步簡化，直到碰到某個函式裡明確的基本情況才停下來——這仍然算是遞迴，只是遞迴呼叫的對象不是自己，而是另一個彼此配合的函式，只要最終能收斂到基本情況，一樣是合法且會終止的遞迴。",
+      "verify": { "manual": "概念題：以 isEven/isOdd 互相呼叫的具體例子取代抽象相互遞迴定義，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-8-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "相互遞迴的實際執行結果",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Recursion",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function isEven(n) {\n  if (n === 0) return true;\n  return isOdd(n - 1);\n}\nfunction isOdd(n) {\n  if (n === 0) return false;\n  return isEven(n - 1);\n}\n\nconsole.log(isEven(6), isOdd(6));\nconsole.log(isEven(7), isOdd(7));",
+      "options": [
+        { "id": "a", "text": "true false\nfalse true" },
+        { "id": "b", "text": "false true\ntrue false" },
+        { "id": "c", "text": "true true\nfalse false" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "isEven 和 isOdd 輪流把 n 減 1 丟給對方，一路化簡到 n 變成 0 才判定答案：6 是偶數，isEven(6) 是 true、isOdd(6) 是 false；7 是奇數，isEven(7) 是 false、isOdd(7) 是 true。整個過程完全靠兩個函式互相呼叫，沒有任何一個函式直接呼叫自己。",
+      "verify": {
+        "checks": [
+          { "code": "function isEven(n) {\n  if (n === 0) return true;\n  return isOdd(n - 1);\n}\nfunction isOdd(n) {\n  if (n === 0) return false;\n  return isEven(n - 1);\n}\nconsole.log(isEven(6), isOdd(6));\nconsole.log(isEven(7), isOdd(7));", "expected": "true false\nfalse true" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-8-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "為什麼要用遞迴：宣告式地表達「分而治之」",
+      "docs": "",
+      "story": "",
+      "prompt": "走訪一棵樹狀結構、把每個節點的值加總，用遞迴寫跟用手動維護一個堆疊、迴圈走訪比起來，遞迴版本的優勢是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "遞迴版本直接把「這個節點的總和 = 自己的值 + 每個子節點的總和」這個定義本身寫成程式碼，讀起來就是在陳述問題的定義；手動維護堆疊的迴圈版本，則要自己處理「什麼時候該把子節點推進堆疊、什麼時候該彈出、目前處理到第幾層」這些跟問題定義本身無關的簿記工作——遞迴讓「分而治之」的問題，能用宣告式的方式直接表達出定義，不用手動管理走訪過程的細節" },
+        { "id": "b", "text": "遞迴版本一定比手動維護堆疊的版本執行得更快" },
+        { "id": "c", "text": "手動維護堆疊的版本比遞迴版本更容易讀懂，因為步驟寫得比較清楚" },
+        { "id": "d", "text": "遞迴只能用在陣列上，沒辦法用在樹狀結構這種巢狀資料上" }
+      ],
+      "answer": "a",
+      "explanation": "遞迴版本直接把「這個節點的總和 = 自己的值 + 每個子節點的總和」這個定義寫成程式碼，讀起來就是在陳述問題本身；手動維護堆疊的版本則要自己處理推入、彈出、目前層級等簿記工作，這些細節跟問題定義本身無關。遞迴讓「分而治之」類型的問題，能用宣告式的方式直接表達定義，不用手動管理走訪過程。",
+      "verify": { "manual": "概念題：以樹狀結構加總的具體例子取代抽象遞迴優勢敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-8-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "二元樹遞迴：加總每個節點的值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Recursion",
+      "story": "",
+      "prompt": "sumTree 遞迴計算一棵二元樹每個節點值的總和。這段程式會印出什麼？",
+      "code": "function sumTree(node) {\n  if (node === null) return 0;\n  return node.value + sumTree(node.left) + sumTree(node.right);\n}\n\nconst tree = {\n  value: 1,\n  left: { value: 2, left: null, right: null },\n  right: { value: 3, left: { value: 4, left: null, right: null }, right: null },\n};\n\nconsole.log(sumTree(tree));",
+      "options": [
+        { "id": "a", "text": "10" },
+        { "id": "b", "text": "6" },
+        { "id": "c", "text": "9" },
+        { "id": "d", "text": "4" }
+      ],
+      "answer": "a",
+      "explanation": "sumTree 遞迴地把每個節點的值，加上它左子樹的總和、再加上右子樹的總和：根節點 1，加上左子樹（只有一個節點 2）的總和 2，再加上右子樹（節點 3，底下還有一個節點 4）的總和 7，總計 1+2+7=10。程式碼直接反映了「這個節點的總和」這個定義本身，不用另外手動管理走訪順序。",
+      "verify": {
+        "checks": [
+          { "code": "function sumTree(node) {\n  if (node === null) return 0;\n  return node.value + sumTree(node.left) + sumTree(node.right);\n}\nconst tree = {\n  value: 1,\n  left: { value: 2, left: null, right: null },\n  right: { value: 3, left: { value: 4, left: null, right: null }, right: null },\n};\nconsole.log(sumTree(tree));", "expected": "10" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-8-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "尾呼叫最佳化：規格裡有，但大多數 JS 引擎沒有真的實作",
+      "docs": "",
+      "story": "",
+      "prompt": "「尾呼叫」指的是遞迴呼叫發生在函式的最後一步，回傳之後沒有其他事要做。ES6 規格裡定義了「正確尾呼叫」（PTC）最佳化。這代表在 JavaScript 裡寫出尾呼叫形式的遞迴，就能保證不會堆疊溢位嗎？",
+      "code": "function factorialTail(n, acc = 1) {\n  if (n <= 1) return acc;\n  return factorialTail(n - 1, n * acc);\n}",
+      "options": [
+        { "id": "a", "text": "不能保證：雖然 ES6 規格定義了 PTC 這個最佳化，但實務上除了少數引擎之外，主流 JavaScript 引擎（包括 V8）大多沒有真的實作 PTC——即使程式碼寫成尾呼叫形式，在大多數環境裡遞迴深度夠大時，還是可能發生堆疊溢位，不能假設「寫成尾呼叫」就等於「引擎會幫你最佳化」" },
+        { "id": "b", "text": "可以保證，因為所有 JavaScript 引擎都完整實作了 ES6 規格裡的 PTC" },
+        { "id": "c", "text": "尾呼叫形式的遞迴，跟一般遞迴在堆疊使用上完全沒有差異，規格根本沒有定義過 PTC 這件事" },
+        { "id": "d", "text": "PTC 只是一種瀏覽器擴充功能，不是 ECMAScript 官方規格的一部分" }
+      ],
+      "answer": "a",
+      "explanation": "雖然 ES6 規格定義了 PTC，理論上能讓尾呼叫遞迴重複利用同一個堆疊格，但實務上除了少數引擎之外，主流 JavaScript 引擎大多沒有真的實作這個最佳化——寫成尾呼叫形式並不能保證在所有環境下都不會堆疊溢位，這是規格與實務落差的一個具體例子，也是為什麼接下來要介紹 trampoline 這種不依賴引擎最佳化的替代方案。",
+      "verify": { "manual": "概念題：以 PTC 規格與實務落差的具體說明取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-8-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "Trampoline：把遞迴改寫成迴圈，不依賴引擎有沒有做尾呼叫最佳化",
+      "docs": "",
+      "story": "",
+      "prompt": "trampoline 技巧要求每一步「遞迴」不要真的呼叫自己，而是回傳一個「代表下一步要做什麼」的函式（thunk），再由外層一個迴圈負責重複呼叫這些 thunk，直到拿到最終的值為止。這種做法為什麼能避免堆疊溢位？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "因為每一步都只是「回傳一個 thunk」，函式呼叫本身其實已經結束、返回了，並沒有真的巢狀呼叫下一層——真正驅動「繼續往下算」的是外層那個迴圈，迴圈本身不會讓呼叫堆疊往上疊加，不管邏輯上想遞迴幾層，實際的呼叫堆疊深度都維持固定，因此完全不依賴引擎有沒有做尾呼叫最佳化" },
+        { "id": "b", "text": "trampoline 技巧會讓程式碼變成真正的遞迴呼叫，堆疊深度反而會比原本更深" },
+        { "id": "c", "text": "trampoline 只是把遞迴呼叫改名叫做 thunk，實際執行方式跟原本的遞迴完全一樣" },
+        { "id": "d", "text": "trampoline 只能用在數學運算上，沒辦法用在走訪樹狀結構這種遞迴問題上" }
+      ],
+      "answer": "a",
+      "explanation": "trampoline 的關鍵在於每一步都只是「回傳一個 thunk」就結束了，函式呼叫本身沒有真的巢狀呼叫下一層——真正驅動「繼續往下算」的是外層的迴圈，迴圈本身不會讓呼叫堆疊往上疊加。不管邏輯上想模擬遞迴幾層，實際的呼叫堆疊深度都維持固定不變，這種做法完全不依賴引擎有沒有實作尾呼叫最佳化，是繞開 PTC 落差問題的實用技巧。",
+      "verify": { "manual": "概念題：以 thunk 與外層迴圈的具體運作方式取代抽象 trampoline 敘述，無可執行程式碼。" }
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "id": "fljs-12",
+  "title": "附錄 A：Transducing",
+  "questions": [
+    {
+      "id": "fljs-12-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "為什麼要 Transducing：避免每加一個轉換步驟就多建一份中間陣列",
+      "docs": "",
+      "story": "",
+      "prompt": "arr.filter(isOdd).map(double) 這種連續呼叫，會分別建立一份「篩選完的中間陣列」跟「轉換完的最終陣列」，走訪了陣列兩次。Transducing 想解決的正是什麼問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "Transducing 想解決「串接越多步驟，就要多走訪陣列一次、多建一份中間陣列」的問題——把 filter、map 這種轉換步驟，改寫成可以先組合好、再一次套用的形式，不管串接幾個轉換步驟，最終都只需要走訪一次原始資料、不需要為每個中間步驟各自建立一份陣列" },
+        { "id": "b", "text": "Transducing 想讓程式碼的執行結果變得跟原本不一樣，藉此達到更快的速度" },
+        { "id": "c", "text": "Transducing 只是 filter 和 map 的另一種名稱，實際運作方式完全相同" },
+        { "id": "d", "text": "Transducing 只能用於陣列的長度小於 100 的情況" }
+      ],
+      "answer": "a",
+      "explanation": "串接越多 filter、map 呼叫，就要多走訪陣列一次、多建一份只是過渡用途的中間陣列。Transducing 想解決的正是這個問題：把這些轉換步驟改寫成可以先組合好、再一次套用的形式，不管串接幾個轉換步驟，最終都只需要走訪一次原始資料，這是先前「融合」概念更進一步、更通用化的解法。",
+      "verify": { "manual": "概念題：呼應第 9 章融合概念，以中間陣列問題取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-12-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "把 map 表達成「改造 combine 函式」的東西",
+      "docs": "",
+      "story": "",
+      "prompt": "Transducing 的角度把 map(f) 改成：接收一個「combine 函式」，回傳一個新的 combine 函式，這個新函式會先用 f 轉換元素、再呼叫原本的 combine。這樣的改寫，重點在哪裡？",
+      "code": "// 傳統：mapArray(f, arr) 直接操作整個陣列\n// Transducing：mapReducer(f)(combine) 回傳一個新的 combine 函式，本身不碰陣列",
+      "options": [
+        { "id": "a", "text": "重點在於 mapReducer(f) 完全不知道自己最終會被套用在陣列、串流還是任何其他可以被 reduce 的資料來源上——它只負責「在真正合併之前，先用 f 轉換一下」這件事，把「轉換」跟「怎麼走訪、怎麼合併」這兩件事徹底拆開，讓同一個轉換邏輯可以被套用在任何支援 reduce 的資料結構上" },
+        { "id": "b", "text": "mapReducer(f) 一定要先知道完整的陣列內容，才能決定怎麼轉換" },
+        { "id": "c", "text": "這種改寫方式讓 map 沒辦法再被用在陣列上，只能用在物件上" },
+        { "id": "d", "text": "mapReducer(f) 回傳的東西是一個陣列，不是一個函式" }
+      ],
+      "answer": "a",
+      "explanation": "mapReducer(f) 回傳的是一個「新的 combine 函式」，它完全不知道、也不需要知道自己最終會被套用在陣列、串流還是其他資料來源上——它只負責「轉換」這件事，把「轉換邏輯」跟「怎麼走訪、怎麼合併」徹底拆開。這種拆分讓同一個轉換邏輯可以被重複用在任何支援 reduce 操作的資料結構上，不侷限於陣列。",
+      "verify": { "manual": "概念題：以 mapReducer 包裝 combine 函式的具體做法取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-12-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "手動實作一個 map transducer：包裝 combine 函式",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "mapReducer(f) 回傳一個新的 combine 函式，這個新函式會先用 f 轉換元素、再呼叫原本的 combine 把結果併入累加值。這段程式會印出什麼？",
+      "code": "function mapReducer(f) {\n  return (combine) => (acc, x) => combine(acc, f(x));\n}\n\nconst double = (x) => x * 2;\nconst push = (acc, x) => { acc.push(x); return acc; };\n\nconst doubleThenPush = mapReducer(double)(push);\n\nconst result = [1, 2, 3].reduce(doubleThenPush, []);\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "[ 2, 4, 6 ]" },
+        { "id": "b", "text": "[ 1, 2, 3 ]" },
+        { "id": "c", "text": "[ 2, 4, 6, 2, 4, 6 ]" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "mapReducer(double) 回傳一個「還等著接收 combine 函式」的函式，餵進 push 之後得到 doubleThenPush——每次呼叫都先用 double 轉換 x，再呼叫 push 把轉換後的值併入累加陣列。用 reduce 依序套用在 [1, 2, 3] 上，得到 [2, 4, 6]，整個過程只走訪了陣列一次，卻還是能組合出跟直接呼叫 .map(double) 一樣的結果。",
+      "verify": {
+        "checks": [
+          { "code": "function mapReducer(f) {\n  return (combine) => (acc, x) => combine(acc, f(x));\n}\nconst double = (x) => x * 2;\nconst push = (acc, x) => { acc.push(x); return acc; };\nconst doubleThenPush = mapReducer(double)(push);\nconst result = [1, 2, 3].reduce(doubleThenPush, []);\nconsole.log(result);", "expected": "[ 2, 4, 6 ]" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-12-q4",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "Transducer 可以組合：串接多個轉換，套用時仍然只走訪一次",
+      "docs": "",
+      "story": "",
+      "prompt": "mapReducer(f) 和 filterReducer(pred) 都是「接收一個 combine 函式、回傳一個新 combine 函式」的同一種形狀。這代表可以把它們怎麼樣使用？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "可以把它們像組合一般函式一樣，用 compose 串接起來，組合出一個新的「combine 函式改造器」——這個組合出來的東西一樣可以餵進原始的 combine 函式，得到一個同時做了篩選跟轉換的新 combine 函式，套用在 reduce 上時，資料只需要被走訪一次，不管實際上串了幾個轉換步驟" },
+        { "id": "b", "text": "mapReducer 和 filterReducer 沒辦法組合在一起，只能各自獨立使用" },
+        { "id": "c", "text": "組合 mapReducer 和 filterReducer 之後，資料必須被走訪的次數會等於組合了幾個轉換步驟" },
+        { "id": "d", "text": "兩者的形狀完全不同，沒辦法用同一個 compose 函式組合" }
+      ],
+      "answer": "a",
+      "explanation": "mapReducer(f) 和 filterReducer(pred) 都是同一種形狀：接收一個 combine 函式、回傳一個新的 combine 函式。正因為形狀一致，可以像組合一般函式一樣用 compose 把它們串接起來，組合出一個同時做篩選跟轉換的新 combine 函式，套用在 reduce 上時，資料只需要被走訪一次——這正是 Transducing 解決「連續多次 map/filter 建立中間陣列」問題的核心機制。",
+      "verify": { "manual": "概念題：以 mapReducer 與 filterReducer 同形狀可組合的具體例子取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-12-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "組合 map 與 filter transducer：一次走訪完成篩選加轉換",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "這段程式把 filterReducer(isEven) 和 mapReducer(double) 組合起來，套用在同一個 reduce 上。這段程式會印出什麼？",
+      "code": "function mapReducer(f) {\n  return (combine) => (acc, x) => combine(acc, f(x));\n}\nfunction filterReducer(pred) {\n  return (combine) => (acc, x) => (pred(x) ? combine(acc, x) : acc);\n}\nfunction compose2(f, g) {\n  return (x) => f(g(x));\n}\n\nconst push = (acc, x) => { acc.push(x); return acc; };\nconst isEven = (x) => x % 2 === 0;\nconst double = (x) => x * 2;\n\nconst transducer = compose2(filterReducer(isEven), mapReducer(double));\nconst combined = transducer(push);\n\nconst result = [1, 2, 3, 4, 5].reduce(combined, []);\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "[ 4, 8 ]" },
+        { "id": "b", "text": "[ 2, 4 ]" },
+        { "id": "c", "text": "[ 4, 8, 2, 4 ]" },
+        { "id": "d", "text": "[ 1, 2, 3, 4, 5 ]" }
+      ],
+      "answer": "a",
+      "explanation": "組合出來的 combined 函式，對每個元素先檢查是不是偶數，只有偶數才會被送進 mapReducer 那一層做加倍、再併入結果陣列——2 和 4 是偶數，各自加倍成 4 和 8，1、3、5 因為不是偶數，直接被濾掉，連 double 都不會被套用到。整個過程只走訪了陣列一次，篩選跟轉換這兩個步驟被組合成同一次走訪裡依序套用的邏輯。",
+      "verify": {
+        "checks": [
+          { "code": "function mapReducer(f) {\n  return (combine) => (acc, x) => combine(acc, f(x));\n}\nfunction filterReducer(pred) {\n  return (combine) => (acc, x) => (pred(x) ? combine(acc, x) : acc);\n}\nfunction compose2(f, g) {\n  return (x) => f(g(x));\n}\nconst push = (acc, x) => { acc.push(x); return acc; };\nconst isEven = (x) => x % 2 === 0;\nconst double = (x) => x * 2;\nconst transducer = compose2(filterReducer(isEven), mapReducer(double));\nconst combined = transducer(push);\nconst result = [1, 2, 3, 4, 5].reduce(combined, []);\nconsole.log(result);", "expected": "[ 4, 8 ]" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-12-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Transducing 的價值：把「做什麼轉換」跟「怎麼合併資料」徹底解耦",
+      "docs": "",
+      "story": "",
+      "prompt": "同一組組合好的 transducer（例如「篩選偶數、再加倍」），理論上除了套用在陣列的 reduce 上，還能不能套用在其他「支援 reduce 操作」的資料來源上？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "可以：transducer 本身只描述「怎麼轉換」，完全不知道也不在乎最終的資料來源是陣列、串流還是其他任何東西——只要那個資料來源提供了一個相容的 combine／reduce 操作，同一組 transducer 就能重複套用上去，不需要為每一種資料來源分別重寫一次篩選跟轉換的邏輯" },
+        { "id": "b", "text": "transducer 只能套用在陣列上，沒辦法套用在其他任何資料結構上" },
+        { "id": "c", "text": "每一種資料來源都需要各自重新定義一次篩選跟轉換的邏輯，transducer 沒辦法重複使用" },
+        { "id": "d", "text": "transducer 的設計目的只是讓程式碼看起來更複雜，沒有任何實際的重用價值" }
+      ],
+      "answer": "a",
+      "explanation": "transducer 本身只描述「怎麼轉換」，完全不知道、也不在乎最終資料來源是陣列、串流還是其他任何東西——只要那個資料來源提供了相容的 combine／reduce 操作，同一組 transducer 就能重複套用。這正是 Transducing 最核心的價值：把「做什麼轉換」跟「怎麼合併資料、資料來源長什麼樣子」徹底解耦，讓轉換邏輯可以在不同情境下被重複使用。",
+      "verify": { "manual": "概念題：總結 Transducing 解耦轉換與合併機制的核心價值，無可執行程式碼。" }
+    }
+  ]
+}

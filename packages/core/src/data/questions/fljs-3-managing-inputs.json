@@ -1,0 +1,128 @@
+{
+  "id": "fljs-3",
+  "title": "Ch3：管理函式的輸入",
+  "questions": [
+    {
+      "id": "fljs-3-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "偏函式應用：一次填入「現在知道的部分」引數，其餘留給之後一次補齊",
+      "docs": "",
+      "story": "",
+      "prompt": "add3(a, b, c) 需要三個引數。偏函式應用（partial application）想做的是「現在先把 a 填死，回傳一個只等 b、c 兩個引數的新函式」。這跟稍後會介紹的 currying 有什麼根本上的不同？",
+      "code": "// partial(add3, 1) 回傳一個函式，只還需要再傳入 b、c 兩個引數（一次補齊，不是一個一個給）",
+      "options": [
+        { "id": "a", "text": "偏函式應用允許「一次填入好幾個」現在已知的引數（不限定只能填一個），回傳的新函式等著「一次把剩下的全部補齊」，不強制之後也要一個一個分開傳——這是它跟 currying（強制每次只能傳一個引數）在使用方式上最直接的差異" },
+        { "id": "b", "text": "偏函式應用跟 currying 完全是同一件事，只是換了個名字稱呼" },
+        { "id": "c", "text": "偏函式應用一次只能填入剛好一個引數，不能一次填入多個" },
+        { "id": "d", "text": "偏函式應用要求呼叫者必須知道函式總共有幾個引數，currying 則不需要" }
+      ],
+      "answer": "a",
+      "explanation": "偏函式應用允許「一次填入好幾個」現在已知的引數，回傳的新函式在被呼叫時，可以一次把剩下的引數全部補齊，不強制之後也要一個一個分開傳——這正是它跟 currying（強制每次呼叫只能傳一個引數，一次一個往下傳）最直接的使用方式差異，兩者都是「先給一部分、之後再給剩下的」，但「怎麼給剩下的」規則不一樣。",
+      "verify": { "manual": "概念題：以 add3 偏函式應用的具體例子取代抽象定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-3-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "用 bind 做偏函式應用：先填入一部分引數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Function/bind",
+      "story": "",
+      "prompt": "Function.prototype.bind 除了綁定 this 之外，也能拿來做偏函式應用——先填入部分引數，回傳一個只需要補齊剩下引數的新函式。這段程式會印出什麼？",
+      "code": "function add3(a, b, c) {\n  return a + b + c;\n}\n\nconst addWith1 = add3.bind(null, 1);\nconsole.log(addWith1(2, 3));",
+      "options": [
+        { "id": "a", "text": "6" },
+        { "id": "b", "text": "1" },
+        { "id": "c", "text": "5" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "add3.bind(null, 1) 回傳一個新函式，這個新函式已經把第一個引數 a 固定為 1，之後呼叫 addWith1(2, 3) 時，2 和 3 會依序補進 b、c 的位置——一次把剩下需要的兩個引數都補齊，不需要分成兩次各傳一個，這正是偏函式應用「一次填入現在知道的、其餘一次補齊」的具體示範。",
+      "verify": {
+        "checks": [
+          { "code": "function add3(a, b, c) {\n  return a + b + c;\n}\nconst addWith1 = add3.bind(null, 1);\nconsole.log(addWith1(2, 3));", "expected": "6" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-3-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Currying：把多元函式轉成一連串「一次只吃一個引數」的函式",
+      "docs": "",
+      "story": "",
+      "prompt": "curry(add3) 之後得到的函式，呼叫方式是 curriedAdd3(1)(2)(3)，每次呼叫都只能傳一個引數。這跟偏函式應用「一次補齊剩下所有引數」比起來，Currying 的核心規則是什麼？",
+      "code": "const curriedAdd3 = curry(add3);\ncurriedAdd3(1)(2)(3);",
+      "options": [
+        { "id": "a", "text": "Currying 把一個多元函式，轉換成一連串「每次只吃剛好一個引數」的函式：curriedAdd3(1) 回傳一個還等著吃第二個引數的新函式，curriedAdd3(1)(2) 又回傳一個還等著吃第三個引數的函式，直到所有引數都一個一個給齊，才真正算出最終結果——跟偏函式應用「可以一次補齊好幾個」不同，Currying 強制每一步呼叫都只能傳入剛好一個引數" },
+        { "id": "b", "text": "Currying 跟偏函式應用的呼叫方式完全一樣，都可以一次傳入任意數量的引數" },
+        { "id": "c", "text": "Currying 要求呼叫者一次把所有引數通通傳完，不能分開呼叫" },
+        { "id": "d", "text": "Currying 只能用在剛好兩個引數的函式上，三個以上引數無法轉換" }
+      ],
+      "answer": "a",
+      "explanation": "Currying 把多元函式轉換成一連串「每次只吃剛好一個引數」的函式：每呼叫一次只能傳一個引數，回傳的是還在等下一個引數的新函式，直到所有引數一個一個補齊才真正算出結果。這跟偏函式應用「可以一次補齊好幾個引數」的彈性不同，Currying 的規則更嚴格：每一步都只能傳入剛好一個。",
+      "verify": { "manual": "概念題：對照上一題偏函式應用，以 curry 呼叫規則的具體差異取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-3-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Curry 過的函式：一路一個一個引數呼叫下去",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions",
+      "story": "",
+      "prompt": "這段程式手動實作一個簡化版的三元 curry。這段程式會印出什麼？",
+      "code": "function curry3(fn) {\n  return (a) => (b) => (c) => fn(a, b, c);\n}\n\nfunction add3(a, b, c) { return a + b + c; }\n\nconst curriedAdd3 = curry3(add3);\nconsole.log(curriedAdd3(1)(2)(3));\nconsole.log(curriedAdd3(10)(20)(30));",
+      "options": [
+        { "id": "a", "text": "6\n60" },
+        { "id": "b", "text": "6\n6" },
+        { "id": "c", "text": "60\n6" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "curriedAdd3(1) 回傳一個等著吃 b 的函式，curriedAdd3(1)(2) 又回傳一個等著吃 c 的函式，curriedAdd3(1)(2)(3) 才真正呼叫 add3(1, 2, 3) 算出 6；第二次用完全不同的三個值重新呼叫一整串，算出 60。每次都得依序把三個引數一個一個補齊，才會真正執行到底層的 add3。",
+      "verify": {
+        "checks": [
+          { "code": "function curry3(fn) {\n  return (a) => (b) => (c) => fn(a, b, c);\n}\nfunction add3(a, b, c) { return a + b + c; }\nconst curriedAdd3 = curry3(add3);\nconsole.log(curriedAdd3(1)(2)(3));\nconsole.log(curriedAdd3(10)(20)(30));", "expected": "6\n60" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-3-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "為什麼要 Curry／偏函式應用：讓多元函式也能塞進只吃一個引數的組合管線",
+      "docs": "",
+      "story": "",
+      "prompt": "compose、pipe 這種組合工具，通常假設每個步驟都是「只吃一個引數」的函式。如果 pipeline 裡有一個步驟需要兩個引數（例如 add(a, b)），要怎麼把它塞進這種只吃一個引數的組合管線？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "先用 curry 或偏函式應用把 add(a, b) 轉換成「只等一個引數」的形狀，轉換完之後才能跟 pipeline 裡其他只吃一個引數的步驟正常組合在一起——curry／偏函式應用的價值之一，就是把多元函式「削」成適合塞進組合管線的單元函式" },
+        { "id": "b", "text": "多元函式沒辦法用在任何組合管線裡，只能單獨呼叫，不能跟其他函式組合" },
+        { "id": "c", "text": "組合管線會自動偵測函式需要幾個引數，不需要額外做任何轉換" },
+        { "id": "d", "text": "compose、pipe 這種工具只能組合完全沒有引數的函式" }
+      ],
+      "answer": "a",
+      "explanation": "compose、pipe 這類組合工具通常假設每個步驟都只吃一個引數，前一步的輸出直接變成下一步唯一的輸入。多元函式沒辦法直接塞進這種管線，需要先用 curry 或偏函式應用把它轉換成「只等一個引數」的單元函式形狀，轉換完才能跟管線裡其他步驟正常組合——這正是 curry／偏函式應用在「函式組合」這個情境下最實際的用途。",
+      "verify": { "manual": "概念題：以多元函式塞進組合管線的具體需求取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-3-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "無點風格：組合出來的函式看不到「資料本身」被明講出來",
+      "docs": "",
+      "story": "",
+      "prompt": "getName = compose(toUpperCase, extractName)，呼叫時寫 getName(user)，而不是寫成 (user) => toUpperCase(extractName(user))。這種「函式定義裡完全不提到 user 這個資料本身」的風格，叫做什麼？為什麼常被視為一種簡潔的寫法？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "叫做「無點風格」（point-free style，「point」指的就是資料本身）：getName 這個函式定義裡完全沒有出現任何代表「資料」的參數名稱，只靠組合 toUpperCase 和 extractName 這兩個函式定義出來——因為不用特地取一個參數名稱、寫一次「拿到這個參數之後要做什麼」，程式碼可以更專注在「用哪些函式組合出最終行為」，而不是被資料的傳遞細節分心" },
+        { "id": "b", "text": "無點風格指的是程式碼裡完全不能使用任何符號，只能使用底線" },
+        { "id": "c", "text": "無點風格要求函式必須永遠回傳 undefined，不能有任何回傳值" },
+        { "id": "d", "text": "無點風格只是一種美觀上的偏好，跟函式組合完全沒有關係" }
+      ],
+      "answer": "a",
+      "explanation": "無點風格指的是定義一個函式時，完全不需要明講「資料本身」這個參數，只靠組合現有函式（compose(toUpperCase, extractName)）就能定義出新函式的行為。這種寫法把焦點放在「用哪些函式組合出最終行為」，不用為了描述「拿到資料之後要做什麼」而特地寫出一個參數名稱、一層函式呼叫，是函式組合技巧帶來的一種簡潔風格。",
+      "verify": { "manual": "概念題：以 getName 無點定義的具體例子取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

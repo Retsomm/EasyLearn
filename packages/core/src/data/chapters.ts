@@ -82,6 +82,19 @@ import dmmf10 from './questions/dmmf-10-working-with-errors.json'
 import dmmf11 from './questions/dmmf-11-serialization.json'
 import dmmf12 from './questions/dmmf-12-persistence.json'
 import dmmf13 from './questions/dmmf-13-evolving-design.json'
+import fljs1 from './questions/fljs-1-why-functional.json'
+import fljs2 from './questions/fljs-2-nature-of-functions.json'
+import fljs3 from './questions/fljs-3-managing-inputs.json'
+import fljs4 from './questions/fljs-4-composing-functions.json'
+import fljs5 from './questions/fljs-5-reducing-side-effects.json'
+import fljs6 from './questions/fljs-6-value-immutability.json'
+import fljs7 from './questions/fljs-7-closure-vs-object.json'
+import fljs8 from './questions/fljs-8-recursion.json'
+import fljs9 from './questions/fljs-9-list-operations.json'
+import fljs10 from './questions/fljs-10-functional-async.json'
+import fljs11 from './questions/fljs-11-putting-together.json'
+import fljs12 from './questions/fljs-12-transducing.json'
+import fljs13 from './questions/fljs-13-humble-monad.json'
 import ri1 from './questions/ri-1-router.json'
 import ri2 from './questions/ri-2-i18n.json'
 import ri3 from './questions/ri-3-testing.json'
@@ -166,6 +179,15 @@ export const chapters: Chapter[] = [
     levels: [
       dmmf1, dmmf2, dmmf3, dmmf4, dmmf5, dmmf6, dmmf7,
       dmmf8, dmmf9, dmmf10, dmmf11, dmmf12, dmmf13,
+    ].map(asLevel),
+  },
+  {
+    id: 'fljs',
+    title: '輕量函數式 JavaScript（Functional-Light JavaScript）',
+    icon: 'pencil',
+    levels: [
+      fljs1, fljs2, fljs3, fljs4, fljs5, fljs6, fljs7,
+      fljs8, fljs9, fljs10, fljs11, fljs12, fljs13,
     ].map(asLevel),
   },
   {

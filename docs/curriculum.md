@@ -101,6 +101,29 @@
 | Chapter 12: Persistence | dmmf-12 持久化 | ✅ |
 | Chapter 13: Evolving a Design and Keeping It Clean | dmmf-13 演進設計，保持乾淨 | ✅ |
 
+## 第六章 Functional-Light JavaScript（Kyle Simpson）
+
+> 全書 11 章＋3 個附錄，一樣沒有數字小節編號，關卡對照每個數字 Chapter，一章一關；
+> 附錄 A、B 各自也有實質設計概念可以出題，各開一關；附錄 C（FP Libraries）只是書單／
+> 第三方函式庫介紹，沒有概念可出題，跳過不排入地圖。本書原著就是 JS，題目多半可以直接
+> 執行驗證（predict-output/fill-in），只有少數純設計理念題維持 concept 型別。
+
+| 書中章節 | 關卡 | 狀態 |
+|:--|:--|:--|
+| Chapter 1. Why Functional Programming? | fljs-1 為什麼要函數式？ | ✅ |
+| Chapter 2. The Nature Of Functions | fljs-2 函式的本質 | ✅ |
+| Chapter 3. Managing Function Inputs | fljs-3 管理函式的輸入（Currying vs 偏函式應用） | ✅ |
+| Chapter 4. Composing Functions | fljs-4 組合函式 | ✅ |
+| Chapter 5. Reducing Side Effects | fljs-5 減少副作用 | ✅ |
+| Chapter 6. Value Immutability | fljs-6 值的不可變性 | ✅ |
+| Chapter 7. Closure vs. Object | fljs-7 Closure 對比物件 | ✅ |
+| Chapter 8. Recursion | fljs-8 遞迴 | ✅ |
+| Chapter 9. List Operations | fljs-9 走訪清單的操作 | ✅ |
+| Chapter 10. Functional Async | fljs-10 函數式非同步 | ✅ |
+| Chapter 11. Putting It All Together | fljs-11 整合應用 | ✅ |
+| Appendix A. Transducing | fljs-12 Transducing | ✅ |
+| Appendix B. The Humble Monad | fljs-13 謙遜的 Monad | ✅ |
+
 ## 產題規則備忘
 
 - **以書籍為知識依據的章節**（目前是 `fp`、`sicp`；未來若再新增其他書籍章節比照辦理）：這些書不是官方線上
