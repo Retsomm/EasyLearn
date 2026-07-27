@@ -756,6 +756,104 @@ export const chapterSummaries: Record<string, LevelSummary[]> = {
       ],
     },
   ],
+  'js-advanced': [
+    {
+      levelId: 'jsa-1',
+      keyPoints: [
+        'this 的值取決於函式如何被呼叫，而非如何被定義：當函式作為物件方法被呼叫時（obj.method()），this 指向該物件；作為獨立函式呼叫時，非嚴格模式下指向全域物件，嚴格模式下為 undefined。',
+        '箭頭函式與一般函式根本不同，它繼承外層作用域的 this 值並永久綁定，無法透過 call()、apply()、bind() 方法改變其 this，這使箭頭函式特別適合用作回呼函式以保留上下文。',
+        'Function.prototype.bind() 建立一個新函式並永久綁定 this 值，即使再次用 bind() 重新綁定也不會改變（bind 只生效一次）；而 call() 和 apply() 則是在單次呼叫時臨時指定 this 值，前者逐一傳遞參數，後者用陣列傳遞。',
+        '在類別中，實例方法的 this 指向實例物件，靜態方法的 this 指向類別本身；但若將方法解除綁定後再呼叫，嚴格模式下會因 this 為 undefined 而拋出錯誤。',
+        '非嚴格模式會進行 this 替換機制：若 this 值為 null 或 undefined 會被替換為全域物件，若為原始值則被轉換為對應的包裝物件；嚴格模式則保持 this 為原始值，不進行任何替換。',
+        '在 DOM 事件監聽器中，this 通常綁定到觸發事件的 DOM 元素；但內聯事件處理程式（如 onclick 屬性）內部的函式則不會自動綁定到該元素，其 this 會遵循一般函式規則。',
+      ],
+    },
+    {
+      levelId: 'jsa-2',
+      keyPoints: [
+        '詞法作用域（lexical scoping）是指函式能存取在其定義時所處的外層作用域中的變數，而不是執行時所處的作用域；JS 引擎根據程式碼中變數宣告的位置決定其可用範圍，巢狀函式因此能存取外層函式的變數。',
+        'closure 是函式與其宣告時所在詞法環境（lexical environment）的組合體；當函式從外層函式被回傳後，它仍然保留著該環境的參照，使得即使外層函式執行完畢，內層函式仍能存取外層的變數。',
+        'ES6 之前 var 只有函式作用域和全域作用域，導致在迴圈中建立的多個 closure 會共享同一個 lexical environment，使得事件監聽器都會用到最後一次的變數值；改用 let 或 const 建立區塊作用域，每次迴圈都會產生獨立的環境。',
+        'closure 常用於實現私有變數和私有方法，如計數器模式：透過立即執行函式（IIFE）把變數隱藏起來，只透過回傳的公開方法（如 increment、decrement）操作私有狀態，達成資料隱藏和封裝的目的。',
+        '效能上不該在物件建構子內部定義方法，因為每次建立新物件都會重複建立新的 closure；改在 prototype 上定義方法能讓所有物件實例共享同一個方法定義，減少記憶體消耗。',
+      ],
+    },
+    {
+      levelId: 'jsa-3',
+      keyPoints: [
+        '同步程式會一行一行依序執行，瀏覽器必須等待每一行完成才能繼續下一行，這導致如果某個函式執行時間長（如計算大量質數），整個程式會被卡住無法回應使用者輸入。',
+        '非同步程式設計讓長時間執行的工作能在背景進行，主程式仍能持續回應其他事件（如使用者點擊、輸入文字），待工作完成後才取得結果，解決了同步函式造成的 UI 阻塞問題。',
+        'JavaScript 是單執行緒語言，瀏覽器提供的非同步 API（如 fetch()、getUserMedia()、showOpenFilePicker()）會在內部啟動新執行緒執行，不會佔用主執行緒，避免畫面卡頓。',
+        '事件處理器是非同步程式的早期實現方式，透過監聽事件（如 XMLHttpRequest 的 loadend 事件）來得知操作完成並取得結果，但這種方式在複雜流程中容易形成「回呼地獄」。',
+        '回呼函式寫法會造成「金字塔厄運」問題：多個非同步操作需要依序執行時，會產生深層巢狀的回呼，使程式碼難以閱讀、維護和進行錯誤處理，這促使 JavaScript 發展出 Promise 等更好的非同步模式。',
+      ],
+    },
+    {
+      levelId: 'jsa-4',
+      keyPoints: [
+        'Promise 的 then() 方法會回傳一個新的 Promise，使得可以將多個非同步操作串連起來，而不是像傳統 callback 陷阱那樣產生深層巢狀的金字塔程式碼。',
+        '在 Promise 鏈中務必從 then() 回呼函式 return 結果或新的 Promise，否則會產生「浮動 Promise」問題，導致後續 then() 無法取得前一步的值，且容易發生競態條件。',
+        'Promise 鏈可以保持扁平結構，將所有錯誤處理集中在末尾的 catch()，這模仿了同步程式碼的 try/catch 模式，比傳統 callback 方式更易於管理和追蹤錯誤。',
+        'async/await 語法提供了比 Promise 鏈更直觀且類似同步程式碼的寫法，利用 await 關鍵字暫停執行直到 Promise 解決，但本質上仍是基於 Promise 的實作。',
+        '在 async 函式中搭配 try/catch 進行錯誤處理時，可以捕捉到 await 過程中發生的所有錯誤（包括被拋出的例外），比在 Promise 鏈中逐一加 catch() 更簡潔且不易遺漏。',
+      ],
+    },
+    {
+      levelId: 'jsa-5',
+      keyPoints: [
+        '類別宣告不會被提升（hoisting），受 let/const 的暫時死區限制，必須先宣告後使用，否則會拋出 ReferenceError，這點與函式宣告不同。',
+        'constructor 負責初始化實例，透過 this 綁定到新建立的物件，內部可使用 rest parameters 等語法；若 return 非原始值會導致該值成為 new 表達式的結果，this 則被丟棄。',
+        '私有欄位以 # 前綴宣告（如 #values），提供「硬私有」保護，編譯時就防止外部存取，即使衍生類別也無法存取父類的私有欄位，實現真正的封裝。',
+        '繼承時衍生類別必須在 constructor 中呼叫 super() 初始化父類，才能使用 this；並可透過 super.method() 呼叫父類方法，static 成員也會被繼承並可覆寫。',
+        'static 成員（static fields/methods/getters/setters）屬於類別本身而非實例，用於工具方法或命名空間化，例如 Date.now() 是靜態方法。',
+        'getter/setter 讓屬性存取表現得像是直接操作欄位（color.red = 255），但實際執行自訂邏輯；若只有 getter 則為唯讀，setter 則可進行驗證或觸發其他副作用。',
+      ],
+    },
+    {
+      levelId: 'jsa-6',
+      keyPoints: [
+        'Map 物件的鍵可以是任意型別（包括物件、函式等），而一般物件的鍵只能是字串或 Symbol；Map 有內建的 size 屬性可直接取得元素數量，無需手動追蹤。',
+        'Set 會自動排除重複值，且刪除元素時直接用值來刪除（set.delete(value)），比陣列用 indexOf 搭配 splice 的做法更簡潔有效率，也能正確處理 NaN 的相等性判斷。',
+        'WeakMap 的鍵必須是物件或非註冊的 Symbol，且對鍵只保持弱引用，當鍵物件被垃圾回收後對應的值也會成為回收候選；常用於為物件儲存私有資料而不暴露內部實作細節。',
+        'Map 和 Set 採用 SameValueZero 演算法判斷相等性，使得 -0 與 +0 被視為相等、NaN 也等於自己，這與 === 運算子的行為略有差異。',
+        'JSON 語法看起來像 JavaScript 物件，但有嚴格限制：只能包含字串、數字、布林值、null、物件和陣列，無法儲存 undefined、NaN、Infinity 或函式；屬性名稱必須用雙引號，不允許尾隨逗號和註解。',
+        'JSON.parse() 把 JSON 字串轉換成 JavaScript 物件（反序列化），JSON.stringify() 則把物件轉成字串（序列化），兩者是互補的操作，常搭配 Fetch API 使用來傳送和接收網路資料。',
+      ],
+    },
+    {
+      levelId: 'jsa-7',
+      keyPoints: [
+        '模組使用 export/import 語法共享功能：named export 需在 import 時用花括號指定名稱（如 import { draw } from \'./square.js\'），default export 則可直接匯入不用花括號，每個模組只能有一個 default export。',
+        '在 HTML 中載入模組必須在 <script> 標籤加上 type="module" 屬性，模組會自動使用 strict mode、自動 defer 載入，且只會執行一次，即使被多個 <script> 標籤引用；模組內容不會外洩到全域作用域，只有明確 export 的功能才能被其他模組使用。',
+        '使用 import * as Module 語法可以把模組所有的 export 集合成一個物件（如 import * as Square from \'./square.js\' 後用 Square.draw() 呼叫），避免多個同名函式匯入時的命名衝突問題。',
+        '動態模組載入透過 import() 函式實現，回傳 Promise 物件，允許在執行期依條件載入模組（如按鈕點擊時才載入相關功能），在瀏覽器主執行緒、Web Worker 中都支援，但 Service Worker 不支援。',
+        '循環依賴不一定會失敗，只要匯入的值在實際使用時才被讀取（如透過 setTimeout 延遲）就能正常運作；但若同步讀取未初始化的循環依賴變數，會拋出 ReferenceError，因此應盡量避免循環匯入。',
+        'Import maps 提供模組指定符的別名映射機制，允許用短名稱（如 \'square\'）代替長路徑、進行 URL 重對應、管理套件版本，配合 scopes 可對不同執行路徑套用不同映射，簡化跨環境模組管理的複雜度。',
+      ],
+    },
+    {
+      levelId: 'jsa-8',
+      keyPoints: [
+        '迭代器是實現了 Iterator protocol 的物件，必須擁有 next() 方法回傳 {value, done} 結構，藉此定義序列的逐步消費方式，讓無限序列（如 0 到 Infinity）也能高效表示而無需一次性配置記憶體。',
+        'generator function（function* 語法）提供比手寫迭代器更簡潔的方案，呼叫時回傳 Generator 物件而非直接執行程式碼，每次遇到 yield 關鍵字便暫停執行並回傳該值，使複雜迭代邏輯變得易讀。',
+        'iterable 物件必須實現 [Symbol.iterator]() 方法，才能被 for...of 迴圈、展開語法等語法識別；單次迭代的迭代器（如 Generator）應讓 [Symbol.iterator]() 回傳 this，多次迭代的則應每次回傳新的迭代器。',
+        'generator 的 next(value) 方法可以接收參數，該值會作為前一個 yield 表達式的結果被注入，藉此改變 generator 的內部狀態，例如費氏數列產生器可透過 next(true) 重設數列。',
+        '內建物件如 String、Array、Map、Set 都實現了 Symbol.iterator，因此原生支援 for...of 迴圈和解構語法，讓開發者不用手寫迭代邏輯即可遍歷集合元素。',
+        'generator 提供 throw() 和 return() 方法分別用於注入例外和結束迭代，throw() 會在暫停點拋出例外導致 done 設為 true，return() 則直接回傳給定值並完成 generator。',
+      ],
+    },
+    {
+      levelId: 'jsa-9',
+      keyPoints: [
+        'Promise.all() 會在陣列中任何一個 promise 被拒絕時立即拒絕整個操作，其他還在執行中的 promise 會繼續運行但其結果無法透過回傳值取得；相比之下 Promise.allSettled() 會等待所有 promise 完成（無論成功或失敗），適合用在需要蒐集完整結果的場景。',
+        '四種並行 Promise 組合方法各有不同用途：Promise.all() 要求全部成功、Promise.any() 只要任何一個成功就解決、Promise.race() 回傳第一個完成（無論成功或失敗）的結果、Promise.allSettled() 等待全部完成並回傳詳細狀態。',
+        'Promise 的回呼函式永遠不會同步執行，即使 promise 已經被解決；它們被放入 microtask queue 中，只在目前 JavaScript 執行堆疊清空後才會被呼叫，保證了執行順序的可預測性。',
+        'microtask 和 task 佇列有不同的優先級：Promise 回呼（microtask）會在 setTimeout 等 task 回呼之前執行，這在混用 promise 和傳統回呼時可能造成非預期的執行順序，了解兩者的區別對除錯很重要。',
+        '解決「Zalgo 問題」（回呼有時同步執行、有時非同步執行導致的不確定性）是 promise 相對於原始回呼 API 的優勢；promise 實作會自動維護回呼佇列並強制非同步執行，讓開發者不用考慮時序問題。',
+        '循序性 promise 組合（sequential composition）可用 reduce 實現，但要注意不要回傳巢狀的 promise chain；改用扁平化的 then 鏈或 async/await 會更簡潔且錯誤處理更統一，因為平面結構的 catch 能捕捉所有步驟的失敗。',
+      ],
+    },
+  ],
 }
 
 export const getChapterSummary = (chapterId: string): LevelSummary[] | undefined =>
