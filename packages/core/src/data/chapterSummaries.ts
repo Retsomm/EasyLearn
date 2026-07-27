@@ -514,6 +514,149 @@ export const chapterSummaries: Record<string, LevelSummary[]> = {
       ],
     },
   ],
+  fljs: [
+    {
+      levelId: 'fljs-1',
+      keyPoints: [
+        '書一開頭就用同一個任務的兩段程式碼對照：第一段用 for 迴圈、暫存變數、跨函式的隱含資料流；第二段改用 FP.compose／FP.pipe／filterReducer 組出 reducer，具體示範「命令式（how）」與「宣告式（what）」的差異，而不是空談定義。',
+        '作者提出「confidence（信任）」的核心主張：能透過閱讀、推理就確認程式碼會做什麼，才是真正信任程式碼；只靠跑測試套件通過就安心，是一種心存僥倖，FP 的價值在於讓程式碼本身可驗證、可推理。',
+        '書中引用「開發者約 70% 維護時間花在讀程式碼」的統計，強調可讀性的關鍵是「熟悉度」而非字元數多寡：看到 map(..) 能立刻辨認語意，但每次遇到 for 迴圈都得重新讀懂內容在做什麼。',
+        '作者坦承宣告式 FP 的可讀性曲線一開始會先下降（因為不熟悉這種寫法），要撐過陣痛期才會回升；這也是書名取「Functional-Light」的原因——刻意避開傳統 FP 教材一開始就丟數學符號與術語的做法。',
+        '用 YAGNI（You Ain\'t Gonna Need It）原則提醒：學到 FP 的技巧不代表每處程式碼都該套用，取捨標準應是「這裡套用是否讓程式碼更好讀」，而非展示 FP 造詣；書中強調每一行程式碼都有讀者要付出的理解成本。',
+      ],
+    },
+    {
+      levelId: 'fljs-2',
+      keyPoints: [
+        '書中先用數學 f(x) 的「morphism（映射）」概念定義函式，再據此區分「函式」與「程序」：程序是任意一段功能、可以沒輸入沒輸出，函式則一定接收輸入並回傳輸出，FP 主張盡量寫函式、避免程序。',
+        'arguments（呼叫時傳入的值）與 parameters（函式內接收的具名變數）是兩回事；arity 指宣告的參數個數，可用 fn.length 檢查，但預設值、解構、...rest 參數都會讓 length 回報失真，例如 function foo(x,y=2){} 的 length 其實是 1。',
+        '... 運算子有對稱的雙重身份：寫在參數列是「gather」（把剩餘引數收集成陣列），寫在呼叫的引數列則是「spread」（把陣列展開成個別引數）；同時陣列／物件解構參數可以模擬類似「具名引數」的效果，呼叫端能只給需要的屬性、順序也不受限。',
+        '書中用 sum(list) 範例區分「顯式輸出」與「隱式輸出」：函式內對傳入的陣列做 list[i]=0，即使沒有 return 那個陣列，呼叫端的原始陣列也被意外改動了——這種隱式輸出稱為 side effect，沒有 side effect 的函式稱為 pure function。',
+        'Closure（閉包）被定義為「函式記得並能存取自己詞法作用域外的變數，即使該函式在別的作用域被執行」；書中用 makeAdder(x) 回傳 sum(y)=>x+y 示範如何用閉包先記住一個輸入、之後才提供第二個輸入，這正是下一章偏函式應用／currying 的基礎。',
+        '作者主張 this 本質上是函式的一個「隱含輸入」，取決於呼叫方式而非詞法位置；FP 應避免依賴 this，改把 context 物件當作明確參數傳入（例如把 sum.call(context) 改寫成 sum(context)），這樣函式之間才容易互相組合、串接。',
+      ],
+    },
+    {
+      levelId: 'fljs-3',
+      keyPoints: [
+        'unary(fn) 的具體用途：[\'1\',\'2\',\'3\'].map(parseInt) 會出錯，是因為 map 每次回呼會傳入 (value, index, array) 三個引數，parseInt 把第二個引數 index 誤當成 radix；用 unary(..) 包成只吃第一個引數的函式即可修正，具體示範「刻意減少引數」的實際價值。',
+        'partial(fn, ...presetArgs) 是「偏函式應用」：用 closure 記住前面幾個已確定的引數（例如 ajax 的 url），回傳一個只等待剩餘引數的新函式，如 var getOrder = partial(ajax, "url")，本質是把函式的 arity 降低。',
+        'curry(fn, arity) 是「柯里化」：把一個 n 元函式拆成 n 個依序呼叫、每次只吃一個引數的 unary 函式鏈，如 curriedAjax(url)(data)(cb)；跟 partial 的差別在於 partial 一次可以把剩下所有引數一起傳入，curry 每次呼叫只能給一個，直到集滿 arity 才真正執行原函式。',
+        '書中特別點出 JS 內建的 bind(..) 把「綁定 this」和「偏函式應用」兩種功能混在一起：若只想做偏函式應用又不在乎 this，得傳一個礙眼的 null 佔位第一個引數，因此 FP 圈傾向用專門的 partial(..) 工具而非 bind。',
+        'currying／partial application 的意義不只是語法花俏：能把「何時、何處指定哪個引數」分散到程式碼不同位置與時間點，curry 過的 unary 函式也更容易做函式組合（compose），還能把通用函式特化成語意清楚的具名函式（如 getCurrentUser 比裸的 ajax 呼叫更能表達意圖）。',
+        'Point-free 風格（tacit programming）：去掉不必要的參數對引數的映射，例如用 map(double) 取代 map(v => double(v))；書中示範用 not(predicate) 把 isShortEnough 包裝成 isLongEnough，再結合 uncurry、partialRight、when 組出完全不出現 str／predicate 參數名的 printIf，呈現 FP 社群對「去掉多餘具名參數」偏好與取捨的實例。',
+      ],
+    },
+    {
+      levelId: 'fljs-4',
+      keyPoints: [
+        '組合(composition)是把一個函式的輸出直接當成下一個函式的輸入;書中用 compose2(fn2, fn1) 說明一個容易搞混的地方——參數列出的順序是「由左到右」對應手動巢狀呼叫的寫法(如 unique(words(str))),但實際執行順序卻是「由右到左」(fn1 先跑、fn2 後跑),程式碼順序跟執行順序是兩件事。',
+        '書中用糖果工廠的比喻描述組合的演進:一開始用輸送帶把三台機器串起來,後來把整條生產線收進一個外殼變成一台「複合機器」,對應到程式碼就是把巢狀呼叫包成一個具名函式(如 uniqueWords),再進一步做出「機器製造機器」的通用 compose(...fns) 工具,能一次串接任意數量的函式。',
+        '組合的方向不是絕對固定的:把 words 和 unique 對調順序(compose2(words, unique))會產生語意完全不同的函式,從「取出不重複的單字」變成「取出不重複的字母」,因為 words() 內部會先用 String() 強制轉型,說明組合順序本身就是設計上要刻意決定的事。',
+        'compose(...fns) 有多種實作取捨:用陣列迴圈每次 pop 出函式來執行,每次呼叫都要重跑一次迴圈;改用 reduce 包成巢狀函式的版本則是「lazy」,組合當下就先展開好巢狀結構,之後呼叫只需執行——但兩種寫法都要注意如果直接操作傳入的 fns 陣列(如 .pop() 會改變原陣列),沒有先複製一份,組合出來的函式可能只能安全呼叫一次。',
+        'pipe(..) 其實就是 reverseArgs(compose(..)),差別只在於函式列出的順序改成「由左到右」對應執行順序,讀起來更符合直覺,也更方便用 partial(pipe, ...) 預先指定前面幾個步驟,對比 compose 得用比較繞的 partialRight 才能做到同樣的事。',
+        '組合的核心價值是把「what(要做什麼)」跟「how(怎麼一步步算出來)」分開:呼叫端只要看 compose(...)/pipe(...) 組出來的函式名稱就知道用途,不必關心內部怎麼實作;書末範例示範用 prop、setProp、makeObjProp 搭配 compose,把一段巢狀 callback 改寫成完全沒有中間變數(point-free)的 lookupPerson 組合鏈。',
+      ],
+    },
+    {
+      levelId: 'fljs-5',
+      keyPoints: [
+        '區分 side effect(輸出的意外變化,例如函式內部直接對外部變數賦值 y = x * 2)跟 side cause(輸入的隱藏依賴,例如函式讀取一個沒當作參數傳入的外部變數 y):兩者都會讓程式的因果關係變得不直接,逼讀者得去翻函式內部實作才能確定它到底做了什麼。',
+        '不是所有自由變數(free variable)都算 side cause:書中舉例 const PI 或者穩定不會被重新賦值的函式參照(如 foo 內呼叫 bar),因為它們的值從頭到尾不變,等於可以直接內聯替換而不影響行為;但 Math.random() 這種在 JS 裡拿不到 seed 的偽隨機數,則必須被當成貨真價實的 side cause。',
+        '用一個非同步的使用者/訂單案例(fetchUserData、fetchOrders、deleteOrder)示範兩種 side effect 造成的 bug:一種是明顯的執行順序 race condition(onOrders 比 onUserData 先觸發就會出錯);另一種更隱晦,是 isLatestOrder 這類暫存旗標在 callback 延遲期間被其他非同步操作偷偷改動了共享狀態,導致資料悄悄跟畫面不同步卻不會拋出任何錯誤。',
+        '冪等(idempotence)有兩種定義:數學上是 f(x) 跟 f(f(x)) 結果相同(如 Math.abs、字串轉大寫 upper());程式面向則是「呼叫一次」跟「呼叫很多次」對程式狀態的影響相同,例如 obj.count = 2 是冪等的直接賦值,但 obj.count++ 每呼叫一次狀態就多變一次,不算冪等。',
+        '參照透明(referential transparency):一個純函式的呼叫可以被它的回傳值直接取代,而不改變程式行為,例如 calculateAverage(numbers) 這行呼叫永遠可以換成常數 9 而邏輯不變;書中也討論了「沒有被其他地方觀察到的 side effect」(例如用全域 cache 做 memoization,但沒有其他程式碼存取那個 cache)算不算破壞這個定義的灰色地帶。',
+        '修正不純函式的具體做法:能改的話優先把 side effect 移到呼叫端讓它變得顯眼(如把 addMaxNum 內部的 arr.push 移出函式本體,改成呼叫端自己執行 push);不能改原函式時,可以寫一層 wrapper 函式在呼叫前後手動存檔、還原外部狀態(存原狀態、設初始值、執行、擷取結果、復原、回傳),把 side effect 限制在自己能掌控的邊界內。',
+      ],
+    },
+    {
+      levelId: 'fljs-6',
+      keyPoints: [
+        '各種 primitive(數字、字串、布林)本來就是不可變的,連 JS 的「boxing」怪癖(存取 primitive 屬性時會偷偷包成 Number/String 物件)也無法真的讓它變動——像 x.length = 4 這種賦值在字串或數字上會被靜默忽略,只有在嚴格模式下才會拋出錯誤。',
+        '值不可變不代表程式狀態不能變,而是「要改變狀態時建立一個新值,而不是直接改動舊值」:書中範例 addValue(arr) 用 [...arr, 4] 產生新陣列,而不是對傳入的 arr 做 push,這樣呼叫端的原始資料不會被意外動到,狀態轉移完全可控且可預期。',
+        '非 primitive 值(物件、陣列)當參數傳遞時,傳的其實是「參照的複製」,所以接收方函式可以透過這個參照把呼叫端原本的物件/陣列悄悄改掉;書中示範可以用展開語法傳一份複製品(foo([...arr]))來避免外部函式意外 mutate 到原始陣列。',
+        'const 是常被誤解的關鍵字:它只保證「變數不能被重新賦值」,完全不保證「這個值不能被改動」——const x = [2] 之後執行 x[0] = 3 完全合法,因為陣列本身依然可變;作者甚至主張 const 容易誤導讀者以為值不會再變,寧可用 var/let 搭配「不去重新賦值」的自我紀律,反而是更誠實的意圖信號。',
+        'Object.freeze(..) 才是真正能凍結值的做法,但只做「淺層」凍結,只鎖最外層的屬性/索引,巢狀的子陣列或子物件不會被連帶凍結;要做到深層不可變,得自己遞迴走訪整個結構逐層 freeze,或改用 Immutable.js 這類函式庫提供的持久化資料結構(概念上類似 Git,只記錄每次變動的差異而非整份複製)來兼顧效能與不可變性。',
+        '不論收到的值實際上是不是真的不可變,函式內部都應該「當作」它不可變來處理:書中對比 updateLastLogin(user) 用 Object.assign({}, user) 複製後才改 lastLogin,跟直接改 user.lastLogin 兩種寫法;同時整理 JS 陣列方法裡天生「純」的(concat、slice、map、filter 都回傳新陣列)跟會就地 mutate 原陣列的(push、pop、splice、sort、reverse、fill),用到後者時要格外小心只能用在自己本地建立、確定沒有其他外部參照的陣列上。',
+      ],
+    },
+    {
+      levelId: 'fljs-7',
+      keyPoints: [
+        '本章用 Anton van Straaten 那則「物件是窮人的 closure／closure 是窮人的物件」的公案破題：closure 與物件其實是同一份狀態的兩種同構（isomorphic）表示法，可以互相轉換而不遺失資訊，並不是互斥的兩套機制。',
+        '書中示範把 `{x,y,z}` 這種物件改寫成巢狀的 closure（讓內層函式回傳 `[x,y,z]`），也示範反過來把 `point(x1,y1)` 這種 closure 改寫成明確傳入 `{x1,y1}` 物件的函式，證明兩者能一比一互換來裝載同一組狀態與行為。',
+        '結構可變性不同：closure 一旦宣告，能捕捉的變數就固定死了、不能事後增減；物件預設可以自由新增/刪除屬性（除非被 `Object.freeze`），所以像持續增長的按鍵紀錄清單，用陣列（物件）自然擴充會比一直包新的 closure 更合適。',
+        '隱私與可見度是取捨：closure 天生把狀態關起來，只有內部程式碼能重新賦值，讓人更容易確信變數沒有被亂改（改善純度信心）；物件狀態預設公開，配上 `forEach` 這類內建方法很容易列舉處理，但要保護它就得手動 `Object.freeze`，而且凍結是全有全無、不可逆的。',
+        '複製狀態這件事物件明顯占優：陣列/物件可以直接用展開語法或 `Object.assign` 做淺拷貝；要複製藏在 closure 裡的狀態，得自己手刻一套能把內部值抽出來的 API，非常繁瑣，實務上很少划算。',
+        '效能面：作者示範用 `this`＋`bind(..)` 的物件寫法（`StudentRecord.bind({...})`）在現代 JS 引擎中已經跟手刻 closure 版本一樣快甚至更快，提醒效能高下沒有絕對答案，需要依場景實測。',
+      ],
+    },
+    {
+      levelId: 'fljs-8',
+      keyPoints: [
+        '遞迴的定義是函式呼叫自己，直到滿足 base condition 為止；書中用 `foo(x)`（不斷把 x 除以 2 直到小於 5）示範呼叫堆疊先一路往下疊，滿足終止條件後再把回傳值層層往回傳，最終才得到結果。',
+        '區分 direct recursion（函式呼叫自己，如 `foo`、`isPrime`、`fib`）與 mutual recursion（兩個以上函式互相呼叫形成循環，如 `isOdd` 呼叫 `isEven`、`isEven` 又呼叫 `isOdd`）。',
+        '遞迴的宣告式價值在於把迴圈與分支狀態都丟給呼叫堆疊處理：書中把找最大偶數的 `maxEven(num1, ...restNums)` 遞迴版本，拿來對比帶 `-Infinity` 起始值與一堆條件判斷的命令式 for-loop 版本，說明遞迴定義更貼近問題本身的敘述方式。',
+        '遞迴的實務限制是記憶體：每次呼叫都要佔一個 stack frame，JS 引擎會在達到（依實作而異的）堆疊上限時丟出 RangeError，書中直接示範 `isOdd(33333)` 就會把堆疊炸掉，這也是遞迴在 JS 裡不受重用的主因。',
+        'ES6 起規範了 Proper Tail Calls（PTC）：只要函式呼叫是該函式執行的最後一步、且用 `return foo(..)` 這種形式直接回傳（並在嚴格模式下），引擎就能重複利用/捨棄目前的 stack frame，讓遞迴以固定記憶體執行；但像 `fib` 這種一次呼叫自己兩次的二元遞迴，最多只有一次呼叫能落在 tail 位置，天生無法完全 PTC 化。',
+        '當無法自然套用 PTC 時，書中介紹三種因應手法：把中間結果往前傳成參數（如 `sum(result, num1, ...nums)`）改寫成尾呼叫形式、用 Continuation Passing Style 把後續呼叫包成傳入的 continuation 函式（如 `fib(n, cont)`）、以及用 trampoline 讓每層只回傳「下一步要執行的函式」交給外層迴圈執行、使堆疊深度恆為 1——三種都是用程式可讀性換取記憶體可控性。',
+      ],
+    },
+    {
+      levelId: 'fljs-9',
+      keyPoints: [
+        '三個核心清單操作定位不同：`map(..)` 把每個元素投影成新值組成新清單（也就是 functor 的概念：對整個複合值套用同一個轉換函式並產生新的複合值）、`filter(..)` 用 predicate 函式挑選要保留哪些值、`reduce(..)`（folding）把整個清單摺疊成單一結果；書中特別把 `forEach`／`some`／`every` 排除在 FP 清單操作之外，因為它們偏向副作用或收斂成布林值，不符合這套模型。',
+        '書中點出 filter 語意上的混淆：程式裡的 `filter` 其實是「篩選留下（filter in）」而非日常語感的「篩選排除（filter out）」，因此建議明確定義 `filterIn`／`filterOut`（`filterOut` 內部用 `not(predicateFn)` 包一層）取代硬要把 predicate 命名成雙重否定（例如硬凹一個回傳 false 才算偶數的 isEven）。',
+        'map 與 filter 都能改寫成用 `reduce(..)` 實作（在 reducer 裡用 `push`/`concat` 建出新陣列），說明 reduce 是這三者中最基礎、最萬用的「瑞士刀」工具，也是後面進階操作的基礎。',
+        '書中示範幾個建立在 reduce 之上的進階操作：`unique(..)`（用 `indexOf` 判斷是否為第一次出現）、`flatten(..)`（遞迴攤平巢狀陣列，可指定攤平深度，呼應第 8 章的遞迴）、`flatMap(..)`／`chain(..)`（把 map 完再攤平的兩次走訪合併成一次以省效能）、以及 `zip(..)`（把兩個清單逐一配對成子陣列，較短的清單耗盡就停）和 `mergeLists(..)`（交錯合併兩個清單、保留較長清單多出的值，跟 zip+flatten 的組合效果不同）。',
+        'Fusion（融合）技巧：把相鄰的多個 `map(..)` 呼叫用 `compose`/`pipe` 合併成一個函式再只呼叫一次 `map`，避免同一份清單被重複走訪多次；書中用 `removeInvalidChars → upper → elide` 這條字串轉換鏈示範融合前後的差異。',
+        '清單操作不限於陣列：書中親自實作二元搜尋樹（BST）的 `BinaryTree.map/filter/reduce`（用中序走訪），每次都回傳一棵新樹而不直接改動原樹，證明 map/filter/reduce 本質上是「資料結構操作」，不是陣列專屬的能力。',
+      ],
+    },
+    {
+      levelId: 'fljs-10',
+      keyPoints: [
+        '本章把「時間」本身當成最難管理的狀態：當程式狀態的轉換不是立即發生、而是分散在事件流裡，管理複雜度會急遽上升，作者用 lookupCustomer/lookupOrders 兩個並行 callback 互相搶跑（race condition）的例子，說明得靠一個外部 closure 變數 customer 手動判斷誰先執行。',
+        '改用 Promise 後，customerPromise.then() 內嵌 ordersPromise.then()，兩者的執行順序被結構保證，不再需要手動判斷誰先完成；書中把這個效果形容成「Promise 把 = 賦值這個同步動作，以可信賴、與時間無關的方式延伸到未來」。',
+        '書中用 eager 與 lazy 對比一般陣列與想像中的 LazyArray：一般的 a.map() 是 eager，會針對呼叫當下 a 裡已存在的值一次算完；LazyArray 的 mapLazy 則是每次有新值 push 進 a 才觸發一次映射，不需要事先知道 a 未來所有的值。',
+        'Reactive FP 把 producer（例如用 setInterval 持續 push 值的來源）與 consumer（用 listen 訂閱新值）的關注點分開，並強調 b = a.map(...) 這種宣告式寫法讓消費端不用管值何時、從哪裡來，比起「a 主動呼叫 b.onValue(...)」的命令式寫法更能各自獨立推理。',
+        'Observable（書中示範用 RxJS）就是把這種「lazy、隨時間到來的陣列」概念做成真正可用的資料結構：Subject 同時具備 Observer 與 Observable 的角色，可以用 filter/distinctUntilChanged/throttle/map 等 operator 串成鏈，每個 operator 都回傳新的 Observable 可以繼續串接。',
+        '本章總結：陣列是 eager 的資料結構（值都已經在手上），Observable 則是它的 lazy、隨時間展開的對應版本，map() 在陣列上對每個現有值跑一次，在 Observable 上則是每次有新值進來才跑一次並推到輸出 Observable。',
+      ],
+    },
+    {
+      levelId: 'fljs-11',
+      keyPoints: [
+        '股票報價器範例把 DOM 操作（side effect）盡量壓縮到最外層：資料的格式化（如 formatCurrency、formatSign）全部用純函式處理，只有最後呼叫 setElemAttr、setDOMContent、appendDOMChild 這幾個明確標注 `!!SIDE EFFECTS!!` 註解的函式才真正碰觸 DOM。',
+        'formatStockNumbers 用 reduce() 把 [price, change] 這種屬性-值 tuple 陣列逐一套進 setProp()（此函式會先 clone 物件再設屬性），確保處理 stock 資料時不直接修改原始訊息物件，呼應「即使可以 mutate 也當作不可變值來處理」的原則。',
+        'makeObservableFromEvent 用 curry 包住 Rx.Observable.fromEvent 並綁定 server，再透過 pipe(map, curry(zip), map(spreadArgs(...))) 這條管線，把 ["stock","stock-update"] 這兩個事件名稱一次轉成兩個對應格式化函式的 Observable，示範 map/zip 如何把一組事件名稱轉成一組訂閱好的資料流。',
+        'updateStockElems 用 getClassName 配合 stripPrefix 去掉 "stock-" 前綴取得屬性名稱，再用該名稱從 data 物件取值、與對應的 DOM 子元素 zip 成 tuple，接著 filterOut 掉值為 undefined 的 tuple（因為 stock-update 訊息沒有 name 屬性），只更新真正有新資料的 span。',
+        'addStock 建立新 `<li>`/`<span>` 節點時，先用 map(createElement) 一次建立四個節點，再用 zip 把節點與屬性值 tuple 配對、雙層 each() 迴圈設定屬性，最後才用 reduce(appendDOMChild) 把子節點串接進父節點，示範同一批 FP 工具（map/zip/each/reduce）如何組合出完整的 DOM 建構流程。',
+        '全書收尾強調：這個範例的重點不是提供一套該照抄的寫法，而是展示如何把前面十章的個別技巧（curry、pipe/compose、immutability、reduce/map/zip/each、Observable）整合在同一段真實情境的程式碼裡協同運作。',
+      ],
+    },
+    {
+      levelId: 'fljs-12',
+      keyPoints: [
+        '問題起點：words.filter(isLongEnough).filter(isShortEnough) 這種相鄰 filter 鏈，在陣列上效能不佳、在 Observable 上更糟（因為每個 filter 都會產生一個新的中介 Observable），而且像 isShortEnough(isLongEnough(str)) 這樣直接組合兩個 predicate 行不通，因為 predicate 回傳的是布林值，跟下一個 predicate 預期吃字串的「形狀」對不上。',
+        '解法第一步是把 filter/map 都改寫成 reduce 的形式（reducer 統一是「吃 (list, val) 兩個參數、回傳新 list」的形狀），再把其中「把值合併進 list」的共同邏輯抽出成獨立的 combinerFn（例如 listCombine），讓 mapReducer/filterReducer 都改成接受一個外部傳入的 combinerFn 而非寫死。',
+        '關鍵洞察：reducer 本身的形狀（吃兩個參數、回傳一個值）恰好跟 combinerFn 的形狀一樣，所以一個 reducer 可以被當成另一個 reducer 的 combinerFn 使用；把這些 curry 過的 reducer 產生函式用 compose() 疊在一起，就能推導出「同時做完 map + 兩層 filter」的單一組合 reducer（transducer）。',
+        '反直覺的細節：一般 compose() 的執行順序是由右到左（跟列出順序相反），但組合 transducer 時因為抽掉 combinerFn 這層反轉了套用順序，所以 compose() 裡列出的順序反而正好等於你想要的實際執行順序（先 map 再 filter 再 filter）。',
+        'transducer 的威力在於combinerFn 本身可以替換：同一個 transducer 傳入 listCombine 會把結果收集成陣列，傳入 strConcat 則會把結果串接成字串，代表同一組 map/filter 邏輯可以套用在完全不同的輸出資料型別上，這也是 transduce(transducer, combinerFn, initialValue, list) 這個工具函式存在的意義。',
+        '本章總結：transducing 意指「用 reduce 來做轉換」，本質是把 map/filter 等操作先降階為形狀一致的 reducer 再組合起來，效果對 Observable 這種逐一處理大量事件的場景尤其明顯，能省去建立多個中介資料結構/Observable 的開銷。',
+      ],
+    },
+    {
+      levelId: 'fljs-13',
+      keyPoints: [
+        'monad 被定義為一種「值的型別」：把某個值連同一組固定行為（map、chain 也叫 bind/flatMap、ap）包裝在一起的資料結構；不同種類的 monad（Just、Nothing、Maybe、IO 等）用不同名稱實作這組方法，作者稱之為「鬆散的介面（loose interface）」而非統一規格。',
+        'Just(val) 的 map(fn) 會把 fn 套用在內部值上、再包回新的 Just；chain(fn)（等同 bind/flatMap）則是直接回傳 fn(val) 本身，不再包成 monad，書中拿陣列的 flatMap 攤平巢狀陣列類比：map 會產生「monad 包 monad」，chain 則把外層攤平掉。',
+        'ap() 的用法是：先用 A.map(curry(sum)) 把 A 內的值套進一個柯里化函式、產生「monad 裡包著一個記得第一個參數的函式」，再對這個結果呼叫 .ap(B)，等於把 B 內的值當成第二個參數送進去，兩個獨立 monad 的值就這樣被合併成一個新結果（例如 A.map(curry(sum)).ap(B) 算出兩者相加）。',
+        '作者刻意採用「不做 null 檢查」的純版 Maybe（只有 Just/Nothing 兩種狀態），跟坊間常見「map() 內建自動判斷 null/undefined 就切換成 Nothing」的簡化版不同；純版做法是額外寫一個 safeProp() 自行判斷是否為空值再回傳 Just 或 Nothing，用 chain() 串接，一樣能達到「一旦中途遇到空值就整條短路」的效果。',
+        'MaybeHumble 範例：用一個 egoLevel 是否小於 42 的條件決定回傳 Just 或 Nothing，鏈式呼叫 chain(learn(...))／chain(share(...)) 時只要中途 ego 值超過門檻，後續整條鏈就自動變成無動作（Nothing 短路），具體示範 monad 如何把「條件式中斷後續處理」的流程控制封裝進資料結構本身，而不必額外寫 if 判斷。',
+      ],
+    },
+  ],
 }
 
 export const getChapterSummary = (chapterId: string): LevelSummary[] | undefined =>
