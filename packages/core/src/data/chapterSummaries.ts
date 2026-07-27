@@ -973,6 +973,323 @@ export const chapterSummaries: Record<string, LevelSummary[]> = {
       ],
     },
   ],
+  'react-interview': [
+    {
+      levelId: 'ri-1',
+      keyPoints: [
+        'React Router 建立在 history 套件之上,依環境提供 BrowserRouter(HTML5 history API)、HashRouter(hash 路由,適合靜態伺服器)、MemoryRouter(記憶體內路由,用於測試或 React Native)、StaticRouter(SSR 用)四種 Router,各自對應不同的 history 實例。',
+        'history 物件的 push() 會在瀏覽紀錄堆疊新增一筆位置,replace() 則直接取代目前位置,可以把 history 想成一個「已訪問位置」的陣列來理解兩者差異。',
+        'React Router v4 拿掉了內建的 query string 解析功能,官方建議自行搭配 query-string 套件或原生 URLSearchParams 解析 props.location.search,並注意 IE11 需要 polyfill。',
+        '想在元件外部觸發導航,可以自建一個匯出 createBrowserHistory() 產生的 history.js 模組,交給 <Router history={history}> 使用,之後任何檔案 import 這個 history 都能呼叫 push() 導頁,不必依賴 withRouter() 或 context。',
+        '<Switch> 只會渲染第一個相符的 <Route>,沒把多個 Route 包進 Switch 會出現「Router may have only one child」警告;把不帶 path 屬性的 <Route> 放在 Switch 最後一個,就會變成任何路徑都符合的預設/NotFound 頁面。',
+        '<Redirect to="..."> 常用於登入成功後自動導頁,渲染時會把新位置覆蓋掉目前的歷史紀錄,行為類似伺服器端的重新導向。',
+      ],
+    },
+    {
+      levelId: 'ri-2',
+      keyPoints: [
+        'React Intl 是 FormatJS 底下的套件,提供元件與 API 雙軌介面處理數字、日期時間、相對時間與複數形式(pluralization)等在地化需求,號稱支援 150 多種語言,可同時跑在瀏覽器與 Node。',
+        '格式化訊息有兩種寫法:用 <FormattedMessage id defaultMessage /> 元件直接渲染出翻譯後的節點,或用 defineMessages() 定義訊息物件搭配 formatMessage() API 取得純字串。',
+        '<FormattedMessage> 回傳的是 React element 而非純文字,無法直接塞進 placeholder、alt 這類只吃字串的屬性;這時要用 injectIntl() 這個高階元件把 intl 物件注入,再呼叫 intl.formatMessage() 取得純字串使用。',
+        '透過同一個 injectIntl() 機制,也能在元件內用 intl.locale 讀出目前使用者的語系設定,而不用另外自己管理語系狀態。',
+        '日期格式化用 intl.formatDate(date, { year, month, day }) 這個方法,它正是 <FormattedDate> 元件內部呼叫的同一支 API,回傳格式化後的日期字串。',
+      ],
+    },
+    {
+      levelId: 'ri-3',
+      keyPoints: [
+        'Shallow Renderer(react-test-renderer/shallow)只把元件往下渲染一層,子元件不會真的被實例化或渲染,適合單純驗證某元件本身 render 出的結構,不受子元件內部行為干擾。',
+        'react-test-renderer 套件可以把元件渲染成純 JavaScript 物件(用 toJSON() 取得類似 DOM tree 的快照),不依賴瀏覽器 DOM 或原生環境,因此 React DOM 與 React Native 元件都能用它做快照測試。',
+        'ReactTestUtils 提供對「模擬 DOM」操作的工具函式,用來在單元測試中觸發事件、斷言渲染結果。',
+        'Jest 是 Facebook 基於 Jasmine 開發的測試框架,內建 jsdom 環境、自動尋找測試檔與自動 mock 依賴、可平行執行測試,還能用同步語法測試非同步程式碼,這些是它相對 Jasmine 的主要優勢。',
+        '最小的 Jest 測試流程是:寫一支被測函式(如 sum.js)、寫對應的 .test.js 用 test() 搭配 expect().toBe() 斷言,再於 package.json 設定 "test": "jest" 後執行 npm test。',
+      ],
+    },
+    {
+      levelId: 'ri-4',
+      keyPoints: [
+        'Flux 是單向資料流架構:Action 描述發生了什麼、唯一的 Dispatcher 負責把 Action 分派給各個 Store、Store 保存狀態並在異動後發出變更事件、View(React 元件)訂閱 Store 更新畫面並可能再觸發新的 Action;Redux 可視為對這套精神的重新設計與簡化。',
+        'Redux 的三大核心原則是:整個應用狀態存在單一 store 的物件樹裡、狀態唯讀(只能透過 dispatch 一個描述變化的 action 物件來改變)、以及用純函式 reducer(舊 state + action → 新 state)描述狀態轉換,在 reducer 裡再次 dispatch action 屬於反模式,會導致連鎖副作用。',
+        'mapStateToProps() 把 store 狀態映射成元件的 props,mapDispatchToProps() 把「觸發 dispatch」的行為映射成 props,兩者都可以額外接收 ownProps 參數依元件自身的 props 決定回傳內容,最後透過 connect() 這個高階元件把兩者接上目標元件。',
+        'Redux 本身沒有處理非同步的機制,需要中介軟體:redux-thunk 讓 action creator 直接回傳一個函式(可依序 dispatch loading/success/error),redux-saga 則用 generator 搭配 call()(呼叫 promise)、put()(dispatch action)等 effect 把非同步流程寫成可暫停/取消的「另一條執行緒」,兩者可以在同一專案並存混用。',
+        'Redux DevTools 支援時間旅行除錯:可檢視每個 action 對應的 state 與 payload、可以「取消」某個 action 回到過去狀態、reducer 程式碼改動後歷史 action 會重新演算一次,搭配 persistState() 還能讓除錯 session 在重新整理頁面後留存。',
+        '要重置整個 store 狀態(例如登出),常見做法是包一層 root reducer 攔截特定 action(如 USER_LOGOUT),把傳進 combineReducers 的 state 設回 undefined 讓各 reducer 退回初始值;若有用 redux-persist 儲存狀態,還要額外清除對應的持久化資料鍵值。',
+      ],
+    },
+    {
+      levelId: 'ri-5',
+      keyPoints: [
+        'React 是可以跑在瀏覽器與伺服器端的 UI 函式庫,React Native 則是把同一套 React 元件模型編譯成真正的原生 iOS/Android(甚至 Windows)元件,兩者共用開發概念但輸出的目標平台不同。',
+        'React Native 應用主要靠 iOS/Android 模擬器測試,或透過 Expo App 掃描 QR code、讓手機跟電腦在同一個無線網路下同步預覽,不像網頁一樣直接用桌面瀏覽器開啟。',
+        '除了 console.log/console.warn 之外,可用 react-native log-ios 或 react-native log-android 指令在終端機看即時 log;除錯則是在模擬器按 Command+D 開啟 debugger-ui 網頁,開啟「Pause On Caught Exceptions」再搭配 Chrome DevTools 進行除錯。',
+      ],
+    },
+    {
+      levelId: 'ri-6',
+      keyPoints: [
+        'Reselect 是常搭配 Redux 使用的記憶化(memoization)selector 函式庫:只要輸入沒變就直接回傳上次快取的結果,輸入改變才重新計算,藉此讓 store 只需要存放最少量的原始狀態、其餘用衍生計算取得。',
+        'Flow 是靜態型別檢查工具,在編譯期分析程式碼、抓出型別錯誤(包含 null 相關的錯誤);PropTypes 則是執行期(runtime)才檢查,且只能驗證傳入元件的 props 型別,兩者屬於完全不同層級的型別檢查。',
+        'React DevTools 除了 Chrome/Firefox 瀏覽器擴充套件之外,還有支援 Safari、React Native 等環境的獨立應用程式;若是直接開啟本機 file:// 的 HTML 檔案,需要額外到擴充套件設定打開「Allow access to file URLs」才會生效。',
+        'React 頁面載入時會設置全域的 __REACT_DEVTOOLS_GLOBAL_HOOK__,DevTools 靠這個 hook 跟 React 溝通;網站沒用到 React,或 React 未能跟這個 hook 通訊成功時,DevTools 面板裡就不會出現 React 分頁。',
+        'Styled Components 讓你直接用 template literal 寫 CSS 並綁定到特定 HTML 標籤(如 styled.h1、styled.section),取消了傳統「class 名稱對應樣式檔」的間接對應,產生出來的變數本身就是可以直接渲染的 React 元件。',
+        'Relay 是 Facebook 提供的資料層框架,透過 GraphQL query/mutation 存取伺服器狀態並自動快取、只抓取有變動的資料;概念上跟 Redux 一樣使用單一 store,但只管理源自伺服器端的狀態,不像 Redux 管理整個應用的通用狀態。',
+      ],
+    },
+    {
+      levelId: 'ri-7',
+      keyPoints: [
+        'React 的 Hydration 是 SSR 的關鍵技術：伺服器先用 renderToString 產生沒有互動性的純 HTML，瀏覽器載入後再用 hydrateRoot 把事件處理器接上同一份 DOM，讓畫面變得可互動，藉此兼顧 SEO 與初始載入速度。',
+        'React.StrictMode 的檢查只在開發模式生效，production build 會自動關閉、不影響效能；它刻意讓元件本體、以及 useState/useMemo/useReducer 的初始化函式在開發模式下重複執行兩次，藉此提早暴露不純的渲染或忘記清理的副作用。',
+        'useLayoutEffect 在伺服器端渲染時完全不會執行（伺服器沒有 DOM 可操作），直接使用會在 Next.js 這類框架跳出警告；常見解法是寫一個依 typeof window 是否存在切換 useLayoutEffect / useEffect 的 isomorphic hook。',
+        'Next.js App Router 底下元件預設就是 Server Component，在伺服器端渲染、可直接讀取後端資源、程式碼不會送到瀏覽器；只有需要 state、瀏覽器 API 或事件監聽時才需要額外標成 Client Component，這跟舊版 Page Router 全部元件預設都是 Client Component 完全相反。',
+        'React Server Components 這項技術官方文件裡仍標示為持續開發中，目前還不建議直接用在正式環境，是這波「用伺服器渲染換取效能」浪潮裡尚未穩定的一塊。',
+      ],
+    },
+    {
+      levelId: 'ri-8',
+      keyPoints: [
+        'React 18 把過去只在事件處理常式裡才會合併的多次 setState,擴大成在 setTimeout、Promise 等任何非同步程式碼中都自動批次處理、同一輪只觸發一次重新渲染,同時用新的 createRoot() API 取代舊的 ReactDOM.render(),並新增 useTransition/useDeferredValue 這類並行特性,讓不急迫的狀態更新可以延後處理、優先完成緊急互動。',
+        'React 19 的 React Compiler(前身 React Forget)會在建置期分析元件、自動插入必要的記憶化,讓開發者不再需要手動寫 useMemo、useCallback 或包 React.memo,同時仍保持元件原本的行為語意不變。',
+        'React 19 的 Server Actions 讓你在函式最前面標記 \'use server\',把伺服器端邏輯(例如寫入資料庫)直接綁到 <form action={fn}> 使用,不必自己額外搭建 API endpoint;這類表單即使 JavaScript 尚未載入也能運作(漸進增強),且預設具備 CSRF 防護。',
+        'use() 這個新 hook 可以在 render 過程中讀取 Promise 或 Context 的值,且跟 useContext/useState 不同的是它可以被有條件地呼叫、也能放在迴圈裡;讀到還沒 resolve 的 Promise 時會觸發 Suspense,讓元件先暫停顯示直到解析完成。',
+        'useOptimistic 讓 UI 在等待伺服器回應前就先樂觀地顯示更新後的狀態(例如按讚數先加一、待辦事項先顯示 pending 標記),伺服器操作失敗時會自動回滾畫面,適合按讚、聊天訊息這類低風險的即時互動,但不建議用在金流等必須等待伺服器確認的操作。',
+        'React 18+ 的 Streaming SSR 讓伺服器不必等所有資料都就緒才輸出 HTML,而是把慢的部分包進 <Suspense fallback>,先送出其餘內容與 fallback 畫面,對應資料備妥後再補送真正內容並做「選擇性 hydration」,讓互動元件可以優先恢復可互動狀態,不被慢的元件卡住整頁。',
+      ],
+    },
+    {
+      levelId: 'ri-9',
+      keyPoints: [
+        'React 是 Facebook(Meta) 開發的開源前端 JS 函式庫，專注於畫面(view)層，透過元件化與 Virtual DOM 提升 UI 渲染效率，本身不是完整框架。',
+        'Element 是描述畫面長相的不可變純物件（由 createElement 產生），建立成本很低且不會直接操作 DOM；Component 則是回傳 Element 的函式或 class，封裝了邏輯與狀態。',
+        'Hooks（React 16.8）出現後官方建議優先用 Function Component；只有像 Error Boundary 這類還沒有 hook 對應寫法的功能，才需要用到 Class Component。',
+        'Pure Component 代表 props/state 不變時渲染結果一致：Function Component 用 React.memo() 對 props 做淺比較跳過重渲染，Class Component 則改繼承 React.PureComponent 自動對 props 和 state 做淺比較。',
+        'state 是元件內部管理、會隨時間改變並觸發重渲染的私有資料（用 useState 建立）；props 是外部（父層）傳入的唯讀資料，元件本身不能修改自己收到的 props，只能靠父層重新傳值來改變畫面。',
+        'JSX 註解要包在 {/* ... */} 裡（因為 JSX 本身就是 JS 表達式），不能像一般 JS 那樣直接寫 // 或 /* */ 在標籤之間。',
+      ],
+    },
+    {
+      levelId: 'ri-10',
+      keyPoints: [
+        'React 事件命名用 camelCase（onClick 而非 onclick），且處理常式要傳入函式本身而非字串；要阻止預設行為必須明確呼叫 event.preventDefault()，不能像原生 HTML 那樣 return false。',
+        'React 的合成事件（SyntheticEvent）是瀏覽器原生事件的跨瀏覽器包裝層，API 與原生事件一致（含 stopPropagation/preventDefault），可透過 nativeEvent 屬性取得底層原生事件物件。',
+        '受控元件把表單資料的唯一真相交給 React state（value 綁 state、onChange 更新 state），適合做即時驗證；非受控元件讓 DOM 自己管理值，只在需要時用 ref 讀取，寫法較少樣板但較難集中驗證。',
+        'key 是渲染陣列時用來識別哪些項目改變/新增/刪除的特殊屬性，應該用穩定唯一的資料 id 而非陣列 index，否則項目順序變動時容易讓 React 誤判要更新的節點，甚至讓元件內部 state 對應錯。',
+        '&& 短路判斷與三元運算子是 JSX 內常見的行內條件表達式寫法，能在單行內決定是否渲染某段 UI，是條件渲染最基礎的兩種手法。',
+        'Pointer Events（如 onPointerDown/onPointerUp）提供統一處理滑鼠、觸控、手寫筆等不同輸入裝置事件的一組 API，取代分別監聽 mouse 與 touch 事件。',
+      ],
+    },
+    {
+      levelId: 'ri-11',
+      keyPoints: [
+        'Virtual DOM 是 Real DOM 在記憶體中的輕量副本，React 靠它先在記憶體裡運算差異，再把最小必要的變更套用到真實 DOM，避免每次資料變動都整棵重繪。',
+        'Virtual DOM 運作流程大致是：初次渲染建出 VDOM 樹 → state/props 變動時建出新的 VDOM → 用 diffing 演算法比較新舊兩棵樹 → 只把有差異的節點套用到真實 DOM。',
+        'Shadow DOM 和 Virtual DOM 是完全不同層次的技術：Shadow DOM 是瀏覽器原生支援、用於 Web Components 樣式與變數封裝的「真實 DOM」子集；Virtual DOM 是框架在 JS 層自行實作、純粹用來做高效渲染比對的記憶體結構。',
+        'React Fiber 是 React 16 引入的全新協調（reconciliation）引擎，取代舊版以呼叫堆疊為主的演算法，讓渲染工作可以被拆解、標記優先權，甚至中途暫停、中斷、恢復。',
+        'Fiber 的目標包括：漸進式渲染（把渲染工作切成小塊分批處理）、可中斷的渲染（讓高優先權更新如動畫先執行），以及為 Concurrent 模式與 Suspense 打基礎。',
+        'Reconciliation（調和）是 React 比較新舊 Virtual DOM、找出差異節點、再更新對應真實 DOM 節點的整體過程，讓畫面更新只動到真正變化的部分，而非整頁重繪。',
+      ],
+    },
+    {
+      levelId: 'ri-12',
+      keyPoints: [
+        'createElement 是從零建立一個全新的 React element；cloneElement 則是複製一個既有 element、可以額外覆寫或補上 props，常用在需要動態調整子元素 props 的組合場景。',
+        '當多個子元件需要共享同一份會變動的資料時，應該把 state「提升」到它們最近的共同父層集中管理，而不是各自維護一份局部 state 導致不同步。',
+        'Higher-Order Component 是一個接收元件、回傳「加強版」新元件的函式，用來在不修改原本元件內部的情況下重用邏輯（例如 withAuth 依登入狀態決定渲染或導頁），react-redux 的 connect() 就是典型例子。',
+        'children prop 讓你把 JSX 內容放在元件開合標籤之間、當作子內容傳進去，內容可以是文字、元素、陣列甚至函式（render props 手法），很適合寫版面/包裝型元件。',
+        '對 DOM 元素直接展開(spread) props 有把未知/多餘 HTML 屬性也一併塞進 DOM 的風險，較安全的做法是用解構搭配 ...rest，只留下真正該傳給 DOM 的屬性。',
+        'switching component 是用一個物件把某個 prop 值對應到不同元件、依值動態選擇要渲染哪一個（例如依 page 名稱切換頁面元件）；Hooks 出現後，很多原本要用 HOC/render props 解決的情境，可以用更少的巢狀層級達成同樣效果。',
+      ],
+    },
+    {
+      levelId: 'ri-13',
+      keyPoints: [
+        'React 只是視圖(view)函式庫而非完整框架，優點在於用 Virtual DOM 提升效能、JSX 讓程式碼易讀、可與其他框架搭配、並支援伺服器端渲染；缺點包括學習曲線、需額外整合到傳統 MVC 架構、以及元件切太細可能造成過度工程。',
+        '開發模式下 React 會用 PropTypes 對傳入的 props 做執行期型別檢查、型別不符會在 console 印警告，正式環境會關閉以避免效能開銷；但目前業界主流已轉向 TypeScript 做編譯期型別檢查，逐漸取代 PropTypes 與已式微的 Flow。',
+        'react 套件包含 createElement、Component 等與平台無關的核心 API；react-dom 則是專門處理瀏覽器 DOM 渲染的套件（render、hydrate、createPortal 等），React 團隊把兩者拆開是為了讓同一套 React 核心也能對應 react-native、react-art 等非瀏覽器渲染環境。',
+        'ReactDOMServer 提供 renderToString/renderToStaticMarkup，讓元件可以在 Node 伺服器上先渲染成 HTML 字串回傳給瀏覽器，是實作 SSR 的核心工具；瀏覽器端 React 會偵測到預先渲染好的內容並「接手」而不是整個重繪，藉此改善首屏效能與 SEO。',
+        'React 因為只是 view 層，需要另外找路由、狀態管理等其他套件搭配才能組成完整應用，這是它跟 Angular 這類全功能框架最大的定位差異。',
+      ],
+    },
+    {
+      levelId: 'ri-14',
+      keyPoints: [
+        'Fragment（<Fragment> 或 <>...</>）可以讓元件回傳多個並列元素而不必額外包一層 DOM 節點，只有在需要 key（例如渲染列表片段）時才需要用完整的 <Fragment key={...}> 寫法而非簡寫。',
+        '用 Fragment 取代多餘的容器 div，除了省下額外 DOM 節點、減少 DOM Inspector 雜訊外，更重要的是能避免破壞 Flexbox / CSS Grid 這類仰賴直接親子關係的版面配置。',
+        'Portal（ReactDOM.createPortal）可以把子內容渲染到 DOM 樹中父元件範疇之外的節點（例如 document.body），常用來解決 Modal、Tooltip 被祖先的 overflow/transform 限制卡住的 CSS 疊層問題，同時仍保有 React 元件樹的 context/事件行為。',
+        '無狀態元件的行為完全不依賴自身 state（純靠 props 決定輸出），適合寫成 function component；有狀態元件則透過 useState 或 class state 依內部狀態決定渲染結果與行為。',
+        'JSX 不會渲染 false/undefined，因此可以用 && 短路只在條件成立時渲染某段內容，需要 if-else 兩種結果時則改用三元運算子。',
+        '要規範陣列裡每個物件的形狀時，可以用 PropTypes.arrayOf(PropTypes.shape({...})) 描述陣列元素必須符合的欄位與型別，比單純用 PropTypes.array 更精確。',
+      ],
+    },
+    {
+      levelId: 'ri-15',
+      keyPoints: [
+        'React 用 className 而非 class，是因為 class 是 JS 保留字，JSX 編譯後會變成物件字面值的 key，不能直接用 class 這個關鍵字，React 最終會把 className 轉譯回 HTML 的 class 屬性。',
+        'JSX 裡沒有 for 迴圈語法可用（JSX 標籤會被轉譯成函式呼叫，敘述句不能出現在表達式裡），要在 JSX 內產生重複內容一律用 Array.prototype.map 搭配箭頭函式，並記得加上 key。',
+        '屬性值裡不能直接做字串內插（例如 src="images/{x}" 不會生效），要嘛把整個屬性值換成用大括號包住的 JS 表達式，要嘛用樣板字串。',
+        '要依條件套用 class 名稱時，不能把大括號寫在字串引號「裡面」（會被當成純文字），必須把大括號整個移到引號外面，搭配字串串接或樣板字串組出最終的 className。',
+        'React 16 之後，JSX 上寫的未知/自訂 DOM 屬性不再被忽略，會原封不動輸出到最終 HTML，方便串接需要非標準屬性的第三方套件或實驗性 DOM API。',
+        'label 元素要關聯 input 時不能用 HTML 的 for（JS 保留字），要改用 htmlFor；多個 inline style 物件則可以用展開運算子合併（React Native 則是用陣列語法 [styleA, styleB]）。',
+      ],
+    },
+    {
+      levelId: 'ri-16',
+      keyPoints: [
+        '要在 React 裡塞入原始 HTML 字串（等同原生 innerHTML）要用 dangerouslySetInnerHTML，傳入 { __html: \'...\' } 物件；因為有 XSS 風險，屬性名故意取得很顯眼，提醒開發者要小心來源是否可信。',
+        'React 的 style 屬性吃的是 camelCase 屬性的 JS 物件（例如 backgroundImage）而不是 CSS 字串，這跟原生 DOM 的 node.style.xxx 用法一致，也能避免注入純字串樣式造成的安全疑慮。',
+        'React 不會自動加上瀏覽器 vendor 前綴，需要相容舊瀏覽器的樣式（如 transform）要自己額外寫 WebkitTransform、msTransform 等對應 key。',
+        '要監聽視窗尺寸變化並重新渲染，可以用 useState 存寬高、搭配 useEffect 在掛載時註冊 window 的 resize 事件監聽器，並在清理函式裡移除監聽器避免記憶體洩漏。',
+        '要漂亮印出 JSON 資料，可以把 JSON.stringify(data, null, 2) 的結果放進 <pre> 標籤，靠 <pre> 保留換行與縮排格式。',
+        '把常用色票、間距數值抽成獨立的 styles 模組再各處 import 使用，可以避免樣式數值散落各元件裡重複硬編碼；動畫則常交給 React Transition Group、React Motion 等專門套件處理，而非手刻 CSS transition。',
+      ],
+    },
+    {
+      levelId: 'ri-17',
+      keyPoints: [
+        'React 常見專案結構有兩種取向：一種是照功能/路由分組（同一功能的 JS/CSS/測試放同一個資料夾），另一種是照檔案類型分組（所有 components 放一起、所有 api 呼叫放一起），團隊可依規模選擇。',
+        '開啟 production mode 通常是靠建置工具（如 Webpack 的 DefinePlugin）把 NODE_ENV 設成 production，讓 React 跳過開發限定的 PropTypes 檢查與額外警告訊息，並搭配壓縮工具移除死碼，有效縮小最終產出的 bundle 大小。',
+        'JSX 裡的元件名稱必須以大寫字母開頭，否則 React 會把它當成原生 HTML/SVG 標籤解析而報錯；唯一例外是像 obj.component 這種帶點號的屬性存取寫法，即使開頭是小寫也能被辨識成合法元件。',
+        '只要專案的建置工具（Create React App、Next.js、Remix 等）支援 ES2017+ 並透過 Babel 轉譯，就可以在 React 元件（含 useEffect 內）直接使用 async/await 搭配 fetch 處理非同步資料。',
+        '元件慣例上建議用 ES6 的 export default 匯出單一元件、對應在別處用 import 匯入，讓模組的公開介面單純明確。',
+        '常見的 React 專屬 lint 工具是 eslint-plugin-react（檢查 key、prop types 等最佳實務）與 eslint-plugin-jsx-a11y（檢查 JSX 特有的無障礙寫法，例如 alt、tabIndex），兩者常一起搭配 ESLint 使用。',
+      ],
+    },
+    {
+      levelId: 'ri-18',
+      keyPoints: [
+        'Redux 本身不綁定特定建置工具：原始碼是 ES6 寫成、用 Webpack + Babel 轉譯成 ES5 給正式環境用，但也提供不經過任何建置流程就能直接使用的 UMD 版本。',
+        'Redux 並非 React 專屬：它只是提供一個通用的訂閱機制當資料儲存層，Angular、Vue 等其他框架也有對應的綁定套件可以使用同一份 store。',
+        'React.memo 讓函式元件也能像 class 元件用 PureComponent／shouldComponentUpdate 一樣，靠淺層比較 props 來跳過不必要的重渲染。',
+        'React.lazy 把 import() 動態載入包裝成一個一般元件使用，讓對應的程式碼直到真正渲染時才被載入，通常會搭配 Suspense 提供載入中的 fallback 畫面。',
+      ],
+    },
+    {
+      levelId: 'ri-19',
+      keyPoints: [
+        'Hook 是讓函式元件不必寫成 class 也能使用 state 與其他 React 特性的特殊函式，是 React 16.8 引入的模式，目的是把狀態邏輯從元件本體抽離出來方便重用。',
+        '使用 Hook 有兩條硬性規則：只能在元件（或自訂 Hook）的最頂層呼叫，不能放進迴圈、條件判斷或巢狀函式裡，確保每次渲染呼叫的順序都一致；也只能從函式元件或另一個以 use 開頭的自訂 Hook 裡呼叫，不能放進一般 JavaScript 函式或 class 裡。若違反第一條規則（例如把 useState 包進 if 判斷式呼叫），React 會直接丟出執行期錯誤，因為 Hook 是靠呼叫順序去對應內部保存 state 的插槽。',
+        'eslint-plugin-react-hooks 透過兩條規則機械化檢查上述規則：react-hooks/rules-of-hooks 擋掉違規呼叫、react-hooks/exhaustive-deps 檢查 useEffect / useCallback / useMemo 的依賴陣列有沒有漏列；這個外掛假設任何以 use 開頭、後面接大寫字母的函式都是 Hook。',
+        'Hooks 在 React 16.8 作為穩定功能釋出，涵蓋 React DOM、React DOM Server、React Test Renderer、React Shallow Renderer 四個套件；官方沒有要移除 class 元件的計畫，所以不需要把既有的 class 元件重寫成 Hooks，兩種寫法可以在同一個專案裡並存。',
+        'Hooks 目前還沒涵蓋所有 class 元件的使用情境，例如 getSnapshotBeforeUpdate 和 componentDidCatch 這兩個生命週期方法，還沒有對應的 Hook 寫法。',
+        'Hooks 的設計靈感來自好幾個不同來源：react-future 實驗性倉庫裡的函式式 API 嘗試、社群對 render props 模式（如 Reactions Component）的實驗、DisplayScript 語言裡的 state 變數與 state cell、Rx 的訂閱（subscription）機制，以及 ReasonReact 的 reducer 元件寫法。',
+      ],
+    },
+    {
+      levelId: 'ri-20',
+      keyPoints: [
+        '新版 JSX transform 不用在每個檔案裡 import React 就能寫 JSX，編譯結果會改成呼叫 react/jsx-runtime 提供的 _jsx 函式，而不是舊版的 React.createElement；不過如果元件裡用到 Hooks，還是要 import React 本身。',
+        'React 更新畫面分三個步驟：先觸發 render（初次掛載或 state 更新都算），接著呼叫元件函式建出新的虛擬 DOM 樹（這個過程對巢狀元件是遞迴進行的），最後才進入 commit 階段真正操作瀏覽器的真實 DOM 並執行相關的副作用。',
+        'React 16 之後的核心引擎叫 Fiber：把每個元件表示成一個 Fiber 節點（存著元件型別、props/state、effect 標記，以及指向父節點、子節點、兄弟節點的指標），讓原本一次到底的渲染過程能被拆成一個個可以中斷、依優先權排程的小型工作單位，這也是同時維護「目前畫面」與「準備中」兩棵樹（double buffering）的基礎。',
+        '為了避免真正的樹狀比對演算法複雜度太高，React 用兩個假設把理論上 O(n³) 的 diffing 簡化成 O(n) 的啟發式演算法：不同型別的元素會被視為完全不同的樹直接整個重建，而 key 屬性則是用來提示哪些子元素在不同次渲染之間其實是同一個、應該被穩定保留。',
+        'React 18 把「自動批次處理」的範圍從原本只涵蓋瀏覽器原生事件，擴大到 fetch 回呼、setTimeout、Promise 等非同步情境：同一個事件處理器裡多次呼叫 setState 只會觸發一次重渲染；如果需要跳過批次、讓某次更新立刻同步反映到 DOM 上，才需要改用 react-dom 提供的 flushSync。',
+      ],
+    },
+    {
+      levelId: 'ri-21',
+      keyPoints: [
+        '使用 useContext 分三步：先用 createContext() 建立一個 context 物件，再用對應的 Provider 包住需要共享資料的元件樹並帶入 value，子元件內部就能直接呼叫 useContext(該Context) 取值，藉此避免一層層手動往下傳 props（prop drilling）。',
+        'useReducer 把「直接呼叫 setState」換成「dispatch 一個 action，交給 reducer 函式算出新 state」的模式，概念上像是縮小版的 Redux；適合狀態本身很複雜、彼此有關聯，或想把更新邏輯抽離 UI 方便測試與重用的情境，例如多步驟表單精靈、購物車邏輯、undo/redo。',
+        'useState 跟 useReducer 的取捨：useState 適合單一變數或扁平物件、用 setState 直接改；useReducer 適合巢狀或多個欄位彼此關聯的複雜 state，把更新邏輯集中寫在 reducer 函式裡，也比較容易單獨測試。',
+        '寫 reducer 要遵守兩個準則：reducer 必須是純函式，不能在裡面發請求、排 timeout 或做任何副作用，同樣的輸入永遠要回傳同樣的輸出；另外每個 action 應該對應使用者的一個完整互動，即使背後要同時改很多欄位，也建議發一個語意完整的 action（例如「reset」），而不是為每個欄位各自發一個 action。',
+        'dispatch 本身的呼叫是同步的（reducer 會立即執行、算出新 state 並排入下一次重渲染），但在目前這輪 render 裡讀到的 state 變數仍然是舊值，要等到下一次重渲染才拿得到更新後的值；這跟 useState 的 setState 行為一致，同一個事件處理器裡連續呼叫多次 dispatch 也只會讓元件重渲染一次。',
+        'useContext 搭配物件當 value 時常見的坑：只要 Provider 傳入的物件參考改變（即使只是其中一個欄位變了），所有消費這個 context 的元件都會重渲染，不論它們實際上有沒有用到變動的那部分；解法是把不相關的狀態拆成多個獨立 context，或用 useMemo 記住整個 value 物件；如果元件樹裡完全沒有對應的 Provider，useContext 拿到的會是建立 context 時給的預設值（沒給預設值就是 undefined）。',
+      ],
+    },
+    {
+      levelId: 'ri-22',
+      keyPoints: [
+        'useEffect 用來處理跟畫面渲染本身無關的「副作用」，例如抓資料、建立訂閱、設定計時器、手動操作 DOM；在函式元件裡它統一取代了 class 元件的 componentDidMount、componentDidUpdate、componentWillUnmount 三個生命週期方法。',
+        '依賴陣列決定 effect 何時重新執行：傳空陣列 [] 只會在元件掛載後跑一次；陣列裡列出特定值，就會在掛載後跑一次、之後只要那些值改變就再跑一次；完全不傳依賴陣列則每次渲染後都會執行，容易造成不必要的效能負擔。',
+        'effect 回傳的 cleanup 函式，會在「這個 effect 要重新執行之前」以及「元件即將卸載時」被呼叫，適合用來移除事件監聽器、清除計時器或 interval、取消訂閱，或用 AbortController 中止還沒完成的 fetch 請求，避免記憶體洩漏或在已卸載的元件上更新 state。',
+        '不能讓傳給 useEffect 的函式是 async 函式、也不能直接在裡面 return 一個 Promise，React 只認得 undefined 或一個同步的 cleanup 函式；如果要用 await，正確做法是在 effect 內部另外定義一個 async 函式再呼叫它，而不是把 useEffect 的 callback 本身標成 async。',
+        '同一個元件裡可以、也建議寫多個獨立的 useEffect，依用途拆開（例如一個專門處理 API fetch、另一個專門處理事件監聽），讓每個 effect 的職責單純、程式碼更容易維護與除錯。',
+        '無窮迴圈最常見的成因，是 effect 的依賴陣列裡列了某個 state，效果內部卻又呼叫該 state 的 setter 去更新同一個值，導致這個值一變就觸發 effect 重跑、又再次更新，如此循環；解法是加上條件判斷（例如數值到達某個上限就不再更新）避免無條件的自我觸發。',
+      ],
+    },
+    {
+      levelId: 'ri-23',
+      keyPoints: [
+        'useLayoutEffect 跟 useEffect 最大的差異在執行時機：useLayoutEffect 會在瀏覽器真正把畫面畫出來（paint）之前同步執行，適合需要先量測或調整 layout、避免畫面閃爍的情境；useEffect 則是等畫面畫完之後才非同步執行，效能通常較好，多數情況應優先選用 useEffect。',
+        'useLayoutEffect 的典型使用時機是量測 DOM 尺寸或捲動位置後同步套用樣式、做跟畫面同步的動畫轉場、或整合需要在畫面繪製前操作 DOM 的第三方套件；如果拿來做跟 layout 無關的事（例如記錄 log、打分析 API），反而會不必要地拖延畫面的繪製時機。',
+        '如果在同一個 useLayoutEffect 裡反覆「讀取 DOM 尺寸→寫入樣式→再讀取一次」，會逼瀏覽器同步重新計算 layout（reflow）好幾次，形成卡頓的 layout thrashing；建議把所有讀取動作跟所有寫入動作分開集中處理，避免寫完馬上又讀。',
+        'useState 跟 useRef 的核心差異：useState 更新會觸發元件重渲染，useRef 的 .current 改變則不會；可以把 useRef 想成一個能裝任意可變資料、但不會驅動畫面更新的「盒子」，適合拿來存放不需要顯示、但要跨渲染保留的資料，例如記錄上一輪的 state 值。',
+        'useRef 綁定的 DOM 節點要等元件真正掛載（mount）後才存在，如果在 render 當下（不透過 useEffect 或事件處理器）直接讀取 ref.current 會拿到 null；常見用法包含自動聚焦輸入框、捲動到指定元素、量測元素尺寸（offsetWidth 等）、控制影音播放，或整合像 D3、jQuery 這類非 React 的函式庫。',
+        'useImperativeHandle 一定要搭配 forwardRef 才能運作，讓子元件自訂要暴露給父元件 ref 的方法（而不是整個 DOM 節點或內部實作細節），常見於 Modal 的 open()/close()、自訂輸入框的 focus()/reset() 等「父元件需要命令式操控子元件」的場景。',
+      ],
+    },
+    {
+      levelId: 'ri-24',
+      keyPoints: [
+        'useMemo 的核心用途是「記住」一個計算結果，只有在依賴陣列真的改變時才重新執行運算函式，否則直接回傳上次快取的值，用來避免每次渲染都重跑昂貴計算。',
+        'useMemo 記住的是「值」、useCallback 記住的是「函式參照」：前者適合用在篩選、排序這類計算結果本身很貴的情境，後者適合用在把 callback 傳給子元件、需要維持參照穩定的情境，兩者都是依賴改變才重新產生。',
+        '單獨使用 useMemo 並不會阻止子元件重新渲染，它只有在算出來的值當作 prop 傳給用 React.memo 包裹的子元件時才真正發揮效果，因為這時候參照穩定才讓 memo 判斷「沒變」進而跳過渲染。',
+        '自訂 Hook 就是一個名稱以 use 開頭的一般函式，把重複用到的 state／effect 邏輯包起來重複使用，例如把 useState 搭配 useEffect 包成 useFetchData，對外只回傳 { data, loading, error } 給元件呼叫。',
+        '自訂 Hook 共享的是「邏輯」不是「狀態」：兩個元件各自呼叫同一個 useLocalStorage(key, initialValue)，彼此的狀態仍然是各自獨立的一份，不會互相影響。',
+        'useDebugValue 可以讓自訂 Hook 在 React DevTools 裡顯示一個好讀的標籤（也能傳第二個格式化函式、只有打開 DevTools 才會執行），主要用在要公開給別人用的共用 Hook 函式庫，一般專案內部的 Hook 不需要特別加。',
+      ],
+    },
+    {
+      levelId: 'ri-25',
+      keyPoints: [
+        '把 useReducer 回傳的 [state, dispatch] 放進 useContext 的 Provider value 裡，就能組出一個不依賴外部套件、類似 Redux 的輕量全域狀態管理模式。',
+        '同一個事件處理函式裡可以連續呼叫多次 dispatch，每次都會依照目前佇列中最新的狀態往下算；如果想要一次處理多個變化，也可以直接設計一個複合 action type（例如 increment_twice）讓 reducer 一次做完，不用拆成好幾個 dispatch。',
+        'dispatch 本身是同步呼叫、且在整個元件生命週期中參照保持穩定（可以安心不放進 useEffect 依賴陣列），但呼叫完 dispatch 當下讀到的 state 變數還是舊值，真正的新狀態要等到下一次渲染才看得到。',
+        'Hook 使用上的最佳實踐：確實遵守兩條 Hooks 規則、裝上 eslint-plugin-react-hooks 的 rules-of-hooks 與 exhaustive-deps、自訂 Hook 盡量只做一件事而不是一個 Hook 塞進所有邏輯，依賴陣列要如實列出真正用到的值而不是為了消掉警告硬塞空陣列。',
+      ],
+    },
+    {
+      levelId: 'ri-26',
+      keyPoints: [
+        '程式碼分割（code splitting）是靠 Webpack 這類打包工具搭配動態 import() 語法，把某段程式碼拆成獨立的 chunk，只有在真正用到時才會另外載入，不會全部塞進主要 bundle。',
+        'React.lazy(() => import(...)) 讓你把一個動態載入的模組當成普通元件使用，搭配 Suspense 包住它並提供 fallback（例如 loading 畫面），在該元件的程式碼還沒載入完成前先顯示替代內容。',
+        '路由層級是最適合做程式碼分割的地方：因為切換路由時整個頁面本來就會整個重新渲染，使用者不太可能同時跟其他還沒切換的畫面互動，所以把每個路由用 React.lazy 包起來、再搭配 React Router 的 Route 元件，體驗上幾乎不會被打斷。',
+        '在 React 18 支援伺服器端 Suspense 之前，@loadable/component 這類 Loadable Components 套件是伺服器端渲染（SSR）情境下做程式碼分割的替代方案，因為當時 React.lazy 加 Suspense 還不能用在 SSR。',
+        '長列表的效能技巧可以用「窗口化（windowing）」，例如 react-window、react-virtualized，畫面上永遠只實際渲染目前看得到的那一小段列表項目，大幅減少 DOM 節點數量與重新渲染的成本。',
+        'useTransition 可以把某個 setState 標記成「非緊急」的過渡更新（回傳 isPending 旗標），useDeferredValue 則是讓你拿到一個「延遲跟上」的值版本；兩者都是用來讓輸入框等高優先互動保持流暢，把昂貴的重新渲染延後處理。',
+      ],
+    },
+    {
+      levelId: 'ri-27',
+      keyPoints: [
+        'componentDidCatch(error, info) 是 Error Boundary 攔截子孫元件錯誤後被呼叫的生命週期方法，第一個參數是丟出來的錯誤物件本身，第二個參數帶有 componentStack，記錄是哪個元件層級丟出這個錯誤。',
+        'Error Boundary 並非萬能：事件處理函式（onClick 等）裡的錯誤、setTimeout/requestAnimationFrame 這類非同步程式碼裡的錯誤、伺服器端渲染時的錯誤、以及 Error Boundary 自己程式碼本身丟出的錯誤，這四種情況都不會被攔截到。',
+        'React 16 之後，如果一個錯誤沒有被任何 Error Boundary 接住，預設行為是直接把整個元件樹卸載掉，理由是與其讓畫面帶著損壞的狀態繼續顯示（例如金流頁面顯示錯誤金額），不如乾脆整個不顯示。',
+        'Error Boundary 要放在哪個層級沒有標準答案，可以整個包在最外層路由元件外面統一顯示一個通用錯誤畫面，也可以個別包住某些容易出錯的元件，讓它壞掉時不會拖垮整個應用程式的其他部分。',
+        'Error Boundary 攔截到的錯誤除了原本的 JS 堆疊之外，還會額外顯示「元件堆疊追蹤」，把是哪個元件、哪個檔案、哪一行觸發這個錯誤標示出來，比單純的 JS stack trace 更方便定位問題元件。',
+      ],
+    },
+    {
+      levelId: 'ri-28',
+      keyPoints: [
+        'Formik 是一套專門處理表單的 React 函式庫，主要解決三件事：把值寫進與讀出表單狀態、驗證與錯誤訊息呈現、以及表單送出的處理流程。',
+        'Formik 相較 Redux-Form 的優勢：表單狀態本質上是短暫且局部的，硬塞進 Redux 反而多餘；Redux-Form 每打一個字就會把整個頂層 reducer 跑一次，大型應用會拖慢輸入反應；而且 Redux-Form（約 22.5kB gzip）打包體積比 Formik（約 12.7kB gzip）大上不少。',
+        'createContext 的第二個參數（defaultValue）只有在某個消費元件的上層完全沒有對應的 Provider 時才會派上用場，這讓你可以在沒有包 Provider 的情況下單獨測試元件。',
+        'defaultProps 只會在某個 prop 完全沒有傳（undefined）時補上預設值；如果呼叫端明確傳了 null 或 0，即使那看起來像「空值」，React 也不會用預設值去覆蓋它。',
+        'displayName 通常不用自己設，React 會自動從函式或 class 名稱推斷；但像高階元件（HOC）包出來的元件就常常需要手動指定，例如 WithSubscription(CommentList)，讓除錯工具顯示更有意義的名稱。',
+        'PropTypes.oneOfType([...]) 可以讓同一個 prop 接受多種型別，例如 size 這個 prop 同時允許傳字串或數字，寫成 PropTypes.oneOfType([PropTypes.string, PropTypes.number])。',
+      ],
+    },
+    {
+      levelId: 'ri-29',
+      keyPoints: [
+        'Redux Form 的 initialValues 預設不會跟著 store 資料自動更新，要在 reduxForm(...) 設定裡加上 enableReinitialize: true，表單才會在 initialValues 這個 prop 改變時一併重新初始化。',
+        'React 官方建議用組合（composition）取代繼承（inheritance）來重複利用 UI 邏輯：props 加上元件組合就足以應付客製化需求，若是要共用「非 UI」的邏輯，直接抽成一般的 JS 模組匯入使用即可，不需要靠繼承。',
+        'Wrapper 元件就是組合精神的具體實作：寫一個元件把另一個元件包在裡面、外面加上邊框、標題或其他外觀/行為，而不是去繼承並改寫原本的元件。',
+        'Render props 模式不需要真的用一個叫 render 的 prop，任何回傳 JSX 的函式型 prop 都算，甚至可以直接用 children 當作那個函式，不一定要特別命名。',
+        '如果在 render 方法裡臨時建立一個新函式當作 render prop 傳下去，會讓 PureComponent／React.memo 的淺層 props 比較失效，因為每次渲染都是全新的函式參照，判斷永遠是「有改變」；解法是把這個 render 函式定義成穩定的 instance method 或用 useCallback 包住。',
+      ],
+    },
+    {
+      levelId: 'ri-30',
+      keyPoints: [
+        'Flux 與 Redux 的關鍵差異：Flux 的狀態是可變的，且可以同時存在多個彼此獨立的 store，並仰賴一個單例 dispatcher 來分派動作；Redux 只有一個不可變的單一 store，把狀態跟更新邏輯（reducer）分開，也沒有 dispatcher 這個概念。',
+        'MobX 跟 Redux 的取捨：MobX 用 observable 追蹤狀態、可以有多個較小的 store，走反應式（reactive）風格，適合較簡單的應用；Redux 用一整棵 JS 物件樹當成單一大 store，更適合複雜龐大的應用，但相對需要花更多心力做效能優化。',
+        '只用 Context API（不上 Redux）也能在頁面刷新後維持登入狀態：把讀取 token、呼叫 loadUser 的邏輯放在最外層（例如 index.js 包一層 AuthState Provider），並在 App 裡用 useEffect（依賴陣列給空陣列）於每次重新整理都觸發，不管使用者停在哪個路由都能重新驗證登入狀態。',
+        '判斷一份資料到底該不該放進全域狀態（不論是 Redux、Context 或其他方案），可以用幾個判準：其他部分的應用是否關心這份資料、需不需要基於它算出衍生資料、是否被多個元件共用、要不要能回溯到某個時間點（time travel debugging）、要不要做快取。',
+        'useSyncExternalStore 是給狀態管理函式庫作者用的底層 Hook，讓元件可以訂閱 React 之外的外部資料來源，並在並行渲染（concurrent rendering）下不會出現資料不一致（tearing）的問題，還額外支援 getServerSnapshot 讓 SSR 時的初始快照保持一致。',
+      ],
+    },
+  ],
 }
 
 export const getChapterSummary = (chapterId: string): LevelSummary[] | undefined =>
