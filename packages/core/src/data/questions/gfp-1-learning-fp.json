@@ -1,0 +1,128 @@
+{
+  "id": "gfp-1",
+  "title": "Ch1：學習函數式程式設計",
+  "questions": [
+    {
+      "id": "gfp-1-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "宣告式 vs 命令式：描述「要什麼」還是描述「怎麼做」",
+      "docs": "",
+      "story": "",
+      "prompt": "「把清單裡每個數字平方」這個需求，用 for 迴圈一步步寫出怎麼做，跟直接呼叫 list.map(square) 描述要什麼，這兩種寫法的核心差異是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "for 迴圈版本描述的是一連串具體的操作步驟（怎麼做才能達成目標）；list.map(square) 直接描述目標本身（每個元素都要被平方），不需要交代要用什麼步驟才能達到——這正是宣告式（要什麼）跟命令式（怎麼做）的核心差異，FP 傾向盡量用宣告式的方式表達邏輯" },
+        { "id": "b", "text": "兩種寫法在描述的抽象層次上完全一樣，沒有任何差異" },
+        { "id": "c", "text": "for 迴圈版本才是宣告式，map 版本才是命令式，跟一般認知剛好相反" },
+        { "id": "d", "text": "這種差異只存在於 Scala，JavaScript 裡的 map 跟 for 迴圈沒有任何抽象層次上的不同" }
+      ],
+      "answer": "a",
+      "explanation": "for 迴圈描述的是「怎麼一步步達成目標」的具體操作；map(square) 直接描述「目標本身」，不用交代達成的步驟。這正是宣告式（要什麼）跟命令式（怎麼做）的核心差異，FP 傾向盡量用宣告式的方式表達邏輯，讓程式碼讀起來更接近「在說目標」，而不是「在說步驟」。",
+      "verify": { "manual": "概念題：以 map 與 for 迴圈的具體對照取代抽象宣告式敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-1-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "宣告式與命令式：結果相同，描述層次不同",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/map",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "const nums = [1, 2, 3];\n\nconst imperative = [];\nfor (let i = 0; i < nums.length; i++) {\n  imperative.push(nums[i] * nums[i]);\n}\n\nconst declarative = nums.map((x) => x * x);\n\nconsole.log(imperative);\nconsole.log(declarative);",
+      "options": [
+        { "id": "a", "text": "[ 1, 4, 9 ]\n[ 1, 4, 9 ]" },
+        { "id": "b", "text": "[ 1, 2, 3 ]\n[ 1, 4, 9 ]" },
+        { "id": "c", "text": "[ 1, 4, 9 ]\n[ 1, 2, 3 ]" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "兩種寫法都得到 [1, 4, 9]，執行結果完全一樣。差異不在「對不對」，而在於讀程式碼的人要付出多少心力才能看懂這裡在做什麼：map 版本直接讀出「每個元素平方」這個目標，for 迴圈版本要在腦中執行過一遍才能反推出同樣的結論。",
+      "verify": {
+        "checks": [
+          { "code": "const nums = [1, 2, 3];\nconst imperative = [];\nfor (let i = 0; i < nums.length; i++) {\n  imperative.push(nums[i] * nums[i]);\n}\nconst declarative = nums.map((x) => x * x);\nconsole.log(imperative);\nconsole.log(declarative);", "expected": "[ 1, 4, 9 ]\n[ 1, 4, 9 ]" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-1-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "誠實的函式：簽章要如實反映函式實際會做的事",
+      "docs": "",
+      "story": "",
+      "prompt": "parseAge(input) 的簽章看起來是「輸入字串、輸出數字」，但如果輸入格式不對，它會直接拋出例外，而不是回傳一個數字。這種函式為什麼被稱為「說謊的函式」？",
+      "code": "function parseAge(input) {\n  const n = Number(input);\n  if (Number.isNaN(n)) throw new Error('無法解析');\n  return n;\n}",
+      "options": [
+        { "id": "a", "text": "因為簽章宣稱「輸入字串、輸出數字」，讓呼叫者以為只要傳字串進去，一定會拿到一個數字——但實際上遇到格式不對的輸入，它做的事情完全不是「回傳數字」，而是「讓程式中斷」，這種簽章跟實際行為對不上的落差，就是「說謊」：呼叫者光看簽章沒辦法真正信任這個函式會如實做到它宣稱的事" },
+        { "id": "b", "text": "這種函式完全誠實，因為它確實在大多數情況下會回傳一個數字" },
+        { "id": "c", "text": "只要函式最後有 return 陳述式，就一定算是誠實的函式，跟會不會拋例外無關" },
+        { "id": "d", "text": "「說謊的函式」指的是函式命名跟它做的事情無關，跟拋不拋例外無關" }
+      ],
+      "answer": "a",
+      "explanation": "parseAge 的簽章宣稱「輸入字串、輸出數字」，讓呼叫者以為傳字串進去一定拿得到數字——但遇到格式不對的輸入，它做的是「讓程式中斷」，不是「回傳數字」。簽章宣稱的行為跟函式實際的行為對不上，這種落差就是「說謊」：呼叫者沒辦法只看簽章就真正信任這個函式會如實做到它宣稱的事。",
+      "verify": { "manual": "概念題：以 parseAge 簽章與實際行為的落差取代抽象「說謊函式」定義，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-1-q4",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "驗證：簽章說謊的函式，遇到特定輸入會露餡",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Error",
+      "story": "",
+      "prompt": "這段程式會印出什麼，說明了 parseAge 這個簽章「說謊」的具體後果？",
+      "code": "function parseAge(input) {\n  const n = Number(input);\n  if (Number.isNaN(n)) throw new Error('無法解析');\n  return n;\n}\n\ntry {\n  console.log(parseAge('abc'));\n} catch (e) {\n  console.log('捕捉到：', e.message);\n}",
+      "options": [
+        { "id": "a", "text": "捕捉到： 無法解析" },
+        { "id": "b", "text": "NaN" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "程式直接崩潰，什麼都不會印出來" }
+      ],
+      "answer": "a",
+      "explanation": "parseAge('abc') 沒有回傳任何數字，而是拋出例外中斷了正常的回傳流程，被外層的 try/catch 接住、印出錯誤訊息。這正是簽章「說謊」的具體後果：呼叫者如果沒有事先用 try/catch 包住，光憑簽章完全猜不到這裡藏著一條會讓程式中斷的例外路徑。",
+      "verify": {
+        "checks": [
+          { "code": "function parseAge(input) {\n  const n = Number(input);\n  if (Number.isNaN(n)) throw new Error('無法解析');\n  return n;\n}\ntry {\n  console.log(parseAge('abc'));\n} catch (e) {\n  console.log('捕捉到：', e.message);\n}", "expected": "捕捉到： 無法解析" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-1-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "關注簽章勝過關注函式本體：組合函式時，你在乎的是型別對不對得起來",
+      "docs": "",
+      "story": "",
+      "prompt": "把 parseAge 的結果傳給 categorizeAge(age: number) 使用時，你需要先讀懂 parseAge 內部每一行程式碼在做什麼，才能正確使用它嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不需要：只要知道 parseAge 的簽章是「輸入字串、輸出數字」，就能判斷它的輸出型別跟 categorizeAge 要求的輸入型別對得起來，可以直接組合使用，不需要深入讀懂 parseAge 內部每一行是怎麼算出這個數字的——FP 鼓勵在組合函式的時候，優先關注簽章，而不是鑽進函式本體的實作細節" },
+        { "id": "b", "text": "一定要先把 parseAge 內部的每一行程式碼都讀懂，才能知道能不能跟 categorizeAge 組合使用" },
+        { "id": "c", "text": "只要函式名稱聽起來合理，型別對不對得起來完全不重要" },
+        { "id": "d", "text": "簽章只是裝飾用的標註，實際組合函式時完全不會參考它" }
+      ],
+      "answer": "a",
+      "explanation": "只要 parseAge 的簽章跟 categorizeAge 要求的輸入型別對得起來，就能直接組合使用，不需要深入讀懂 parseAge 內部每一行是怎麼算出這個數字的。FP 鼓勵在組合函式時優先關注簽章，這也是為什麼「函式不說謊」這麼重要——一旦簽章可以信任，組合時就能省下讀懂每個函式內部實作細節的心力。",
+      "verify": { "manual": "概念題：以 parseAge 與 categorizeAge 組合的具體例子取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-1-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "FP 是用運算式寫程式，不是用陳述式列步驟",
+      "docs": "",
+      "story": "",
+      "prompt": "const total = items.reduce((sum, item) => sum + item.price, 0) 這一整行本身就是一個會算出值的「運算式」；用一連串 total += item.price 的迴圈則是一連串「陳述式」。這兩者的差異，呼應了本章強調的什麼態度？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "呼應「FP 是用運算式寫程式，不是用陳述式列步驟」：運算式本身直接就是一個值，焦點放在「這是什麼」；陳述式則是一連串「先做這個、再做那個」的步驟指令，焦點放在「怎麼一步步做到」——FP 傾向盡量用能直接算出值的運算式表達邏輯，減少一連串步驟指令堆疊出來的程式碼" },
+        { "id": "b", "text": "兩者完全是同一件事，只是取名字不同" },
+        { "id": "c", "text": "陳述式比運算式更適合用來表達函數式程式設計的精神" },
+        { "id": "d", "text": "運算式只能用在數學計算上，沒辦法用來表示「總金額」這種業務概念" }
+      ],
+      "answer": "a",
+      "explanation": "reduce 那一整行本身就是一個「會算出值的運算式」，直接代表「總金額」這個值本身；一連串 total += ... 則是「先做這個、再做那個」的陳述式步驟。FP 傾向盡量用運算式表達邏輯，讓程式碼的焦點放在「這是什麼值」，而不是「要怎麼一步步湊出這個值」——這正呼應了本章從頭到尾強調的「要什麼」而非「怎麼做」的態度。",
+      "verify": { "manual": "概念題：以 reduce 運算式與迴圈陳述式的對照取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

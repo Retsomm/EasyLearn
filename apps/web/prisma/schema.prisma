@@ -19,6 +19,7 @@ model User {
   completedLevels CompletedLevel[]
   wrongEntries    WrongEntry[]
   savedQuestions  SavedQuestion[]
+  savedKeyPoints  SavedKeyPoint[]
   xpLogs          XpLog[]
   dailyStats      DailyStat[]
   chapterStats    ChapterStat[]
@@ -58,6 +59,18 @@ model SavedQuestion {
   questionId String
 
   @@unique([userId, questionId])
+}
+
+// 章節重點複習分頁的收藏：keyPointId 是前端組出來的「關卡 id:陣列索引」字串，
+// 這裡只存 id，實際文字內容一律由前端即時查 chapterSummaries 回來（見 packages/core）
+model SavedKeyPoint {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  keyPointId String
+
+  @@unique([userId, keyPointId])
 }
 
 model XpLog {

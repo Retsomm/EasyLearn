@@ -1,0 +1,132 @@
+{
+  "id": "gfp-4",
+  "title": "Ch4：函式作為值",
+  "questions": [
+    {
+      "id": "gfp-4-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "把函式當引數傳遞：不用重寫整個函式就能客製化行為",
+      "docs": "",
+      "story": "",
+      "prompt": "如果 sortPeople(people) 內部寫死「依照年齡排序」，想改成「依照姓名排序」時，需要怎麼修改？如果 sortPeople(people, keyFn) 改成接收一個「怎麼取出排序依據」的函式當作引數呢？",
+      "code": "// 寫死年齡排序：sortPeople(people)\n// 傳入客製化的 key 函式：sortPeople(people, (p) => p.age) 或 sortPeople(people, (p) => p.name)",
+      "options": [
+        { "id": "a", "text": "如果排序依據寫死在函式內部，每次想換一種排序方式，都得回頭修改 sortPeople 這個函式本身；改成把「怎麼取出排序依據」寫成一個函式、當作引數傳進去，同一個 sortPeople 就能透過傳入不同的 keyFn，支援任意排序依據，完全不需要修改 sortPeople 內部的程式碼——這正是「把函式當引數傳遞」帶來的彈性" },
+        { "id": "b", "text": "不管有沒有把排序依據寫成引數，每次想換排序方式都得重寫整個 sortPeople 函式" },
+        { "id": "c", "text": "把函式當引數傳遞，只能用在排序這一種特定情境，沒辦法套用在其他需求上" },
+        { "id": "d", "text": "傳入 keyFn 這個引數，會讓 sortPeople 的執行結果變得不確定，每次執行結果都不一樣" }
+      ],
+      "answer": "a",
+      "explanation": "排序依據如果寫死在函式內部，每次想換一種排序方式都得回頭修改函式本身；改成把「怎麼取出排序依據」寫成一個函式當作引數傳進去，同一個 sortPeople 透過傳入不同的 keyFn，就能支援任意排序依據，完全不用修改 sortPeople 內部的程式碼。這正是「把函式當引數傳遞」帶來的彈性：客製化行為，不用重寫整個函式。",
+      "verify": { "manual": "概念題：以 sortPeople 傳入 keyFn 的具體對照取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-4-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：傳入不同的比較函式，同一個 sort 呼叫排出不同順序",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/sort",
+      "story": "",
+      "prompt": "這段程式對同一份資料用兩種不同的比較函式排序。這段程式會印出什麼？",
+      "code": "const people = [{ name: 'Zoe', age: 20 }, { name: 'Amy', age: 30 }];\n\nconst byAge = [...people].sort((a, b) => a.age - b.age);\nconst byName = [...people].sort((a, b) => a.name.localeCompare(b.name));\n\nconsole.log(byAge.map((p) => p.name));\nconsole.log(byName.map((p) => p.name));",
+      "options": [
+        { "id": "a", "text": "[ 'Zoe', 'Amy' ]\n[ 'Amy', 'Zoe' ]" },
+        { "id": "b", "text": "[ 'Zoe', 'Amy' ]\n[ 'Zoe', 'Amy' ]" },
+        { "id": "c", "text": "[ 'Amy', 'Zoe' ]\n[ 'Amy', 'Zoe' ]" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "同一份資料 people，只是傳入不同的比較函式，就排出了完全不同的順序：依年齡排序時 Zoe（20 歲）在前；依姓名排序時 Amy 的字母順序在前。sort 本身完全不需要知道「排序依據到底是什麼」，只需要呼叫傳進來的比較函式決定順序——這正是把函式當引數傳遞的實際效果。",
+      "verify": {
+        "checks": [
+          { "code": "const people = [{ name: 'Zoe', age: 20 }, { name: 'Amy', age: 30 }];\nconst byAge = [...people].sort((a, b) => a.age - b.age);\nconst byName = [...people].sort((a, b) => a.name.localeCompare(b.name));\nconsole.log(byAge.map((p) => p.name));\nconsole.log(byName.map((p) => p.name));", "expected": "[ 'Zoe', 'Amy' ]\n[ 'Amy', 'Zoe' ]" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-4-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "函式回傳函式：逐步累積設定，打造有彈性的 API",
+      "docs": "",
+      "story": "",
+      "prompt": "makeValidator(minAge) 回傳一個「還等著接收要驗證的人」的新函式，而不是直接驗證。這種「函式回傳函式」的設計，比起「一次把所有引數都傳給同一個函式」，帶來了什麼彈性？",
+      "code": "const isAdult = makeValidator(18);\nisAdult(person1);\nisAdult(person2);",
+      "options": [
+        { "id": "a", "text": "makeValidator(18) 只需要呼叫一次，就能得到一個「已經記住 minAge = 18」的 isAdult 函式，之後可以重複拿這個 isAdult 去驗證很多不同的人，不用每次驗證都重新傳一次 minAge——這種「先固定一部分設定、之後重複使用剩下的部分」的彈性，是把「一次把所有引數都塞給同一個函式呼叫」做不到的" },
+        { "id": "b", "text": "函式回傳函式沒有帶來任何額外的彈性，效果跟一次呼叫傳入所有引數完全一樣" },
+        { "id": "c", "text": "makeValidator(18) 只能被呼叫一次，之後回傳的 isAdult 函式只能使用一次就會失效" },
+        { "id": "d", "text": "函式回傳函式這種設計只能用在驗證年齡這一種特定情境上" }
+      ],
+      "answer": "a",
+      "explanation": "makeValidator(18) 只需要呼叫一次，就能得到一個「已經記住 minAge = 18」的 isAdult 函式，之後可以重複拿去驗證很多不同的人，不用每次都重新傳一次 minAge。這種「先固定一部分設定、之後重複使用剩下的部分」的彈性，正是函式回傳函式這種設計帶來的價值，也是打造靈活 API 常用的手法。",
+      "verify": { "manual": "概念題：以 makeValidator 重複使用的具體例子取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-4-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：makeValidator 回傳的函式可以重複驗證不同的人",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function makeValidator(minAge) {\n  return (person) => person.age >= minAge;\n}\n\nconst isAdult = makeValidator(18);\n\nconsole.log(isAdult({ name: '小明', age: 20 }));\nconsole.log(isAdult({ name: '小華', age: 15 }));",
+      "options": [
+        { "id": "a", "text": "true\nfalse" },
+        { "id": "b", "text": "false\ntrue" },
+        { "id": "c", "text": "true\ntrue" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "makeValidator(18) 回傳的 isAdult 函式已經記住了 minAge = 18，之後每次呼叫 isAdult(person) 只需要再傳入要驗證的人，就會拿這個人的 age 跟記住的 18 比較——小明 20 歲符合，印出 true；小華 15 歲不符合，印出 false。同一個 isAdult 函式被重複用來驗證兩個不同的人，不需要每次都重新指定 minAge。",
+      "verify": {
+        "checks": [
+          { "code": "function makeValidator(minAge) {\n  return (person) => person.age >= minAge;\n}\nconst isAdult = makeValidator(18);\nconsole.log(isAdult({ name: '小明', age: 20 }));\nconsole.log(isAdult({ name: '小華', age: 15 }));", "expected": "true\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-4-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "foldLeft：一次學會、到處都能用的收斂工具",
+      "docs": "",
+      "story": "",
+      "prompt": "「加總所有數字」「數出符合條件的元素個數」「找出最大值」「把陣列轉換成另一種資料結構」，這些看似不同的需求，能不能都用同一個 foldLeft（在 JS 對應 reduce）解決？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "能：foldLeft／reduce 的核心能力是「依序走訪每個元素，把目前累積的結果跟下一個元素合併成新的累積結果」，這個模式本身跟「最後想要什麼形狀的結果」無關——不管是加總成一個數字、數出符合條件的個數、找出最大值，還是組合成一個全新的資料結構，都只是「累積邏輯」不同，走訪與收斂的骨架完全一樣，這正是「學一次、到處都能用」的通用工具" },
+        { "id": "b", "text": "只有「加總數字」這種需求能用 foldLeft 解決，其他需求都需要各自不同的專用函式" },
+        { "id": "c", "text": "foldLeft 只能用在數字陣列上，沒辦法用在物件或字串陣列上" },
+        { "id": "d", "text": "foldLeft 每次只能處理固定長度的陣列，長度不同就需要換一種寫法" }
+      ],
+      "answer": "a",
+      "explanation": "foldLeft（reduce）的核心能力是「依序走訪、把目前累積結果跟下一個元素合併成新的累積結果」，這個骨架本身跟「最後想要什麼形狀的結果」無關——加總、計數、找最大值、組合出全新的資料結構，都只是「累積邏輯」不同，走訪與收斂的模式完全一樣。這正是為什麼 foldLeft 被視為「學一次、到處都能用」的通用工具，值得優先熟悉。",
+      "verify": { "manual": "概念題：以多種需求都能用同一個 reduce 骨架解決取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-4-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "用 foldLeft／reduce 數出符合條件的元素個數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "這段程式用 reduce 實作「數出符合條件的元素個數」，展示 foldLeft 不只能加總數字。這段程式會印出什麼？",
+      "code": "const ages = [15, 22, 18, 30, 12];\n\nconst adultCount = ages.reduce((count, age) => (age >= 18 ? count + 1 : count), 0);\n\nconsole.log(adultCount);",
+      "options": [
+        { "id": "a", "text": "3" },
+        { "id": "b", "text": "5" },
+        { "id": "c", "text": "2" },
+        { "id": "d", "text": "1" }
+      ],
+      "answer": "a",
+      "explanation": "reduce 依序走訪每個年齡，累加的不是「總和」而是「符合條件的個數」——每碰到一個 >= 18 的年齡，累加器就加 1，其餘情況維持不變。走訪完 [15, 22, 18, 30, 12] 後，符合條件的有 22、18、30 三個，累加器最終是 3。這證明了同一個 reduce 骨架，只要換一種累積邏輯，就能拿來解決計數這種跟加總完全不同的需求。",
+      "verify": {
+        "checks": [
+          { "code": "const ages = [15, 22, 18, 30, 12];\nconst adultCount = ages.reduce((count, age) => (age >= 18 ? count + 1 : count), 0);\nconsole.log(adultCount);", "expected": "3" }
+        ]
+      }
+    }
+  ]
+}

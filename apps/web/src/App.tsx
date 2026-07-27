@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useProgress } from '@/hooks/useProgress'
 import { useTheme } from '@/hooks/useTheme'
 import {
@@ -21,6 +21,9 @@ import Profile from '@/screens/Profile'
 import ChapterMap from '@/screens/ChapterMap'
 import Quiz from '@/screens/Quiz'
 import QuestionBook from '@/screens/QuestionBook'
+import Recap from '@/screens/Recap'
+import RecapChapter from '@/screens/RecapChapter'
+import SavedKeyPoints from '@/screens/SavedKeyPoints'
 import type { Question } from '@easylearn/core'
 
 type View =
@@ -30,17 +33,21 @@ type View =
   | { name: 'profile' }
   | { name: 'wrongbook' }
   | { name: 'savedbook' }
+  | { name: 'savedkeypoints' }
   | { name: 'levellist'; chapterId: string | null }
   | { name: 'quiz'; levelId: string; questions: Question[] }
   | { name: 'review'; questions: Question[] }
   | { name: 'mixed'; questions: Question[] }
   | { name: 'savedpractice'; questions: Question[] }
+  | { name: 'recap' }
+  | { name: 'recap-chapter'; chapterId: string }
 
 // 決定目前畫面該讓 navbar 的哪個分頁保持高亮
 const navGroupOf = (viewName: View['name']): string => {
   if (viewName === 'stats') return 'stats'
   if (viewName === 'profile') return 'profile'
-  if (['notes', 'review', 'wrongbook', 'savedbook', 'savedpractice'].includes(viewName)) return 'notes'
+  if (viewName === 'recap' || viewName === 'recap-chapter') return 'recap'
+  if (['notes', 'review', 'wrongbook', 'savedbook', 'savedkeypoints', 'savedpractice'].includes(viewName)) return 'notes'
   return 'home'
 }
 
@@ -48,10 +55,23 @@ const navGroupOfChapter = (levelId: string): string | null =>
   chapters.find((ch) => ch.levels.some((l) => l.id === levelId))?.id ?? null
 
 const App = () => {
-  const { progress, answerQuestion, toggleSaved, finishLevel, finishReview, resetLocalProgress } =
-    useProgress()
+  const {
+    progress,
+    answerQuestion,
+    toggleSaved,
+    toggleSavedKeyPoint,
+    finishLevel,
+    finishReview,
+    resetLocalProgress,
+  } = useProgress()
   const { theme, setTheme } = useTheme()
   const [view, setView] = useState<View>({ name: 'home' })
+
+  // 這是單頁式狀態機切換畫面，不是真的換頁，瀏覽器不會自動把捲動位置歸零，
+  // 沒有這行的話從捲動過的清單切到下一畫面時，畫面標頭會被上方 sticky navbar 蓋住
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [view])
 
   const startLevel = (levelId: string) => {
     // 固定抽 LEVEL_SIZE 題作答，題池不足就整包抽完（同難度內順序每次不同）
@@ -178,12 +198,32 @@ const App = () => {
             onBack={() => setView({ name: 'home' })}
           />
         )
+      case 'recap':
+        return <Recap onOpenChapter={(chapterId) => setView({ name: 'recap-chapter', chapterId })} />
+      case 'recap-chapter':
+        return (
+          <RecapChapter
+            chapterId={view.chapterId}
+            savedKeyPointIds={progress.savedKeyPointIds}
+            onToggleSavedKeyPoint={toggleSavedKeyPoint}
+            onBack={() => setView({ name: 'recap' })}
+          />
+        )
+      case 'savedkeypoints':
+        return (
+          <SavedKeyPoints
+            savedKeyPointIds={progress.savedKeyPointIds}
+            onToggleSavedKeyPoint={toggleSavedKeyPoint}
+            onBack={() => setView({ name: 'notes' })}
+          />
+        )
       case 'notes':
         return (
           <Notes
             progress={progress}
             onOpenWrongBook={() => setView({ name: 'wrongbook' })}
             onOpenSavedBook={() => setView({ name: 'savedbook' })}
+            onOpenSavedKeyPoints={() => setView({ name: 'savedkeypoints' })}
             onReview={startReview}
             onPracticeSaved={startSavedPractice}
           />

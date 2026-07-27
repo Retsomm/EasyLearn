@@ -11,6 +11,7 @@ interface NavItem {
 const BASE_NAV_ITEMS: NavItem[] = [
   { key: 'home', label: '每日刷題', icon: 'home' },
   { key: 'notes', label: '精選筆記', icon: 'book-open' },
+  { key: 'recap', label: '章節重點', icon: 'star' },
   { key: 'stats', label: '學習數據', icon: 'bar-chart' },
   { key: 'profile', label: '個人資料', icon: 'user' },
 ]

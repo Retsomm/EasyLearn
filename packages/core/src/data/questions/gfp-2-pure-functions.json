@@ -1,0 +1,132 @@
+{
+  "id": "gfp-2",
+  "title": "Ch2：純函式",
+  "questions": [
+    {
+      "id": "gfp-2-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "純函式的判斷依據：同樣輸入永遠同樣輸出，而且不偷偷影響外部",
+      "docs": "",
+      "story": "",
+      "prompt": "判斷一個函式是不是純函式，最基本的兩個判斷依據是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "第一，給定同樣的輸入，永遠得到同樣的輸出；第二，執行過程中不會偷偷影響函式之外的任何東西（不修改傳進來的參數、不寫資料庫、不印訊息、不讀寫任何外部可變狀態）——兩個條件都要成立，才算是嚴格意義下的純函式，缺一不可" },
+        { "id": "b", "text": "只要函式有回傳值，就自動算是純函式，跟輸入輸出的對應關係或有沒有副作用無關" },
+        { "id": "c", "text": "只要函式的程式碼行數少於 5 行，就自動算是純函式" },
+        { "id": "d", "text": "純函式指的是只能接受一個參數的函式，接受多個參數就不算純函式" }
+      ],
+      "answer": "a",
+      "explanation": "純函式的兩個核心判斷依據：同樣輸入永遠得到同樣輸出，而且執行過程不會偷偷影響函式之外的任何東西。兩者缺一不可——只符合「同樣輸入同樣輸出」卻偷偷寫了資料庫的函式不是純函式；反過來，完全沒有副作用、但每次呼叫給同樣輸入卻算出不同結果的函式，也一樣不是純函式。",
+      "verify": { "manual": "概念題：以兩個判斷依據的具體說明取代抽象純函式定義，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-2-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "共享可變資料破壞程式碼：函式意外修改了呼叫者手上的資料",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/push",
+      "story": "",
+      "prompt": "addBonusItem 想幫購物車「加一份贈品」，卻直接修改傳進來的 cart 陣列本身。這段程式會印出什麼？",
+      "code": "function addBonusItem(cart) {\n  cart.push('贈品');\n  return cart;\n}\n\nconst myCart = ['蘋果', '香蕉'];\nconst cartWithBonus = addBonusItem(myCart);\n\nconsole.log(myCart);\nconsole.log(cartWithBonus);\nconsole.log(myCart === cartWithBonus);",
+      "options": [
+        { "id": "a", "text": "[ '蘋果', '香蕉', '贈品' ]\n[ '蘋果', '香蕉', '贈品' ]\ntrue" },
+        { "id": "b", "text": "[ '蘋果', '香蕉' ]\n[ '蘋果', '香蕉', '贈品' ]\nfalse" },
+        { "id": "c", "text": "[ '蘋果', '香蕉', '贈品' ]\n[ '蘋果', '香蕉' ]\ntrue" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "addBonusItem 直接對傳進來的 cart 呼叫 push，這是原地修改陣列本身——myCart 這個呼叫端手上的原始購物車，跟函式回傳的 cartWithBonus 其實是同一個陣列，呼叫端可能完全沒料到自己手上的購物車也被意外改動了。這正是共享可變資料、又允許直接修改參數，最容易「破壞程式碼」的具體案例。",
+      "verify": {
+        "checks": [
+          { "code": "function addBonusItem(cart) {\n  cart.push('贈品');\n  return cart;\n}\nconst myCart = ['蘋果', '香蕉'];\nconst cartWithBonus = addBonusItem(myCart);\nconsole.log(myCart);\nconsole.log(cartWithBonus);\nconsole.log(myCart === cartWithBonus);", "expected": "[ '蘋果', '香蕉', '贈品' ]\n[ '蘋果', '香蕉', '贈品' ]\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-2-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "傳遞資料的副本：在函式邊界先複製一份，避免意外修改呼叫者的資料",
+      "docs": "",
+      "story": "",
+      "prompt": "要修好上一題的 addBonusItem，讓它不再意外修改呼叫端手上的購物車，該怎麼做？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "在函式一開始，先複製一份傳進來的陣列，後續所有操作都對這份副本進行，最後回傳這份副本，完全不去動原本傳進來的那個陣列——這樣呼叫端手上的原始資料就不會被波及，函式回傳的是一份全新的、加了贈品的購物車，原本的 myCart 維持不變" },
+        { "id": "b", "text": "應該讓 addBonusItem 直接修改全域變數，這樣就不會影響到 myCart" },
+        { "id": "c", "text": "應該把 push 換成 pop，這樣就不會修改到原始陣列" },
+        { "id": "d", "text": "沒有辦法避免這種意外修改，只能要求呼叫端自己先複製一份再傳進去" }
+      ],
+      "answer": "a",
+      "explanation": "在函式一開始就先複製一份傳進來的資料，後續操作都對這份副本進行，最後回傳副本、完全不碰原本傳進來的那份——這樣呼叫端手上的原始資料完全不會被波及。這正是「傳遞資料的副本」這個做法的具體實踐，讓函式從「會意外修改呼叫者資料的陷阱」變成安全、可預期的純函式。",
+      "verify": { "manual": "概念題：以修好 addBonusItem 的具體做法取代抽象傳遞副本敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-2-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：用展開運算子複製陣列後，呼叫端的原始資料不再被波及",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Spread_syntax",
+      "story": "",
+      "prompt": "這段程式改用展開運算子先複製一份陣列，再對副本操作。這段程式會印出什麼？",
+      "code": "function addBonusItemSafe(cart) {\n  const copy = [...cart];\n  copy.push('贈品');\n  return copy;\n}\n\nconst myCart = ['蘋果', '香蕉'];\nconst cartWithBonus = addBonusItemSafe(myCart);\n\nconsole.log(myCart);\nconsole.log(cartWithBonus);\nconsole.log(myCart === cartWithBonus);",
+      "options": [
+        { "id": "a", "text": "[ '蘋果', '香蕉' ]\n[ '蘋果', '香蕉', '贈品' ]\nfalse" },
+        { "id": "b", "text": "[ '蘋果', '香蕉', '贈品' ]\n[ '蘋果', '香蕉', '贈品' ]\ntrue" },
+        { "id": "c", "text": "[ '蘋果', '香蕉' ]\n[ '蘋果', '香蕉' ]\ntrue" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "addBonusItemSafe 一開始就用展開運算子複製了一份全新的陣列，後續的 push 只作用在這份副本上，完全沒有動到原本的 myCart——myCart 維持原樣、cartWithBonus 是加了贈品的全新陣列，兩者是不同的陣列實例。這正是先前那個「意外修改呼叫者資料」的 bug，用傳遞副本的方式修好之後的具體結果。",
+      "verify": {
+        "checks": [
+          { "code": "function addBonusItemSafe(cart) {\n  const copy = [...cart];\n  copy.push('贈品');\n  return copy;\n}\nconst myCart = ['蘋果', '香蕉'];\nconst cartWithBonus = addBonusItemSafe(myCart);\nconsole.log(myCart);\nconsole.log(cartWithBonus);\nconsole.log(myCart === cartWithBonus);", "expected": "[ '蘋果', '香蕉' ]\n[ '蘋果', '香蕉', '贈品' ]\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-2-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "重新計算，而不是儲存：衍生值該即時算出來，不要快取一份容易過期的副本",
+      "docs": "",
+      "story": "",
+      "prompt": "cartTotal 這個變數在加入商品的當下算好存起來，之後商品被移除時，如果忘記同步更新 cartTotal，會發生什麼問題？「重新計算而非儲存」這個原則建議怎麼處理？",
+      "code": "let cart = ['蘋果', '香蕉'];\nlet cartTotal = 50;",
+      "options": [
+        { "id": "a", "text": "如果 cartTotal 是「加入商品當下算好、存起來」的快取值，之後 cart 的內容改變時，如果忘記同步更新這個快取，cartTotal 就會悄悄變成過期、不正確的數字——「重新計算而非儲存」建議每次需要總金額時，直接從 cart 目前的內容即時算出來，不要另外維護一份需要手動同步的快取變數，這樣 cartTotal 就永遠不可能跟 cart 的實際內容脫節" },
+        { "id": "b", "text": "應該把 cartTotal 這個快取變數設為全域變數，這樣就不會有過期的問題" },
+        { "id": "c", "text": "「重新計算而非儲存」建議每次都應該把計算結果存進更多的快取變數裡，快取越多越好" },
+        { "id": "d", "text": "這種過期問題無法避免，任何寫法都會遇到同樣的困境" }
+      ],
+      "answer": "a",
+      "explanation": "cartTotal 如果是「算好存起來」的快取值，一旦 cart 的內容之後改變、卻忘記同步更新這個快取，cartTotal 就會悄悄過期、跟 cart 的實際內容對不上。「重新計算而非儲存」建議每次需要總金額時，直接從 cart 目前的內容即時算出來，這樣總金額就永遠不可能跟來源資料脫節，因為它每次都是當下重新算出來的。",
+      "verify": { "manual": "概念題：以 cartTotal 快取過期風險取代抽象重新計算原則敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-2-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：快取的總金額會過期，即時重新計算的版本永遠正確",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "這段程式對照示範「快取總金額」跟「每次即時重新計算總金額」，在商品被移除之後的差異。這段程式會印出什麼？",
+      "code": "const prices = { 蘋果: 30, 香蕉: 20 };\nlet cart = ['蘋果', '香蕉'];\nlet cachedTotal = cart.reduce((sum, item) => sum + prices[item], 0);\n\nfunction currentTotal(cart) {\n  return cart.reduce((sum, item) => sum + prices[item], 0);\n}\n\ncart = cart.filter((item) => item !== '香蕉');\n\nconsole.log('快取（可能過期）：', cachedTotal);\nconsole.log('即時重新計算：', currentTotal(cart));",
+      "options": [
+        { "id": "a", "text": "快取（可能過期）： 50\n即時重新計算： 30" },
+        { "id": "b", "text": "快取（可能過期）： 30\n即時重新計算： 30" },
+        { "id": "c", "text": "快取（可能過期）： 50\n即時重新計算： 50" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "cachedTotal 是移除香蕉「之前」算好存起來的值，之後 cart 內容改變了，卻沒有人記得同步更新它，變成過期的 50；currentTotal(cart) 則是每次呼叫時都對 cart「目前」的內容重新計算，正確反映出移除香蕉之後的總金額 30。這正是「重新計算而非儲存」想避免的問題：快取值只要沒有配套的同步機制，遲早會悄悄過期。",
+      "verify": {
+        "checks": [
+          { "code": "const prices = { 蘋果: 30, 香蕉: 20 };\nlet cart = ['蘋果', '香蕉'];\nlet cachedTotal = cart.reduce((sum, item) => sum + prices[item], 0);\nfunction currentTotal(cart) {\n  return cart.reduce((sum, item) => sum + prices[item], 0);\n}\ncart = cart.filter((item) => item !== '香蕉');\nconsole.log('快取（可能過期）：', cachedTotal);\nconsole.log('即時重新計算：', currentTotal(cart));", "expected": "快取（可能過期）： 50\n即時重新計算： 30" }
+        ]
+      }
+    }
+  ]
+}

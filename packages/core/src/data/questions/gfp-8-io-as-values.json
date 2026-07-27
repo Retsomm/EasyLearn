@@ -1,0 +1,132 @@
+{
+  "id": "gfp-8",
+  "title": "Ch8：IO 視為值",
+  "questions": [
+    {
+      "id": "gfp-8-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "IO 作為值：把「要做什麼」描述成一個還沒執行的值",
+      "docs": "",
+      "story": "",
+      "prompt": "IO(() => console.log('嗨')) 建立出來的東西，建立的當下會不會真的印出「嗨」？",
+      "code": "function IO(thunk) {\n  return { run: thunk };\n}\n\nconst greet = IO(() => console.log('嗨'));",
+      "options": [
+        { "id": "a", "text": "不會：IO(thunk) 回傳的只是一個「包著還沒執行的動作」的值，thunk 這個函式本身還沒有被呼叫——只有真正呼叫 greet.run() 的時候，裡面的 console.log('嗨') 才會真的執行、印出文字。建立 IO 值的這個動作本身，只是把「等一下要做什麼」描述出來，不會立刻真的做" },
+        { "id": "b", "text": "會，只要呼叫 IO(...) 建構子，裡面傳入的函式就會立刻被執行" },
+        { "id": "c", "text": "IO(...) 建構出來的東西不是一個值，是直接執行的結果本身" },
+        { "id": "d", "text": "只有在程式結束前，IO(...) 才會自動執行一次" }
+      ],
+      "answer": "a",
+      "explanation": "IO(thunk) 回傳的只是一個「包著還沒執行的動作」的值，thunk 本身還沒被呼叫——建立 greet 的當下，「嗨」不會被印出來，只有真正呼叫 greet.run() 時，裡面的 console.log 才會真的執行。IO 值的重點就是「先把要做的事描述成一個值，之後才真正執行」，這跟直接呼叫 console.log('嗨') 立刻就有副作用發生，是完全不同的兩件事。",
+      "verify": { "manual": "概念題：以 IO(thunk) 建立與執行分離的具體例子取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-8-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：IO 值建立時不執行，呼叫 run() 才執行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "這段程式會印出什麼順序？",
+      "code": "function IO(thunk) {\n  return { run: thunk };\n}\n\nconsole.log('步驟一：建立 IO 值');\nconst greet = IO(() => console.log('嗨，這是 IO 執行的內容'));\nconsole.log('步驟二：IO 值建立完成，還沒執行');\ngreet.run();\nconsole.log('步驟三：呼叫 run() 之後');",
+      "options": [
+        { "id": "a", "text": "步驟一：建立 IO 值\n步驟二：IO 值建立完成，還沒執行\n嗨，這是 IO 執行的內容\n步驟三：呼叫 run() 之後" },
+        { "id": "b", "text": "步驟一：建立 IO 值\n嗨，這是 IO 執行的內容\n步驟二：IO 值建立完成，還沒執行\n步驟三：呼叫 run() 之後" },
+        { "id": "c", "text": "嗨，這是 IO 執行的內容\n步驟一：建立 IO 值\n步驟二：IO 值建立完成，還沒執行\n步驟三：呼叫 run() 之後" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "建立 IO(() => console.log(...)) 這個值的時候，裡面的函式完全不會被執行，所以「步驟一」跟「步驟二」之間不會夾雜任何 IO 執行的內容；只有明確呼叫 greet.run()，裡面包著的動作才會真正執行、印出訊息，接著才輪到「步驟三」。這證實了 IO 值真的是「先描述、之後才執行」，執行的時間點完全由呼叫 run() 的那一刻決定。",
+      "verify": {
+        "checks": [
+          { "code": "function IO(thunk) {\n  return { run: thunk };\n}\nconsole.log('步驟一：建立 IO 值');\nconst greet = IO(() => console.log('嗨，這是 IO 執行的內容'));\nconsole.log('步驟二：IO 值建立完成，還沒執行');\ngreet.run();\nconsole.log('步驟三：呼叫 run() 之後');", "expected": "步驟一：建立 IO 值\n步驟二：IO 值建立完成，還沒執行\n嗨，這是 IO 執行的內容\n步驟三：呼叫 run() 之後" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-8-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "IO 具有感染性：用了 IO 的結果，自己也得跟著變成 IO",
+      "docs": "",
+      "story": "",
+      "prompt": "如果 fetchUserName() 回傳一個 IO，writeGreeting() 想用 fetchUserName 的結果組出一句問候語。writeGreeting 能不能只回傳一個普通字串，而不是另一個 IO？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不能：因為 fetchUserName 的結果被包在 IO 裡（只有真正 run 過才能拿到裡面的值），writeGreeting 想用到這個值，勢必也得把自己的邏輯包進 IO 裡，最終回傳的還是一個 IO——只要一個函式的邏輯依賴了某個 IO 的結果，這個函式自己也會被迫「感染」成回傳 IO，沒辦法假裝自己是普通的、能立刻拿到值的函式" },
+        { "id": "b", "text": "writeGreeting 可以直接假裝 fetchUserName 的結果是普通字串，正常使用，不會有任何問題" },
+        { "id": "c", "text": "只要 writeGreeting 不呼叫 fetchUserName().run()，就可以完全不受 IO 影響" },
+        { "id": "d", "text": "IO 只會影響第一層呼叫的函式，不會往外擴散到其他函式" }
+      ],
+      "answer": "a",
+      "explanation": "fetchUserName 的結果被包在 IO 裡，只有真正 run 過才能拿到裡面的值——writeGreeting 想用到這個值，勢必也得把自己的邏輯包進 IO 裡，最終自己也回傳一個 IO。只要一個函式的邏輯依賴了某個 IO 的結果，這個函式自己也會被「感染」成回傳 IO——這正是「IO 具有感染性」的意思，跟 async 函式一旦內部用了 await、自己也得變成 async 函式是同一種現象。",
+      "verify": { "manual": "概念題：以 fetchUserName 與 writeGreeting 的依賴關係取代抽象感染性敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-8-q4",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "組合兩個 IO：串接起來還是沒有真的執行，直到呼叫 run()",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "chain 讓兩個 IO 動作串接成一個新的 IO，串接的當下不會真的執行任何一個。這段程式會印出什麼？",
+      "code": "function IO(thunk) {\n  return { run: thunk };\n}\nfunction chain(io, fn) {\n  return IO(() => fn(io.run()).run());\n}\n\nconst fetchName = IO(() => {\n  console.log('正在打 API 取得名字');\n  return '小明';\n});\n\nconst combined = chain(fetchName, (name) => IO(() => {\n  console.log(`哈囉，${name}！`);\n  return name;\n}));\n\nconsole.log('組合完成，尚未執行');\ncombined.run();",
+      "options": [
+        { "id": "a", "text": "組合完成，尚未執行\n正在打 API 取得名字\n哈囉，小明！" },
+        { "id": "b", "text": "正在打 API 取得名字\n哈囉，小明！\n組合完成，尚未執行" },
+        { "id": "c", "text": "組合完成，尚未執行" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "chain(fetchName, fn) 只是組合出一個新的 IO 描述，組合的當下完全不會執行任何一個內部動作，所以「組合完成，尚未執行」會先印出來；一直到呼叫 combined.run()，才會依序真正執行 fetchName 的動作，再把結果丟給 fn 產生的第二個 IO 並執行它。整個組合過程都停留在「描述」階段，真正的執行永遠只發生在明確呼叫 run() 的那一刻。",
+      "verify": {
+        "checks": [
+          { "code": "function IO(thunk) {\n  return { run: thunk };\n}\nfunction chain(io, fn) {\n  return IO(() => fn(io.run()).run());\n}\nconst fetchName = IO(() => {\n  console.log('正在打 API 取得名字');\n  return '小明';\n});\nconst combined = chain(fetchName, (name) => IO(() => {\n  console.log(`哈囉，${name}！`);\n  return name;\n}));\nconsole.log('組合完成，尚未執行');\ncombined.run();", "expected": "組合完成，尚未執行\n正在打 API 取得名字\n哈囉，小明！" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-8-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "把不純的部分推到邊界：組合 IO 描述完全是純函式操作，只有最後的 run() 才碰到真實世界",
+      "docs": "",
+      "story": "",
+      "prompt": "chain、以及組合多個 IO 動作的過程，本身算不算是「不純」的操作？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不算：chain 這個函式本身只是在組合「描述」，回傳一個新的 IO 值，過程完全是純函式的操作，沒有任何真實世界的副作用發生——真正「不純」、會碰到真實世界的動作，只發生在明確呼叫 .run() 的那一刻。這讓程式裡絕大部分「組合邏輯要怎麼串接」的程式碼，都可以維持純函式、方便測試，只有最終那一個 run() 呼叫點才是真正的邊界" },
+        { "id": "b", "text": "chain 本身也是不純的操作，因為它處理的對象是 IO 這種帶有副作用的東西" },
+        { "id": "c", "text": "只要程式裡出現 IO 這個詞，所有相關的程式碼都自動變成不純的" },
+        { "id": "d", "text": "純不純跟有沒有呼叫 run() 完全無關，只要用到 IO 型別就一律算不純" }
+      ],
+      "answer": "a",
+      "explanation": "chain 這個函式本身只是在組合「描述」，回傳一個新的 IO 值，這個組合過程完全是純函式的操作，沒有任何真實世界的副作用發生——真正會碰到真實世界的動作，只發生在明確呼叫 .run() 的那一刻。這讓程式裡絕大部分組合邏輯的程式碼都能維持純函式、方便測試，只有最終呼叫 run() 的那個邊界才是真正不純的地方。",
+      "verify": { "manual": "概念題：以 chain 純組合、run() 才是邊界的具體區分取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-8-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "IO 的容錯：一個動作執行失敗時，改執行備用的動作",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/try...catch",
+      "story": "",
+      "prompt": "orElse 讓 IO 執行失敗時，改執行備用的 IO。這段程式會印出什麼？",
+      "code": "function IO(thunk) {\n  return { run: thunk };\n}\nfunction orElse(io, fallbackIo) {\n  return IO(() => {\n    try {\n      return io.run();\n    } catch (e) {\n      return fallbackIo.run();\n    }\n  });\n}\n\nconst risky = IO(() => { throw new Error('連線失敗'); });\nconst fallback = IO(() => '使用快取資料');\n\nconst safe = orElse(risky, fallback);\n\nconsole.log(safe.run());",
+      "options": [
+        { "id": "a", "text": "使用快取資料" },
+        { "id": "b", "text": "報錯，程式中止" },
+        { "id": "c", "text": "連線失敗" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "orElse 組出的新 IO，執行時會先嘗試跑 risky（結果拋出例外「連線失敗」），try/catch 接住這個例外之後，改執行 fallback 這個備用的 IO，回傳「使用快取資料」——呼叫者完全不需要自己寫 try/catch 處理 risky 可能失敗的情況，orElse 已經把「失敗時改用備援方案」這個容錯邏輯包進組合出來的新 IO 裡了。",
+      "verify": {
+        "checks": [
+          { "code": "function IO(thunk) {\n  return { run: thunk };\n}\nfunction orElse(io, fallbackIo) {\n  return IO(() => {\n    try {\n      return io.run();\n    } catch (e) {\n      return fallbackIo.run();\n    }\n  });\n}\nconst risky = IO(() => { throw new Error('連線失敗'); });\nconst fallback = IO(() => '使用快取資料');\nconst safe = orElse(risky, fallback);\nconsole.log(safe.run());", "expected": "使用快取資料" }
+        ]
+      }
+    }
+  ]
+}

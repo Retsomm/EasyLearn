@@ -1,0 +1,132 @@
+{
+  "id": "gfp-6",
+  "title": "Ch6：錯誤處理",
+  "questions": [
+    {
+      "id": "gfp-6-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Option 只講「有沒有」，沒有講「為什麼沒有」",
+      "docs": "",
+      "story": "",
+      "prompt": "parseAge('abc') 用 Option 表示失敗時回傳 { tag: 'None' }。如果想進一步告訴使用者「到底是哪裡解析失敗」，只回傳 None 夠用嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不夠：None 只表達「沒有值」這件事本身，完全沒有攜帶「為什麼沒有值」的資訊——想傳達具體的失敗原因，需要換成像 Either 這種能攜帶「失敗時的詳細資訊」的型別，Option／Maybe 適合用在「有沒有值本身就是全部資訊，不需要知道原因」的情境" },
+        { "id": "b", "text": "None 已經足夠攜帶任何詳細的失敗原因，不需要換成任何其他型別" },
+        { "id": "c", "text": "Option 型別強制要求一定要攜帶詳細的失敗原因，不能只回傳單純的 None" },
+        { "id": "d", "text": "只要把 None 這個名稱改成更長的字串，就能順便攜帶失敗原因" }
+      ],
+      "answer": "a",
+      "explanation": "None 只表達「沒有值」這件事本身，完全沒有攜帶「為什麼沒有值」的資訊。想傳達具體的失敗原因，需要換成像 Either 這種能攜帶「失敗時詳細資訊」的型別；Option／Maybe 則適合用在「有沒有值本身就是全部資訊，原因不重要」的情境。",
+      "verify": { "manual": "概念題：以 Option 與 Either 的具體差異取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-6-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "把一串字串各自解析成 Option",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Number",
+      "story": "",
+      "prompt": "parseNumber 把每個字串各自解析成 { tag: 'Some', value } 或 { tag: 'None' }。這段程式會印出什麼？",
+      "code": "function parseNumber(str) {\n  const n = Number(str);\n  return Number.isNaN(n) ? { tag: 'None' } : { tag: 'Some', value: n };\n}\n\nconst inputs = ['10', 'abc', '20'];\nconst results = inputs.map(parseNumber);\n\nconsole.log(results);",
+      "options": [
+        { "id": "a", "text": "[\n  { tag: 'Some', value: 10 },\n  { tag: 'None' },\n  { tag: 'Some', value: 20 }\n]" },
+        { "id": "b", "text": "[ { tag: 'Some', value: 10 }, { tag: 'Some', value: 20 } ]" },
+        { "id": "c", "text": "[ { tag: 'None' }, { tag: 'None' }, { tag: 'None' } ]" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "parseNumber 對每個字串各自嘗試解析：'10' 和 '20' 都能成功解析成數字，得到 Some；'abc' 沒辦法被解析成數字，得到 None。map 把這個轉換套用在每個字串上，結果是一份「每個位置各自是 Some 或 None」的陣列。",
+      "verify": {
+        "checks": [
+          { "code": "function parseNumber(str) {\n  const n = Number(str);\n  return Number.isNaN(n) ? { tag: 'None' } : { tag: 'Some', value: n };\n}\nconst inputs = ['10', 'abc', '20'];\nconst results = inputs.map(parseNumber);\nconsole.log(results);", "expected": "[\n  { tag: 'Some', value: 10 },\n  { tag: 'None' },\n  { tag: 'Some', value: 20 }\n]" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-6-q3",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "把一串 Option 收斂成一個 Option：只要有一個失敗，整體就算失敗",
+      "docs": "",
+      "story": "",
+      "prompt": "如果想確保「輸入的每一筆資料都成功解析，才算整批資料有效」，該怎麼把上一題那份「每個位置各自是 Some 或 None」的陣列，收斂成一個結果？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "用「全有全無」的策略把整份陣列收斂成一個 Option：只要陣列裡有任何一個元素是 None，整體收斂的結果就直接是 None；只有當每一個元素都是 Some，才把每個 Some 裡的值取出來、組成一份新陣列，包成一個 Some 回傳——這種操作讓「這批資料是不是整批都有效」變成一個能直接檢查的單一結果" },
+        { "id": "b", "text": "應該直接把陣列裡每個 Some 的 value 取出來，None 的部分用 0 取代，不管有沒有解析失敗都當作成功" },
+        { "id": "c", "text": "只要陣列裡有任何一個元素是 Some，整體收斂的結果就算成功，不需要檢查其他元素" },
+        { "id": "d", "text": "這種「收斂成一個結果」的需求沒辦法用程式表達，只能逐一手動檢查每個元素" }
+      ],
+      "answer": "a",
+      "explanation": "用「全有全無」的策略收斂：只要陣列裡有任何一個 None，整體結果直接是 None；只有每個元素都是 Some，才把裡面的值取出來組成新陣列、包成一個 Some 回傳。這種操作（有時稱為 sequence 或 traverse）讓「這批資料是不是整批都有效」變成一個能直接檢查的單一結果，不用自己手動逐一檢查。",
+      "verify": { "manual": "概念題：以全有全無策略的具體做法取代抽象 sequence 定義，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-6-q4",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "驗證：sequence 遇到任何一個 None，整體就變成 None",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "sequence 用 reduce 把一份 Option 陣列收斂成一個 Option。這段程式會印出什麼？",
+      "code": "function sequence(options) {\n  return options.reduce((acc, opt) => {\n    if (acc.tag === 'None' || opt.tag === 'None') return { tag: 'None' };\n    return { tag: 'Some', value: [...acc.value, opt.value] };\n  }, { tag: 'Some', value: [] });\n}\n\nconst allValid = [{ tag: 'Some', value: 10 }, { tag: 'Some', value: 20 }];\nconst hasInvalid = [{ tag: 'Some', value: 10 }, { tag: 'None' }, { tag: 'Some', value: 30 }];\n\nconsole.log(sequence(allValid));\nconsole.log(sequence(hasInvalid));",
+      "options": [
+        { "id": "a", "text": "{ tag: 'Some', value: [ 10, 20 ] }\n{ tag: 'None' }" },
+        { "id": "b", "text": "{ tag: 'Some', value: [ 10, 20 ] }\n{ tag: 'Some', value: [ 10, 30 ] }" },
+        { "id": "c", "text": "{ tag: 'None' }\n{ tag: 'None' }" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "allValid 陣列裡每個元素都是 Some，sequence 依序把每個值取出來累加進一份新陣列，最終得到 { tag: 'Some', value: [10, 20] }；hasInvalid 陣列裡有一個 None，一旦碰到 None，累加器就直接鎖定成 { tag: 'None' }，之後不管後面還有沒有 Some，最終結果都維持 None——這正是「全有全無」策略：只要有一個失敗，整批就判定為失敗。",
+      "verify": {
+        "checks": [
+          { "code": "function sequence(options) {\n  return options.reduce((acc, opt) => {\n    if (acc.tag === 'None' || opt.tag === 'None') return { tag: 'None' };\n    return { tag: 'Some', value: [...acc.value, opt.value] };\n  }, { tag: 'Some', value: [] });\n}\nconst allValid = [{ tag: 'Some', value: 10 }, { tag: 'Some', value: 20 }];\nconst hasInvalid = [{ tag: 'Some', value: 10 }, { tag: 'None' }, { tag: 'Some', value: 30 }];\nconsole.log(sequence(allValid));\nconsole.log(sequence(hasInvalid));", "expected": "{ tag: 'Some', value: [ 10, 20 ] }\n{ tag: 'None' }" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-6-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "另一種策略：只留下成功的，悄悄丟掉失敗的",
+      "docs": "",
+      "story": "",
+      "prompt": "如果需求改成「盡量處理，能解析多少算多少，解析失敗的那幾筆直接跳過就好」，這種策略跟「全有全無」有什麼不同？該怎麼實作？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "這是「寬鬆」策略：跟「全有全無」不同，只要挑出所有 Some、把裡面的值取出來組成一份陣列即可，None 直接被忽略、不會讓整體判定為失敗——實作上可以先 filter 出 tag 是 Some 的元素，再 map 取出裡面的 value；這種策略適合「部分失敗可以接受，能拿到多少算多少」的情境" },
+        { "id": "b", "text": "寬鬆策略跟全有全無策略做的事情完全一樣，沒有任何差別" },
+        { "id": "c", "text": "寬鬆策略要求只要有一筆失敗，就必須把所有已經成功的部分也一起作廢" },
+        { "id": "d", "text": "寬鬆策略沒辦法用程式實作，只能靠使用者自己手動篩選" }
+      ],
+      "answer": "a",
+      "explanation": "寬鬆策略只挑出所有 Some、取出裡面的值組成陣列，None 直接被忽略——不像「全有全無」那樣只要有一個失敗就整批判定為失敗。實作上可以先用 filter 篩出 tag 是 Some 的元素，再用 map 取出 value。該用哪一種取決於業務需求能不能接受部分失敗。",
+      "verify": { "manual": "概念題：以寬鬆策略取代抽象定義，用 filter+map 具體實作取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-6-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "對照：寬鬆策略保留成功的部分，全有全無策略只要有一個失敗就整批判定失敗",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/filter",
+      "story": "",
+      "prompt": "這段程式對同一份資料，分別套用「全有全無」跟「寬鬆」兩種策略。這段程式會印出什麼？",
+      "code": "const results = [{ tag: 'Some', value: 10 }, { tag: 'None' }, { tag: 'Some', value: 30 }];\n\nfunction sequence(options) {\n  return options.reduce((acc, opt) => {\n    if (acc.tag === 'None' || opt.tag === 'None') return { tag: 'None' };\n    return { tag: 'Some', value: [...acc.value, opt.value] };\n  }, { tag: 'Some', value: [] });\n}\n\nfunction keepSuccesses(options) {\n  return options.filter((opt) => opt.tag === 'Some').map((opt) => opt.value);\n}\n\nconsole.log(sequence(results));\nconsole.log(keepSuccesses(results));",
+      "options": [
+        { "id": "a", "text": "{ tag: 'None' }\n[ 10, 30 ]" },
+        { "id": "b", "text": "{ tag: 'None' }\n{ tag: 'None' }" },
+        { "id": "c", "text": "[ 10, 30 ]\n[ 10, 30 ]" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "sequence 用「全有全無」策略，只要陣列裡有一個 None，整體結果就是 None；keepSuccesses 用「寬鬆」策略，直接濾掉 None、只留下成功解析的兩筆值 [10, 30]。同一份資料，套用兩種不同的策略會得到完全不同的結果——該用哪一種，取決於業務上能不能接受「部分資料有問題，但還是想處理剩下的」。",
+      "verify": {
+        "checks": [
+          { "code": "const results = [{ tag: 'Some', value: 10 }, { tag: 'None' }, { tag: 'Some', value: 30 }];\nfunction sequence(options) {\n  return options.reduce((acc, opt) => {\n    if (acc.tag === 'None' || opt.tag === 'None') return { tag: 'None' };\n    return { tag: 'Some', value: [...acc.value, opt.value] };\n  }, { tag: 'Some', value: [] });\n}\nfunction keepSuccesses(options) {\n  return options.filter((opt) => opt.tag === 'Some').map((opt) => opt.value);\n}\nconsole.log(sequence(results));\nconsole.log(keepSuccesses(results));", "expected": "{ tag: 'None' }\n[ 10, 30 ]" }
+        ]
+      }
+    }
+  ]
+}

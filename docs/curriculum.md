@@ -126,6 +126,29 @@
 | Appendix A. Transducing | fljs-12 Transducing | ✅ |
 | Appendix B. The Humble Monad | fljs-13 謙遜的 Monad | ✅ |
 
+## 第七章 Grokking Functional Programming（Michal Plachta）
+
+> 全書 3 大 Part、12 個 Chapter，關卡對照書中每個數字 Chapter，一章一關。原著以 Scala 為主，
+> 題目一律翻譯成 JS 可執行的等價寫法；兩個附錄（Scala cheat sheet 純語法對照表、
+> Functional gems 是全書各章「THIS IS BIG!」重點方框的彙整摘要，沒有獨立於各章之外的新概念）
+> 都跳過不排入地圖。跟 `fp`／`sicp`／`dmmf` 有主題重疊的章節（純函式、不可變性、Stream、
+> 併行、Option/Either、ADT）刻意選用不同的具體情境跟切入角度出題，避免重複。
+
+| 書中章節 | 關卡 | 狀態 |
+|:--|:--|:--|
+| Part 1: The functional toolkit / Ch1 Learning functional programming | gfp-1 學習函數式程式設計 | ✅ |
+| Ch2 Pure functions | gfp-2 純函式 | ✅ |
+| Ch3 Immutable values | gfp-3 不可變值 | ✅ |
+| Ch4 Functions as values | gfp-4 函式作為值 | ✅ |
+| Part 2: Functional programs / Ch5 Sequential programs | gfp-5 循序程式 | ✅ |
+| Ch6 Error handling | gfp-6 錯誤處理 | ✅ |
+| Ch7 Requirements as types | gfp-7 把需求變成型別 | ✅ |
+| Ch8 IO as values | gfp-8 IO 視為值 | ✅ |
+| Ch9 Streams as values | gfp-9 Stream 視為值 | ✅ |
+| Ch10 Concurrent programs | gfp-10 併行程式 | ✅ |
+| Part 3: Applied functional programming / Ch11 Designing functional programs | gfp-11 設計函數式程式 | ✅ |
+| Ch12 Testing functional programs | gfp-12 測試函數式程式 | ✅ |
+
 ## 產題規則備忘
 
 - **以書籍為知識依據的章節**（目前是 `fp`、`sicp`、`dmmf`；未來若再新增其他書籍章節比照辦理）：這些書不是官方線上
