@@ -1,0 +1,132 @@
+{
+  "id": "sicp-5-4",
+  "title": "5.4 顯式控制直譯器",
+  "questions": [
+    {
+      "id": "sicp-5-4-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "顯式控制直譯器：把 eval／apply 本身也描述成暫存器機器",
+      "docs": "",
+      "story": "",
+      "prompt": "metacircular evaluator 的 myEval 是用 JavaScript 自己的函式呼叫（也就是 JS 引擎自己的呼叫堆疊）遞迴實作的。「顯式控制直譯器」要做的事是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "把 eval 和 apply 這兩個函式本身，也拆解成暫存器機器的指令序列（用明確的堆疊手動管理「求值到一半」的狀態），不再依賴宿主語言（這裡是 JavaScript）自己的函式呼叫機制——這樣一來，直譯器本身也能在一台只有暫存器和跳轉指令的機器上運作，不再偷偷借用宿主語言的呼叫堆疊" },
+        { "id": "b", "text": "顯式控制直譯器指的是讓使用者可以手動控制要不要執行某一行程式碼，跟暫存器機器完全無關" },
+        { "id": "c", "text": "顯式控制直譯器只是把 myEval 的程式碼加上更多註解，讓人類讀者更容易理解" },
+        { "id": "d", "text": "顯式控制直譯器會讓 eval 和 apply 變成完全不需要遞迴的函式，兩者之間不再互相呼叫" }
+      ],
+      "answer": "a",
+      "explanation": "metacircular evaluator 的遞迴呼叫本身，其實偷偷依賴了 JavaScript 引擎自己的呼叫堆疊來管理「求值到一半、還沒做完的部分」。顯式控制直譯器要做的，就是把這整套 eval/apply 循環也改寫成暫存器機器的指令序列，自己動手管理堆疊，不再倚賴宿主語言內建的函式呼叫機制——這正是「遞迴需要堆疊」的想法，套用在直譯器自己身上。",
+      "verify": { "manual": "概念題：連結先前遞迴需要堆疊的討論，取代抽象顯式控制敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-5-4-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "重新實作 myEval：確認答案跟原本遞迴版本一致",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Recursion",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function evalRecursive(expr) {\n  if (typeof expr === 'number') return expr;\n  const [op, leftExpr, rightExpr] = expr;\n  const left = evalRecursive(leftExpr);\n  const right = evalRecursive(rightExpr);\n  if (op === '+') return left + right;\n  if (op === '*') return left * right;\n  throw new Error('unsupported');\n}\n\nconsole.log(evalRecursive(['+', 2, ['*', 3, 4]]));",
+      "options": [
+        { "id": "a", "text": "14" },
+        { "id": "b", "text": "20" },
+        { "id": "c", "text": "9" },
+        { "id": "d", "text": "24" }
+      ],
+      "answer": "a",
+      "explanation": "不管是用 JS 遞迴呼叫實作，還是改成用明確的堆疊手動管理求值順序，只要邏輯正確，算出來的答案應該完全一樣：['+', 2, ['*', 3, 4]] 一樣是先算內層乘法得到 12，再加上 2 得到 14。顯式控制直譯器的重點不是「答案會不同」，而是「用來管理求值順序的機制，從偷偷倚賴宿主語言的堆疊，換成自己明確處理」。",
+      "verify": {
+        "checks": [
+          { "code": "function evalRecursive(expr) {\n  if (typeof expr === 'number') return expr;\n  const [op, leftExpr, rightExpr] = expr;\n  const left = evalRecursive(leftExpr);\n  const right = evalRecursive(rightExpr);\n  if (op === '+') return left + right;\n  if (op === '*') return left * right;\n  throw new Error('unsupported');\n}\nconsole.log(evalRecursive(['+', 2, ['*', 3, 4]]));", "expected": "14" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-4-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "顯式控制直譯器的價值：揭穿 metacircular 直譯器偷偷依賴的東西",
+      "docs": "",
+      "story": "",
+      "prompt": "metacircular evaluator 的價值在於「解釋語言的求值規則」，但它偷偷依賴了宿主語言（JavaScript）自己的函式呼叫機制。顯式控制直譯器多做了哪一步，讓這個「解釋」變得更徹底？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "顯式控制直譯器把 eval/apply 需要的「求值到一半的狀態管理」也攤開來，用自己的暫存器和堆疊實作，不再暗中借用宿主語言的呼叫堆疊——這樣才能回答「如果要在一台完全沒有『函式呼叫』這種內建功能的機器上（例如真正的硬體）跑出一個直譯器，到底需要做些什麼」，是比 metacircular evaluator 更徹底的解釋" },
+        { "id": "b", "text": "顯式控制直譯器完全沒有比 metacircular evaluator 多做任何事，兩者揭露的東西完全一樣" },
+        { "id": "c", "text": "顯式控制直譯器的目的是讓程式碼執行得更快，跟「解釋語言怎麼運作」無關" },
+        { "id": "d", "text": "metacircular evaluator 本來就沒有依賴宿主語言的任何機制，顯式控制直譯器只是多餘的重複工作" }
+      ],
+      "answer": "a",
+      "explanation": "metacircular evaluator 雖然把求值規則講得很清楚，但它「怎麼記住求值到一半的狀態」這件事，其實是偷偷倚賴宿主語言自己的函式呼叫堆疊完成的，這部分沒有被攤開來講清楚。顯式控制直譯器多走的這一步，就是把這個原本被隱藏的機制也攤開來、自己動手管理，回答了「如果連函式呼叫這種功能都沒有，直譯器該怎麼運作」這個更底層的問題。",
+      "verify": { "manual": "概念題：以隱藏機制攤開的具體對照取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-5-4-q4",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "顯式堆疊執行運算式：把運算式編譯成一串扁平指令再執行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/push",
+      "story": "",
+      "prompt": "請填入正確的方法，讓 run 在遇到 'push' 指令時，把值放進堆疊頂端。",
+      "code": "function compile(expr, instructions = []) {\n  if (typeof expr === 'number') {\n    instructions.push({ op: 'push', value: expr });\n    return instructions;\n  }\n  const [op, left, right] = expr;\n  compile(left, instructions);\n  compile(right, instructions);\n  instructions.push({ op });\n  return instructions;\n}\n\nfunction run(instructions) {\n  const stack = [];\n  for (const instr of instructions) {\n    if (instr.op === 'push') {\n      stack.____(instr.value);\n    } else if (instr.op === '+') {\n      const b = stack.pop();\n      const a = stack.pop();\n      stack.push(a + b);\n    } else if (instr.op === '*') {\n      const b = stack.pop();\n      const a = stack.pop();\n      stack.push(a * b);\n    }\n  }\n  return stack.pop();\n}\n\nconst instructions = compile(['+', 2, ['*', 3, 4]]);\nconsole.log(run(instructions));",
+      "options": [
+        { "id": "a", "text": "push" },
+        { "id": "b", "text": "pop" },
+        { "id": "c", "text": "shift" },
+        { "id": "d", "text": "splice" }
+      ],
+      "answer": "a",
+      "explanation": "遇到 'push' 這種指令，要把它帶的值放進堆疊頂端，所以要用 stack.push(instr.value)。compile 先把運算式攤平成一串扁平指令（先算好子運算式怎麼展開、最後才放運算子），run 再依序執行這些指令：整個過程完全沒有用到 JS 遞迴呼叫來管理求值順序，改成用一個明確的堆疊陣列——這正是顯式控制直譯器的精神。",
+      "verify": {
+        "checks": [
+          { "code": "function compile(expr, instructions = []) {\n  if (typeof expr === 'number') {\n    instructions.push({ op: 'push', value: expr });\n    return instructions;\n  }\n  const [op, left, right] = expr;\n  compile(left, instructions);\n  compile(right, instructions);\n  instructions.push({ op });\n  return instructions;\n}\nfunction run(instructions) {\n  const stack = [];\n  for (const instr of instructions) {\n    if (instr.op === 'push') {\n      stack.push(instr.value);\n    } else if (instr.op === '+') {\n      const b = stack.pop();\n      const a = stack.pop();\n      stack.push(a + b);\n    } else if (instr.op === '*') {\n      const b = stack.pop();\n      const a = stack.pop();\n      stack.push(a * b);\n    }\n  }\n  return stack.pop();\n}\nconst instructions = compile(['+', 2, ['*', 3, 4]]);\nconsole.log(run(instructions));", "expected": "14" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-4-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "執行器不管指令從哪來：手寫指令跟 compile 出來的指令通用",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      "story": "",
+      "prompt": "run 這個執行器只認得指令格式，不管這些指令是 compile 自動產生的，還是像這樣手動寫出來的。這段程式會印出什麼？",
+      "code": "function run(instructions) {\n  const stack = [];\n  for (const instr of instructions) {\n    if (instr.op === 'push') {\n      stack.push(instr.value);\n    } else if (instr.op === '+') {\n      const b = stack.pop();\n      const a = stack.pop();\n      stack.push(a + b);\n    } else if (instr.op === '*') {\n      const b = stack.pop();\n      const a = stack.pop();\n      stack.push(a * b);\n    }\n  }\n  return stack.pop();\n}\n\nconst handWritten = [\n  { op: 'push', value: 5 },\n  { op: 'push', value: 6 },\n  { op: '+' },\n  { op: 'push', value: 2 },\n  { op: '*' },\n];\n\nconsole.log(run(handWritten));",
+      "options": [
+        { "id": "a", "text": "22" },
+        { "id": "b", "text": "11" },
+        { "id": "c", "text": "13" },
+        { "id": "d", "text": "2" }
+      ],
+      "answer": "a",
+      "explanation": "run 完全不在乎這些指令是怎麼產生的，只依照指令格式（push、+、*）依序執行：push 5、push 6、相加成 11、push 2、相乘成 22。不管指令是 compile 自動產生的，還是像這樣直接手寫出來的陣列，run 的行為完全一樣——執行器跟「產生指令的方式」是兩件互相獨立的事。",
+      "verify": {
+        "checks": [
+          { "code": "function run(instructions) {\n  const stack = [];\n  for (const instr of instructions) {\n    if (instr.op === 'push') {\n      stack.push(instr.value);\n    } else if (instr.op === '+') {\n      const b = stack.pop();\n      const a = stack.pop();\n      stack.push(a + b);\n    } else if (instr.op === '*') {\n      const b = stack.pop();\n      const a = stack.pop();\n      stack.push(a * b);\n    }\n  }\n  return stack.pop();\n}\nconst handWritten = [\n  { op: 'push', value: 5 },\n  { op: 'push', value: 6 },\n  { op: '+' },\n  { op: 'push', value: 2 },\n  { op: '*' },\n];\nconsole.log(run(handWritten));", "expected": "22" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-4-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "eval 不是魔法：它自己也只是另一支可以被暫存器機器執行的程式",
+      "docs": "",
+      "story": "",
+      "prompt": "從 metacircular evaluator 到顯式控制直譯器，整個過程說明了 eval（求值）這件事的本質是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "eval 本身完全沒有任何「魔法」成分：它就跟任何其他演算法一樣，可以一路拆解到暫存器機器的指令序列（暫存器、跳轉、明確堆疊）為止，沒有任何一步是「語言內建、沒辦法再往下解釋」的黑箱——從高階語言的函式呼叫，到 eval/apply 循環，再到暫存器機器指令，每一層都可以用更底層的機制解釋清楚" },
+        { "id": "b", "text": "eval 是一種特殊的語言內建功能，沒辦法像其他演算法一樣拆解到暫存器機器層級" },
+        { "id": "c", "text": "eval 只存在於 metacircular evaluator 裡，顯式控制直譯器完全不需要用到 eval 這個概念" },
+        { "id": "d", "text": "顯式控制直譯器證明了「求值」這件事沒辦法用機械化的步驟描述，一定需要某種超出演算法範圍的東西" }
+      ],
+      "answer": "a",
+      "explanation": "這正是整個直譯器主題想呈現的核心洞察：從一開始覺得「執行程式碼」這件事很神秘，到用 metacircular evaluator 把求值規則講清楚，再到用顯式控制直譯器把「求值到一半的狀態怎麼管理」也攤開來、拆解到暫存器機器的指令序列為止——eval 本身不是什麼特殊的黑箱魔法，而是一路可以被拆解、解釋清楚的機械化步驟，跟任何一個演算法本質上沒有不同。",
+      "verify": { "manual": "概念題：總結 metacircular 到顯式控制的完整拆解過程，無可執行程式碼。" }
+    }
+  ]
+}

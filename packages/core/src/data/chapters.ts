@@ -47,6 +47,54 @@ import fp16 from './questions/fp-16-sharing-resources.json'
 import fp17 from './questions/fp-17-coordinating-timelines.json'
 import fp18 from './questions/fp-18-reactive-onion.json'
 import fp19 from './questions/fp-19-road-ahead.json'
+import sicp11 from './questions/sicp-1-1-elements-of-programming.json'
+import sicp12 from './questions/sicp-1-2-processes-and-recursion.json'
+import sicp13 from './questions/sicp-1-3-higher-order-functions.json'
+import sicp21 from './questions/sicp-2-1-data-abstraction.json'
+import sicp22 from './questions/sicp-2-2-hierarchical-data.json'
+import sicp23 from './questions/sicp-2-3-symbolic-data.json'
+import sicp24 from './questions/sicp-2-4-multiple-representations.json'
+import sicp25 from './questions/sicp-2-5-generic-operations.json'
+import sicp31 from './questions/sicp-3-1-assignment-local-state.json'
+import sicp32 from './questions/sicp-3-2-environment-model.json'
+import sicp33 from './questions/sicp-3-3-mutable-data.json'
+import sicp34 from './questions/sicp-3-4-concurrency.json'
+import sicp35 from './questions/sicp-3-5-streams.json'
+import sicp41 from './questions/sicp-4-1-metacircular-evaluator.json'
+import sicp42 from './questions/sicp-4-2-lazy-evaluation.json'
+import sicp43 from './questions/sicp-4-3-nondeterministic-computing.json'
+import sicp44 from './questions/sicp-4-4-logic-programming.json'
+import sicp51 from './questions/sicp-5-1-register-machines.json'
+import sicp52 from './questions/sicp-5-2-register-machine-simulator.json'
+import sicp53 from './questions/sicp-5-3-storage-gc.json'
+import sicp54 from './questions/sicp-5-4-explicit-control-evaluator.json'
+import sicp55 from './questions/sicp-5-5-compilation.json'
+import dmmf1 from './questions/dmmf-1-introducing-ddd.json'
+import dmmf2 from './questions/dmmf-2-understanding-domain.json'
+import dmmf3 from './questions/dmmf-3-functional-architecture.json'
+import dmmf4 from './questions/dmmf-4-understanding-types.json'
+import dmmf5 from './questions/dmmf-5-domain-modeling-types.json'
+import dmmf6 from './questions/dmmf-6-integrity-consistency.json'
+import dmmf7 from './questions/dmmf-7-workflows-as-pipelines.json'
+import dmmf8 from './questions/dmmf-8-understanding-functions.json'
+import dmmf9 from './questions/dmmf-9-composing-pipeline.json'
+import dmmf10 from './questions/dmmf-10-working-with-errors.json'
+import dmmf11 from './questions/dmmf-11-serialization.json'
+import dmmf12 from './questions/dmmf-12-persistence.json'
+import dmmf13 from './questions/dmmf-13-evolving-design.json'
+import fljs1 from './questions/fljs-1-why-functional.json'
+import fljs2 from './questions/fljs-2-nature-of-functions.json'
+import fljs3 from './questions/fljs-3-managing-inputs.json'
+import fljs4 from './questions/fljs-4-composing-functions.json'
+import fljs5 from './questions/fljs-5-reducing-side-effects.json'
+import fljs6 from './questions/fljs-6-value-immutability.json'
+import fljs7 from './questions/fljs-7-closure-vs-object.json'
+import fljs8 from './questions/fljs-8-recursion.json'
+import fljs9 from './questions/fljs-9-list-operations.json'
+import fljs10 from './questions/fljs-10-functional-async.json'
+import fljs11 from './questions/fljs-11-putting-together.json'
+import fljs12 from './questions/fljs-12-transducing.json'
+import fljs13 from './questions/fljs-13-humble-monad.json'
 import ri1 from './questions/ri-1-router.json'
 import ri2 from './questions/ri-2-i18n.json'
 import ri3 from './questions/ri-3-testing.json'
@@ -110,6 +158,36 @@ export const chapters: Chapter[] = [
     levels: [
       fp1, fp2, fp3, fp4, fp5, fp6, fp7, fp8, fp9, fp10,
       fp11, fp12, fp13, fp14, fp15, fp16, fp17, fp18, fp19,
+    ].map(asLevel),
+  },
+  {
+    id: 'sicp',
+    title: '計算機程式的構造和解釋（SICP JS）',
+    icon: 'star',
+    levels: [
+      sicp11, sicp12, sicp13,
+      sicp21, sicp22, sicp23, sicp24, sicp25,
+      sicp31, sicp32, sicp33, sicp34, sicp35,
+      sicp41, sicp42, sicp43, sicp44,
+      sicp51, sicp52, sicp53, sicp54, sicp55,
+    ].map(asLevel),
+  },
+  {
+    id: 'dmmf',
+    title: '領域驅動的函數式設計（Domain Modeling Made Functional）',
+    icon: 'shuffle',
+    levels: [
+      dmmf1, dmmf2, dmmf3, dmmf4, dmmf5, dmmf6, dmmf7,
+      dmmf8, dmmf9, dmmf10, dmmf11, dmmf12, dmmf13,
+    ].map(asLevel),
+  },
+  {
+    id: 'fljs',
+    title: '輕量函數式 JavaScript（Functional-Light JavaScript）',
+    icon: 'pencil',
+    levels: [
+      fljs1, fljs2, fljs3, fljs4, fljs5, fljs6, fljs7,
+      fljs8, fljs9, fljs10, fljs11, fljs12, fljs13,
     ].map(asLevel),
   },
   {

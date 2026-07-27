@@ -1,0 +1,136 @@
+{
+  "id": "sicp-2-1",
+  "title": "2.1 資料抽象導論",
+  "questions": [
+    {
+      "id": "sicp-2-1-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "抽象屏障：使用者只依賴介面，不依賴表示法",
+      "docs": "",
+      "story": "",
+      "prompt": "makeRat(n, d) 建構一個分數、numer/denom 取出分子分母。addRat 這一層只透過 numer、denom、makeRat 操作分數，完全沒有直接動過分數內部怎麼儲存。這是「抽象屏障」的什麼好處？",
+      "code": "function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }\nfunction makeRat(n, d) {\n  const g = gcd(n, d);\n  return [n / g, d / g];\n}\nfunction numer(x) { return x[0]; }\nfunction denom(x) { return x[1]; }\nfunction addRat(x, y) {\n  return makeRat(numer(x) * denom(y) + numer(y) * denom(x), denom(x) * denom(y));\n}",
+      "options": [
+        { "id": "a", "text": "如果之後想把分數的內部表示法從陣列 [n, d] 換成物件 { n, d }，只需要改 makeRat、numer、denom 這三個函式，addRat 完全不用跟著改——因為 addRat 只透過這三個介面函式操作分數，從來沒有直接寫過 x[0] 或 x[1]" },
+        { "id": "b", "text": "addRat 一定要直接讀取 x[0]、x[1] 才能正確運作，跟 numer/denom 是不是有實作抽象屏障無關" },
+        { "id": "c", "text": "抽象屏障只是理論上的說法，實務上換內部表示法一定要把用到分數的每一段程式碼都改一遍" },
+        { "id": "d", "text": "makeRat 不應該呼叫 gcd 化簡，化簡的責任應該交給 addRat 自己處理" }
+      ],
+      "answer": "a",
+      "explanation": "抽象屏障把「分數怎麼儲存」（makeRat/numer/denom 這一層）跟「分數怎麼運算」（addRat 這一層）隔開，addRat 只依賴 numer(x)、denom(x) 這種介面呼叫，完全不知道內部是陣列還是物件。只要這一層維持同樣的行為約定，內部表示法可以自由更換，不會波及使用這些介面的上層程式碼。",
+      "verify": { "manual": "概念題：以具體分數套件範例取代抽象屏障定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-2-1-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "分數套件：透過抽象屏障組合運算",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }\nfunction makeRat(n, d) {\n  const g = gcd(n, d);\n  return [n / g, d / g];\n}\nfunction numer(x) { return x[0]; }\nfunction denom(x) { return x[1]; }\nfunction addRat(x, y) {\n  return makeRat(numer(x) * denom(y) + numer(y) * denom(x), denom(x) * denom(y));\n}\n\nconst half = makeRat(1, 2);\nconst third = makeRat(1, 3);\nconsole.log(addRat(half, third));",
+      "options": [
+        { "id": "a", "text": "[ 5, 6 ]" },
+        { "id": "b", "text": "[ 3, 6 ]" },
+        { "id": "c", "text": "[ 1, 1 ]" },
+        { "id": "d", "text": "5/6" }
+      ],
+      "answer": "a",
+      "explanation": "1/2 + 1/3 = (1*3 + 1*2) / (2*3) = 5/6，makeRat(5, 6) 用 gcd(5, 6) = 1 化簡，結果不變，回傳 [5, 6]。整個過程 addRat 都只透過 numer/denom/makeRat 操作，沒有直接碰過陣列索引。",
+      "verify": {
+        "checks": [
+          { "code": "function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }\nfunction makeRat(n, d) {\n  const g = gcd(n, d);\n  return [n / g, d / g];\n}\nfunction numer(x) { return x[0]; }\nfunction denom(x) { return x[1]; }\nfunction addRat(x, y) {\n  return makeRat(numer(x) * denom(y) + numer(y) * denom(x), denom(x) * denom(y));\n}\nconst half = makeRat(1, 2);\nconst third = makeRat(1, 3);\nconsole.log(addRat(half, third));", "expected": "[ 5, 6 ]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-1-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "資料的本質：只要滿足行為約定，不需要真正的資料結構",
+      "docs": "",
+      "story": "",
+      "prompt": "下面這個 cons 完全沒有用陣列、物件或任何「容器」，只回傳一個函式；car、cdr 呼叫這個函式並傳入 0 或 1 來決定要拿哪個值。這種寫法還算不算是「資料」？",
+      "code": "function cons(x, y) {\n  return (pick) => (pick === 0 ? x : y);\n}\nfunction car(p) { return p(0); }\nfunction cdr(p) { return p(1); }\n\nconst p = cons(3, 4);\nconsole.log(car(p), cdr(p));",
+      "options": [
+        { "id": "a", "text": "算：只要 car(cons(x, y)) 永遠等於 x、cdr(cons(x, y)) 永遠等於 y 這個行為約定成立，它就滿足「資料」的定義——SICP 對「資料是什麼」的定義只在乎能不能滿足這組行為約定，不在乎背後有沒有真正的容器或記憶體結構" },
+        { "id": "b", "text": "不算，因為它回傳的是一個函式，不是真正的「資料」，資料一定要用陣列或物件表示" },
+        { "id": "c", "text": "這段程式會出錯，因為 car 和 cdr 傳入的參數型別不對" },
+        { "id": "d", "text": "只有第一次呼叫 car(p) 有效，第二次呼叫 cdr(p) 會拿到錯誤的值" }
+      ],
+      "answer": "a",
+      "explanation": "cons、car、cdr 之間唯一被要求滿足的行為約定就是 car(cons(x, y)) === x 且 cdr(cons(x, y)) === y。用「回傳一個依 pick 挑值的函式」實作的版本完全滿足這組約定，所以照這個定義，它就是合格的資料表示法——不需要真正的容器，滿足約定就夠了。",
+      "verify": { "manual": "概念題：以具體用函式實作 cons/car/cdr 取代抽象定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-2-1-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用純函式實作 cons/car/cdr（訊息傳遞）",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "承上題，car 靠呼叫 p(0) 拿到第一個值、cdr 靠呼叫 p(1) 拿到第二個值。請填入正確的判斷式，讓 cons 回傳的函式能依照 pick 正確挑值。",
+      "code": "function cons(x, y) {\n  return (pick) => (____);\n}\nfunction car(p) { return p(0); }\nfunction cdr(p) { return p(1); }\n\nconsole.log(car(cons(10, 20)), cdr(cons(10, 20)));",
+      "options": [
+        { "id": "a", "text": "pick === 0 ? x : y" },
+        { "id": "b", "text": "pick === 1 ? x : y" },
+        { "id": "c", "text": "x" },
+        { "id": "d", "text": "pick + x" }
+      ],
+      "answer": "a",
+      "explanation": "pick 傳 0 時要拿到第一個值 x，傳其他值（這裡只會傳 1）時要拿到第二個值 y，所以要用 pick === 0 ? x : y 這個判斷式。car(cons(10, 20)) 呼叫時 pick = 0 拿到 10，cdr(cons(10, 20)) 呼叫時 pick = 1 拿到 20。",
+      "verify": {
+        "checks": [
+          { "code": "function cons(x, y) {\n  return (pick) => (pick === 0 ? x : y);\n}\nfunction car(p) { return p(0); }\nfunction cdr(p) { return p(1); }\nconsole.log(car(cons(10, 20)), cdr(cons(10, 20)));", "expected": "10 20" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-1-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "違反抽象屏障：直接依賴內部表示法的風險",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Object_initializer",
+      "story": "",
+      "prompt": "這段程式繞過 numer，直接假設分數內部是陣列、用 x[0] 存取分子。但 makeRat 的內部表示法其實已經換成物件 { n, d }。這段程式會印出什麼？",
+      "code": "function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }\nfunction makeRat(n, d) {\n  const g = gcd(n, d);\n  return { n: n / g, d: d / g };\n}\n\nfunction unsafeNumer(x) { return x[0]; }\n\nconst half = makeRat(1, 2);\nconsole.log(unsafeNumer(half));",
+      "options": [
+        { "id": "a", "text": "undefined" },
+        { "id": "b", "text": "1" },
+        { "id": "c", "text": "2" },
+        { "id": "d", "text": "報錯，程式無法執行" }
+      ],
+      "answer": "a",
+      "explanation": "unsafeNumer 假設分數內部永遠是陣列、用 x[0] 存取，但 makeRat 已經把內部表示法換成物件 { n, d }，物件沒有索引 0 這個屬性，所以 x[0] 是 undefined。這正是繞過抽象屏障（不透過 numer 這個介面函式）的代價：只要內部表示法一換，沒有走正規介面的地方就會悄悄壞掉，而且往往不會馬上報錯，而是印出 undefined 這種難以察覺的錯誤結果。",
+      "verify": {
+        "checks": [
+          { "code": "function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }\nfunction makeRat(n, d) {\n  const g = gcd(n, d);\n  return { n: n / g, d: d / g };\n}\nfunction unsafeNumer(x) { return x[0]; }\nconst half = makeRat(1, 2);\nconsole.log(unsafeNumer(half));", "expected": "undefined" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-1-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "區間運算：用建構子/選擇器操作不確定的量",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      "story": "",
+      "prompt": "makeInterval(lower, upper) 建構一個代表「介於 lower 與 upper 之間」的不確定數值區間，addInterval 只透過 lowerBound/upperBound 操作，不直接碰內部陣列。這段程式會印出什麼？",
+      "code": "function makeInterval(lower, upper) { return [lower, upper]; }\nfunction lowerBound(i) { return i[0]; }\nfunction upperBound(i) { return i[1]; }\nfunction addInterval(x, y) {\n  return makeInterval(lowerBound(x) + lowerBound(y), upperBound(x) + upperBound(y));\n}\n\nconst r1 = makeInterval(6, 6.25);\nconst r2 = makeInterval(4.5, 4.75);\nconsole.log(addInterval(r1, r2));",
+      "options": [
+        { "id": "a", "text": "[ 10.5, 11 ]" },
+        { "id": "b", "text": "[ 6, 4.75 ]" },
+        { "id": "c", "text": "[ 1.5, 1.5 ]" },
+        { "id": "d", "text": "10.5" }
+      ],
+      "answer": "a",
+      "explanation": "addInterval 只透過 lowerBound、upperBound、makeInterval 這三個介面操作區間，把兩個區間的下界相加、上界相加，得到新區間 [10.5, 11]。跟前面的分數套件一樣，這是同一種「用建構子/選擇器隔開表示法與運算」的手法，應用在代表不確定數值範圍的區間資料上。",
+      "verify": {
+        "checks": [
+          { "code": "function makeInterval(lower, upper) { return [lower, upper]; }\nfunction lowerBound(i) { return i[0]; }\nfunction upperBound(i) { return i[1]; }\nfunction addInterval(x, y) {\n  return makeInterval(lowerBound(x) + lowerBound(y), upperBound(x) + upperBound(y));\n}\nconst r1 = makeInterval(6, 6.25);\nconst r2 = makeInterval(4.5, 4.75);\nconsole.log(addInterval(r1, r2));", "expected": "[ 10.5, 11 ]" }
+        ]
+      }
+    }
+  ]
+}

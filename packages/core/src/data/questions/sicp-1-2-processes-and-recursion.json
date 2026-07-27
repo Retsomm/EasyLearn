@@ -1,0 +1,136 @@
+{
+  "id": "sicp-1-2",
+  "title": "1.2 函式與它們產生的計算過程",
+  "questions": [
+    {
+      "id": "sicp-1-2-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "線性遞迴 process：延遲運算的堆疊",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Recursion",
+      "story": "",
+      "prompt": "factorial 用「先遞迴呼叫、等呼叫返回後才做乘法」的方式寫成線性遞迴。這段程式會印出什麼？",
+      "code": "function factorial(n) {\n  if (n === 1) return 1;\n  return n * factorial(n - 1);\n}\n\nconsole.log(factorial(5));",
+      "options": [
+        { "id": "a", "text": "120" },
+        { "id": "b", "text": "15" },
+        { "id": "c", "text": "24" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "每一層呼叫都要先等 factorial(n - 1) 算完，才能做 n * ... 這個乘法，所以會先一路展開到 factorial(1) = 1，再從最內層開始把乘法一層層做回來（5*4*3*2*1 = 120）。這種「先展開、後收縮」的形狀就是線性遞迴 process，需要的記憶體會隨 n 線性增加，因為要記住每一層還沒做完的乘法。",
+      "verify": {
+        "checks": [
+          { "code": "function factorial(n) {\n  if (n === 1) return 1;\n  return n * factorial(n - 1);\n}\nconsole.log(factorial(5));", "expected": "120" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-1-2-q2",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "遞迴「函式」vs 遞迴「process」的差別",
+      "docs": "",
+      "story": "",
+      "prompt": "版本一與版本二都是語法上會呼叫自己的遞迴函式，但它們產生的計算過程（process）形狀不一樣。哪一個描述正確？",
+      "code": "// 版本一\nfunction factRec(n) {\n  if (n === 1) return 1;\n  return n * factRec(n - 1);\n}\n\n// 版本二\nfunction factIter(n, acc = 1) {\n  if (n === 1) return acc;\n  return factIter(n - 1, n * acc);\n}",
+      "options": [
+        { "id": "a", "text": "版本一每往下一層呼叫，都要留著「還沒做的乘法」等呼叫返回才能完成，形成隨 n 增長的延遲運算鏈（遞迴 process）；版本二把當下算好的乘積直接放進 acc 參數往下傳，每一步都不留待辦事項，是疊代 process——即使兩者語法上都是函式呼叫自己" },
+        { "id": "b", "text": "兩者產生的計算過程完全相同，因為兩個函式語法上都是遞迴呼叫，語法一樣就代表計算過程一樣" },
+        { "id": "c", "text": "版本二才是延遲運算鏈，因為它多了一個 acc 參數，參數越多代表過程越複雜" },
+        { "id": "d", "text": "版本一是疊代 process，因為它只有一行乘法運算，看起來比較簡單" }
+      ],
+      "answer": "a",
+      "explanation": "判斷是遞迴 process 還是疊代 process，看的不是「語法上有沒有函式呼叫自己」，而是「每一步是不是已經把當下能算的都算完、不留延遲運算」。factRec 每層都要等下一層返回才能做乘法，運算會一路堆疊；factIter 用 acc 把目前算好的結果往下傳，每一步都是完整的，不需要堆疊延遲運算。",
+      "verify": { "manual": "概念題：以具體對照兩種寫法取代抽象定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-1-2-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "樹狀遞迴：重複計算的代價",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Recursion",
+      "story": "",
+      "prompt": "用最直接的定義 fib(n) = fib(n-1) + fib(n-2) 寫費氏數列，會產生樹狀遞迴 process——同樣的子問題會被重複算好幾次。這段程式會印出什麼？",
+      "code": "let calls = 0;\nfunction fib(n) {\n  calls++;\n  if (n <= 1) return n;\n  return fib(n - 1) + fib(n - 2);\n}\n\nconsole.log(fib(5), calls);",
+      "options": [
+        { "id": "a", "text": "5 15" },
+        { "id": "b", "text": "5 5" },
+        { "id": "c", "text": "5 9" },
+        { "id": "d", "text": "8 15" }
+      ],
+      "answer": "a",
+      "explanation": "fib(5) 的值是 5，但要算出它得展開成一棵呼叫樹：fib(5) 呼叫 fib(4) 和 fib(3)，fib(4) 又呼叫 fib(3) 和 fib(2)……像 fib(3)、fib(2) 這樣的子問題會被重複計算好幾次，而不是只算一次存起來，總共呼叫了 15 次。這正是樹狀遞迴 process 最大的代價：呼叫次數會隨 n 指數成長，不是像疊代那樣只需要線性次數。",
+      "verify": {
+        "checks": [
+          { "code": "let calls = 0;\nfunction fib(n) {\n  calls++;\n  if (n <= 1) return n;\n  return fib(n - 1) + fib(n - 2);\n}\nconsole.log(fib(5), calls);", "expected": "5 15" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-1-2-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "快速指數：用平方降低次方運算次數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Remainder",
+      "story": "",
+      "prompt": "直接把 b 相乘 n 次求 b 的 n 次方，需要 n 次乘法；利用「n 是偶數時，b^n = (b^(n/2))^2」可以把次方運算次數大幅降低。請填入正確的判斷式，讓 fastExpt 用平方法計算次方。",
+      "code": "function fastExpt(b, n) {\n  if (n === 0) return 1;\n  if (____) {\n    const half = fastExpt(b, n / 2);\n    return half * half;\n  }\n  return b * fastExpt(b, n - 1);\n}\n\nconsole.log(fastExpt(2, 10));",
+      "options": [
+        { "id": "a", "text": "n % 2 === 0" },
+        { "id": "b", "text": "n % 2 === 1" },
+        { "id": "c", "text": "n > 0" },
+        { "id": "d", "text": "b % 2 === 0" }
+      ],
+      "answer": "a",
+      "explanation": "只有 n 是偶數時，才能把 b^n 拆成 (b^(n/2))^2 這種平方形式；n 是奇數時就得先拿掉一個 b、退回 b * b^(n-1) 這種較慢但正確的路徑。fastExpt(2, 10) 會沿路用平方法算：2^10 = (2^5)^2，2^5 是奇數走 2 * 2^4，一路算下去最終得到 1024。",
+      "verify": {
+        "checks": [
+          { "code": "function fastExpt(b, n) {\n  if (n === 0) return 1;\n  if (n % 2 === 0) {\n    const half = fastExpt(b, n / 2);\n    return half * half;\n  }\n  return b * fastExpt(b, n - 1);\n}\nconsole.log(fastExpt(2, 10));", "expected": "1024" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-1-2-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "成長量級：空間需求隨輸入怎麼變化",
+      "docs": "",
+      "story": "",
+      "prompt": "如果要計算 n = 100000 的階乘，下面這兩種寫法比起來，哪一個比較可能在極大的 n 下發生「呼叫堆疊爆掉」（stack overflow）？",
+      "code": "function factRec(n) {\n  if (n === 1) return 1;\n  return n * factRec(n - 1);\n}\nfunction factIter(n, acc = 1) {\n  while (n !== 1) {\n    acc = n * acc;\n    n = n - 1;\n  }\n  return acc;\n}",
+      "options": [
+        { "id": "a", "text": "factRec 比較容易在極大 n 下爆堆疊，因為它每往下一層都要保留「還沒做完的乘法」等待返回，需要的堆疊空間隨 n 線性增加；factIter 用迴圈把「當下算好的結果」放進 acc 往下傳，不留待辦事項、也不會多開任何一層函式呼叫，是空間需求不隨 n 增加的疊代 process（提醒：如果把 factIter 改寫成呼叫自己的遞迴形式而不是迴圈，同樣的「不留待辦事項」邏輯在 SICP 的抽象模型裡仍然是疊代 process，但在沒有做尾端呼叫優化的 JavaScript 引擎裡，函式呼叫本身還是會消耗堆疊空間，不能保證不會爆堆疊——這裡直接用迴圈實作，才能在實際的 JS 環境裡真正做到空間需求不隨 n 增加）" },
+        { "id": "b", "text": "factIter 比較容易爆堆疊，因為它多了一個參數 acc，參數越多用掉的記憶體越多" },
+        { "id": "c", "text": "兩者發生堆疊爆掉的機率完全一樣，跟寫法無關，只跟 n 的大小有關" },
+        { "id": "d", "text": "兩者都不可能發生堆疊爆掉，因為 JavaScript 引擎沒有任何堆疊深度限制" }
+      ],
+      "answer": "a",
+      "explanation": "這正是「成長量級」在乎的重點：不是「哪個寫法比較短」，而是空間需求怎麼隨輸入 n 成長。factRec 每層呼叫都要保留一個「還沒做完的乘法」等下一層返回值，這些待辦事項會隨 n 線性堆疊起來；factIter 改用迴圈，每一輪直接把當前結果算進 acc、覆寫同一組區域變數，完全不新增函式呼叫，是空間需求不隨 n 增加的疊代 process。SICP 原書用尾端遞迴寫 factIter，在有做尾端呼叫優化（tail-call optimization）的直譯器裡效果跟迴圈一樣；但主流 JavaScript 引擎大多沒有實作 TCO，同樣寫法的尾端遞迴仍然會逐層消耗堆疊，所以這裡直接示範迴圈版本，確保「疊代 process＝真的不佔堆疊空間」這個結論在實際的 JS 環境裡也成立。",
+      "verify": { "manual": "概念題：極大 n 會實際造成呼叫堆疊溢位，不適合在驗證腳本裡執行，以文字說明取代。" }
+    },
+    {
+      "id": "sicp-1-2-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "歐幾里得演算法：GCD 的疊代 process",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Remainder",
+      "story": "",
+      "prompt": "用歐幾里得演算法（gcd(a, b) = gcd(b, a mod b)，直到 b 為 0 時回傳 a）計算最大公因數。這段程式會印出什麼？",
+      "code": "function gcd(a, b) {\n  if (b === 0) return a;\n  return gcd(b, a % b);\n}\n\nconsole.log(gcd(206, 40));",
+      "options": [
+        { "id": "a", "text": "2" },
+        { "id": "b", "text": "6" },
+        { "id": "c", "text": "4" },
+        { "id": "d", "text": "40" }
+      ],
+      "answer": "a",
+      "explanation": "每一步都把 (a, b) 換成 (b, a mod b)，直到 b 變成 0 為止：(206,40) → (40,6) → (6,4) → (4,2) → (2,0)，最後回傳 2。這是典型的疊代 process：每一步都只需要記住當下的 (a, b)，不需要像線性遞迴那樣堆疊延遲運算。",
+      "verify": {
+        "checks": [
+          { "code": "function gcd(a, b) {\n  if (b === 0) return a;\n  return gcd(b, a % b);\n}\nconsole.log(gcd(206, 40));", "expected": "2" }
+        ]
+      }
+    }
+  ]
+}

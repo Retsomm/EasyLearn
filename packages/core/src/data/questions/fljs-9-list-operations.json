@@ -1,0 +1,128 @@
+{
+  "id": "fljs-9",
+  "title": "Ch9：走訪清單的操作",
+  "questions": [
+    {
+      "id": "fljs-9-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "map vs forEach：有沒有「回傳一份新的轉換結果」",
+      "docs": "",
+      "story": "",
+      "prompt": "arr.map(f) 跟 arr.forEach(f) 都會依序對每個元素呼叫 f，但兩者在 FP 的意義下不算同一件事。差別在哪？",
+      "code": "const doubled = [1, 2, 3].map((x) => x * 2);\n[1, 2, 3].forEach((x) => x * 2);",
+      "options": [
+        { "id": "a", "text": "map 的重點是「回傳一份跟原陣列等長、但每個元素都被轉換過的新陣列」，這份新陣列本身就是 map 的輸出；forEach 只是單純依序呼叫 f，f 的回傳值完全被忽略、丟棄，forEach 本身永遠回傳 undefined——如果目的是要拿到一份轉換後的資料，該用的是 map；forEach 只適合用在「單純執行某個副作用、不需要拿到轉換結果」的情境" },
+        { "id": "b", "text": "map 和 forEach 在任何情境下都完全等價，可以隨意互相替換使用" },
+        { "id": "c", "text": "forEach 才是正確做資料轉換的方法，map 只能用來執行副作用" },
+        { "id": "d", "text": "map 和 forEach 唯一的差別是 map 的執行速度比較快，其餘行為完全一樣" }
+      ],
+      "answer": "a",
+      "explanation": "map 的核心價值是「回傳一份轉換後的新陣列」，這份新陣列就是它的輸出；forEach 只是依序呼叫 f、把每次呼叫的回傳值直接丟棄，forEach 本身永遠回傳 undefined。如果目的是要拿到一份轉換後的資料，該用 map；forEach 只適合用在單純執行副作用、不需要保留轉換結果的情境。混用兩者是常見的 FP 反模式。",
+      "verify": { "manual": "概念題：以 map 與 forEach 回傳值的具體差異取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-9-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "驗證：forEach 的回傳值永遠是 undefined",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach",
+      "story": "",
+      "prompt": "這段程式示範用 forEach「試圖」做轉換，跟正確用 map 做轉換的差異。這段程式會印出什麼？",
+      "code": "const doubledWithMap = [1, 2, 3].map((x) => x * 2);\nconst doubledWithForEach = [1, 2, 3].forEach((x) => x * 2);\n\nconsole.log(doubledWithMap);\nconsole.log(doubledWithForEach);",
+      "options": [
+        { "id": "a", "text": "[ 2, 4, 6 ]\nundefined" },
+        { "id": "b", "text": "[ 2, 4, 6 ]\n[ 2, 4, 6 ]" },
+        { "id": "c", "text": "[ 2, 4, 6 ]\n[ 1, 2, 3 ]" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "map 回傳一份轉換後的新陣列 [2, 4, 6]；forEach 不管回呼函式回傳什麼，forEach 本身永遠回傳 undefined——doubledWithForEach 完全沒有拿到任何轉換後的資料，這正是為什麼想要拿到轉換結果時，一定要用 map，用 forEach 只會白白浪費那些回傳值。",
+      "verify": {
+        "checks": [
+          { "code": "const doubledWithMap = [1, 2, 3].map((x) => x * 2);\nconst doubledWithForEach = [1, 2, 3].forEach((x) => x * 2);\nconsole.log(doubledWithMap);\nconsole.log(doubledWithForEach);", "expected": "[ 2, 4, 6 ]\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-9-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Functor：擁有「合乎規則的」map 方法的容器",
+      "docs": "",
+      "story": "",
+      "prompt": "陣列因為有 .map() 方法、而且這個方法遵守某些規則，所以陣列被稱為一種 functor。這個「functor」的概念，重點放在什麼地方？",
+      "code": "const arr = [1, 2, 3];\nconst same = arr.map((x) => x);",
+      "options": [
+        { "id": "a", "text": "重點在於「這個容器有沒有提供一個合乎規則的 map 方法」，不限定容器本身一定要是陣列——只要一個東西有 map 方法、而且這個 map 方法遵守特定規則，它就可以被視為一種 functor，陣列只是 JavaScript 裡最常見、最直覺的一種 functor，不是唯一一種" },
+        { "id": "b", "text": "functor 專指陣列這一種資料結構，任何其他容器都不能被稱為 functor" },
+        { "id": "c", "text": "functor 指的是任何有 length 屬性的物件，跟 map 方法完全無關" },
+        { "id": "d", "text": "只要一個物件的名字裡有 \"map\" 這個字，就自動算是 functor" }
+      ],
+      "answer": "a",
+      "explanation": "functor 的重點在於「這個容器有沒有提供一個合乎規則的 map 方法」，不限定它一定要是陣列——任何東西只要有 map 方法、而且這個方法遵守特定規則，就可以被視為一種 functor。陣列是 JavaScript 裡最常見、最直覺的一種 functor，但概念本身比陣列這個具體型別更通用，之後遇到的 Maybe、Result 這類容器，也都可以是 functor。",
+      "verify": { "manual": "概念題：以陣列作為 functor 的具體例子取代抽象定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-9-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Functor 的規則之一：map 恆等函式，結果要跟原本等價",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/map",
+      "story": "",
+      "prompt": "這段程式驗證「用恆等函式 map 一個陣列」，結果是不是跟原陣列的內容相等。這段程式會印出什麼？",
+      "code": "const identity = (x) => x;\nconst arr = [1, 2, 3];\nconst mapped = arr.map(identity);\n\nconsole.log(mapped);\nconsole.log(arr === mapped, JSON.stringify(arr) === JSON.stringify(mapped));",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3 ]\nfalse true" },
+        { "id": "b", "text": "[ 1, 2, 3 ]\ntrue true" },
+        { "id": "c", "text": "[ 1, 2, 3 ]\nfalse false" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "arr.map(identity) 回傳一份「內容」跟原陣列一模一樣的新陣列，符合 functor 恆等法則；但這份新陣列是另外建立出來的，不是原本那個陣列實例，所以 arr === mapped 是 false（參照不同），JSON.stringify 比較內容則是 true（內容相同）。functor 法則講的是「內容等價」，不是「是不是同一個物件實例」。",
+      "verify": {
+        "checks": [
+          { "code": "const identity = (x) => x;\nconst arr = [1, 2, 3];\nconst mapped = arr.map(identity);\nconsole.log(mapped);\nconsole.log(arr === mapped, JSON.stringify(arr) === JSON.stringify(mapped));", "expected": "[ 1, 2, 3 ]\nfalse true" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-9-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "reduce 是最通用的：map 和 filter 都能用 reduce 表達出來",
+      "docs": "",
+      "story": "",
+      "prompt": "map 和 filter 各自有自己的方法，但兩者其實都能改寫成用 reduce 實作。這說明了 reduce 在這幾個列表操作裡，扮演什麼樣的角色？",
+      "code": "// arr.map(f) 等價於 arr.reduce((acc, x) => [...acc, f(x)], [])\n// arr.filter(pred) 等價於 arr.reduce((acc, x) => pred(x) ? [...acc, x] : acc, [])",
+      "options": [
+        { "id": "a", "text": "reduce 是最通用、最基礎的列表操作：map（逐一轉換）和 filter（逐一篩選）都可以看成是「用 reduce 累加出一份新陣列」的特化版本——map 每次都把轉換後的值累加進去，filter 只在條件成立時才累加，兩者都只是「reduce 收斂成陣列」這個更通用模式底下的特殊情況" },
+        { "id": "b", "text": "reduce 只是 map 和 filter 的別名，三者做的事情完全一樣，沒有誰更通用" },
+        { "id": "c", "text": "map 和 filter 沒辦法用 reduce 表達，三者是三種互不相關的獨立操作" },
+        { "id": "d", "text": "reduce 只能用來加總數字，沒辦法用來組合出陣列這種結果" }
+      ],
+      "answer": "a",
+      "explanation": "map（逐一轉換）和 filter（逐一篩選）都能改寫成「用 reduce 累加出一份新陣列」的特化版本——map 每次都把轉換後的值累加進去，filter 只在條件成立時才累加。這說明 reduce 是這幾個列表操作裡最通用、最基礎的一個，map、filter 都可以被看成 reduce 底下的特殊情況。",
+      "verify": { "manual": "概念題：以 map/filter 改寫成 reduce 的具體對照取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-9-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "融合：把多次 map 合併成一次走訪，避免建立中間陣列",
+      "docs": "",
+      "story": "",
+      "prompt": "arr.map(f).map(g) 對同一個陣列走訪了兩次，會建立一份中間陣列（.map(f) 的結果）跟一份最終結果陣列（.map(g) 的結果）。「融合」（fusion）這個技巧想做的是什麼？",
+      "code": "// 沒融合：走訪兩次，多一份中間陣列\narr.map(f).map(g);\n\n// 融合後：只走訪一次，沒有中間陣列\narr.map((x) => g(f(x)));",
+      "options": [
+        { "id": "a", "text": "融合把「連續兩次 map」合併成「一次 map，內部依序套用兩個轉換函式」，這樣只需要走訪陣列一次、不需要建立中間那份只是過渡用途的陣列——這是效能上的最佳化，把多個轉換步驟先組合好、再一次套用，而不是每個步驟各自建立一份新陣列" },
+        { "id": "b", "text": "融合會讓陣列的最終轉換結果跟沒融合前不一樣" },
+        { "id": "c", "text": "融合只能套用在陣列長度小於 10 的情況，陣列較長時無法融合" },
+        { "id": "d", "text": "融合是指把陣列本身跟轉換函式合併成同一個物件" }
+      ],
+      "answer": "a",
+      "explanation": "融合把「連續兩次 map」合併成「一次 map，內部依序套用兩個轉換函式」，這樣只需要走訪陣列一次，不用建立只是過渡用途的中間陣列。這是純粹效能上的最佳化，先組合好轉換邏輯再一次套用，跟先套用 f 產生中間陣列、再套用 g，最終結果完全一樣，只是省下了建立中間陣列的成本。",
+      "verify": { "manual": "概念題：以 map 融合前後的具體對照取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+{
+  "id": "sicp-4-2",
+  "title": "4.2 惰性求值",
+  "questions": [
+    {
+      "id": "sicp-4-2-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "求值順序：applicative order（先算好參數）vs normal order（用到才算）",
+      "docs": "",
+      "story": "",
+      "prompt": "JavaScript 呼叫函式時，會先把每個引數都算出實際的值，才把值傳進函式本體執行——這叫 applicative order。如果改成「先把引數包成還沒算的運算式傳進去，函式本體裡真的用到那個引數時才去算它」，這種求值順序叫做什麼？",
+      "code": "function f(a, b) {\n  return a; // 完全沒用到 b\n}\n\nconsole.log(f(1, 2 + 3)); // applicative order：2+3 呼叫前就先算好了",
+      "options": [
+        { "id": "a", "text": "normal order（正常序）：引數先以未求值的運算式形式傳入，只有函式本體真的用到這個引數時才會去計算它的值——如果函式本體像 f 這樣根本沒用到某個引數，那個引數對應的運算式就永遠不會被算，跟 applicative order「不管用不用得到，呼叫前就先全部算好」剛好相反" },
+        { "id": "b", "text": "normal order 指的是引數一定要按照從左到右的順序依序求值，跟「要不要用到」無關" },
+        { "id": "c", "text": "normal order 只是 applicative order 的另一個名稱，兩者完全等價" },
+        { "id": "d", "text": "normal order 會導致所有引數都被求值兩次" }
+      ],
+      "answer": "a",
+      "explanation": "applicative order（JavaScript 採用的方式）是「不管函式本體用不用得到，呼叫前就先把每個引數都算成實際的值」；normal order 則是「引數先以未求值的運算式形式傳進去，函式本體裡真的用到才去算」——如果像 f(a, b) 這樣函式本體根本沒用到 b，normal order 下 b 對應的運算式永遠不會被求值，applicative order 下卻早在呼叫前就已經被算過了。",
+      "verify": { "manual": "概念題：以具體未使用參數範例取代抽象求值順序敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-4-2-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Applicative order 的代價：沒用到的引數也會被提前算",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions",
+      "story": "",
+      "prompt": "JavaScript 用 applicative order，即使 f 完全沒用到第二個參數，這段程式還是會先執行 computeB。這段程式會印出什麼順序？",
+      "code": "function computeB() {\n  console.log('算 b 了');\n  return 999;\n}\nfunction f(a, b) {\n  return a;\n}\n\nconsole.log(f(1, computeB()));",
+      "options": [
+        { "id": "a", "text": "算 b 了\n1" },
+        { "id": "b", "text": "1" },
+        { "id": "c", "text": "1\n算 b 了" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "JavaScript 呼叫 f(1, computeB()) 之前，會先把每個引數都算成實際的值——所以 computeB() 一定會被執行、印出「算 b 了」，即使 f 本身根本沒用到這個參數 b。這正是 applicative order 的代價：即使某個引數最後完全用不到，只要呼叫發生了，它就已經被提前算過、產生過的副作用（像這裡的 console.log）也已經發生了，無法回頭。",
+      "verify": {
+        "checks": [
+          { "code": "function computeB() {\n  console.log('算 b 了');\n  return 999;\n}\nfunction f(a, b) {\n  return a;\n}\nconsole.log(f(1, computeB()));", "expected": "算 b 了\n1" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-4-2-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Normal order 能避免不必要的計算",
+      "docs": "",
+      "story": "",
+      "prompt": "如果 JavaScript 是 normal order，上一題的 computeB() 會發生什麼變化？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "computeB() 根本不會被呼叫：因為 f 的函式本體完全沒有用到第二個參數，normal order 下這個引數對應的運算式永遠不會被求值，「算 b 了」這行訊息完全不會出現——這正是延遲求值能省下不必要計算（甚至避免不必要副作用）的具體例子" },
+        { "id": "b", "text": "computeB() 還是會被呼叫，只是呼叫的時間點會延後到程式執行完畢之後" },
+        { "id": "c", "text": "normal order 下 computeB() 會被呼叫兩次而不是一次" },
+        { "id": "d", "text": "這種情況下 normal order 跟 applicative order 的行為完全一樣，沒有任何差別" }
+      ],
+      "answer": "a",
+      "explanation": "normal order 的核心價值就在這裡：如果一個引數最終完全沒被函式本體用到，它對應的運算式就永遠不會被求值，任何附帶的副作用（像 console.log）自然也不會發生。跟 applicative order「不管用不用得到，先算就對了」完全相反，這也是為什麼 normal order 能省下（有時候是避免）不必要的計算。",
+      "verify": { "manual": "概念題：對照上一題 applicative order 的行為，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-4-2-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "手動模擬延遲求值：用 thunk 包住還沒算的運算式",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "用一個「零參數函式」（thunk）包住還沒算的運算式，只有真的呼叫這個 thunk 時才會執行裡面的計算。請填入正確的呼叫，讓 force 執行 thunk、拿到實際的值。",
+      "code": "function delay(fn) { return fn; }\nfunction force(thunk) { return ____; }\n\nfunction computeB() {\n  console.log('算 b 了');\n  return 999;\n}\n\nconst bThunk = delay(computeB);\nconsole.log('還沒 force 前，b 還沒被算');\nconsole.log(force(bThunk));",
+      "options": [
+        { "id": "a", "text": "thunk()" },
+        { "id": "b", "text": "thunk" },
+        { "id": "c", "text": "thunk.call()" },
+        { "id": "d", "text": "delay(thunk)" }
+      ],
+      "answer": "a",
+      "explanation": "force 要做的事就是「呼叫」這個被包起來的 thunk，讓它裡面的計算真正執行、拿到值，所以要填 thunk()。這段程式先印出「還沒 force 前，b 還沒被算」，此時 computeB 完全還沒執行；直到 force(bThunk) 真正呼叫 thunk() 那一刻，才會印出「算 b 了」並算出 999。",
+      "verify": {
+        "checks": [
+          { "code": "function delay(fn) { return fn; }\nfunction force(thunk) { return thunk(); }\nfunction computeB() {\n  console.log('算 b 了');\n  return 999;\n}\nconst bThunk = delay(computeB);\nconsole.log('還沒 force 前，b 還沒被算');\nconsole.log(force(bThunk));", "expected": "還沒 force 前，b 還沒被算\n算 b 了\n999" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-4-2-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "Thunk 被 force 兩次：沒有記憶化的話，會重複計算",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "force 這個最簡單的版本，每次呼叫都會重新執行一次 thunk 裡的計算，沒有把算過的結果存起來。這段程式會印出什麼？",
+      "code": "function delay(fn) { return fn; }\nfunction force(thunk) { return thunk(); }\n\nfunction computeB() {\n  console.log('算 b 了');\n  return 999;\n}\n\nconst bThunk = delay(computeB);\nconsole.log(force(bThunk));\nconsole.log(force(bThunk));",
+      "options": [
+        { "id": "a", "text": "算 b 了\n999\n算 b 了\n999" },
+        { "id": "b", "text": "算 b 了\n999\n999" },
+        { "id": "c", "text": "算 b 了\n999" },
+        { "id": "d", "text": "999\n999" }
+      ],
+      "answer": "a",
+      "explanation": "這個最簡單版本的 force 每次呼叫都會重新執行一次 thunk() 裡的計算，並沒有把第一次算出來的結果存起來重複使用，所以「算 b 了」跟 999 各出現兩次。實務上的延遲求值（包括 stream）通常會搭配「記憶化」（只計算一次、之後直接回傳存好的結果），這裡刻意示範沒有記憶化的版本，凸顯記憶化是延遲求值額外需要處理的一層，不是內建就有的。",
+      "verify": {
+        "checks": [
+          { "code": "function delay(fn) { return fn; }\nfunction force(thunk) { return thunk(); }\nfunction computeB() {\n  console.log('算 b 了');\n  return 999;\n}\nconst bThunk = delay(computeB);\nconsole.log(force(bThunk));\nconsole.log(force(bThunk));", "expected": "算 b 了\n999\n算 b 了\n999" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-4-2-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Stream 就是延遲求值的具體應用",
+      "docs": "",
+      "story": "",
+      "prompt": "前面章節用 generator 實作的 stream，「只在被要求下一個元素時才去計算它」。這跟這一節的 delay/force（thunk）背後是同一種什麼想法？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "都是同一種想法：把「什麼時候真的執行計算」延後到「真的需要這個值的那一刻」，在那之前只保留一個「還沒被執行、但已經準備好隨時可以被執行」的東西（thunk 是一個零參數函式，generator 則是一個可以被要求 next() 的物件）——stream 可以看成是「延遲求值」這個想法，應用在處理一整串序列時的具體實作方式" },
+        { "id": "b", "text": "兩者是完全無關的技巧，只是剛好都用到函式" },
+        { "id": "c", "text": "generator 底層其實跟 thunk／delay 完全不同的機制，沒有任何共通點" },
+        { "id": "d", "text": "stream 只是加快了計算速度，跟「什麼時候計算」這個時機無關" }
+      ],
+      "answer": "a",
+      "explanation": "delay/force（thunk）跟用 generator 實作的 stream，背後是同一種核心想法：把「什麼時候真的執行計算」延後到「真的用得到這個值的那一刻」，在那之前只保留一個「還沒執行、但隨時可以被觸發」的東西。thunk 是最小單位的示範（一個值的延遲），stream 則是把同一個想法套用在「一整串連續的值」上，這也是為什麼延遲求值跟 stream 會被放在同一個大主題底下討論。",
+      "verify": { "manual": "概念題：連結先前 stream 小節，說明兩者背後共通的延遲求值想法，無可執行程式碼。" }
+    }
+  ]
+}

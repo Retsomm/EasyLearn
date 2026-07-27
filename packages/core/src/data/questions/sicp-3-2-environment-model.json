@@ -1,0 +1,136 @@
+{
+  "id": "sicp-3-2",
+  "title": "3.2 求值的環境模型",
+  "questions": [
+    {
+      "id": "sicp-3-2-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "環境模型：函式依定義時的環境找自由變數，不是呼叫時的環境",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "makeAdder 回傳的函式讀取 n 這個自由變數。呼叫端 callWithDifferentN 剛好也宣告了一個叫 n 的變數。這段程式會印出什麼？",
+      "code": "function makeAdder(n) {\n  return (x) => x + n;\n}\n\nfunction callWithDifferentN() {\n  let n = 999;\n  const add5 = makeAdder(5);\n  return add5(10);\n}\n\nconsole.log(callWithDifferentN());",
+      "options": [
+        { "id": "a", "text": "15" },
+        { "id": "b", "text": "1009" },
+        { "id": "c", "text": "報錯" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "add5 這個函式在 makeAdder(5) 呼叫當下就把「定義時的環境」（n = 5 那個 frame）記在自己的 closure 裡，之後不管在哪裡呼叫 add5，它讀取自由變數 n 永遠沿著「定義時」的環境鏈往外找，找到的是 5，跟呼叫端 callWithDifferentN 內部剛好同名的 n = 999 完全無關。add5(10) 算出 10 + 5 = 15，不是 10 + 999。這正是 JavaScript 詞法作用域（lexical scoping）的環境模型：自由變數只看函式「定義時」所在的環境鏈。",
+      "verify": {
+        "checks": [
+          { "code": "function makeAdder(n) {\n  return (x) => x + n;\n}\nfunction callWithDifferentN() {\n  let n = 999;\n  const add5 = makeAdder(5);\n  return add5(10);\n}\nconsole.log(callWithDifferentN());", "expected": "15" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-2-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "每次呼叫都是新的 frame：兩個 closure 互不干擾",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "makeCounter() 呼叫兩次會建立兩個獨立的 frame，各自有自己的 count。這段程式會印出什麼？",
+      "code": "function makeCounter() {\n  let count = 0;\n  return () => {\n    count += 1;\n    return count;\n  };\n}\n\nconst counterA = makeCounter();\nconst counterB = makeCounter();\nconsole.log(counterA(), counterA(), counterB());",
+      "options": [
+        { "id": "a", "text": "1 2 1" },
+        { "id": "b", "text": "1 2 3" },
+        { "id": "c", "text": "1 1 1" },
+        { "id": "d", "text": "2 2 1" }
+      ],
+      "answer": "a",
+      "explanation": "counterA 和 counterB 是分別呼叫 makeCounter() 兩次得到的，每次呼叫 makeCounter() 都會建立一個全新的 frame（各自有自己獨立的 count）。counterA 呼叫兩次，count 從 0 累加到 1 再到 2；counterB 是另一個全新的 frame，第一次呼叫時 count 從 0 開始累加，跟 counterA 完全無關，所以是 1。",
+      "verify": {
+        "checks": [
+          { "code": "function makeCounter() {\n  let count = 0;\n  return () => {\n    count += 1;\n    return count;\n  };\n}\nconst counterA = makeCounter();\nconst counterB = makeCounter();\nconsole.log(counterA(), counterA(), counterB());", "expected": "1 2 1" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-2-q3",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "Frame 作為區域狀態的存放處：為什麼 balance 能在呼叫之間存活",
+      "docs": "",
+      "story": "",
+      "prompt": "makeWithdraw(100) 呼叫一次之後就結束了，理論上它的 frame 應該被回收，但回傳的提款函式之後每次呼叫還是能讀到、修改同一份 balance。為什麼 balance 沒有隨著 makeWithdraw 呼叫結束就消失？",
+      "code": "function makeWithdraw(balance) {\n  return (amount) => {\n    balance -= amount;\n    return balance;\n  };\n}",
+      "options": [
+        { "id": "a", "text": "因為回傳的箭頭函式的 closure 環境鏈指向 makeWithdraw 那次呼叫建立的 frame，只要還有人（也就是這個箭頭函式）持有這個 frame 的參照，這個 frame 就會被保留下來、不會被回收——balance 這個區域狀態能存活多久，取決於還有沒有函式的 closure 指向它，不是取決於外層函式呼叫本身有沒有結束" },
+        { "id": "b", "text": "balance 會在 makeWithdraw 呼叫結束的瞬間被重設回初始值，之後每次呼叫都是重新從 100 開始扣款" },
+        { "id": "c", "text": "JavaScript 引擎會把 balance 提升成全域變數，所以才能一直存取到" },
+        { "id": "d", "text": "每次呼叫回傳的箭頭函式，都會各自複製一份 balance 的副本，彼此獨立不相關" }
+      ],
+      "answer": "a",
+      "explanation": "一個 frame 什麼時候會被回收，看的不是「建立它的函式呼叫有沒有結束」，而是「還有沒有東西持有它的參照」。makeWithdraw 回傳的箭頭函式把 makeWithdraw 呼叫建立的 frame 記在自己的 closure 裡，只要這個箭頭函式還存在，這個 frame 連同裡面的 balance 就會一直活著，之後每次呼叫都在讀寫同一份 balance——這正是環境模型解釋「區域狀態為什麼能跨呼叫存活」的方式。",
+      "verify": { "manual": "概念題：以具體 frame 存活機制取代抽象環境模型敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-3-2-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "環境鏈：由內而外一層層找自由變數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "請填入正確的變數，讓 inner 印出「往外一層層找到的 x」。",
+      "code": "function outer() {\n  const x = 'outer-x';\n  function middle() {\n    function inner() {\n      return ____;\n    }\n    return inner();\n  }\n  return middle();\n}\n\nconsole.log(outer());",
+      "options": [
+        { "id": "a", "text": "x" },
+        { "id": "b", "text": "'inner-x'" },
+        { "id": "c", "text": "this.x" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "inner 裡面沒有宣告自己的 x，所以會沿著環境鏈往外找：先看 middle 有沒有 x（沒有），再往外看 outer 有沒有 x（有，是 'outer-x'），找到就直接用這一層的值。填 x 就能正確讀到 'outer-x'。",
+      "verify": {
+        "checks": [
+          { "code": "function outer() {\n  const x = 'outer-x';\n  function middle() {\n    function inner() {\n      return x;\n    }\n    return inner();\n  }\n  return middle();\n}\nconsole.log(outer());", "expected": "outer-x" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-2-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "內部宣告：巢狀函式直接讀取外層參數，不用額外傳參數",
+      "docs": "",
+      "story": "",
+      "prompt": "goodEnough 和 improve 兩個輔助函式被定義在 mySqrt 裡面，它們都能直接讀到 mySqrt 的參數 x，不需要 mySqrt 呼叫它們時額外把 x 當作參數傳進去。這是環境模型的什麼好處？",
+      "code": "function mySqrt(x) {\n  function goodEnough(guess) {\n    return Math.abs(guess * guess - x) < 0.001;\n  }\n  function improve(guess) {\n    return (guess + x / guess) / 2;\n  }\n  function sqrtIter(guess) {\n    return goodEnough(guess) ? guess : sqrtIter(improve(guess));\n  }\n  return sqrtIter(1);\n}",
+      "options": [
+        { "id": "a", "text": "goodEnough、improve 這些內部宣告的函式，它們的 closure 環境鏈本來就包含 mySqrt 呼叫建立的 frame（x 就存在那個 frame 裡），所以能直接沿著環境鏈讀到 x，不需要 mySqrt 每次呼叫它們都額外把 x 當成參數傳一次——這讓輔助函式的參數列可以只保留真正需要「每次呼叫都不同」的部分（像 guess），減少不必要的參數" },
+        { "id": "b", "text": "這只是巧合，goodEnough 和 improve 其實各自有自己獨立的 x，跟 mySqrt 的 x 沒有關係" },
+        { "id": "c", "text": "一定要把 x 明確當作 goodEnough、improve 的參數傳進去，否則這段程式會報錯" },
+        { "id": "d", "text": "內部宣告的函式沒辦法讀取外層函式的參數，只能讀取全域變數" }
+      ],
+      "answer": "a",
+      "explanation": "goodEnough、improve 被定義在 mySqrt 內部，它們的 closure 環境鏈自然就包含 mySqrt 呼叫建立的那個 frame，x 就存在那個 frame 裡，所以不用額外當參數傳遞就能直接讀到。這是「內部宣告」的實用價值：讓輔助函式的參數列只需要保留真正每次呼叫都會變動的部分（像 guess），其餘從外層環境就能直接取用的值不用重複傳遞。",
+      "verify": { "manual": "概念題：以具體 mySqrt 巢狀函式範例取代抽象內部宣告敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-3-2-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "環境鏈 vs 動態作用域：呼叫端的同名變數不會被讀到",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "如果 JavaScript 是「動態作用域」，getX() 會讀到呼叫當下離它最近的 x；但 JavaScript 其實是詞法作用域。這段程式會印出什麼？",
+      "code": "const x = 'global-x';\nfunction getX() {\n  return x;\n}\nfunction runWithLocalX() {\n  const x = 'local-x'; // 呼叫端有一個同名的區域變數\n  return getX();\n}\n\nconsole.log(runWithLocalX());",
+      "options": [
+        { "id": "a", "text": "global-x" },
+        { "id": "b", "text": "local-x" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "getX 是在最外層定義的，它的環境鏈只包含「定義時」看得到的範圍，也就是最外層的 x = 'global-x'，跟它是「在哪裡被呼叫」完全無關。即使 runWithLocalX 呼叫 getX() 時，呼叫端剛好有一個同名的區域變數 x = 'local-x'，getX 也讀不到它——這就是詞法作用域跟（JavaScript 沒有採用的）動態作用域最關鍵的差異。",
+      "verify": {
+        "checks": [
+          { "code": "const x = 'global-x';\nfunction getX() {\n  return x;\n}\nfunction runWithLocalX() {\n  const x = 'local-x';\n  return getX();\n}\nconsole.log(runWithLocalX());", "expected": "global-x" }
+        ]
+      }
+    }
+  ]
+}

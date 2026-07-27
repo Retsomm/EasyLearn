@@ -1,0 +1,132 @@
+{
+  "id": "sicp-4-4",
+  "title": "4.4 邏輯式程式設計",
+  "questions": [
+    {
+      "id": "sicp-4-4-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "邏輯式程式設計：描述「事實之間的關係」，不描述「怎麼算出來」",
+      "docs": "",
+      "story": "",
+      "prompt": "一般函式程式設計要寫「怎麼一步步算出答案」的步驟；邏輯式程式設計則是描述「哪些事實跟關係成立」，讓系統自己想辦法找出滿足這些關係的答案。下列何者最符合這個差異？",
+      "code": "// 邏輯式風格的敘述（概念示意，非真正可執行語法）\n// assert: (是父親 \"小明\" \"小華\")\n// assert: (是父親 \"小華\" \"小美\")\n// query: 誰是 \"小美\" 的祖父？",
+      "options": [
+        { "id": "a", "text": "使用者只需要宣告「小明是小華的父親」「小華是小美的父親」這些事實，以及「祖父」跟「父親」之間的邏輯關係，不需要自己寫任何迴圈或遞迴去「搜尋」答案——查詢系統會自己想辦法在已知的事實裡找出符合條件的答案" },
+        { "id": "b", "text": "邏輯式程式設計要求使用者自己寫巢狀迴圈去尋找答案，跟一般程式設計完全一樣，只是語法不同" },
+        { "id": "c", "text": "邏輯式程式設計只能表達「是」或「不是」這種布林關係，沒辦法回答「誰是誰的祖父」這種需要查出具體對象的問題" },
+        { "id": "d", "text": "assert 這個動作代表立刻計算出「小美的祖父是誰」這個答案並印出來" }
+      ],
+      "answer": "a",
+      "explanation": "邏輯式程式設計的核心差異在於「你只需要描述事實和規則，不需要自己寫出尋找答案的步驟」——像「誰是小美的祖父」這種查詢，只要系統知道「父親的父親就是祖父」這條規則，加上「小明是小華父親、小華是小美父親」這兩個事實，就能自己推導出「小明是小美的祖父」，使用者完全不需要手寫搜尋邏輯。",
+      "verify": { "manual": "概念題：以具體家族關係查詢取代抽象邏輯式程式設計敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-4-4-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "模式比對：把查詢裡的變數對應到事實裡的實際值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "matchPattern 把模式裡以 '?' 開頭的部分當成變數，對應到事實裡同位置的實際值，回傳一份「變數→值」的綁定。這段程式會印出什麼？",
+      "code": "function matchPattern(pattern, fact) {\n  const bindings = {};\n  for (let i = 0; i < pattern.length; i++) {\n    if (pattern[i].startsWith('?')) {\n      bindings[pattern[i]] = fact[i];\n    } else if (pattern[i] !== fact[i]) {\n      return null;\n    }\n  }\n  return bindings;\n}\n\nconsole.log(matchPattern(['父親', '小華', '?child'], ['父親', '小華', '小美']));",
+      "options": [
+        { "id": "a", "text": "{ '?child': '小美' }" },
+        { "id": "b", "text": "null" },
+        { "id": "c", "text": "{ '?child': '小華' }" },
+        { "id": "d", "text": "{}" }
+      ],
+      "answer": "a",
+      "explanation": "matchPattern 逐一比對模式跟事實：前兩個位置都是固定字串且完全相同，順利通過；第三個位置 '?child' 是變數（以 '?' 開頭），所以直接把事實裡同位置的值 '小美' 記錄成 { '?child': '小美' } 這組綁定，回傳出來。這正是模式比對的基本運作：固定部分要求完全相同，變數部分則負責「記錄下對應到什麼值」。",
+      "verify": {
+        "checks": [
+          { "code": "function matchPattern(pattern, fact) {\n  const bindings = {};\n  for (let i = 0; i < pattern.length; i++) {\n    if (pattern[i].startsWith('?')) {\n      bindings[pattern[i]] = fact[i];\n    } else if (pattern[i] !== fact[i]) {\n      return null;\n    }\n  }\n  return bindings;\n}\nconsole.log(matchPattern(['父親', '小華', '?child'], ['父親', '小華', '小美']));", "expected": "{ '?child': '小美' }" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-4-4-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "同一個變數出現兩次，兩邊必須綁定到同一個值",
+      "docs": "",
+      "story": "",
+      "prompt": "如果查詢模式是 ['父親', '?x', '?x']（要求父親跟小孩綁定同一個值），拿去跟事實 ['父親', '小明', '小華'] 比對，這種比對該不該成功？",
+      "code": "// 查詢模式：['父親', '?x', '?x']\n// 事實：['父親', '小明', '小華']",
+      "options": [
+        { "id": "a", "text": "不該成功：模式裡的 '?x' 出現了兩次，這代表「這兩個位置必須綁定到同一個值」，但事實裡對應的兩個位置分別是 '小明' 和 '小華'，兩者不一樣，所以這組比對應該回傳「比對失敗」，而不是隨便回傳其中一個值當作綁定結果——這正是「一致性」在模式比對裡的要求：同一個變數在整個模式裡的每一次出現，綁定的值都必須一致" },
+        { "id": "b", "text": "應該成功，直接把 '?x' 綁定成第一次出現時對應到的 '小明' 就好，不用管第二次出現對不對得上" },
+        { "id": "c", "text": "應該成功，因為 '小明' 和 '小華' 都是字串，型別相符就算比對成功" },
+        { "id": "d", "text": "這種模式在邏輯式程式設計裡是不合法的語法，寫出來就會直接報錯" }
+      ],
+      "answer": "a",
+      "explanation": "模式比對（更精確地說是 unification）要求「同一個變數在模式裡不管出現幾次，最終綁定到的值都必須完全一致」。['父親', '?x', '?x'] 要求父親欄位和小孩欄位綁定同一個值，但事實裡這兩個位置是不同的值，沒辦法讓 '?x' 同時等於這兩個不同的值，所以整組比對應該判定為失敗，而不是隨便選一個當結果。",
+      "verify": { "manual": "概念題：以重複變數的一致性要求取代抽象 unification 定義，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-4-4-q4",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "實作一致性檢查：同一個變數第二次出現要比對已經綁定的值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "請填入正確的判斷式，讓 matchPattern 在變數第二次出現時，檢查它跟第一次綁定的值是否一致，不一致就判定比對失敗。",
+      "code": "function matchPattern(pattern, fact) {\n  const bindings = {};\n  for (let i = 0; i < pattern.length; i++) {\n    const p = pattern[i];\n    if (p.startsWith('?')) {\n      if (p in bindings) {\n        if (____) return null;\n      } else {\n        bindings[p] = fact[i];\n      }\n    } else if (p !== fact[i]) {\n      return null;\n    }\n  }\n  return bindings;\n}\n\nconsole.log(matchPattern(['父親', '?x', '?x'], ['父親', '小明', '小華']));\nconsole.log(matchPattern(['父親', '?x', '?x'], ['父親', '小明', '小明']));",
+      "options": [
+        { "id": "a", "text": "bindings[p] !== fact[i]" },
+        { "id": "b", "text": "bindings[p] === fact[i]" },
+        { "id": "c", "text": "fact[i] === undefined" },
+        { "id": "d", "text": "p !== fact[i]" }
+      ],
+      "answer": "a",
+      "explanation": "變數第二次出現時，要拿「這次事實裡的值」跟「第一次綁定時記錄下來的值」比較，不一致（bindings[p] !== fact[i]）就代表沒辦法讓同一個變數同時等於兩個不同的值，比對失敗。第一組事實父親跟小孩是不同人，比對失敗回傳 null；第二組父親跟小孩剛好同名，兩次都綁定到「小明」，一致，比對成功。",
+      "verify": {
+        "checks": [
+          { "code": "function matchPattern(pattern, fact) {\n  const bindings = {};\n  for (let i = 0; i < pattern.length; i++) {\n    const p = pattern[i];\n    if (p.startsWith('?')) {\n      if (p in bindings) {\n        if (bindings[p] !== fact[i]) return null;\n      } else {\n        bindings[p] = fact[i];\n      }\n    } else if (p !== fact[i]) {\n      return null;\n    }\n  }\n  return bindings;\n}\nconsole.log(matchPattern(['父親', '?x', '?x'], ['父親', '小明', '小華']));\nconsole.log(matchPattern(['父親', '?x', '?x'], ['父親', '小明', '小明']));", "expected": "null\n{ '?x': '小明' }" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-4-4-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "查詢一整個事實庫：找出所有符合模式的綁定",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/filter",
+      "story": "",
+      "prompt": "這段程式對一整個事實庫（database）套用同一個查詢模式，把每個成功比對的綁定都收集起來。這段程式會印出什麼？",
+      "code": "function matchPattern(pattern, fact) {\n  const bindings = {};\n  for (let i = 0; i < pattern.length; i++) {\n    const p = pattern[i];\n    if (p.startsWith('?')) {\n      bindings[p] = fact[i];\n    } else if (p !== fact[i]) {\n      return null;\n    }\n  }\n  return bindings;\n}\n\nconst database = [\n  ['父親', '小明', '小華'],\n  ['父親', '小明', '小芳'],\n  ['父親', '小美', '小強'],\n];\n\nconst results = database\n  .map((fact) => matchPattern(['父親', '小明', '?child'], fact))\n  .filter((b) => b !== null)\n  .map((b) => b['?child']);\n\nconsole.log(results);",
+      "options": [
+        { "id": "a", "text": "[ '小華', '小芳' ]" },
+        { "id": "b", "text": "[ '小華', '小芳', '小強' ]" },
+        { "id": "c", "text": "[ '小強' ]" },
+        { "id": "d", "text": "[]" }
+      ],
+      "answer": "a",
+      "explanation": "只有前兩筆事實的第二個位置是 '小明'，符合模式固定部分的要求，比對成功並把 '?child' 分別綁定成 '小華'、'小芳'；第三筆事實第二個位置是 '小美'，跟模式要求的 '小明' 對不上，比對失敗回傳 null，被 filter 濾掉。這正是查詢一整個事實庫的做法：對每一筆事實都試著比對，收集所有比對成功的結果。",
+      "verify": {
+        "checks": [
+          { "code": "function matchPattern(pattern, fact) {\n  const bindings = {};\n  for (let i = 0; i < pattern.length; i++) {\n    const p = pattern[i];\n    if (p.startsWith('?')) {\n      bindings[p] = fact[i];\n    } else if (p !== fact[i]) {\n      return null;\n    }\n  }\n  return bindings;\n}\nconst database = [\n  ['父親', '小明', '小華'],\n  ['父親', '小明', '小芳'],\n  ['父親', '小美', '小強'],\n];\nconst results = database\n  .map((fact) => matchPattern(['父親', '小明', '?child'], fact))\n  .filter((b) => b !== null)\n  .map((b) => b['?child']);\nconsole.log(results);", "expected": "[ '小華', '小芳' ]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-4-4-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "規則 vs 斷言：從既有事實推導出新事實，而不是全部手動列出",
+      "docs": "",
+      "story": "",
+      "prompt": "資料庫裡只手動列出了「父親」這種事實，並沒有列出「祖父」的事實。如果想查詢「誰是誰的祖父」，卻不想把每一組祖父關係都手動列成事實，邏輯式程式設計提供了什麼方法？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "定義一條「規則」：例如「如果 X 是 Y 的父親、Y 是 Z 的父親，那麼 X 就是 Z 的祖父」，查詢系統會拿這條規則，自動去比對已知的「父親」事實、推導出所有符合的祖父關係，不需要事先手動把每一組祖父關係都列成事實存起來——規則讓你能用少量已知事實，推導出大量衍生出來的新事實" },
+        { "id": "b", "text": "一定要把每一組祖父關係都手動當成事實，一筆一筆加進資料庫，邏輯式程式設計不支援從既有事實推導新事實" },
+        { "id": "c", "text": "只能查詢資料庫裡已經明確存在的事實，沒辦法查詢任何需要推導的關係" },
+        { "id": "d", "text": "規則跟斷言（事實）在邏輯式程式設計裡完全是同一種東西，沒有區別" }
+      ],
+      "answer": "a",
+      "explanation": "這正是規則（rule）的價值：把「父親的父親就是祖父」這種關係本身定義成一條規則，查詢系統會自動拿這條規則去比對已經存在的「父親」事實，推導出所有符合的祖父關係——不需要事先手動窮舉每一組祖父關係存進資料庫。這讓少量的基本事實（assertion），可以透過規則衍生出大量的新事實，是邏輯式程式設計最有威力的部分之一。",
+      "verify": { "manual": "概念題：以規則推導祖父關係的具體例子取代抽象規則定義敘述，無可執行程式碼。" }
+    }
+  ]
+}

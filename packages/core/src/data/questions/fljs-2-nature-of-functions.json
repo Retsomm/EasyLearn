@@ -1,0 +1,129 @@
+{
+  "id": "fljs-2",
+  "title": "Ch2：函式的本質",
+  "questions": [
+    {
+      "id": "fljs-2-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "函式 vs 程序：有沒有「輸入對應輸出」這種關係",
+      "docs": "",
+      "story": "",
+      "prompt": "FP 意義下的「函式」，強調的是「給定輸入，映射到一個輸出」這種關係；「程序」則只是一串依序執行的操作，不一定有這種輸入輸出的對應關係。下面這個 JS function，算不算 FP 意義下的函式？",
+      "code": "function logAndSave(user) {\n  console.log('正在儲存使用者');\n  database.save(user);\n}",
+      "options": [
+        { "id": "a", "text": "不算：logAndSave 雖然用 function 關鍵字宣告，但它沒有任何有意義的回傳值，它做的事情是「依序執行兩個動作」，不是「把輸入映射成一個輸出」——這種只是一串操作、沒有輸入輸出對應關係的東西，在 FP 的術語裡比較接近「程序」，不是嚴格意義下的「函式」，即使 JS 語法上兩者都用 function 這個關鍵字宣告" },
+        { "id": "b", "text": "算，因為只要用 function 關鍵字宣告，就自動算是 FP 意義下的函式" },
+        { "id": "c", "text": "這種區分只存在於數學課本裡，JavaScript 裡所有 function 都是完全一樣的東西，沒有必要區分" },
+        { "id": "d", "text": "logAndSave 是函式，因為它有一個參數 user" }
+      ],
+      "answer": "a",
+      "explanation": "FP 意義下的「函式」強調「給定輸入，映射到一個輸出」這種關係；logAndSave 沒有任何有意義的回傳值，只是依序執行「印出訊息」和「存進資料庫」這兩個動作，比較接近「程序」——這跟 JS 語法上是不是用 function 關鍵字宣告無關，重點在於「有沒有輸入輸出的映射關係」。",
+      "verify": { "manual": "概念題：以 logAndSave 的具體例子取代抽象函式與程序定義區分，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-2-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "計算輸入的數量：function.length 告訴你宣告了幾個非預設參數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Function/length",
+      "story": "",
+      "prompt": "function.length 這個屬性會回傳「宣告時，第一個有預設值或 rest 參數之前」的參數個數，也就是這個函式的 arity（元數）。這段程式會印出什麼？",
+      "code": "function add(a, b) { return a + b; }\nfunction greet(name, greeting = 'Hi') { return `${greeting}, ${name}`; }\nfunction sum(...nums) { return nums.reduce((a, b) => a + b, 0); }\n\nconsole.log(add.length, greet.length, sum.length);",
+      "options": [
+        { "id": "a", "text": "2 1 0" },
+        { "id": "b", "text": "2 2 1" },
+        { "id": "c", "text": "2 1 1" },
+        { "id": "d", "text": "3 3 3" }
+      ],
+      "answer": "a",
+      "explanation": "length 只計算「第一個有預設值或 rest 參數之前」宣告的參數個數：add 兩個都是一般參數，length 是 2；greet 的第二個參數 greeting 有預設值，length 只算到它之前，是 1；sum 整個是 rest 參數，length 是 0。這個屬性反映的是函式宣告時「非預設、非 rest」部分的元數（arity），不是「呼叫時實際傳了幾個引數」。",
+      "verify": {
+        "checks": [
+          { "code": "function add(a, b) { return a + b; }\nfunction greet(name, greeting = 'Hi') { return `${greeting}, ${name}`; }\nfunction sum(...nums) { return nums.reduce((a, b) => a + b, 0); }\nconsole.log(add.length, greet.length, sum.length);", "expected": "2 1 0" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-2-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "參數解構：模擬具名引數，呼叫時不用管順序",
+      "docs": "",
+      "story": "",
+      "prompt": "用物件解構當作參數（function createUser({ name, age }) { ... }），呼叫端可以寫 createUser({ age: 25, name: '小明' })，欄位順序跟宣告時不一樣。這樣為什麼還能正確運作？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "因為解構是依照「屬性名稱」去對應值，不是依照「位置順序」——createUser 內部解構時會分別去物件裡找 name、age 這兩個屬性名稱各自對應的值，跟這兩個屬性在物件字面值裡先寫哪個、後寫哪個完全無關，這讓呼叫端可以用「具名引數」的方式呼叫，不用死記引數的正確順序" },
+        { "id": "b", "text": "JavaScript 引擎會自動排序物件屬性，讓它們符合函式宣告時的順序" },
+        { "id": "c", "text": "這種寫法其實會出錯，因為順序對不上，age 會被誤當成 name 使用" },
+        { "id": "d", "text": "解構只能依照物件屬性在記憶體裡的順序讀取，不能依照名稱讀取" }
+      ],
+      "answer": "a",
+      "explanation": "物件解構是依照「屬性名稱」對應值，不是依照「位置順序」——createUser 內部解構時分別去傳進來的物件裡找 name、age 這兩個屬性名稱對應的值，跟這兩個屬性在物件字面值裡先後寫的順序完全無關。這讓呼叫端可以用類似「具名引數」的方式呼叫函式，不需要死記引數的正確順序。",
+      "verify": { "manual": "概念題：以 createUser 解構參數的具體例子取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-2-q4",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "解構參數不受呼叫時屬性順序影響",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function createUser({ name, age }) {\n  return `${name}（${age} 歲）`;\n}\n\nconsole.log(createUser({ name: '小明', age: 25 }));\nconsole.log(createUser({ age: 25, name: '小明' }));",
+      "options": [
+        { "id": "a", "text": "小明（25 歲）\n小明（25 歲）" },
+        { "id": "b", "text": "小明（25 歲）\n25（小明 歲）" },
+        { "id": "c", "text": "小明（25 歲）\n報錯" },
+        { "id": "d", "text": "undefined（undefined 歲）\n小明（25 歲）" }
+      ],
+      "answer": "a",
+      "explanation": "兩次呼叫傳進去的物件屬性順序不一樣，但因為 createUser 用解構依照「屬性名稱」取值，不是依照「位置」，兩次呼叫的結果完全相同，都印出「小明（25 歲）」——物件字面值裡屬性的書寫順序，本來就不影響用名稱存取到的結果。",
+      "verify": {
+        "checks": [
+          { "code": "function createUser({ name, age }) {\n  return `${name}（${age} 歲）`;\n}\nconsole.log(createUser({ name: '小明', age: 25 }));\nconsole.log(createUser({ age: 25, name: '小明' }));", "expected": "小明（25 歲）\n小明（25 歲）" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-2-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "沒有被回傳的輸出：透過副作用溜出去的東西，不是函式真正的「輸出」",
+      "docs": "",
+      "story": "",
+      "prompt": "一個函式除了修改傳進來的參數物件之外，也用 return 回傳了一個值。「透過修改參數溜出去」跟「透過 return 回傳」這兩種讓資訊離開函式的方式，在 FP 的角度看有什麼不同？",
+      "code": "function addAndTag(order) {\n  order.tagged = true;\n  return order.total + 10;\n}",
+      "options":
+      [
+        { "id": "a", "text": "透過 return 回傳的值，是函式唯一「正式」的輸出通道，呼叫者一看函式簽章的回傳型別，就知道這個函式會給出什麼；直接修改傳進來的參數物件，則是一種「沒有被回傳的輸出」——這種副作用式的輸出管道，藏在函式簽章之外，呼叫者如果沒有仔細讀函式內部實作，很容易完全沒發現這個函式偷偷改動了傳進來的物件" },
+        { "id": "b", "text": "兩種方式對呼叫者來說完全等價，沒有任何差別" },
+        { "id": "c", "text": "修改參數物件比使用 return 更值得鼓勵，因為可以同時傳遞更多資訊" },
+        { "id": "d", "text": "FP 認為只要函式最終有 return 陳述式，修改參數這件事就不算是一種輸出，可以隨意使用" }
+      ],
+      "answer": "a",
+      "explanation": "return 回傳的值，是函式唯一「正式」的輸出通道，呼叫者透過函式簽章就能預期會拿到什麼；直接修改傳進來的參數物件，則是一種藏在簽章之外的「沒有被回傳的輸出」，呼叫者如果沒有仔細讀函式內部實作，很容易完全沒發現這個函式其實偷偷動了傳進來的東西。FP 傾向盡量避免這種隱藏的輸出管道，讓函式唯一的輸出就是它的回傳值。",
+      "verify": { "manual": "概念題：以 addAndTag 修改參數的具體例子取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-2-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "避開 this：它是一種看不見的隱藏輸入",
+      "docs": "",
+      "story": "",
+      "prompt": "一個使用 this.rate 的函式，呼叫時得到的結果會因為「用什麼方式呼叫」而不同。這說明了 this 對「函式的輸入」造成了什麼問題？",
+      "code": "function calc(amount) {\n  return amount * this.rate;\n}",
+      "options": [
+        { "id": "a", "text": "this 是一種「看不見的隱藏輸入」：函式的參數列表只寫了 amount，但實際算出來的結果還取決於「呼叫當下 this 是什麼」，這個資訊完全沒有出現在函式簽章裡——這違反了「函式的所有輸入都該清楚寫在參數列表裡」這個 FP 期望，呼叫者光看 calc(amount) 這個呼叫式，猜不出這次算出來的結果會是什麼，因為還缺一個看不到的 this" },
+        { "id": "b", "text": "this 完全不會影響函式的輸出，只是語法上多餘的裝飾" },
+        { "id": "c", "text": "this 是函式參數列表的一部分，跟 amount 沒有任何差別" },
+        { "id": "d", "text": "只要函式有使用 this，呼叫方式就完全不影響輸出結果" }
+      ],
+      "answer": "a",
+      "explanation": "this 是一種「看不見的隱藏輸入」：函式的參數列表只寫了 amount，但實際結果還取決於「呼叫當下 this 綁定到什麼」，這個資訊完全沒有出現在函式簽章裡。這違反了「函式的所有輸入都該清楚寫在參數列表裡」這個 FP 期望的透明度，也是為什麼函數式風格的程式碼傾向避免依賴 this，改用明確的參數傳遞需要的值。",
+      "verify": { "manual": "概念題：以 calc 依賴 this 的具體例子取代抽象隱藏輸入敘述，無可執行程式碼。" }
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "id": "dmmf-12",
+  "title": "Ch12：持久化",
+  "questions": [
+    {
+      "id": "dmmf-12-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "把持久化推到邊界：workflow 核心邏輯保持單純，不要自己動手存取資料庫",
+      "docs": "",
+      "story": "",
+      "prompt": "placeOrder 這個 workflow 的核心邏輯（驗證、計價）應該完全不知道資料庫的存在，讀取資料、寫回資料庫這些動作應該放在哪裡？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "應該放在 workflow 核心邏輯的「外面」（邊界）：先讀取需要的資料、把讀到的資料當成參數傳給 workflow 核心邏輯，等 workflow 算出結果後，再由邊界那一層負責把結果寫回資料庫——workflow 核心邏輯完全不需要知道資料庫存在，這樣才能像先前談過的一樣，輕易替換掉真正的資料庫、傳入假資料做測試" },
+        { "id": "b", "text": "應該讓 workflow 核心邏輯自己直接呼叫資料庫的讀寫函式，這樣程式碼比較簡潔" },
+        { "id": "c", "text": "讀取資料應該放在邊界，但寫回資料庫應該放在 workflow 核心邏輯內部" },
+        { "id": "d", "text": "這種安排完全不會影響能不能測試 workflow 核心邏輯" }
+      ],
+      "answer": "a",
+      "explanation": "把讀寫資料庫這些動作放在 workflow 核心邏輯的「外面」（邊界），核心邏輯只負責單純的資料轉換，完全不知道資料庫存在——這正是「把持久化推到邊界」，讓 workflow 核心邏輯可以輕易被測試，這也跟先前談過的「依賴注入」是同一種精神的不同應用場景。",
+      "verify": { "manual": "概念題：以 placeOrder 讀寫分離的具體安排取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-12-q2",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "違反把持久化推到邊界的後果：workflow 邏輯跟資料庫存取綁死",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "calculateDiscount 把「讀取顧客等級」這個資料庫查詢直接寫在函式內部。這段程式碼有什麼問題？",
+      "code": "const database = { getCustomerTier: (id) => (id === 'VIP1' ? 'VIP' : 'REGULAR') };\n\nfunction calculateDiscount(customerId, amount) {\n  const tier = database.getCustomerTier(customerId);\n  return tier === 'VIP' ? amount * 0.8 : amount;\n}\n\nconsole.log(calculateDiscount('VIP1', 1000));",
+      "options": [
+        { "id": "a", "text": "calculateDiscount 把資料庫查詢直接寫死在函式內部，這個函式再也不是一個「單純的資料轉換」，而是偷偷依賴了 database 這個外部物件——如果之後想測試「VIP 顧客該打幾折」這個計算邏輯，沒辦法直接傳入假的顧客等級資料，一定得先想辦法準備出一個假的 database 物件才能測試，把「計算折扣」跟「怎麼查詢顧客等級」這兩件本來該分開的事綁在了一起" },
+        { "id": "b", "text": "這段程式碼完全沒有問題，把資料庫查詢寫在函式內部是常見且值得鼓勵的做法" },
+        { "id": "c", "text": "問題出在折扣是 0.8 這個數字，應該改成 0.9" },
+        { "id": "d", "text": "問題出在 customerId 的命名方式，跟資料庫查詢無關" }
+      ],
+      "answer": "a",
+      "explanation": "calculateDiscount 把資料庫查詢直接寫死在函式內部，這個函式不再是單純的資料轉換，而是偷偷依賴了 database 這個外部物件——想測試「VIP 顧客該打幾折」這個計算邏輯本身，沒辦法直接傳入假的顧客等級，非得先準備出一個假的 database 物件不可，把「計算折扣」跟「怎麼查詢顧客等級」這兩件本該分開的事綁死在一起。更好的做法是把 tier 當成參數直接傳進來，讓 calculateDiscount 完全不知道 database 的存在。",
+      "verify": {
+        "checks": [
+          { "code": "const database = { getCustomerTier: (id) => (id === 'VIP1' ? 'VIP' : 'REGULAR') };\nfunction calculateDiscount(customerId, amount) {\n  const tier = database.getCustomerTier(customerId);\n  return tier === 'VIP' ? amount * 0.8 : amount;\n}\nconsole.log(calculateDiscount('VIP1', 1000));", "expected": "800" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-12-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "命令查詢分離：一個函式不該「既改變狀態、又回傳有意義的查詢結果」",
+      "docs": "",
+      "story": "",
+      "prompt": "incrementAndGetCount() 這個函式，每次呼叫都會把一個計數器加 1（改變狀態），同時回傳目前的計數值（回傳有意義的查詢結果）。這種「又做事、又回傳資料」的函式，命令查詢分離（CQS）原則建議怎麼處理？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "應該拆成兩個函式：一個是「命令」，只負責改變狀態（increment()，不回傳有意義的資料）；另一個是「查詢」，只負責回傳目前的資料（getCount()，完全不改變任何狀態）——CQS 主張命令和查詢應該是兩件互相獨立的事，混在同一個函式裡，會讓呼叫者難以單獨「只想查詢、不想不小心改到狀態」，也讓函式的行為變得難以預期" },
+        { "id": "b", "text": "這種函式完全沒有問題，命令查詢分離只是理論上的說法，實務上不需要遵守" },
+        { "id": "c", "text": "CQS 主張所有函式都必須同時具備命令和查詢的功能，缺一不可" },
+        { "id": "d", "text": "只要函式名稱裡同時包含 increment 和 get，就已經符合 CQS 的要求" }
+      ],
+      "answer": "a",
+      "explanation": "CQS 主張「命令」（改變狀態，不該回傳有意義的查詢結果）跟「查詢」（回傳資料，不該改變任何狀態）應該是兩件互相獨立的事。incrementAndGetCount() 把兩者混在一起，呼叫者沒辦法「只想單純查詢目前的計數」而不會不小心把計數器加 1——拆成 increment() 和 getCount() 兩個各自單純的函式，才能讓呼叫者清楚知道每個函式各自的效果。",
+      "verify": { "manual": "概念題：以 incrementAndGetCount 的具體問題取代抽象 CQS 敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-12-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "命令查詢分離的具體示範：拆開之後行為更可預期",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "這段程式先示範一個違反 CQS 的函式（同時改變狀態又回傳資料），再示範拆開後的版本。這段程式會印出什麼？",
+      "code": "function makeCounterMixed() {\n  let count = 0;\n  return () => {\n    count += 1;\n    return count;\n  };\n}\n\nfunction makeCounterSeparated() {\n  let count = 0;\n  return {\n    increment() { count += 1; },\n    getCount() { return count; },\n  };\n}\n\nconst mixed = makeCounterMixed();\nconsole.log(mixed(), mixed());\n\nconst separated = makeCounterSeparated();\nseparated.increment();\nseparated.increment();\nconsole.log(separated.getCount());\nconsole.log(separated.getCount());",
+      "options": [
+        { "id": "a", "text": "1 2\n2\n2" },
+        { "id": "b", "text": "1 2\n1\n2" },
+        { "id": "c", "text": "1 2\n2\n3" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "mixed() 每次呼叫都同時改變狀態又回傳資料，兩次呼叫分別印出 1、2；separated 拆開之後，increment() 只負責改變狀態、不回傳有意義的資料，getCount() 只負責查詢、完全不改變狀態——所以連續呼叫兩次 getCount()，兩次都回傳一樣的 2，不會因為「查詢」這個動作本身又不小心讓計數繼續往上加。這正是 CQS 帶來的可預期性：查詢不會有副作用，可以放心呼叫任意次數。",
+      "verify": {
+        "checks": [
+          { "code": "function makeCounterMixed() {\n  let count = 0;\n  return () => {\n    count += 1;\n    return count;\n  };\n}\nfunction makeCounterSeparated() {\n  let count = 0;\n  return {\n    increment() { count += 1; },\n    getCount() { return count; },\n  };\n}\nconst mixed = makeCounterMixed();\nconsole.log(mixed(), mixed());\nconst separated = makeCounterSeparated();\nseparated.increment();\nseparated.increment();\nconsole.log(separated.getCount());\nconsole.log(separated.getCount());", "expected": "1 2\n2\n2" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-12-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "文件資料庫 vs 關聯式資料庫：跟 Aggregate 邊界的契合程度不同",
+      "docs": "",
+      "story": "",
+      "prompt": "一個 Order Aggregate（訂單本體加上它包含的所有 OrderLine）如果存進「文件資料庫」（整個 Aggregate 存成一份 JSON 文件），跟存進「關聯式資料庫」（拆成 Order 表和 OrderLine 表，用外鍵關聯），在「跟 Aggregate 邊界貼不貼合」這件事上有什麼差異？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "文件資料庫天生跟 Aggregate 邊界很貼合：整個 Aggregate 可以直接存成一份文件，讀寫的時候整份一起讀、整份一起寫，剛好對應「Aggregate 應該作為一個一致性單位整體處理」的設計；關聯式資料庫則需要把同一個 Aggregate 拆成多張表，讀寫時要多做一層「把多張表的資料組合回一個 Aggregate、或拆開存回多張表」的轉換工作，這道轉換是文件資料庫不需要處理的額外負擔" },
+        { "id": "b", "text": "兩種資料庫在跟 Aggregate 邊界的契合程度上完全沒有差異" },
+        { "id": "c", "text": "關聯式資料庫比文件資料庫更貼合 Aggregate 邊界，因為關聯式資料庫的外鍵天生就是為了表達 Aggregate 而設計的" },
+        { "id": "d", "text": "Aggregate 這個概念只能用在文件資料庫上，關聯式資料庫沒辦法表達 Aggregate" }
+      ],
+      "answer": "a",
+      "explanation": "文件資料庫天生跟「Aggregate 應該作為一個整體讀寫」這個設計很貼合，整個 Aggregate 可以直接存成一份文件；關聯式資料庫則需要把同一個 Aggregate 拆成多張正規化的表，讀寫時要額外做一層「組合／拆解」的轉換工作，這是文件資料庫不太需要處理的額外負擔——這不代表關聯式資料庫不能用來實作 Aggregate，只是需要多一層轉換邏輯。",
+      "verify": { "manual": "概念題：以 Order Aggregate 存進兩種資料庫的具體對照取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-12-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "交易：確保整個 Aggregate 的寫入要嘛全部成功、要嘛全部不生效",
+      "docs": "",
+      "story": "",
+      "prompt": "儲存一筆訂單時，需要同時寫入 Order 表和它底下好幾筆 OrderLine 表。如果寫到一半（Order 寫成功了，但某一筆 OrderLine 寫入失敗）就中斷，會發生什麼問題？資料庫的「交易」（transaction）機制想解決的正是這個問題嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "如果沒有交易保護，寫到一半中斷會留下一個「Order 存在，但底下的 OrderLine 不完整」的損壞狀態，違反了 Aggregate 應該保持一致（要嘛整個正確、要嘛完全不變）的邊界；交易機制正是為了解決這個問題：把整個 Aggregate 的所有寫入操作包在同一個交易裡，要嘛全部一起成功生效，要嘛整個交易失敗、所有寫入都撤銷回到寫入前的狀態，不會留下寫到一半的中間狀態" },
+        { "id": "b", "text": "交易機制的目的只是讓資料庫寫入速度變快，跟一致性沒有任何關係" },
+        { "id": "c", "text": "寫到一半中斷完全不會造成任何問題，資料庫會自動修復不完整的資料" },
+        { "id": "d", "text": "交易機制要求每一筆 OrderLine 都必須各自獨立交易，不能跟 Order 放在同一個交易裡" }
+      ],
+      "answer": "a",
+      "explanation": "如果沒有交易保護，寫到一半中斷會留下「Order 存在，OrderLine 卻不完整」這種損壞狀態，違反了 Aggregate 該有的一致性邊界。交易機制正是為了保證這種「全部一起成功，或全部一起撤銷」的效果，讓 Aggregate 在儲存層也能維持跟先前談過的一致性要求一致，不會留下寫到一半的中間狀態。",
+      "verify": { "manual": "概念題：呼應先前一致性邊界主題，以交易的具體保證取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

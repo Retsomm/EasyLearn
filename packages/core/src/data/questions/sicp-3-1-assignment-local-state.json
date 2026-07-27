@@ -1,0 +1,132 @@
+{
+  "id": "sicp-3-1",
+  "title": "3.1 賦值與區域狀態",
+  "questions": [
+    {
+      "id": "sicp-3-1-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "區域狀態：closure 記住 balance",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "makeWithdraw 每次呼叫都會建立一個「記得自己 balance」的新提款函式，之後每次呼叫這個提款函式都會修改同一份被記住的 balance。這段程式會印出什麼？",
+      "code": "function makeWithdraw(balance) {\n  return (amount) => {\n    if (balance >= amount) {\n      balance = balance - amount;\n      return balance;\n    }\n    return 'Insufficient funds';\n  };\n}\n\nconst w1 = makeWithdraw(100);\nconsole.log(w1(30));\nconsole.log(w1(40));",
+      "options": [
+        { "id": "a", "text": "70\n30" },
+        { "id": "b", "text": "70\n70" },
+        { "id": "c", "text": "30\n70" },
+        { "id": "d", "text": "100\n60" }
+      ],
+      "answer": "a",
+      "explanation": "makeWithdraw(100) 建立一個 closure，把 balance = 100 這個區域狀態「關」在這個提款函式裡。第一次呼叫 w1(30) 把 balance 改成 70 並回傳；第二次呼叫 w1(40) 是在「上一次已經被改過的 balance」基礎上繼續扣款，變成 30。這正是區域狀態的重點：同一個函式的兩次呼叫不再是獨立的，後面的呼叫會受前面呼叫留下的狀態影響。",
+      "verify": {
+        "checks": [
+          { "code": "function makeWithdraw(balance) {\n  return (amount) => {\n    if (balance >= amount) {\n      balance = balance - amount;\n      return balance;\n    }\n    return 'Insufficient funds';\n  };\n}\nconst w1 = makeWithdraw(100);\nconsole.log(w1(30));\nconsole.log(w1(40));", "expected": "70\n30" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-1-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "引入賦值的好處：把狀態封裝成物件，不用一路往下傳",
+      "docs": "",
+      "story": "",
+      "prompt": "如果不能用賦值維護區域狀態，要讓 100 個獨立的銀行帳戶各自記住自己的餘額，得把「目前所有帳戶的餘額」當成一個大狀態，一路當作參數傳進、傳出每一個操作函式。makeWithdraw 這種寫法解決了什麼問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "讓每個帳戶的餘額變成該帳戶自己 closure 裡的區域狀態，各自獨立、互不干擾，呼叫者不需要手動把「全部帳戶的餘額」當成一包參數一路傳來傳去——把系統拆解成一堆各自維護自己狀態的「物件」，是賦值/區域狀態能帶來的模組化好處" },
+        { "id": "b", "text": "賦值完全沒有解決任何問題，把狀態當參數一路傳遞永遠是比較好的做法" },
+        { "id": "c", "text": "賦值只能用來管理全域變數，不能用來管理個別帳戶各自獨立的狀態" },
+        { "id": "d", "text": "100 個帳戶一定要共用同一個 balance 變數，賦值的目的就是讓它們共用狀態" }
+      ],
+      "answer": "a",
+      "explanation": "賦值讓每個 makeWithdraw(100) 呼叫產生的提款函式都各自擁有一份屬於自己的 balance closure 狀態，100 個帳戶彼此獨立，不需要在系統的其他地方手動把「所有帳戶的餘額」包成一包資料一路傳遞。這種「把狀態封裝進物件、物件各自負責自己那份狀態」的設計，正是引入賦值換來的模組化優勢。",
+      "verify": { "manual": "概念題：以具體帳戶物件範例取代抽象模組化好處敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-3-1-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "引入賦值的代價：同樣的呼叫，結果不再固定",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "在沒有賦值的世界裡，同樣的函式呼叫、同樣的輸入，結果永遠一樣（代換模型）。這段程式會印出什麼？",
+      "code": "function makeCounter() {\n  let count = 0;\n  return () => {\n    count += 1;\n    return count;\n  };\n}\n\nconst next = makeCounter();\nconsole.log(next());\nconsole.log(next());\nconsole.log(next());",
+      "options": [
+        { "id": "a", "text": "1\n2\n3" },
+        { "id": "b", "text": "1\n1\n1" },
+        { "id": "c", "text": "0\n1\n2" },
+        { "id": "d", "text": "3\n3\n3" }
+      ],
+      "answer": "a",
+      "explanation": "next() 完全沒有傳入任何參數，但連續呼叫三次卻印出三個不同的值 1、2、3——這就是引入賦值的代價：一旦函式內部有「會被賦值修改」的區域狀態，同一個呼叫式 next() 就不再永遠代表同一個值，代換模型（把呼叫換成固定結果）不再適用，必須額外去想「這是第幾次呼叫」才能判斷結果。",
+      "verify": {
+        "checks": [
+          { "code": "function makeCounter() {\n  let count = 0;\n  return () => {\n    count += 1;\n    return count;\n  };\n}\nconst next = makeCounter();\nconsole.log(next());\nconsole.log(next());\nconsole.log(next());", "expected": "1\n2\n3" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-1-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "帳戶物件：用賦值維護餘額，附上餘額不足的判斷",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "請填入正確的判斷式，讓 withdraw 在餘額不足時回傳錯誤訊息，而不是讓 balance 變成負的。",
+      "code": "function makeAccount(balance) {\n  function withdraw(amount) {\n    if (____) {\n      balance = balance - amount;\n      return balance;\n    }\n    return 'Insufficient funds';\n  }\n  function deposit(amount) {\n    balance = balance + amount;\n    return balance;\n  }\n  return { withdraw, deposit };\n}\n\nconst acc = makeAccount(50);\nconsole.log(acc.withdraw(60));\nconsole.log(acc.deposit(60));\nconsole.log(acc.withdraw(60));",
+      "options": [
+        { "id": "a", "text": "balance >= amount" },
+        { "id": "b", "text": "balance > 0" },
+        { "id": "c", "text": "amount >= balance" },
+        { "id": "d", "text": "balance === amount" }
+      ],
+      "answer": "a",
+      "explanation": "只有「目前餘額 >= 要提領的金額」時才能安全扣款，所以要檢查 balance >= amount；不成立就回傳錯誤訊息、不去修改 balance。acc.withdraw(60) 一開始餘額只有 50 不夠扣，回傳錯誤；deposit(60) 把餘額存到 110；再 withdraw(60) 這次餘額夠了，扣成 50。",
+      "verify": {
+        "checks": [
+          { "code": "function makeAccount(balance) {\n  function withdraw(amount) {\n    if (balance >= amount) {\n      balance = balance - amount;\n      return balance;\n    }\n    return 'Insufficient funds';\n  }\n  function deposit(amount) {\n    balance = balance + amount;\n    return balance;\n  }\n  return { withdraw, deposit };\n}\nconst acc = makeAccount(50);\nconsole.log(acc.withdraw(60));\nconsole.log(acc.deposit(60));\nconsole.log(acc.withdraw(60));", "expected": "Insufficient funds\n110\n50" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-1-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "求值順序開始有影響：兩個操作誰先執行，結果可能不同",
+      "docs": "",
+      "story": "",
+      "prompt": "在沒有賦值的世界，運算式裡各部分先算哪個都無所謂，結果一樣。一旦帳戶物件牽涉到共享的區域狀態，deposit 跟 withdraw 誰先執行，會不會影響最後結果？",
+      "code": "function makeAccount(balance) {\n  return {\n    withdraw(amount) {\n      if (balance >= amount) { balance -= amount; return balance; }\n      return 'Insufficient funds';\n    },\n    deposit(amount) { balance += amount; return balance; },\n  };\n}\n\nconst acc = makeAccount(50);\n// 情境一：先 withdraw(60) 再 deposit(100)\n// 情境二：先 deposit(100) 再 withdraw(60)",
+      "options": [
+        { "id": "a", "text": "會有影響：情境一裡 withdraw(60) 先執行時餘額只有 50、不夠扣，會回傳 'Insufficient funds'（之後 deposit 才把餘額存到 150）；情境二裡先 deposit(100) 把餘額存到 150，withdraw(60) 才執行時餘額夠了，能順利扣成 90——同樣兩個操作，執行順序不同，中間結果和最終狀態都不一樣" },
+        { "id": "b", "text": "不會有影響，因為 withdraw 和 deposit 都是各自獨立的函式，跟先後順序無關，最終餘額一定相同" },
+        { "id": "c", "text": "只有 withdraw 的結果會因為順序改變，deposit 的結果永遠不變" },
+        { "id": "d", "text": "這兩種情境會讓程式直接報錯，因為不能對同一個帳戶連續呼叫兩次操作" }
+      ],
+      "answer": "a",
+      "explanation": "一旦操作牽涉到共享的區域狀態（這裡是 balance），操作彼此執行的先後順序就會實際影響中間結果，不再像純運算式那樣「先算哪一部分都無所謂」。情境一 withdraw 先執行時餘額不夠，會拿到錯誤訊息；情境二 deposit 先執行讓餘額變充足，withdraw 才能成功——這正是引入賦值後，「時間順序」變成一個必須額外考慮的新維度。",
+      "verify": { "manual": "概念題：以具體兩種執行順序對照取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-3-1-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "代換模型失效：賦值讓「同一個運算式」不再永遠等於同一個值",
+      "docs": "",
+      "story": "",
+      "prompt": "第 1 章的代換模型可以把任何函式呼叫直接換成它的回傳值，整個運算式怎麼組合都不影響結果。一旦函式內部有賦值維護的區域狀態，這個模型還適用嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不完全適用了：像 next()（每次呼叫回傳遞增的計數）這種函式，兩次呼叫 next() 不能被當成「同一個值」互相替換——因為它們的結果不一樣，即使呼叫式看起來一模一樣。想正確推理這種程式，除了看函式本身的定義，還要額外追蹤「呼叫發生的時間點」跟「呼叫之間狀態怎麼變化」，這是代換模型原本不需要考慮的" },
+        { "id": "b", "text": "完全適用，代換模型對所有 JavaScript 函式永遠成立，跟函式內部有沒有賦值無關" },
+        { "id": "c", "text": "只要函式有回傳值，就一定可以用代換模型正確推理，不需要考慮賦值" },
+        { "id": "d", "text": "代換模型只是理論上的說法，從第一章開始就從來沒有真的適用過" }
+      ],
+      "answer": "a",
+      "explanation": "代換模型假設「同一個函式呼叫可以被它的回傳值直接取代，到處替換都不影響整體結果」，這個假設的前提是函式呼叫本身沒有依賴或影響外部會變動的狀態。一旦函式內部靠賦值維護區域狀態（像計數器 next()），同樣的呼叫式在不同時間點呼叫會得到不同結果，就不能再被當成「同一個值」到處替換——這正是引入賦值必須付出的代價，也是模組化好處背後的取捨。",
+      "verify": { "manual": "概念題：呼應第 1 章代換模型，以具體反例說明其失效條件，無可執行程式碼。" }
+    }
+  ]
+}

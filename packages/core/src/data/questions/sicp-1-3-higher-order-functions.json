@@ -1,0 +1,140 @@
+{
+  "id": "sicp-1-3",
+  "title": "1.3 用高階函式構造抽象",
+  "questions": [
+    {
+      "id": "sicp-1-3-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "把加總模式抽象成通用的 sum",
+      "docs": "",
+      "story": "",
+      "prompt": "下面這個 sum 函式把「從 a 到 b、每項套用 term、下一項用 next 算」這個通用模式抽出來，sumSquares 跟 sumIntegers 都只需要傳入不同的 term/next 就能重用同一個 sum。這說明了「函式作為參數」的什麼價值？",
+      "code": "function sum(term, a, next, b) {\n  if (a > b) return 0;\n  return term(a) + sum(term, next(a), next, b);\n}\n\nfunction sumSquares(a, b) {\n  return sum((x) => x * x, a, (x) => x + 1, b);\n}\nfunction sumIntegers(a, b) {\n  return sum((x) => x, a, (x) => x + 1, b);\n}",
+      "options": [
+        { "id": "a", "text": "sum 本身不需要知道「要對每一項做什麼轉換」（term）或「下一項怎麼算」（next），這兩件事被抽成參數傳進來——只要把「一路累加」這個通用模式寫一次，sumSquares、sumIntegers 這些看似不同的加總需求都能重用同一個 sum，不用每次重寫一次遞迴骨架" },
+        { "id": "b", "text": "這只是把程式碼變長，沒有帶來任何實際好處，直接分別寫三個獨立的迴圈比較好懂" },
+        { "id": "c", "text": "term 和 next 一定要是加法運算，不能是其他任何轉換，否則 sum 會出錯" },
+        { "id": "d", "text": "sum 需要知道呼叫者是要算平方和還是整數和，才能正確執行" }
+      ],
+      "answer": "a",
+      "explanation": "把「每一項要做什麼轉換」跟「下一項怎麼推進」抽成參數（term、next），sum 這個通用骨架就能被各種不同需求重用，不用每種加總需求都重寫一次遞迴——這正是「函式作為參數」讓抽象層級往上提一階的價值。",
+      "verify": { "manual": "概念題：以具體重用範例取代抽象定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-1-3-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "用 sum 抽象組出 sumSquares",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions",
+      "story": "",
+      "prompt": "承上題的 sum、sumSquares，這段程式會印出什麼？",
+      "code": "function sum(term, a, next, b) {\n  if (a > b) return 0;\n  return term(a) + sum(term, next(a), next, b);\n}\nfunction sumSquares(a, b) {\n  return sum((x) => x * x, a, (x) => x + 1, b);\n}\n\nconsole.log(sumSquares(1, 4));",
+      "options": [
+        { "id": "a", "text": "30" },
+        { "id": "b", "text": "10" },
+        { "id": "c", "text": "16" },
+        { "id": "d", "text": "100" }
+      ],
+      "answer": "a",
+      "explanation": "sumSquares(1, 4) 依序把 term 套用在 1、2、3、4 上：1² + 2² + 3² + 4² = 1 + 4 + 9 + 16 = 30，next 每次把 a 加 1 推進到下一項，直到超過 b 為止。",
+      "verify": {
+        "checks": [
+          { "code": "function sum(term, a, next, b) {\n  if (a > b) return 0;\n  return term(a) + sum(term, next(a), next, b);\n}\nfunction sumSquares(a, b) {\n  return sum((x) => x * x, a, (x) => x + 1, b);\n}\nconsole.log(sumSquares(1, 4));", "expected": "30" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-1-3-q3",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "Lambda：不需要命名的函式",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/Arrow_functions",
+      "story": "",
+      "prompt": "SICP 用 lambda 建立「不需要另外取名字」的函式，直接當場造出來傳給別的函式用。JS 的箭頭函式就是這種 lambda。這段程式會印出什麼？",
+      "code": "function double(x) {\n  return x * 2;\n}\nconst result1 = [1, 2, 3].map(double);\nconst result2 = [1, 2, 3].map((x) => x * 2);\n\nconsole.log(JSON.stringify(result1), JSON.stringify(result2));",
+      "options": [
+        { "id": "a", "text": "[2,4,6] [2,4,6]" },
+        { "id": "b", "text": "[1,2,3] [2,4,6]" },
+        { "id": "c", "text": "報錯，因為 map 只接受有名字的函式" },
+        { "id": "d", "text": "[2,4,6] undefined" }
+      ],
+      "answer": "a",
+      "explanation": "兩者結果完全相同。lambda（JS 裡對應箭頭函式）讓你可以「當場造一個函式」直接傳出去用，不必為了只用一次的邏輯先取名字定義出來——這是 SICP 用 lambda 記法要表達的核心概念：命名與否不影響函式的行為。",
+      "verify": {
+        "checks": [
+          { "code": "function double(x) {\n  return x * 2;\n}\nconst result1 = [1, 2, 3].map(double);\nconst result2 = [1, 2, 3].map((x) => x * 2);\nconsole.log(JSON.stringify(result1), JSON.stringify(result2));", "expected": "[2,4,6] [2,4,6]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-1-3-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "不動點：通用方法與特定函式無關",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Recursion",
+      "story": "",
+      "prompt": "不動點方法（fixed-point）不斷把 f(x) 套用在猜測值上，直到結果幾乎不再變動為止，這個「不斷逼近」的通用邏輯跟傳入的 f 是什麼函式無關。請填入正確的引數，讓 fixedPoint 能對任何「會收斂」的 f 逼近不動點（不是每個 f 從任意起始猜測值都會收斂，但只要會收斂，逼近的邏輯就是同一套，不用因為 f 不同而改寫）。",
+      "code": "function fixedPoint(f, guess) {\n  const next = f(guess);\n  if (Math.abs(next - guess) < 0.0001) {\n    return next;\n  }\n  return fixedPoint(f, ____);\n}\n\nconsole.log(fixedPoint((x) => (x + 2 / x) / 2, 1).toFixed(2));",
+      "options": [
+        { "id": "a", "text": "next" },
+        { "id": "b", "text": "guess" },
+        { "id": "c", "text": "f(next)" },
+        { "id": "d", "text": "guess + 1" }
+      ],
+      "answer": "a",
+      "explanation": "每一步都要拿「剛剛算出來的 next」當作下一輪的新猜測值，逼近才會收斂；如果繼續用舊的 guess，會卡在原地永遠不動。fixedPoint((x) => (x + 2/x)/2, 1) 其實就是牛頓法求平方根的另一種寫法，逼近到約 1.41（也就是 √2）。",
+      "verify": {
+        "checks": [
+          { "code": "function fixedPoint(f, guess) {\n  const next = f(guess);\n  if (Math.abs(next - guess) < 0.0001) {\n    return next;\n  }\n  return fixedPoint(f, next);\n}\nconsole.log(fixedPoint((x) => (x + 2 / x) / 2, 1).toFixed(2));", "expected": "1.41" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-1-3-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "函式作為回傳值：averageDamp 產生新函式",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "averageDamp(f) 不直接算出一個值，而是回傳一個新函式，這個新函式會把輸入 x 跟 f(x) 取平均。這段程式會印出什麼？",
+      "code": "function averageDamp(f) {\n  return (x) => (x + f(x)) / 2;\n}\n\nconst dampedSquare = averageDamp((x) => x * x);\nconsole.log(dampedSquare(4));",
+      "options": [
+        { "id": "a", "text": "10" },
+        { "id": "b", "text": "16" },
+        { "id": "c", "text": "8" },
+        { "id": "d", "text": "20" }
+      ],
+      "answer": "a",
+      "explanation": "averageDamp(f) 回傳的是一個「還沒被呼叫」的新函式，這個新函式在被呼叫時才會計算 (x + f(x)) / 2。dampedSquare(4) 呼叫時，f 是 x * x，所以是 (4 + 4*4) / 2 = (4 + 16) / 2 = 10——重點是 averageDamp 回傳的是函式本身，不是某次計算的結果。",
+      "verify": {
+        "checks": [
+          { "code": "function averageDamp(f) {\n  return (x) => (x + f(x)) / 2;\n}\nconst dampedSquare = averageDamp((x) => x * x);\nconsole.log(dampedSquare(4));", "expected": "10" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-1-3-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "函式組合：compose 回傳的新函式跟手動巢狀呼叫等價",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "版本一直接手動巢狀呼叫 square(inc(x))，版本二用 compose(square, inc) 產生一個新函式再呼叫。這段程式會印出什麼？",
+      "code": "function compose(f, g) {\n  return (x) => f(g(x));\n}\nfunction square(x) { return x * x; }\nfunction inc(x) { return x + 1; }\n\n// 版本一\nconst result1 = square(inc(5));\n\n// 版本二\nconst composed = compose(square, inc);\nconst result2 = composed(5);\n\nconsole.log(result1, result2);",
+      "options": [
+        { "id": "a", "text": "36 36" },
+        { "id": "b", "text": "36 6" },
+        { "id": "c", "text": "6 36" },
+        { "id": "d", "text": "25 36" }
+      ],
+      "answer": "a",
+      "explanation": "兩者都印出 36。compose(f, g) 回傳的新函式呼叫時做的事就是 f(g(x))，跟手動巢狀呼叫 square(inc(x)) 完全等價——差別只在於 compose 版本把「組合」這個動作本身變成一個值（一個函式），可以先組好存起來、傳來傳去，不用每次都手動巢狀呼叫。",
+      "verify": {
+        "checks": [
+          { "code": "function compose(f, g) {\n  return (x) => f(g(x));\n}\nfunction square(x) { return x * x; }\nfunction inc(x) { return x + 1; }\nconst result1 = square(inc(5));\nconst composed = compose(square, inc);\nconst result2 = composed(5);\nconsole.log(result1, result2);", "expected": "36 36" }
+        ]
+      }
+    }
+  ]
+}

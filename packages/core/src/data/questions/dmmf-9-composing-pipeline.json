@@ -1,0 +1,128 @@
+{
+  "id": "dmmf-9",
+  "title": "Ch9：實作 — 組裝 Pipeline",
+  "questions": [
+    {
+      "id": "dmmf-9-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "用函式型別引導實作：簽章先決定了「可能的實作只剩哪些」",
+      "docs": "",
+      "story": "",
+      "prompt": "一個函式的簽章寫死是 (input: string) => number，型別檢查器不允許回傳字串、陣列或任何非 number 的東西。這個簽章本身，對「這個函式實際上可能怎麼實作」造成了什麼限制？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "簽章排除了大量「不可能是正確實作」的可能性：既然回傳型別是 number，這個函式不可能回傳一個字串、也不可能什麼都不回傳——在真正動手寫函式本體之前，光看簽章就已經先大幅縮小了「這個函式合理的實作方式可能長什麼樣子」的範圍，寫程式碼變成「在型別容許的範圍內，把邏輯填進去」，而不是漫無邊際地隨便寫" },
+        { "id": "b", "text": "函式簽章只是裝飾用的標註，對實際能寫出的程式碼內容完全沒有任何限制" },
+        { "id": "c", "text": "簽章只會限制函式的名稱怎麼取，不會限制函式內部邏輯" },
+        { "id": "d", "text": "只要函式最後有 return 陳述式，簽章寫什麼都不重要" }
+      ],
+      "answer": "a",
+      "explanation": "簽章 (input: string) => number 直接排除掉「回傳字串」「回傳 undefined」「不回傳任何東西」這些不可能的實作——在真正寫函式本體之前，光看簽章就已經先劃定了「這個函式的實作只能在什麼範圍內」，寫程式碼的過程變成「在型別容許的範圍內把邏輯填進去」，而不是漫無邊際地嘗試。這正是「用函式型別引導實作」的具體意思。",
+      "verify": { "manual": "概念題：以具體簽章排除不合法實作的例子取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-9-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "實作驗證步驟：依照簽章產生 Ok 或 Error 兩種結果之一",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "validateOrder 的簽章是「輸入未驗證訂單，輸出不是 { tag: 'Ok', order } 就是 { tag: 'Error', message }」。這段程式會印出什麼？",
+      "code": "function validateOrder(unvalidatedOrder) {\n  if (!unvalidatedOrder.customerId) {\n    return { tag: 'Error', message: '缺少 customerId' };\n  }\n  return { tag: 'Ok', order: { ...unvalidatedOrder, validated: true } };\n}\n\nconsole.log(validateOrder({ customerId: 'C1' }));\nconsole.log(validateOrder({}));",
+      "options": [
+        { "id": "a", "text": "{ tag: 'Ok', order: { customerId: 'C1', validated: true } }\n{ tag: 'Error', message: '缺少 customerId' }" },
+        { "id": "b", "text": "{ tag: 'Ok', order: { customerId: 'C1', validated: true } }\n{ tag: 'Ok', order: { validated: true } }" },
+        { "id": "c", "text": "{ tag: 'Error', message: '缺少 customerId' }\n{ tag: 'Error', message: '缺少 customerId' }" },
+        { "id": "d", "text": "{ tag: 'Error', message: '缺少 customerId' }\n{ tag: 'Ok', order: { customerId: 'C1', validated: true } }" }
+      ],
+      "answer": "a",
+      "explanation": "validateOrder 依照簽章的約定，回傳的永遠不是 { tag: 'Ok', order } 就是 { tag: 'Error', message } 兩者之一：第一筆輸入有 customerId，驗證通過回傳 Ok；第二筆輸入缺少 customerId，回傳 Error 並附上明確的錯誤訊息。呼叫者靠檢查 tag，就能確定拿到的是哪一種結果，不需要另外猜測或處理例外。",
+      "verify": {
+        "checks": [
+          { "code": "function validateOrder(unvalidatedOrder) {\n  if (!unvalidatedOrder.customerId) {\n    return { tag: 'Error', message: '缺少 customerId' };\n  }\n  return { tag: 'Ok', order: { ...unvalidatedOrder, validated: true } };\n}\nconsole.log(validateOrder({ customerId: 'C1' }));\nconsole.log(validateOrder({}));", "expected": "{ tag: 'Ok', order: { customerId: 'C1', validated: true } }\n{ tag: 'Error', message: '缺少 customerId' }" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-9-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "注入依賴讓測試不用碰真正的基礎設施",
+      "docs": "",
+      "story": "",
+      "prompt": "要測試 validateOrder 是否正確拒絕「商品編號不存在」的訂單，如果 validateOrder 內部直接呼叫真正的資料庫查詢商品是否存在，測試會遇到什麼困難？跟改成「把檢查商品是否存在的函式當成參數傳進去」比起來呢？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "如果內部直接查真正的資料庫，測試就得先準備好一個測試資料庫、確保裡面有沒有特定商品編號的資料，測試會變得又慢又脆弱；改成把「檢查商品是否存在」當成參數傳進去，測試時可以傳一個假的函式（例如永遠回傳 false，模擬商品不存在），完全不需要碰真正的資料庫，測試變得又快又穩定" },
+        { "id": "b", "text": "兩種做法在測試的難易度上完全沒有差異" },
+        { "id": "c", "text": "直接呼叫真正的資料庫查詢，測試起來反而比較簡單、比較不容易出錯" },
+        { "id": "d", "text": "只要資料庫效能夠好，測試就不會遇到任何困難，不需要考慮依賴注入" }
+      ],
+      "answer": "a",
+      "explanation": "內部直接依賴真正的資料庫，測試就得準備真實環境（測試資料庫、特定資料），測試會變得又慢又脆弱；把依賴當成參數傳進去（依賴注入），測試時只需要傳一個簡單的假函式模擬各種情境，完全不用碰真正的基礎設施，測試能又快又穩定地針對驗證邏輯本身做斷言。",
+      "verify": { "manual": "概念題：以測試資料庫 vs 假函式依賴的具體對照取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-9-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "用假的依賴函式測試：不需要真正的資料庫",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions",
+      "story": "",
+      "prompt": "這段測試用一個永遠回傳 false 的假函式，模擬「商品不存在」的情境，驗證 validateOrder 是否正確擋下這種訂單。這段程式會印出什麼？",
+      "code": "function validateOrder(checkProductExists, unvalidatedOrder) {\n  if (!checkProductExists(unvalidatedOrder.productId)) {\n    return { tag: 'Error', message: `商品 ${unvalidatedOrder.productId} 不存在` };\n  }\n  return { tag: 'Ok', order: unvalidatedOrder };\n}\n\nconst fakeCheckProductExists = () => false;\n\nconsole.log(validateOrder(fakeCheckProductExists, { productId: 'P999' }));",
+      "options": [
+        { "id": "a", "text": "{ tag: 'Error', message: '商品 P999 不存在' }" },
+        { "id": "b", "text": "{ tag: 'Ok', order: { productId: 'P999' } }" },
+        { "id": "c", "text": "報錯：checkProductExists 不是函式" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "fakeCheckProductExists 是一個完全不碰真正資料庫的假函式，永遠回傳 false，模擬「商品不存在」這個情境。validateOrder 收到 false，判斷商品不存在，回傳 Error 並附上訊息——整個測試完全不需要真正的資料庫，只靠一個簡單的假依賴函式，就能針對「商品不存在時該怎麼處理」這個邏輯做出明確的斷言。",
+      "verify": {
+        "checks": [
+          { "code": "function validateOrder(checkProductExists, unvalidatedOrder) {\n  if (!checkProductExists(unvalidatedOrder.productId)) {\n    return { tag: 'Error', message: `商品 ${unvalidatedOrder.productId} 不存在` };\n  }\n  return { tag: 'Ok', order: unvalidatedOrder };\n}\nconst fakeCheckProductExists = () => false;\nconsole.log(validateOrder(fakeCheckProductExists, { productId: 'P999' }));", "expected": "{ tag: 'Error', message: '商品 P999 不存在' }" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-9-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "組合步驟時的挑戰：不是每個步驟的「形狀」都一樣",
+      "docs": "",
+      "story": "",
+      "prompt": "validateOrder 回傳的是「Ok 或 Error 兩者之一」，priceOrder 卻假設自己一定會拿到一筆訂單、直接回傳計價後的訂單（沒有 Ok/Error 這層包裝）。如果想把兩者直接用簡單的 pipe 串起來，會遇到什麼問題？",
+      "code": "// validateOrder 的輸出形狀：{ tag: 'Ok', order } 或 { tag: 'Error', message }\n// priceOrder 的輸出形狀：直接是一筆訂單物件，沒有 tag 包裝",
+      "options": [
+        { "id": "a", "text": "兩者的輸出形狀對不起來：priceOrder 預期直接拿到一筆訂單，但 validateOrder 給出的是包了一層 tag 的 { tag: 'Ok'/'Error', ... }，如果不做任何處理直接把 validateOrder 的輸出塞給 priceOrder，priceOrder 會拿到一個它看不懂的形狀——需要一種專門的組合方式（只在 tag 是 Ok 時才把裡面的 order 往下傳，遇到 Error 就整個跳過後面步驟），簡單的 pipe 沒辦法處理這種「形狀不一致」的情況" },
+        { "id": "b", "text": "這種形狀不一致完全不會造成任何問題，pipe 會自動處理好一切" },
+        { "id": "c", "text": "應該讓 priceOrder 也回傳完全相同的形狀，跟 validateOrder 的輸出形狀是不是一致無關" },
+        { "id": "d", "text": "這種情況只能透過重寫整個程式語言的型別系統才能解決" }
+      ],
+      "answer": "a",
+      "explanation": "validateOrder 的輸出多包了一層 { tag: 'Ok'/'Error', ... }，priceOrder 卻預期直接拿到一筆訂單，兩者的「形狀」對不起來——如果不做任何處理直接串接，priceOrder 會拿到一個它完全看不懂的形狀。這種「有些步驟可能失敗、形狀因此多包一層」的組合問題，需要專門的組合方式來處理，不是隨便用簡單的 pipe 就能解決，這也是後續章節要專門處理的問題。",
+      "verify": { "manual": "概念題：以 validateOrder 與 priceOrder 形狀不一致的具體情境取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-9-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "組裝完成的 pipeline：頂層函式應該薄，只負責串接，不藏邏輯",
+      "docs": "",
+      "story": "",
+      "prompt": "組裝完成的 placeOrder workflow 函式，理想上應該長什麼樣子——是「一個很長、裡面塞滿各種判斷邏輯的大函式」，還是「一個很短，幾乎只是依序呼叫 validateOrder、priceOrder、confirmOrder 的薄函式」？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "應該是一個薄函式：真正有趣、需要仔細推敲的邏輯，都應該住在 validateOrder、priceOrder 這些各自獨立的步驟裡面；頂層的 placeOrder 只負責依序把這些步驟串接起來，讓人一眼看過 placeOrder 就能掌握「這個 workflow 大致有哪些步驟、順序是什麼」，不需要一次讀完所有細節邏輯" },
+        { "id": "b", "text": "應該把所有步驟的邏輯都攤平寫進同一個大函式裡，這樣執行效率比較好" },
+        { "id": "c", "text": "placeOrder 完全不需要呼叫任何步驟函式，應該獨立重新實作一次所有邏輯" },
+        { "id": "d", "text": "頂層函式的長短完全不影響程式碼的可讀性" }
+      ],
+      "answer": "a",
+      "explanation": "頂層的 placeOrder 應該是一個薄函式，只負責依序串接各個步驟——真正的邏輯細節都住在 validateOrder、priceOrder 這些各自獨立的步驟裡。這樣一來，只看 placeOrder 就能快速掌握整個 workflow 大致的流程順序，想深入了解某一步的細節，才需要去看對應那個步驟自己的實作，兩種層次的理解需求都被滿足了。",
+      "verify": { "manual": "概念題：以薄組裝層與獨立步驟的具體對照取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "id": "dmmf-8",
+  "title": "Ch8：理解函式",
+  "questions": [
+    {
+      "id": "dmmf-8-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "函式作為「東西」：可以存進變數、傳來傳去、放進陣列",
+      "docs": "",
+      "story": "",
+      "prompt": "一個 workflow 的每個步驟（validateOrder、priceOrder……）本身都可以被存進一個陣列 steps = [validateOrder, priceOrder, confirmOrder]，之後再用迴圈依序取出呼叫。這說明了函式的什麼性質？",
+      "code": "const steps = [validateOrder, priceOrder, confirmOrder];\n// steps 是一個裝著函式的陣列，函式本身被當成資料處理",
+      "options": [
+        { "id": "a", "text": "函式在這裡被當成「第一級公民」（first-class）：函式本身就是一種可以被存進變數、放進陣列、傳來傳去的「東西」（value），不是只能在呼叫的當下才存在的特殊語法——正因為函式可以被當成資料操作，才能把一連串 workflow 步驟存進陣列，之後用通用的邏輯去處理它們，不用為每一種步驟組合分別寫程式碼" },
+        { "id": "b", "text": "函式只能被呼叫，不能被存進變數或陣列，這段程式碼在大部分程式語言裡都無法執行" },
+        { "id": "c", "text": "這種寫法只是巧合，跟「函式是不是第一級公民」這個概念完全無關" },
+        { "id": "d", "text": "把函式放進陣列，會讓函式失去被呼叫的能力" }
+      ],
+      "answer": "a",
+      "explanation": "函式能被存進變數、放進陣列，正是「函式作為第一級公民」的具體展現——函式本身是一種可以被當成資料操作的「東西」，不是只能寫在呼叫語法裡的特殊構造。正因為有這個性質，才能把一連串 workflow 步驟存進陣列，用通用的邏輯去處理任意組合的步驟，不用為每種步驟排列組合分別寫程式碼。",
+      "verify": { "manual": "概念題：以 workflow 步驟陣列的具體例子取代抽象第一級公民敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-8-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "全函式：對「每一種」可能的輸入，都要有明確的輸出",
+      "docs": "",
+      "story": "",
+      "prompt": "divide(a, b) 這個函式，如果它的型別簽章宣稱接受「任意兩個 number」，但對「b 是 0」這種輸入完全沒有處理、執行到那一行直接拋出例外中斷程式，這樣算不算一個「全函式」（total function）？",
+      "code": "function divide(a, b) {\n  if (b === 0) {\n    throw new Error('divide by zero');\n  }\n  return a / b;\n}",
+      "options": [
+        { "id": "a", "text": "不算：全函式要求「宣稱接受的每一種輸入」都必須有明確定義的輸出，如果簽章宣稱接受任意 number，卻對某些輸入沒有正常回傳值、而是拋出例外中斷執行，這就是一個「偏函式」（partial function）——簽章宣稱能處理的範圍其實藏著沒被覆蓋到的例外情況" },
+        { "id": "b", "text": "算，因為大部分情況下 divide 都能正常運作，只有極少數輸入會出問題" },
+        { "id": "c", "text": "全函式指的是函式的程式碼行數要夠少，跟輸入輸出有沒有涵蓋所有情況無關" },
+        { "id": "d", "text": "只要函式有 return 陳述式，就一定是全函式" }
+      ],
+      "answer": "a",
+      "explanation": "全函式要求「型別簽章宣稱能接受的每一種輸入」，都必須有明確定義的輸出。如果簽章說「我接受任意兩個 number」，卻對某些輸入會拋出例外、而不是回傳一個正常定義好的值，這個函式的行為其實沒有誠實反映在簽章上——這種簽章看起來能處理任何輸入、實際上卻藏著沒覆蓋到的例外情況的函式，叫做「偏函式」。",
+      "verify": { "manual": "概念題：以 divide 除以零的具體例子取代抽象全函式定義，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-8-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "偏函式的具體例子：對某些輸入完全沒有定義好的回傳值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/toUpperCase",
+      "story": "",
+      "prompt": "firstElement 想拿到陣列的第一個元素，遇到空陣列時的行為，讓呼叫者措手不及。這段程式碼有什麼問題？",
+      "code": "function firstElement(arr) {\n  return arr[0].toUpperCase();\n}\n\nconsole.log(firstElement(['hello', 'world']));\ntry {\n  console.log(firstElement([]));\n} catch (e) {\n  console.log(e.constructor.name);\n}",
+      "options": [
+        { "id": "a", "text": "firstElement 的簽章看起來接受「任意陣列」，但遇到空陣列時，arr[0] 是 undefined，呼叫 .toUpperCase() 會直接拋出 TypeError 讓程式中斷——這是一個典型的偏函式：對「空陣列」這種完全合法的輸入，沒有定義好的正常回傳值，呼叫者從簽章上完全看不出「傳空陣列進來會爆炸」這件事" },
+        { "id": "b", "text": "這段程式碼對所有輸入都能正常運作，不會有任何問題" },
+        { "id": "c", "text": "問題出在 toUpperCase 這個方法用錯了，應該改用 toLowerCase" },
+        { "id": "d", "text": "問題出在 console.log 印出的方式，跟 firstElement 的邏輯無關" }
+      ],
+      "answer": "a",
+      "explanation": "firstElement 看起來能接受「任意陣列」，但遇到空陣列時，arr[0] 是 undefined，呼叫 undefined.toUpperCase() 會直接拋出 TypeError 讓程式中斷——這正是偏函式的典型例子：對「空陣列」這種完全合法的輸入，沒有事先定義好正常的回傳值，呼叫者光看函式簽章完全看不出「傳空陣列會爆炸」這個隱藏的例外情況。",
+      "verify": {
+        "checks": [
+          { "code": "function firstElement(arr) {\n  return arr[0].toUpperCase();\n}\nconsole.log(firstElement(['hello', 'world']));\ntry {\n  console.log(firstElement([]));\n} catch (e) {\n  console.log(e.constructor.name);\n}", "expected": "HELLO\nTypeError" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-8-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "改寫成全函式：用 Option 表示「可能沒有值」，不再拋出例外",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "firstElementSafe 接受「字串陣列」，把「拿不到值」也表示成一個正常的回傳值（{ tag: 'None' }），對合法輸入（字串陣列，不管是不是空的）不再拋出例外。這段程式會印出什麼？",
+      "code": "function firstElementSafe(arr) {\n  if (arr.length === 0) return { tag: 'None' };\n  return { tag: 'Some', value: arr[0].toUpperCase() };\n}\n\nfunction describe(opt) {\n  return opt.tag === 'Some' ? `拿到：${opt.value}` : '陣列是空的';\n}\n\nconsole.log(describe(firstElementSafe(['hello', 'world'])));\nconsole.log(describe(firstElementSafe([])));",
+      "options": [
+        { "id": "a", "text": "拿到：HELLO\n陣列是空的" },
+        { "id": "b", "text": "拿到：HELLO\n拿到：undefined" },
+        { "id": "c", "text": "陣列是空的\n拿到：HELLO" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "firstElementSafe 對「空陣列」這種輸入，回傳的是一個正常定義好的值（{ tag: 'None' }），不是拋出例外——只要傳進來的是它簽章宣稱的「字串陣列」，不管是不是空的，這個函式對「宣稱能接受的每一種輸入」都有明確的輸出，是一個真正的全函式（如果傳進去的陣列第一個元素不是字串，例如數字陣列，呼叫 .toUpperCase() 一樣會拋例外——那是超出簽章宣稱範圍的輸入，不影響這裡「全函式」的判斷）。呼叫者被迫透過 describe 這種函式檢查 tag，才能拿到裡面的值，不會像原本的 firstElement 那樣，一不小心就讓例外意外中斷整個程式。",
+      "verify": {
+        "checks": [
+          { "code": "function firstElementSafe(arr) {\n  if (arr.length === 0) return { tag: 'None' };\n  return { tag: 'Some', value: arr[0].toUpperCase() };\n}\nfunction describe(opt) {\n  return opt.tag === 'Some' ? `拿到：${opt.value}` : '陣列是空的';\n}\nconsole.log(describe(firstElementSafe(['hello', 'world'])));\nconsole.log(describe(firstElementSafe([])));", "expected": "拿到：HELLO\n陣列是空的" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-8-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "全函式為什麼對組合很重要：偏函式會讓串接步驟變得不安全",
+      "docs": "",
+      "story": "",
+      "prompt": "如果 workflow 裡某個步驟是偏函式（可能對某些輸入拋出例外），把它跟下一個步驟用 pipe 串起來，會有什麼風險？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "一旦某個步驟是偏函式，對特定輸入會直接拋出例外中斷執行，pipe 沒辦法保證「這個步驟一定會產生一個值傳給下一個步驟」——整個串接起來的 workflow 隨時可能因為某一步的例外而整個中斷，而且從 pipe 這一層完全看不出來是哪個步驟、哪種輸入會導致這個問題。如果每個步驟都是全函式，組合起來的行為就能完全從型別上推導出來，不會有意外中斷的風險" },
+        { "id": "b", "text": "偏函式跟全函式在組合起來的行為上完全沒有差異" },
+        { "id": "c", "text": "只要 pipe 這個工具寫得夠好，就能自動把任何偏函式變成全函式" },
+        { "id": "d", "text": "偏函式反而比全函式更適合用來組合 workflow 步驟，因為程式碼比較簡短" }
+      ],
+      "answer": "a",
+      "explanation": "偏函式對某些輸入可能直接拋出例外，pipe 沒辦法保證「每個步驟都一定會產生一個值往下傳」——整個串接起來的 workflow 隨時可能因為某一步的例外意外中斷，而且從 pipe 這一層完全看不出是哪個環節、哪種輸入導致的。如果每個步驟都是全函式，用型別誠實表達所有可能的結果，組合起來的行為就能完全從型別上推導、預期，不會有偷偷冒出來的意外中斷。",
+      "verify": { "manual": "概念題：以偏函式破壞 pipe 組合安全性的具體情境取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-8-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "全函式呼應「讓不合法狀態無法表示」：把所有可能的結果都寫進回傳型別",
+      "docs": "",
+      "story": "",
+      "prompt": "一個全函式的回傳型別，如果誠實地包含了「這個函式所有可能發生的結果」，這跟先前談過的「讓不合法的狀態沒辦法被表示出來」是同一種精神的什麼應用？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "是同一種精神應用在函式的回傳值上：與其讓函式對某些輸入偷偷拋出例外（呼叫者從型別上完全看不出來、容易忘記處理），不如把「所有可能發生的結果」都誠實地包進回傳型別裡，逼著呼叫者必須處理每一種可能的結果——呼叫者沒辦法只處理「成功」的情況，卻假裝「失敗」的情況不存在" },
+        { "id": "b", "text": "這兩者是完全無關的兩個獨立主題，只是剛好都出現在同一本書裡" },
+        { "id": "c", "text": "全函式的重點只在於函式名稱要取得夠清楚，跟回傳型別無關" },
+        { "id": "d", "text": "「讓不合法狀態無法表示」只適用於資料型別，不能套用在函式的回傳值上" }
+      ],
+      "answer": "a",
+      "explanation": "全函式的核心精神——回傳型別誠實包含所有可能發生的結果——正是「讓不合法的狀態沒辦法被表示出來」套用在函式回傳值上的具體應用：與其讓函式對某些輸入偷偷拋出例外，不如把每一種可能的結果都寫進回傳型別，逼著呼叫者必須處理每一種情況，不能只挑「成功」的情況處理、假裝其他情況不存在。",
+      "verify": { "manual": "概念題：呼應先前不合法狀態無法表示的主題，無可執行程式碼。" }
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+{
+  "id": "sicp-2-5",
+  "title": "2.5 具有泛用操作的系統",
+  "questions": [
+    {
+      "id": "sicp-2-5-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "泛用算術運算：同一個操作，橫跨不同數字型別",
+      "docs": "",
+      "story": "",
+      "prompt": "系統裡同時有「一般數字」「有理數」「複數」三種數字型別，之前替單一操作做的依標籤分派，如果要讓 add、sub、mul、div 這些運算通通支援三種型別，會怎麼延伸？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "把「依標籤查表分派」這套機制套用在每一個算術運算上：對 add 這個操作名稱，分別替 (add, ordinary)、(add, rational)、(add, complex) 各自登記一份對應的加法實作，genericAdd 呼叫時一樣是先看運算元的標籤、查表叫對應版本——延伸方式跟單一操作的做法完全一致，只是操作名稱從一個變成好幾個" },
+        { "id": "b", "text": "每種型別的加法都要另外取一個完全不同的函式名稱，例如 addOrdinary、addRational、addComplex，呼叫者要自己記得該呼叫哪一個" },
+        { "id": "c", "text": "泛用算術運算沒辦法用依標籤分派實現，一定要改用完全不同的機制" },
+        { "id": "d", "text": "只需要替 add 這個操作做依標籤分派，sub、mul、div 不需要，因為它們一定會自動套用同一份邏輯" }
+      ],
+      "answer": "a",
+      "explanation": "依標籤分派這套機制本身可以直接套用到多個操作上——不只單一操作，add、sub、mul、div 都可以各自對每種型別登記一份實作，執行時一樣是查 (操作名稱, 標籤) 這組 key 找到對應版本呼叫。整個系統的操作數量變多了，但機制本身沒有變。",
+      "verify": { "manual": "概念題：以具體延伸方式取代抽象泛用運算敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-2-5-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "泛用加法：依運算元的標籤查表",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "const table = {};\nfunction put(op, tag, fn) { table[op + '/' + tag] = fn; }\nfunction get(op, tag) { return table[op + '/' + tag]; }\n\nput('add', 'ordinary', (a, b) => a.value + b.value);\nput('add', 'rational', (a, b) => ({ n: a.n * b.d + b.n * a.d, d: a.d * b.d }));\n\nfunction genericAdd(tag, a, b) { return get('add', tag)(a, b); }\n\nconsole.log(genericAdd('ordinary', { value: 3 }, { value: 4 }));\nconsole.log(genericAdd('rational', { n: 1, d: 2 }, { n: 1, d: 3 }));",
+      "options": [
+        { "id": "a", "text": "7\n{ n: 5, d: 6 }" },
+        { "id": "b", "text": "7\n5/6" },
+        { "id": "c", "text": "{ n: 5, d: 6 }\n7" },
+        { "id": "d", "text": "7\n{ n: 1, d: 2 }" }
+      ],
+      "answer": "a",
+      "explanation": "genericAdd('ordinary', ...) 查到的是處理一般數字的版本，直接把 value 相加得到 7；genericAdd('rational', ...) 查到的是處理有理數的版本，套用分數加法公式算出 { n: 5, d: 6 }（代表 1/2 + 1/3 = 5/6）。同一個 genericAdd 函式，靠標籤查表就能正確分派到對應型別的加法邏輯。",
+      "verify": {
+        "checks": [
+          { "code": "const table = {};\nfunction put(op, tag, fn) { table[op + '/' + tag] = fn; }\nfunction get(op, tag) { return table[op + '/' + tag]; }\nput('add', 'ordinary', (a, b) => a.value + b.value);\nput('add', 'rational', (a, b) => ({ n: a.n * b.d + b.n * a.d, d: a.d * b.d }));\nfunction genericAdd(tag, a, b) { return get('add', tag)(a, b); }\nconsole.log(genericAdd('ordinary', { value: 3 }, { value: 4 }));\nconsole.log(genericAdd('rational', { n: 1, d: 2 }, { n: 1, d: 3 }));", "expected": "7\n{ n: 5, d: 6 }" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-5-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "混合型別運算：兩個運算元標籤不一致時的難題",
+      "docs": "",
+      "story": "",
+      "prompt": "如果 genericAdd 收到的兩個運算元一個是 ordinary（一般數字）、一個是 rational（有理數），標籤不一致，直接查 (add, ordinary) 或 (add, rational) 都不對。這種情況該怎麼處理？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "需要一種「型別轉換」（coercion）機制：先把其中一種型別轉換成另一種型別（例如把一般數字 3 轉換成有理數 3/1），轉換成同一種型別之後，才能套用該型別原本就有的加法實作——這是多重表示法系統要處理混合型別運算時額外需要的一層" },
+        { "id": "b", "text": "直接讓程式出錯就好，系統不應該支援任何跨型別的運算" },
+        { "id": "c", "text": "隨便挑其中一個運算元的標籤查表，另一個運算元的值直接忽略不用" },
+        { "id": "d", "text": "把兩個運算元的標籤直接串接成一個新標籤，例如 'ordinary+rational'，再去查這個新標籤對應的實作" }
+      ],
+      "answer": "a",
+      "explanation": "混合型別運算沒辦法只靠原本的依標籤查表機制解決，因為查表的前提是兩個運算元標籤一致。真正的解法是先做「型別轉換」：把其中一種型別的值轉換成另一種型別能理解的形式（例如把整數 3 轉換成有理數 3/1），轉換完兩邊標籤一致了，才能套用該型別原本就有的加法實作。",
+      "verify": { "manual": "概念題：以具體混合型別情境取代抽象轉換機制敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-2-5-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "型別轉換：把整數轉換成有理數再相加",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Object_initializer",
+      "story": "",
+      "prompt": "請填入正確的轉換邏輯，讓 toRational 把一般數字轉換成分母為 1 的有理數，使混合型別的加法能正確運作。",
+      "code": "function toRational(n) { return ____; }\nfunction addRational(a, b) {\n  return { n: a.n * b.d + b.n * a.d, d: a.d * b.d };\n}\n\nconst result = addRational(toRational(3), { n: 1, d: 2 });\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "{ n: n, d: 1 }" },
+        { "id": "b", "text": "{ n: 1, d: n }" },
+        { "id": "c", "text": "n" },
+        { "id": "d", "text": "{ n: n, d: n }" }
+      ],
+      "answer": "a",
+      "explanation": "整數 n 要轉換成「分母為 1」的有理數才能跟其他有理數用同一套 addRational 相加，因為任何整數 n 本身就等於 n/1。toRational(3) 得到 { n: 3, d: 1 }，跟 { n: 1, d: 2 } 相加：n = 3*2 + 1*1 = 7，d = 1*2 = 2，結果是 { n: 7, d: 2 }（代表 3 + 1/2 = 7/2）。",
+      "verify": {
+        "checks": [
+          { "code": "function toRational(n) { return { n: n, d: 1 }; }\nfunction addRational(a, b) {\n  return { n: a.n * b.d + b.n * a.d, d: a.d * b.d };\n}\nconst result = addRational(toRational(3), { n: 1, d: 2 });\nconsole.log(result);", "expected": "{ n: 7, d: 2 }" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-5-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "混合型別的泛用加法：查無同型別實作時先轉換再重試",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "genericAdd 先試著直接查「兩個標籤組成的 key」；查不到的話，就把 ordinary 轉換成 rational 再重試一次。這段程式會印出什麼？",
+      "code": "const table = {};\nfunction put(op, tags, fn) { table[op + '/' + tags] = fn; }\nfunction get(op, tags) { return table[op + '/' + tags]; }\n\nput('add', 'rational,rational', (a, b) => ({ n: a.n * b.d + b.n * a.d, d: a.d * b.d }));\n\nfunction toRational(n) { return { n, d: 1 }; }\n\nfunction genericAdd(aTag, a, bTag, b) {\n  const direct = get('add', aTag + ',' + bTag);\n  if (direct) return direct(a, b);\n  if (aTag === 'ordinary' && bTag === 'rational') {\n    return get('add', 'rational,rational')(toRational(a), b);\n  }\n  throw new Error('no implementation');\n}\n\nconsole.log(genericAdd('ordinary', 3, 'rational', { n: 1, d: 2 }));",
+      "options": [
+        { "id": "a", "text": "{ n: 7, d: 2 }" },
+        { "id": "b", "text": "{ n: 3, d: 2 }" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "報錯：no implementation" }
+      ],
+      "answer": "a",
+      "explanation": "直接查 'add/ordinary,rational' 這組 key 查不到對應實作，於是進到轉換路徑：先用 toRational 把一般數字 3 轉換成有理數 { n: 3, d: 1 }，轉換完兩邊都是 rational，才能查到 'add/rational,rational' 這組已經登記好的加法實作，算出 3 + 1/2 = 7/2，也就是 { n: 7, d: 2 }。",
+      "verify": {
+        "checks": [
+          { "code": "const table = {};\nfunction put(op, tags, fn) { table[op + '/' + tags] = fn; }\nfunction get(op, tags) { return table[op + '/' + tags]; }\nput('add', 'rational,rational', (a, b) => ({ n: a.n * b.d + b.n * a.d, d: a.d * b.d }));\nfunction toRational(n) { return { n, d: 1 }; }\nfunction genericAdd(aTag, a, bTag, b) {\n  const direct = get('add', aTag + ',' + bTag);\n  if (direct) return direct(a, b);\n  if (aTag === 'ordinary' && bTag === 'rational') {\n    return get('add', 'rational,rational')(toRational(a), b);\n  }\n  throw new Error('no implementation');\n}\nconsole.log(genericAdd('ordinary', 3, 'rational', { n: 1, d: 2 }));", "expected": "{ n: 7, d: 2 }" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-5-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "符號代數：多項式的係數本身也可以是泛用資料",
+      "docs": "",
+      "story": "",
+      "prompt": "一個多項式可以表示成係數陣列，例如 [1, 0, -2] 代表 x² - 2。如果多項式的係數本身又是另一個多項式（處理兩個變數的多項式時常見），前面 genericAdd 這種依標籤分派的加法邏輯，需要為此另外寫一套全新的程式碼嗎？",
+      "code": "const poly = [1, 0, -2]; // 代表 x^2 - 2",
+      "options": [
+        { "id": "a", "text": "不需要：只要係數本身也照著同一套「打標籤＋依標籤分派」的規則實作（不管它是一般數字、有理數，還是另一個多項式），加多項式時呼叫的還是同一個 genericAdd，遞迴地把每一項係數相加——同一套泛用運算機制可以疊加著用在「資料的資料」上，不需要為每一層另外寫專屬程式碼" },
+        { "id": "b", "text": "一定要為「係數是多項式」這種情況另外寫一套全新的 add、sub、mul，跟原本處理數字的版本完全分開" },
+        { "id": "c", "text": "多項式的係數只能是普通數字，不能是另一個多項式" },
+        { "id": "d", "text": "只要多項式的長度夠短，就不需要考慮係數本身是什麼型別" }
+      ],
+      "answer": "a",
+      "explanation": "這正是依標籤分派機制的威力：只要係數本身也乖乖遵守「打標籤、可以被 genericAdd 處理」這組約定，不管係數是一般數字、有理數還是另一個多項式，加多項式時都可以遞迴呼叫同一個 genericAdd 處理每一項係數，不需要為「係數的型別」的每一種組合另外寫專屬程式碼——這也是為什麼這種結構被稱為一座可以疊加的「型別塔」。",
+      "verify": { "manual": "概念題：以具體多項式係數情境取代抽象型別塔敘述，無可執行程式碼。" }
+    }
+  ]
+}

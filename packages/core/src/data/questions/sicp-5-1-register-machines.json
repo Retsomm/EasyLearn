@@ -1,0 +1,132 @@
+{
+  "id": "sicp-5-1",
+  "title": "5.1 設計暫存器機器",
+  "questions": [
+    {
+      "id": "sicp-5-1-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "暫存器機器：用少量暫存器和固定指令序列描述演算法",
+      "docs": "",
+      "story": "",
+      "prompt": "之前用 JS 遞迴函式描述的 gcd(a, b)，如果換成暫存器機器的角度來看，會被拆解成「暫存器（存放 a、b 目前的值）」加上「一串固定的指令（測試、賦值、跳轉）」。這種描述方式比起原本的遞迴函式定義，差在哪個抽象層級？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "暫存器機器把演算法描述在更低的抽象層級：原本 gcd(a, b) 這種遞迴呼叫，被拆解成「把某個值放進某個暫存器」「檢查暫存器的值、決定要跳到哪一條指令」這種更貼近硬體實際運作方式的操作，不再有「函式呼叫」這種高層概念，只剩暫存器和跳轉指令" },
+        { "id": "b", "text": "暫存器機器描述的是完全不同的演算法，跟原本的遞迴 gcd 函式想解決的問題無關" },
+        { "id": "c", "text": "暫存器機器只是把程式碼縮排方式改變，抽象層級跟原本的遞迴函式完全一樣" },
+        { "id": "d", "text": "暫存器機器的描述方式比高階語言更抽象、更看不到執行細節" }
+      ],
+      "answer": "a",
+      "explanation": "暫存器機器是刻意把演算法描述在更接近硬體的抽象層級：沒有「函式呼叫」這種高層次的概念，只剩下「暫存器裡存了什麼值」「現在要不要跳到某條指令」這種最基本的操作。理解一個演算法在暫存器機器層級長什麼樣子，能幫助你看清楚高階語言的函式呼叫、遞迴，實際上是靠什麼樣的底層機制運作出來的。",
+      "verify": { "manual": "概念題：以具體 gcd 拆解對照取代抽象層級敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-5-1-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "模擬暫存器機器：用一個小迴圈執行「指令序列」",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "這段程式建了一台迷你「暫存器機器」，registers 是暫存器、program 是固定的指令序列，一個小迴圈負責依序（或依跳轉）執行每條指令。這段程式會印出什麼？",
+      "code": "const registers = { a: 20, b: 8 };\nconst program = [\n  { op: 'test-zero', reg: 'b', jumpTo: 4 },\n  { op: 'mod', dest: 'a', src1: 'a', src2: 'b' },\n  { op: 'swap', reg1: 'a', reg2: 'b' },\n  { op: 'jump', to: 0 },\n  { op: 'done' },\n];\n\nlet pc = 0;\nwhile (program[pc].op !== 'done') {\n  const instr = program[pc];\n  if (instr.op === 'test-zero') {\n    pc = registers[instr.reg] === 0 ? instr.jumpTo : pc + 1;\n  } else if (instr.op === 'mod') {\n    registers[instr.dest] = registers[instr.src1] % registers[instr.src2];\n    pc += 1;\n  } else if (instr.op === 'swap') {\n    [registers[instr.reg1], registers[instr.reg2]] = [registers[instr.reg2], registers[instr.reg1]];\n    pc += 1;\n  } else if (instr.op === 'jump') {\n    pc = instr.to;\n  }\n}\n\nconsole.log(registers.a);",
+      "options": [
+        { "id": "a", "text": "4" },
+        { "id": "b", "text": "20" },
+        { "id": "c", "text": "8" },
+        { "id": "d", "text": "0" }
+      ],
+      "answer": "a",
+      "explanation": "這台迷你暫存器機器完全靠 pc（程式計數器）決定下一步要執行哪一條指令，靠 test-zero、jump 這種指令控制流程——本質上就是用暫存器機器的方式重新實作歐幾里得演算法：反覆做「a mod b」再交換 a、b，直到 b 變成 0 為止，最後 a 裡存的就是最大公因數。20 和 8 的最大公因數是 4，跑完整個指令序列後 registers.a 正好是 4。",
+      "verify": {
+        "checks": [
+          { "code": "const registers = { a: 20, b: 8 };\nconst program = [\n  { op: 'test-zero', reg: 'b', jumpTo: 4 },\n  { op: 'mod', dest: 'a', src1: 'a', src2: 'b' },\n  { op: 'swap', reg1: 'a', reg2: 'b' },\n  { op: 'jump', to: 0 },\n  { op: 'done' },\n];\nlet pc = 0;\nwhile (program[pc].op !== 'done') {\n  const instr = program[pc];\n  if (instr.op === 'test-zero') {\n    pc = registers[instr.reg] === 0 ? instr.jumpTo : pc + 1;\n  } else if (instr.op === 'mod') {\n    registers[instr.dest] = registers[instr.src1] % registers[instr.src2];\n    pc += 1;\n  } else if (instr.op === 'swap') {\n    [registers[instr.reg1], registers[instr.reg2]] = [registers[instr.reg2], registers[instr.reg1]];\n    pc += 1;\n  } else if (instr.op === 'jump') {\n    pc = instr.to;\n  }\n}\nconsole.log(registers.a);", "expected": "4" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-1-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "遞迴需要堆疊：暫存器機器沒有內建的函式呼叫機制",
+      "docs": "",
+      "story": "",
+      "prompt": "高階語言的遞迴函式呼叫，背後其實需要記住「每一層還沒做完的運算」才能正確返回。暫存器機器沒有「函式呼叫」這種內建功能，如果要在暫存器機器上實作遞迴（例如階乘），需要額外處理什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "需要一個明確的「堆疊」（stack）來手動存放每一層「還沒做完的運算」跟「返回位置」：每往下遞迴一層，就把目前的暫存器狀態和返回位置推進堆疊；遞迴到底之後，再依序從堆疊彈出這些狀態，一層層把剩下的運算做完——高階語言的遞迴呼叫，其實就是編譯器/直譯器自動幫你管理了這個堆疊，暫存器機器則要自己手動處理" },
+        { "id": "b", "text": "暫存器機器完全不需要處理堆疊，遞迴在暫存器機器上會自動正確執行" },
+        { "id": "c", "text": "暫存器機器只能執行沒有遞迴的演算法，遇到遞迴問題必須先改寫成完全不同的演算法" },
+        { "id": "d", "text": "堆疊只在網頁瀏覽器裡才需要，暫存器機器的執行環境不需要堆疊" }
+      ],
+      "answer": "a",
+      "explanation": "高階語言的遞迴呼叫之所以「看起來很自然」，是因為語言本身（編譯器/直譯器）自動幫你管理了一份堆疊，記住每一層還沒做完的運算跟返回位置。暫存器機器沒有這種內建機制，要自己用一個明確的堆疊資料結構，手動 push 目前狀態、遞迴到底之後再手動 pop 回來繼續運算——這正是線性遞迴 process 在暫存器層級具體對應的實作方式。",
+      "verify": { "manual": "概念題：以具體堆疊管理需求取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-5-1-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用明確的堆疊手動還原遞迴展開的順序",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/pop",
+      "story": "",
+      "prompt": "請填入正確的方法，讓 factorialWithStack 用 pop()（後進先出）依序取出堆疊裡的值，重現遞迴展開時「從最內層開始」的順序。",
+      "code": "function factorialWithStack(n) {\n  const stack = [];\n  let current = n;\n  while (current > 1) {\n    stack.push(current);\n    current -= 1;\n  }\n  const order = [];\n  while (stack.length > 0) {\n    order.push(stack.____());\n  }\n  return order;\n}\n\nconsole.log(factorialWithStack(5));",
+      "options": [
+        { "id": "a", "text": "pop" },
+        { "id": "b", "text": "shift" },
+        { "id": "c", "text": "push" },
+        { "id": "d", "text": "slice" }
+      ],
+      "answer": "a",
+      "explanation": "堆疊的展開順序（LIFO，後進先出）跟真正的函式呼叫遞迴展開順序一致：最後被 push 進去的（也就是遞迴展開到最深的那一層，這裡是 2）會最先被處理，最先被 push 的（最外層的呼叫，這裡是 5）反而最後被處理——用 stack.pop() 依序取出，順序是 2, 3, 4, 5，剛好對應「從最內層的乘法開始往外算」這個真正的遞迴展開順序。如果改用 shift()（先進先出），順序會變成 5, 4, 3, 2，不符合真正遞迴呼叫「後進先出」的展開方式。",
+      "verify": {
+        "checks": [
+          { "code": "function factorialWithStack(n) {\n  const stack = [];\n  let current = n;\n  while (current > 1) {\n    stack.push(current);\n    current -= 1;\n  }\n  const order = [];\n  while (stack.length > 0) {\n    order.push(stack.pop());\n  }\n  return order;\n}\nconsole.log(factorialWithStack(5));", "expected": "[ 2, 3, 4, 5 ]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-1-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "用堆疊還原階乘：從最內層的乘法開始往外算",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/pop",
+      "story": "",
+      "prompt": "這段程式用 pop()（後進先出）依序取出堆疊裡的值相乘，重現遞迴階乘「從最內層開始收斂」的過程。這段程式會印出什麼？",
+      "code": "function factorialWithStack(n) {\n  const stack = [];\n  let current = n;\n  while (current > 1) {\n    stack.push(current);\n    current -= 1;\n  }\n  let result = 1;\n  while (stack.length > 0) {\n    result *= stack.pop();\n  }\n  return result;\n}\n\nconsole.log(factorialWithStack(5));",
+      "options": [
+        { "id": "a", "text": "120" },
+        { "id": "b", "text": "24" },
+        { "id": "c", "text": "15" },
+        { "id": "d", "text": "5" }
+      ],
+      "answer": "a",
+      "explanation": "stack 依序 push 進 5, 4, 3, 2（current 從 5 累減到 2 為止，current 變成 1 時迴圈條件 current > 1 不成立，不會再 push）。之後用 pop() 依序取出 2, 3, 4, 5 相乘：1*2=2、*3=6、*4=24、*5=120——這正好對應遞迴階乘「從最內層算起，一路把外層的乘法補完」的順序，最終正確算出 5! = 120。",
+      "verify": {
+        "checks": [
+          { "code": "function factorialWithStack(n) {\n  const stack = [];\n  let current = n;\n  while (current > 1) {\n    stack.push(current);\n    current -= 1;\n  }\n  let result = 1;\n  while (stack.length > 0) {\n    result *= stack.pop();\n  }\n  return result;\n}\nconsole.log(factorialWithStack(5));", "expected": "120" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-5-1-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "在暫存器層級才看得到：遞迴到底要付出多少堆疊空間",
+      "docs": "",
+      "story": "",
+      "prompt": "第 1 章比較過「線性遞迴」跟「疊代」process 誰比較省空間，但在高階語言裡這只是抽象的說法。暫存器機器的堆疊實作，讓這個抽象說法變成什麼具體可觀察的東西？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "變成「堆疊裡實際疊了幾層」這種可以直接數出來的具體數量：線性遞迴 process 在還沒開始收斂前，堆疊裡會疊到跟 n 成正比的深度；如果改寫成疊代 process，暫存器機器可以只用固定數量的暫存器完成整個計算，堆疊深度不會隨 n 增加——「空間需求隨 n 怎麼成長」不再只是抽象敘述，而是「堆疊實際疊多高」這種可以直接觀察、數出來的東西" },
+        { "id": "b", "text": "暫存器機器沒辦法呈現空間需求的差異，兩種 process 在暫存器層級佔用的空間永遠一樣" },
+        { "id": "c", "text": "這個差異只存在於理論分析，實際執行時堆疊深度跟 n 完全無關" },
+        { "id": "d", "text": "疊代 process 在暫存器機器上反而需要比線性遞迴 process 更深的堆疊" }
+      ],
+      "answer": "a",
+      "explanation": "在高階語言裡，「線性遞迴 process 需要的空間隨 n 線性增加」是一個抽象的說法；到了暫存器機器層級，這句話變成了具體可以觀察、數出來的東西——堆疊裡實際疊了幾層。這正是暫存器機器這種底層描述方式的價值：把原本抽象的效率分析，變成可以直接盯著堆疊深度數出來的具體現象。",
+      "verify": { "manual": "概念題：呼應第 1 章成長量級討論，以堆疊深度的具體觀察取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

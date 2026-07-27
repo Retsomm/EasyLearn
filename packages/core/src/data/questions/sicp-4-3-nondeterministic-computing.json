@@ -1,0 +1,132 @@
+{
+  "id": "sicp-4-3",
+  "title": "4.3 非決定性計算",
+  "questions": [
+    {
+      "id": "sicp-4-3-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "非決定性計算：amb 代表「先試一個，之後失敗再回頭換下一個」",
+      "docs": "",
+      "story": "",
+      "prompt": "一般函式呼叫只會傳回一個固定的值。amb(1, 2, 3) 概念上代表「先假設選 1，如果之後的計算證明這個選擇行不通（失敗），就回頭改選 2，再不行就選 3」。這跟一般的函式呼叫最大的不同是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "amb 不是「算出一個固定答案」，而是代表「一個尚待決定的選擇」——它的值要看後續的計算會不會成功而定：如果選 1 之後的計算都順利，答案就是 1；如果選 1 之後失敗了，就當作沒發生過，回頭改成選 2 重新嘗試，這種「失敗就回頭換一個選擇再試」的機制叫做回溯（backtracking）" },
+        { "id": "b", "text": "amb(1, 2, 3) 只是回傳陣列 [1, 2, 3] 的另一種寫法，跟一般函式呼叫沒有任何差別" },
+        { "id": "c", "text": "amb 保證一定會回傳 1，2 和 3 只是用來混淆閱讀者的裝飾用參數" },
+        { "id": "d", "text": "amb 只能用在數字上，不能用在字串或其他型別的值" }
+      ],
+      "answer": "a",
+      "explanation": "amb 代表的是「一個尚待決定、可能有好幾種候選答案的選擇點」，它最終呈現出來的值取決於「選了這個之後，後面的計算會不會走得通」——如果走不通（失敗），系統會回頭到這個選擇點、換下一個候選值重新嘗試，這種「失敗就回頭換一個」的機制就是回溯。這跟一般函式呼叫「呼叫了就會得到一個固定值」是完全不同的計算模型。",
+      "verify": { "manual": "概念題：以具體選擇點與回溯機制取代抽象 amb 定義敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-4-3-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "回溯搜尋：找出兩個數字加總等於目標值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      "story": "",
+      "prompt": "這段程式用巢狀迴圈模擬「先選第一個數字、再選第二個數字，湊不出目標值就換下一組」的回溯搜尋。這段程式會印出什麼？",
+      "code": "function findPair(list1, list2, target) {\n  for (const a of list1) {\n    for (const b of list2) {\n      if (a + b === target) {\n        return [a, b];\n      }\n    }\n  }\n  return null;\n}\n\nconsole.log(findPair([1, 3, 5], [2, 4, 6], 9));",
+      "options": [
+        { "id": "a", "text": "[ 3, 6 ]" },
+        { "id": "b", "text": "[ 1, 6 ]" },
+        { "id": "c", "text": "null" },
+        { "id": "d", "text": "[ 5, 4 ]" }
+      ],
+      "answer": "a",
+      "explanation": "findPair 依序嘗試每一組 (a, b)：(1,2)、(1,4)、(1,6)、(3,2)、(3,4) 都湊不出 9（這些「失敗」的嘗試會直接被跳過、換下一組），一路試到 (3, 6) = 9 才成功，回傳 [3, 6]。這種「一路試、湊不出就換下一組」的搜尋方式，正是回溯搜尋最基本的形式，只是這裡用巢狀迴圈手動展開，沒有用 amb 這種語言層級的機制自動處理。",
+      "verify": {
+        "checks": [
+          { "code": "function findPair(list1, list2, target) {\n  for (const a of list1) {\n    for (const b of list2) {\n      if (a + b === target) {\n        return [a, b];\n      }\n    }\n  }\n  return null;\n}\nconsole.log(findPair([1, 3, 5], [2, 4, 6], 9));", "expected": "[ 3, 6 ]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-4-3-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "失敗不是錯誤，是回溯搜尋的正常訊號",
+      "docs": "",
+      "story": "",
+      "prompt": "在上一題的 findPair 裡，(1, 2) 湊不出目標值 9，這個「失敗」在回溯搜尋的世界裡代表什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "「失敗」只是一個訊號，告訴搜尋機制「這個選擇組合行不通，該換下一個候選值繼續試」，不是程式出錯、也不需要中斷整個搜尋——回溯搜尋原本就預期大部分候選組合都會失敗，只有找到符合條件的那一組才算成功" },
+        { "id": "b", "text": "「失敗」代表程式邏輯寫錯了，一旦發生就應該讓整個程式拋出例外中止執行" },
+        { "id": "c", "text": "「失敗」代表輸入的 list1、list2 一定有資料型別錯誤" },
+        { "id": "d", "text": "每次「失敗」都會讓已經找到的正確答案被清空，必須整個重新開始搜尋" }
+      ],
+      "answer": "a",
+      "explanation": "在回溯搜尋裡，「失敗」是搜尋過程中完全正常、預期中會發生的事——它只是告訴系統「這個候選組合不符合條件，換下一個繼續試」，不代表程式寫錯了。回溯搜尋的效率跟正確性，正是建立在「能快速從失敗的分支跳到下一個候選值」這個機制上。",
+      "verify": { "manual": "概念題：釐清失敗在回溯搜尋裡的正常角色，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-4-3-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用 generator 列舉所有符合條件的組合",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function*",
+      "story": "",
+      "prompt": "請填入正確的條件，讓 findAllPairs 用 generator 依序 yield 出每一組加總等於 target 的組合。",
+      "code": "function* findAllPairs(list1, list2, target) {\n  for (const a of list1) {\n    for (const b of list2) {\n      if (____) {\n        yield [a, b];\n      }\n    }\n  }\n}\n\nconsole.log([...findAllPairs([1, 3, 5], [2, 4, 6], 7)]);",
+      "options": [
+        { "id": "a", "text": "a + b === target" },
+        { "id": "b", "text": "a + b !== target" },
+        { "id": "c", "text": "a === target" },
+        { "id": "d", "text": "b === target" }
+      ],
+      "answer": "a",
+      "explanation": "要 yield 出「加總剛好等於 target」的組合，判斷式要寫 a + b === target。findAllPairs 依序走訪每一組 (a, b)，符合條件就 yield 出去，不符合就跳過繼續看下一組——跟 amb 的精神一致，只是這裡不是「找到第一個就停」，而是把所有符合條件的組合都列舉出來。",
+      "verify": {
+        "checks": [
+          { "code": "function* findAllPairs(list1, list2, target) {\n  for (const a of list1) {\n    for (const b of list2) {\n      if (a + b === target) {\n        yield [a, b];\n      }\n    }\n  }\n}\nconsole.log([...findAllPairs([1, 3, 5], [2, 4, 6], 7)]);", "expected": "[ [ 1, 6 ], [ 3, 4 ], [ 5, 2 ] ]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-4-3-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "搜尋順序會影響「第一個」找到的解",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      "story": "",
+      "prompt": "這段程式只找「第一個」符合條件的組合就停下來。如果把外層迴圈換成先走訪 list2、內層才走訪 list1，會不會改變找到的答案？",
+      "code": "function findFirst(list1, list2, target) {\n  for (const a of list1) {\n    for (const b of list2) {\n      if (a + b === target) return [a, b];\n    }\n  }\n  return null;\n}\nfunction findFirstSwapped(list1, list2, target) {\n  for (const b of list2) {\n    for (const a of list1) {\n      if (a + b === target) return [b, a];\n    }\n  }\n  return null;\n}\n\nconsole.log(findFirst([1, 3, 5], [2, 4, 6], 7));\nconsole.log(findFirstSwapped([1, 3, 5], [2, 4, 6], 7));",
+      "options": [
+        { "id": "a", "text": "[ 1, 6 ]\n[ 2, 5 ]" },
+        { "id": "b", "text": "[ 1, 6 ]\n[ 1, 6 ]" },
+        { "id": "c", "text": "[ 2, 5 ]\n[ 1, 6 ]" },
+        { "id": "d", "text": "null\nnull" }
+      ],
+      "answer": "a",
+      "explanation": "兩種寫法都能找到「加總等於 7」的組合，但搜尋的順序（先固定哪一個迴圈在外層）不同，「第一個」被找到、觸發 return 而停止搜尋的組合也會不同：findFirst 先走訪 list1 的 1，配上 list2 的 6 先湊到 7 就停了；findFirstSwapped 先走訪 list2 的 2，配上 list1 的 5 先湊到 7 就停了。這說明回溯搜尋「只要第一個解」的寫法，結果會受搜尋順序（也就是選擇點嘗試候選值的先後順序）影響，不是唯一固定的答案。",
+      "verify": {
+        "checks": [
+          { "code": "function findFirst(list1, list2, target) {\n  for (const a of list1) {\n    for (const b of list2) {\n      if (a + b === target) return [a, b];\n    }\n  }\n  return null;\n}\nfunction findFirstSwapped(list1, list2, target) {\n  for (const b of list2) {\n    for (const a of list1) {\n      if (a + b === target) return [b, a];\n    }\n  }\n  return null;\n}\nconsole.log(findFirst([1, 3, 5], [2, 4, 6], 7));\nconsole.log(findFirstSwapped([1, 3, 5], [2, 4, 6], 7));", "expected": "[ 1, 6 ]\n[ 2, 5 ]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-4-3-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "amb 的價值：宣告式地描述「找到符合條件的值」，不用手動寫巢狀迴圈",
+      "docs": "",
+      "story": "",
+      "prompt": "前面的 findPair、findAllPairs 都要手動寫巢狀迴圈枚舉組合。SICP 的 amb 讓你可以直接描述「a、b 各自從候選值裡選一個，要求 a+b 等於 target，否則失敗回溯」，不用自己手刻迴圈。這帶來了什麼好處？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "讓你可以用「宣告式」的方式描述搜尋問題本身（要找到滿足什麼條件的值），把「怎麼有效率地枚舉、回溯」這件事交給語言的 amb 機制去處理，不用每次遇到新的搜尋問題都重新手刻一套巢狀迴圈——這跟高階函式「把通用模式抽出來重用」是同一種抽象化精神，只是這裡抽的是「搜尋」這個通用模式" },
+        { "id": "b", "text": "amb 只是巢狀迴圈的語法糖，寫出來的程式碼在效能和行為上完全等價，沒有任何額外好處" },
+        { "id": "c", "text": "amb 只能用在數字搜尋問題上，遇到其他型別的搜尋問題還是得手刻迴圈" },
+        { "id": "d", "text": "使用 amb 之後，程式設計師完全不需要理解回溯的概念，系統會自動保證一定找得到答案" }
+      ],
+      "answer": "a",
+      "explanation": "amb 讓你能專注在「描述問題本身」（要找到滿足什麼條件的一組選擇），而不用親自處理「怎麼有效率地枚舉候選值、失敗了要怎麼回溯到上一個選擇點」這些搜尋機制的細節——這些細節被藏進語言的 amb 實作裡。這跟高階函式「把通用模式抽出來，讓使用者只需要提供跟自己問題相關的部分」是同一種抽象化精神，只是這裡通用模式換成了「搜尋」。",
+      "verify": { "manual": "概念題：以宣告式搜尋 vs 手刻迴圈對照取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

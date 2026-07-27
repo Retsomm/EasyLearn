@@ -1,0 +1,128 @@
+{
+  "id": "fljs-10",
+  "title": "Ch10：函數式非同步",
+  "questions": [
+    {
+      "id": "fljs-10-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "時間即狀態：隨時間改變的值，本質上就是一種共享的可變狀態",
+      "docs": "",
+      "story": "",
+      "prompt": "兩個非同步操作都會在完成時把結果寫進同一個變數 latestResult。如果不確定哪個操作會先完成，這個情境本質上跟哪一種問題很像？",
+      "code": "let latestResult;\nfetchA().then((r) => { latestResult = r; });\nfetchB().then((r) => { latestResult = r; });",
+      "options": [
+        { "id": "a", "text": "這本質上就是「共享可變狀態」的問題：latestResult 這個變數會被兩個各自獨立、時間點不確定的操作寫入，最終的值取決於「誰先完成」這種執行順序上的競爭——「隨時間改變的值」本身就是一種狀態，一旦有好幾個地方會在不確定的時間點寫入它，就會出現典型的競態問題" },
+        { "id": "b", "text": "這種情境完全不會有任何問題，非同步操作永遠會按照程式碼撰寫的順序完成" },
+        { "id": "c", "text": "只有真正的多執行緒程式才會遇到這種問題，非同步的 JavaScript 完全不會" },
+        { "id": "d", "text": "latestResult 不算是狀態，因為它只是一個普通變數，不是物件或陣列" }
+      ],
+      "answer": "a",
+      "explanation": "latestResult 會被兩個時間點不確定的非同步操作寫入，最終的值取決於「誰先完成」——這正是共享可變狀態的典型問題：不管是多執行緒的共享變數，還是 JavaScript 裡多個非同步回呼寫入同一個變數，只要有「好幾個地方會在不確定的時間點寫入同一份狀態」，就會出現這種競態問題。",
+      "verify": { "manual": "概念題：以 latestResult 競態情境取代抽象時間即狀態敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-10-q2",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "時間即狀態的具體示範：後完成的非同步操作覆蓋先完成的結果",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise",
+      "story": "",
+      "prompt": "delayedValue('A', 20) 比 delayedValue('B', 10) 晚完成。這段程式最終會印出什麼？",
+      "code": "let latestResult;\n\nfunction delayedValue(value, ms) {\n  return new Promise((resolve) => setTimeout(() => resolve(value), ms));\n}\n\nasync function main() {\n  delayedValue('A', 20).then((r) => { latestResult = r; });\n  delayedValue('B', 10).then((r) => { latestResult = r; });\n  await new Promise((resolve) => setTimeout(resolve, 30));\n  console.log(latestResult);\n}\n\nmain();",
+      "options": [
+        { "id": "a", "text": "A" },
+        { "id": "b", "text": "B" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "不確定，每次執行結果都不同" }
+      ],
+      "answer": "a",
+      "explanation": "雖然 delayedValue('A', 20) 在程式碼裡先被呼叫，但它的延遲時間比較長，會比 delayedValue('B', 10) 晚完成——B 先在第 10 毫秒把 latestResult 設成 'B'，A 在第 20 毫秒才把 latestResult 覆蓋成 'A'，等到第 30 毫秒印出時，看到的是最後寫入的 'A'。這正是「時間即狀態」的具體案例：最終的值取決於誰完成得比較晚，不是取決於程式碼撰寫的順序。",
+      "verify": {
+        "checks": [
+          { "code": "let latestResult;\nfunction delayedValue(value, ms) {\n  return new Promise((resolve) => setTimeout(() => resolve(value), ms));\n}\nasync function main() {\n  delayedValue('A', 20).then((r) => { latestResult = r; });\n  delayedValue('B', 10).then((r) => { latestResult = r; });\n  await new Promise((resolve) => setTimeout(resolve, 30));\n  console.log(latestResult);\n}\nmain();", "expected": "A" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-10-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Promise 是「急切」的：建構當下就開始執行，不用等別人來要結果",
+      "docs": "",
+      "story": "",
+      "prompt": "new Promise((resolve) => { ... }) 這個建構子裡的函式（executor），是在 Promise 被建立的當下就立刻執行，還是要等到之後呼叫 .then() 才會開始執行？",
+      "code": "const p = new Promise((resolve) => {\n  console.log('executor 執行了');\n  resolve(42);\n});",
+      "options": [
+        { "id": "a", "text": "建構的當下就立刻執行：Promise 是「急切」（eager）的，只要呼叫 new Promise(...)，裡面的 executor 函式馬上就會開始跑，完全不需要等到之後有人呼叫 .then() 才啟動——這跟後面會介紹的 Observable（要等到真的被訂閱才會開始執行）形成鮮明對比" },
+        { "id": "b", "text": "要等到之後呼叫 .then() 才會開始執行，Promise 建構的當下什麼都不會做" },
+        { "id": "c", "text": "executor 函式永遠不會被執行，只是用來宣告型別的裝飾用語法" },
+        { "id": "d", "text": "executor 函式只有在呼叫 .catch() 時才會執行" }
+      ],
+      "answer": "a",
+      "explanation": "Promise 是「急切」的：只要呼叫 new Promise(...)，裡面的 executor 函式會立刻開始執行，完全不需要等到之後有人呼叫 .then() 才啟動——這代表 Promise 代表的非同步工作，從建立的那一刻就已經在背景進行了。這跟後面會介紹的 Observable（要等到真的被訂閱才會開始執行）剛好相反，形成鮮明對比。",
+      "verify": { "manual": "概念題：以 executor 立即執行的具體行為取代抽象急切性敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-10-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證 Promise 的急切性：executor 立刻執行，不等 .then()",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise",
+      "story": "",
+      "prompt": "這段程式會印出什麼順序？",
+      "code": "console.log('開始');\nconst p = new Promise((resolve) => {\n  console.log('executor 執行了');\n  resolve(42);\n});\nconsole.log('Promise 建立完成');\np.then((value) => console.log('拿到值：', value));",
+      "options": [
+        { "id": "a", "text": "開始\nexecutor 執行了\nPromise 建立完成\n拿到值： 42" },
+        { "id": "b", "text": "開始\nPromise 建立完成\nexecutor 執行了\n拿到值： 42" },
+        { "id": "c", "text": "開始\n拿到值： 42\nexecutor 執行了\nPromise 建立完成" },
+        { "id": "d", "text": "開始\nexecutor 執行了\n拿到值： 42\nPromise 建立完成" }
+      ],
+      "answer": "a",
+      "explanation": "executor 在 new Promise(...) 這一行執行的當下就同步跑完了，所以「executor 執行了」會在「Promise 建立完成」之前印出來；p.then() 註冊的回呼要等到目前這輪同步程式碼全部跑完之後，才會在微任務佇列裡被執行，所以「拿到值：42」是最後才印出來的。這證實了 executor 是同步、立即執行的，不會等到呼叫 .then() 才開始。",
+      "verify": {
+        "checks": [
+          { "code": "console.log('開始');\nconst p = new Promise((resolve) => {\n  console.log('executor 執行了');\n  resolve(42);\n});\nconsole.log('Promise 建立完成');\np.then((value) => console.log('拿到值：', value));", "expected": "開始\nexecutor 執行了\nPromise 建立完成\n拿到值： 42" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-10-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Observable 是「惰性」的：沒有訂閱，就完全不會執行",
+      "docs": "",
+      "story": "",
+      "prompt": "建立一個預設的 cold Observable，如果建立之後完全沒有呼叫 subscribe()，裡面描述的邏輯會不會執行？跟 Promise 比起來呢？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "完全不會執行：cold Observable 是「惰性」（lazy）的，只有在真的呼叫 subscribe() 訂閱之後，裡面描述的邏輯才會真正開始執行——沒有人訂閱，等於這個 Observable 什麼事都還沒發生，這跟 Promise「建立當下就立刻執行」的急切特性完全相反（注意：像 RxJS 的 shared／multicast Observable 會把同一次執行結果共享給所有訂閱者，不是每次訂閱都重新跑一次，這裡討論的是預設的 cold Observable）" },
+        { "id": "b", "text": "Observable 跟 Promise 一樣，建立當下就會立刻執行，跟訂閱與否無關" },
+        { "id": "c", "text": "Observable 只有在程式結束前的最後一刻才會自動執行一次" },
+        { "id": "d", "text": "Observable 完全不需要訂閱，建立出來就自動會把結果印出來" }
+      ],
+      "answer": "a",
+      "explanation": "cold Observable 是「惰性」的：只有在真的呼叫 subscribe() 之後，裡面描述的邏輯才會開始執行；沒有人訂閱，這個 Observable 就什麼事都還沒發生。這跟 Promise「建立當下就立刻執行」的急切特性完全相反——cold Observable 可以被訂閱多次，每次訂閱都重新觸發一次執行，這也是 Promise（只會解決一次）做不到的；但這個「每次訂閱重新執行」只適用於 cold Observable，RxJS 的 shared／multicast Observable 會讓多個訂閱者共享同一次執行結果，不會每訂閱一次就重跑一次。",
+      "verify": { "manual": "概念題：對照 Promise 的急切性，以 Observable 惰性取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-10-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "宣告式的時間：用 map／filter 處理「隨時間發生的一連串事件」",
+      "docs": "",
+      "story": "",
+      "prompt": "一連串使用者點擊事件，可以用 Observable 表示成「隨時間發生的一連串值」，再用 RxJS 的 pipe(map(...), filter(...)) 這種 operator 組合方式處理（RxJS 的 map、filter 是透過 pipe 串接的獨立 operator 函式，不是直接掛在 Observable 上呼叫的方法）。這跟手動寫一堆 addEventListener 回呼、自己管理狀態比起來，好處是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "讓「處理一連串隨時間發生的事件」這件事，可以用跟處理陣列一樣的宣告式工具（RxJS 的 map、filter 這些 operator，透過 pipe(map(...), filter(...)) 組合起來）來表達，不用手動管理「現在事件觸發到第幾次了」「上一次的值是什麼」這些簿記細節——這正是把 FP 處理靜態資料集合的宣告式風格，延伸套用到「隨時間變化的資料流」上，讓非同步事件也能用同樣熟悉的工具處理" },
+        { "id": "b", "text": "Observable 沒辦法使用 map、filter 這種操作，只能搭配迴圈手動處理" },
+        { "id": "c", "text": "使用 Observable 之後，完全不需要考慮事件發生的先後順序" },
+        { "id": "d", "text": "這種做法只能用在滑鼠點擊事件上，沒辦法用在其他種類的非同步事件" }
+      ],
+      "answer": "a",
+      "explanation": "Observable 讓「處理一連串隨時間發生的事件」，可以用跟處理陣列一樣熟悉的宣告式工具表達——在 RxJS 裡是把 map、filter 這些 operator 透過 pipe(map(...), filter(...)) 串接起來，不用手動管理事件觸發次數、上一次的值這些簿記細節。這正是把 FP 處理靜態資料集合的宣告式風格，延伸套用到「隨時間變化的資料流」上，讓非同步事件處理也能享受到跟同步陣列操作一樣的表達力。",
+      "verify": { "manual": "概念題：以 Observable 宣告式處理事件流的具體例子取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

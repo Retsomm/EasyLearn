@@ -1,0 +1,132 @@
+{
+  "id": "sicp-2-4",
+  "title": "2.4 抽象資料的多重表示法",
+  "questions": [
+    {
+      "id": "sicp-2-4-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "多重表示法的衝突：同一種資料，兩種不同的內部設計",
+      "docs": "",
+      "story": "",
+      "prompt": "兩個團隊分別用「直角座標 (real, imag)」和「極座標 (magnitude, angle)」實作複數，兩邊都各自有一套 makeComplex／realPart／imagPart。如果要讓兩種實作在同一個系統裡並存、又不會互相干擾，最根本的問題是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "系統需要一種方法在執行期分辨「這個複數值到底是用哪一種表示法建出來的」，才能呼叫對應那一種實作的操作——否則同一個 realPart 函式如果收到另一種表示法的資料，會算出錯誤結果甚至直接壞掉" },
+        { "id": "b", "text": "沒有任何問題，兩個團隊的 makeComplex 剛好都叫同樣的名字，系統會自動選對的那個" },
+        { "id": "c", "text": "只要兩個團隊的程式碼寫得夠長，就不會互相衝突" },
+        { "id": "d", "text": "應該強制規定全公司只能用其中一種表示法，多重表示法本身沒有存在的必要" }
+      ],
+      "answer": "a",
+      "explanation": "多重表示法真正的難題不是「怎麼各自實作」，而是「同一個系統裡，怎麼在執行期正確分辨一份複數資料是用哪一種表示法建出來的，並且呼叫對應那一套操作」——如果沒有這種分辨機制，把直角座標的資料誤當極座標處理（或反過來），計算結果會整個錯掉。這正是接下來用「打標籤」（tagged data）解決的問題。",
+      "verify": { "manual": "概念題：以具體兩團隊衝突情境取代抽象問題敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-2-4-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "打標籤的資料：型別標籤跟內容綁在一起",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      "story": "",
+      "prompt": "attachTag 把型別標籤跟實際內容包在一起，typeTag／contents 負責拆開來看。這段程式會印出什麼？",
+      "code": "function attachTag(tag, contents) { return [tag, contents]; }\nfunction typeTag(datum) { return datum[0]; }\nfunction contents(datum) { return datum[1]; }\n\nconst z = attachTag('rectangular', { real: 3, imag: 4 });\nconsole.log(typeTag(z), contents(z).real, contents(z).imag);",
+      "options": [
+        { "id": "a", "text": "rectangular 3 4" },
+        { "id": "b", "text": "3 4 rectangular" },
+        { "id": "c", "text": "rectangular undefined undefined" },
+        { "id": "d", "text": "[object Object]" }
+      ],
+      "answer": "a",
+      "explanation": "attachTag('rectangular', {...}) 把標籤 'rectangular' 跟實際內容 { real: 3, imag: 4 } 打包成 [tag, contents] 這種結構；typeTag 取出第 0 個位置的標籤，contents 取出第 1 個位置的實際內容。之後任何操作都可以先用 typeTag 檢查這份資料是哪種表示法，再決定要用哪一套函式處理它。",
+      "verify": {
+        "checks": [
+          { "code": "function attachTag(tag, contents) { return [tag, contents]; }\nfunction typeTag(datum) { return datum[0]; }\nfunction contents(datum) { return datum[1]; }\nconst z = attachTag('rectangular', { real: 3, imag: 4 });\nconsole.log(typeTag(z), contents(z).real, contents(z).imag);", "expected": "rectangular 3 4" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-4-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "依標籤分派：同一個操作名稱，執行不同的實作",
+      "docs": "",
+      "story": "",
+      "prompt": "realPart 這個操作名稱只有一個，但遇到 rectangular 資料要直接取 real 欄位、遇到 polar 資料則要用 magnitude*cos(angle) 換算。這種「同一個操作名稱、依資料標籤選擇不同實作」的做法叫做什麼？",
+      "code": "function realPart(z) {\n  if (typeTag(z) === 'rectangular') return contents(z).real;\n  if (typeTag(z) === 'polar') return contents(z).magnitude * Math.cos(contents(z).angle);\n  throw new Error('unknown type');\n}",
+      "options": [
+        { "id": "a", "text": "依標籤分派（dispatching on type）：realPart 對外只有一個統一的名字，呼叫者不需要知道也不需要在意這份資料實際上是哪種表示法，realPart 內部會自己檢查標籤、挑選對應的計算方式，把「有哪些表示法、各自怎麼算」這件事隱藏在這一層裡面" },
+        { "id": "b", "text": "這只是巧合寫法，跟任何設計概念都無關" },
+        { "id": "c", "text": "呼叫者每次呼叫都要自己先判斷是 rectangular 還是 polar，再手動呼叫對應的函式" },
+        { "id": "d", "text": "這種寫法在 JavaScript 裡會導致 realPart 這個名稱被重複宣告的錯誤" }
+      ],
+      "answer": "a",
+      "explanation": "這正是「依標籤分派」：realPart 對外呈現統一的操作名稱，呼叫者完全不用管內部資料是哪種表示法，realPart 內部依標籤自己挑選對應的計算邏輯。呼叫者拿到的是「一個能處理任何表示法的 realPart」，不需要自己寫 if-else 去分辨、呼叫不同版本的函式。",
+      "verify": { "manual": "概念題：以具體分派程式碼取代抽象設計概念敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-2-4-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "依標籤分派：填入正確的型別檢查",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Math/sqrt",
+      "story": "",
+      "prompt": "請填入正確的判斷式，讓 magnitude 依標籤選對計算方式：rectangular 資料要用勾股定理換算，polar 資料直接讀 magnitude 欄位。",
+      "code": "function attachTag(tag, contents) { return [tag, contents]; }\nfunction typeTag(datum) { return datum[0]; }\nfunction contents(datum) { return datum[1]; }\n\nfunction magnitude(z) {\n  if (____) {\n    const { real, imag } = contents(z);\n    return Math.sqrt(real * real + imag * imag);\n  }\n  return contents(z).magnitude;\n}\n\nconst rect = attachTag('rectangular', { real: 3, imag: 4 });\nconsole.log(magnitude(rect));",
+      "options": [
+        { "id": "a", "text": "typeTag(z) === 'rectangular'" },
+        { "id": "b", "text": "typeTag(z) === 'polar'" },
+        { "id": "c", "text": "contents(z).real" },
+        { "id": "d", "text": "z[0] === 'polar'" }
+      ],
+      "answer": "a",
+      "explanation": "只有 rectangular 表示法需要用勾股定理（√(real² + imag²)）換算出 magnitude，所以要先檢查 typeTag(z) === 'rectangular'。magnitude(rect) 裡 real = 3、imag = 4，算出 √(9 + 16) = √25 = 5。",
+      "verify": {
+        "checks": [
+          { "code": "function attachTag(tag, contents) { return [tag, contents]; }\nfunction typeTag(datum) { return datum[0]; }\nfunction contents(datum) { return datum[1]; }\nfunction magnitude(z) {\n  if (typeTag(z) === 'rectangular') {\n    const { real, imag } = contents(z);\n    return Math.sqrt(real * real + imag * imag);\n  }\n  return contents(z).magnitude;\n}\nconst rect = attachTag('rectangular', { real: 3, imag: 4 });\nconsole.log(magnitude(rect));", "expected": "5" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-4-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "資料導向設計：用查表取代一長串 if-else",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      "story": "",
+      "prompt": "與其在每個操作裡寫一長串 if (typeTag === 'rectangular') ... else if (typeTag === 'polar') ...，資料導向設計改成建一張「(操作名稱, 標籤) → 對應函式」的表，執行時直接查表呼叫。這段程式會印出什麼？",
+      "code": "const table = {};\nfunction put(op, tag, fn) {\n  table[op + '/' + tag] = fn;\n}\nfunction get(op, tag) {\n  return table[op + '/' + tag];\n}\n\nput('real-part', 'rectangular', (z) => z.real);\nput('real-part', 'polar', (z) => z.magnitude * Math.cos(z.angle));\n\nfunction applyGeneric(op, tag, z) {\n  return get(op, tag)(z);\n}\n\nconsole.log(applyGeneric('real-part', 'rectangular', { real: 3, imag: 4 }));",
+      "options": [
+        { "id": "a", "text": "3" },
+        { "id": "b", "text": "4" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "報錯，get 找不到對應函式" }
+      ],
+      "answer": "a",
+      "explanation": "put 把 ('real-part', 'rectangular') 這組 key 對應到「直接取 real 欄位」的函式存進表裡；applyGeneric 執行時用同一組 key 查表，找到對應函式並呼叫它。get('real-part', 'rectangular') 找到的正是那個回傳 z.real 的函式，所以印出 3。",
+      "verify": {
+        "checks": [
+          { "code": "const table = {};\nfunction put(op, tag, fn) {\n  table[op + '/' + tag] = fn;\n}\nfunction get(op, tag) {\n  return table[op + '/' + tag];\n}\nput('real-part', 'rectangular', (z) => z.real);\nput('real-part', 'polar', (z) => z.magnitude * Math.cos(z.angle));\nfunction applyGeneric(op, tag, z) {\n  return get(op, tag)(z);\n}\nconsole.log(applyGeneric('real-part', 'rectangular', { real: 3, imag: 4 }));", "expected": "3" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-2-4-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "可加性：新增表示法或新增操作都不用改到既有程式碼",
+      "docs": "",
+      "story": "",
+      "prompt": "用資料導向設計（查表）取代一長串 if-else 分派之後，如果之後想「新增第三種複數表示法」，需要改動 realPart、imagPart 這些既有操作函式的原始碼嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不需要：只要幫新表示法呼叫 put，把它的 real-part、imag-part 等實作分別登記進表裡，既有的 applyGeneric（依標籤查表呼叫）完全不用修改一行——這種「新增東西不必回頭改舊程式碼」的特性就是可加性（additivity）" },
+        { "id": "b", "text": "一定要把 realPart、imagPart 每一個操作函式都打開來，各自加一個新的 if 分支處理新表示法" },
+        { "id": "c", "text": "資料導向設計不支援新增表示法，只能在系統設計初期就決定好全部的表示法種類" },
+        { "id": "d", "text": "只要新表示法的欄位名稱跟舊的不一樣，系統就會自動壞掉，需要整個重寫" }
+      ],
+      "answer": "a",
+      "explanation": "用查表取代 if-else 鏈之後，新增一種表示法只需要幫它把每個操作（real-part、imag-part…）呼叫 put 登記進表裡，既有的 applyGeneric 邏輯完全不用改——它永遠只是「依 (操作, 標籤) 查表呼叫」。這種「加新東西不用回頭動舊程式碼」的特性正是可加性，跟原本要在每個操作函式裡插入新 if 分支的寫法比起來，改動的風險小很多。",
+      "verify": { "manual": "概念題：以具體新增表示法情境取代抽象可加性定義，無可執行程式碼。" }
+    }
+  ]
+}

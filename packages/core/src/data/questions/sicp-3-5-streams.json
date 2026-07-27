@@ -1,0 +1,132 @@
+{
+  "id": "sicp-3-5",
+  "title": "3.5 Stream",
+  "questions": [
+    {
+      "id": "sicp-3-5-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Stream 是延遲清單：需要時才算下一個元素",
+      "docs": "",
+      "story": "",
+      "prompt": "一般陣列 [1, 2, 3, ..., 1000000] 建立時就要把每個元素都算好存起來；stream（在 JS 可以用 generator 實作）則是「被要求要下一個元素時才去計算它」。這個差異的核心價值是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "延遲計算讓你可以表示「還沒被完全計算出來、甚至計算不完（例如無限長）」的序列，因為只有真正被要求的那部分才會被算出來，沒被要求的部分完全不會浪費時間或記憶體去計算——這跟陣列「建立當下就要把全部元素算完」是完全不同的時間模型" },
+        { "id": "b", "text": "兩者完全等價，只是語法寫法不同而已，沒有本質上的差異" },
+        { "id": "c", "text": "stream 的元素永遠比陣列的元素少，所以比較省記憶體" },
+        { "id": "d", "text": "stream 只是陣列的另一種名稱，JavaScript 底層會自動把它們轉換成一樣的東西" }
+      ],
+      "answer": "a",
+      "explanation": "stream 最核心的價值就是「延遲計算」：只有真正被要求（被讀取）的那個元素才會被算出來，還沒被要求的部分完全不會消耗運算資源。這讓 stream 可以表示連陣列都無法表示的東西——例如一個理論上無限長的序列，因為你永遠不需要「一次算完全部」，只需要算到目前實際用到的地方就好。",
+      "verify": { "manual": "概念題：以陣列與 stream 的時間模型對照取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-3-5-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "用 generator 示範延遲計算：只有被要求才會執行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function*",
+      "story": "",
+      "prompt": "這段程式會印出什麼順序？注意 console.log('計算 N') 這種訊息什麼時候出現。",
+      "code": "function* numbers() {\n  console.log('計算 1');\n  yield 1;\n  console.log('計算 2');\n  yield 2;\n  console.log('計算 3');\n  yield 3;\n}\n\nconst gen = numbers();\nconsole.log('generator 已建立，但還沒開始算');\nconsole.log('拿到第一個值：', gen.next().value);\nconsole.log('拿到第二個值：', gen.next().value);",
+      "options": [
+        { "id": "a", "text": "generator 已建立，但還沒開始算\n計算 1\n拿到第一個值： 1\n計算 2\n拿到第二個值： 2" },
+        { "id": "b", "text": "計算 1\n計算 2\n計算 3\ngenerator 已建立，但還沒開始算\n拿到第一個值： 1\n拿到第二個值： 2" },
+        { "id": "c", "text": "generator 已建立，但還沒開始算\n拿到第一個值： 1\n拿到第二個值： 2" },
+        { "id": "d", "text": "計算 1\ngenerator 已建立，但還沒開始算\n拿到第一個值： 1\n計算 2\n拿到第二個值： 2" }
+      ],
+      "answer": "a",
+      "explanation": "呼叫 numbers() 只是建立一個 generator 物件，函式本體完全不會執行（所以「計算 1」不會馬上印出來）。要等到呼叫 gen.next() 這個「要求下一個值」的動作，函式本體才會真的執行到下一個 yield 為止。這正是延遲計算的具體展現：程式碼被寫出來、generator 被建立，不代表它已經被執行了，只有真正被要求下一個值時才會執行對應的那一段。",
+      "verify": {
+        "checks": [
+          { "code": "function* numbers() {\n  console.log('計算 1');\n  yield 1;\n  console.log('計算 2');\n  yield 2;\n  console.log('計算 3');\n  yield 3;\n}\nconst gen = numbers();\nconsole.log('generator 已建立，但還沒開始算');\nconsole.log('拿到第一個值：', gen.next().value);\nconsole.log('拿到第二個值：', gen.next().value);", "expected": "generator 已建立，但還沒開始算\n計算 1\n拿到第一個值： 1\n計算 2\n拿到第二個值： 2" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-5-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "無限 stream：只取需要的前 N 個",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function*",
+      "story": "",
+      "prompt": "naturals 是一個永遠不會停止的 generator，代表「所有正整數」。這段程式會印出什麼？",
+      "code": "function* naturals() {\n  let n = 1;\n  while (true) {\n    yield n;\n    n += 1;\n  }\n}\n\nfunction take(gen, count) {\n  const result = [];\n  for (let i = 0; i < count; i++) {\n    result.push(gen.next().value);\n  }\n  return result;\n}\n\nconsole.log(take(naturals(), 5));",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3, 4, 5 ]" },
+        { "id": "b", "text": "[ 0, 1, 2, 3, 4 ]" },
+        { "id": "c", "text": "程式會無限迴圈，永遠不會印出東西" },
+        { "id": "d", "text": "[ 5, 4, 3, 2, 1 ]" }
+      ],
+      "answer": "a",
+      "explanation": "naturals() 本身永遠不會執行完（while(true) 沒有終止條件），但因為它是 generator，每次只在被呼叫 next() 時往前算一步，take 只呼叫了 5 次 next()，所以只會實際往前推進 5 步，不會真的陷入無限迴圈。這正是延遲計算讓表示無限序列變得可行的原因：定義本身可以是無限的，只要使用端只取用需要的部分，就不會真的卡住。",
+      "verify": {
+        "checks": [
+          { "code": "function* naturals() {\n  let n = 1;\n  while (true) {\n    yield n;\n    n += 1;\n  }\n}\nfunction take(gen, count) {\n  const result = [];\n  for (let i = 0; i < count; i++) {\n    result.push(gen.next().value);\n  }\n  return result;\n}\nconsole.log(take(naturals(), 5));", "expected": "[ 1, 2, 3, 4, 5 ]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-5-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "Stream 上的 filter：只在被要求時才往下找符合的元素",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function*",
+      "story": "",
+      "prompt": "請填入正確的判斷式，讓 streamFilter 只 yield 出符合 predicate 的元素，其餘的直接跳過不 yield。",
+      "code": "function* naturals() {\n  let n = 1;\n  while (true) {\n    yield n;\n    n += 1;\n  }\n}\n\nfunction* streamFilter(gen, predicate) {\n  for (const value of gen) {\n    if (____) {\n      yield value;\n    }\n  }\n}\n\nfunction take(gen, count) {\n  const result = [];\n  for (let i = 0; i < count; i++) {\n    result.push(gen.next().value);\n  }\n  return result;\n}\n\nconst evens = streamFilter(naturals(), (x) => x % 2 === 0);\nconsole.log(take(evens, 4));",
+      "options": [
+        { "id": "a", "text": "predicate(value)" },
+        { "id": "b", "text": "value" },
+        { "id": "c", "text": "!predicate(value)" },
+        { "id": "d", "text": "predicate" }
+      ],
+      "answer": "a",
+      "explanation": "streamFilter 要對每個從 gen 拿到的 value 呼叫 predicate 判斷是否符合條件，符合才 yield 出去，不符合就跳過繼續看下一個——所以要填 predicate(value)。evens 這個 stream 只會 yield 偶數，take(evens, 4) 依序取出 2, 4, 6, 8。",
+      "verify": {
+        "checks": [
+          { "code": "function* naturals() {\n  let n = 1;\n  while (true) {\n    yield n;\n    n += 1;\n  }\n}\nfunction* streamFilter(gen, predicate) {\n  for (const value of gen) {\n    if (predicate(value)) {\n      yield value;\n    }\n  }\n}\nfunction take(gen, count) {\n  const result = [];\n  for (let i = 0; i < count; i++) {\n    result.push(gen.next().value);\n  }\n  return result;\n}\nconst evens = streamFilter(naturals(), (x) => x % 2 === 0);\nconsole.log(take(evens, 4));", "expected": "[ 2, 4, 6, 8 ]" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-3-5-q5",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "善用 Stream 範式：定義序列的方式跟要用多少完全分開",
+      "docs": "",
+      "story": "",
+      "prompt": "naturals() 的定義完全沒有提到「要用幾個」，take(naturals(), 5) 才決定要幾個。這種寫法比起「先決定好要 1000 個、把陣列建好」的寫法，帶來了什麼設計上的彈性？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "序列本身怎麼定義（例如「所有正整數」）跟呼叫端到底要用多少個，變成完全獨立的兩件事：同一個 naturals() 定義，可以被 take(..., 5) 用、也可以被 take(..., 5000) 用，不需要為了「這次只要 5 個」還是「這次要 5000 個」回頭去修改 naturals() 本身的定義——序列的「定義」跟「消耗多少」的耦合被拆開了" },
+        { "id": "b", "text": "這種寫法唯一的好處是程式碼行數比較少，跟設計彈性沒有任何關係" },
+        { "id": "c", "text": "naturals() 一定要事先知道呼叫端要用幾個，才能正確產生序列" },
+        { "id": "d", "text": "這種寫法只能用在數字序列上，沒辦法套用在其他種類的資料上" }
+      ],
+      "answer": "a",
+      "explanation": "這正是善用 stream 範式的核心價值：把「序列本身是什麼」（naturals 是所有正整數）跟「這次要用掉多少」（take 的 count）這兩件事徹底解耦。呼叫端可以自由決定要取用 5 個還是 5000 個，完全不需要回頭修改序列本身的定義——這種彈性在「陣列建立時就要決定好全部長度」的寫法裡是做不到的。",
+      "verify": { "manual": "概念題：以定義與消耗量解耦的具體對照取代抽象彈性敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-3-5-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "Stream 讓你同時擁有物件模型的模組化，跟函數式的可預測性",
+      "docs": "",
+      "story": "",
+      "prompt": "makeWithdraw（用賦值維護 balance）跟用 stream 表示「一連串交易後的餘額序列」，兩者都能表達「隨時間變化的過程」。但兩者在「能不能安心用代換模型推理」這件事上，有什麼關鍵差異？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "makeWithdraw 用賦值直接修改 balance，一旦有賦值，代換模型就不再適用（同一個呼叫式在不同時間點可能得到不同結果）；用 stream 表示「一連串餘額」則不需要靠賦值改寫某個變數來表達變化——整個過程被表示成一份（可能無限長的）序列，每個位置對應的值本身不會被回頭改寫，可以繼續套用代換模型推理，同時還是能表達「隨時間演變的過程」這種通常需要靠賦值才能做到的事（要注意這個結論指的是像 SICP 原書 cons-stream 那種會做記憶化、可重複讀取的持久化 stream；本章示範用的 JS generator 是單向、一次性的疊代器，同一個 generator 實例呼叫 next() 會往前推進內部狀態、不能回頭重讀，跟真正的持久化 stream 不完全相同，這裡談的是 stream 這個抽象模型本身具備的性質）" },
+        { "id": "b", "text": "兩者在代換模型適不適用這件事上完全沒有差異，賦值跟 stream 都一樣會讓代換模型失效" },
+        { "id": "c", "text": "stream 內部其實也是用賦值實作的，所以一樣沒辦法用代換模型推理" },
+        { "id": "d", "text": "makeWithdraw 才能安心用代換模型推理，stream 反而不行" }
+      ],
+      "answer": "a",
+      "explanation": "makeWithdraw 這種「物件＋賦值」的寫法，能表達隨時間演變的狀態，但代價是失去代換模型；stream 提供了另一條路——把「隨時間演變的一連串值」整個表示成一份（可能無限長的）序列，每個位置對應的值固定不變，永遠可以用代換模型推理，卻仍然能表達「時間、變化」這種通常被認為需要賦值才能處理的東西。這是函數式模型跟物件模型的模組化各自優點的一種調和。這個性質嚴格來說屬於 SICP 原書那種會記憶化、可重複讀取的持久化 stream；本章用來示範的 JS generator 是單向、用過即丟的疊代器（呼叫 next() 會不可逆地推進內部狀態），拿它當範例只是為了示範「延遲計算」這個時間模型，不代表 generator 本身就是可以任意重讀、不可變的持久化資料結構。",
+      "verify": { "manual": "概念題：呼應賦值與代換模型的取捨，以 stream 提供的另一條路取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

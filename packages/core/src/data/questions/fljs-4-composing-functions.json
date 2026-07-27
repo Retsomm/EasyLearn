@@ -1,0 +1,128 @@
+{
+  "id": "fljs-4",
+  "title": "Ch4：組合函式",
+  "questions": [
+    {
+      "id": "fljs-4-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "輸出接輸入：組合的本質就是把上一步的輸出接到下一步的輸入",
+      "docs": "",
+      "story": "",
+      "prompt": "compose(f, g)(x) 等於 f(g(x))。這個定義的核心精神是什麼？",
+      "code": "function compose(f, g) {\n  return (x) => f(g(x));\n}",
+      "options": [
+        { "id": "a", "text": "先把 x 丟給 g 執行，g 的輸出直接變成 f 的輸入——組合的本質就是把「上一步驟的輸出」直接接到「下一步驟的輸入」，串成一條資料流動的管線，呼叫者只需要呼叫最終組合出來的函式一次，不需要自己手動把中間結果一步步傳遞" },
+        { "id": "b", "text": "compose(f, g)(x) 代表 f 和 g 會同時各自獨立地對 x 做處理，兩者互不影響" },
+        { "id": "c", "text": "compose 只是把兩個函式的名稱串接成一個新的字串，不會真的執行任何邏輯" },
+        { "id": "d", "text": "compose(f, g)(x) 只會執行 g，f 完全不會被呼叫到" }
+      ],
+      "answer": "a",
+      "explanation": "compose 的核心精神就是「輸出接輸入」：g(x) 算出來的結果，直接變成 f 的輸入，f 再對這個結果進一步處理——整個過程串成一條資料流動的管線，呼叫者只需要呼叫組合出來的函式一次，不需要自己手動把 g 的結果存進一個變數、再傳給 f。",
+      "verify": { "manual": "概念題：以 compose(f, g)(x) 的具體展開取代抽象組合本質敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-4-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "compose 的求值順序：由右到左",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions",
+      "story": "",
+      "prompt": "compose(f, g, h)(x) 依照慣例，會先執行最右邊的 h，再往左執行 g，最後才執行 f。這段程式會印出什麼？",
+      "code": "function compose(...fns) {\n  return (x) => fns.reduceRight((acc, fn) => fn(acc), x);\n}\n\nconst addOne = (x) => x + 1;\nconst double = (x) => x * 2;\nconst square = (x) => x * x;\n\nconst pipeline = compose(square, double, addOne);\nconsole.log(pipeline(3));",
+      "options": [
+        { "id": "a", "text": "64" },
+        { "id": "b", "text": "49" },
+        { "id": "c", "text": "20" },
+        { "id": "d", "text": "16" }
+      ],
+      "answer": "a",
+      "explanation": "compose 依照慣例由右到左執行：先對 3 套用最右邊的 addOne 得到 4，再套用中間的 double 得到 8，最後套用最左邊的 square 得到 64。閱讀 compose(square, double, addOne) 時，實際的執行順序跟寫下來的順序是相反的，這也是 compose 常被拿來跟 pipe（由左到右）比較、容易搞混的地方。",
+      "verify": {
+        "checks": [
+          { "code": "function compose(...fns) {\n  return (x) => fns.reduceRight((acc, fn) => fn(acc), x);\n}\nconst addOne = (x) => x + 1;\nconst double = (x) => x * 2;\nconst square = (x) => x * x;\nconst pipeline = compose(square, double, addOne);\nconsole.log(pipeline(3));", "expected": "64" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-4-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "compose vs pipe：由右到左 vs 由左到右，兩種慣例都存在",
+      "docs": "",
+      "story": "",
+      "prompt": "pipe(addOne, double, square)(x) 依照慣例，會照著寫下來的順序由左到右執行；compose(square, double, addOne)(x) 則是由右到左執行。如果把兩者的函式排列順序反過來對應，兩者最終算出的結果會不會一樣？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "會一樣：只要把 compose 裡的函式順序，跟 pipe 裡想要的執行順序反過來寫，兩者就能算出完全相同的結果——compose 和 pipe 只是「函式列表要怎麼排列，才能對應到你想要的執行順序」的兩種不同慣例，不是兩種不同的組合邏輯" },
+        { "id": "b", "text": "compose 和 pipe 是完全不同的兩種運算，不管函式怎麼排列，算出來的結果永遠不同" },
+        { "id": "c", "text": "pipe 只能組合兩個函式，compose 才能組合三個以上的函式" },
+        { "id": "d", "text": "compose 和 pipe 的差異只在於函式命名，程式碼底層實作完全相同、不需要區分" }
+      ],
+      "answer": "a",
+      "explanation": "compose 和 pipe 想表達的都是「把一連串函式串起來、輸出接輸入」，差別只在於「函式列表的排列順序該對應到閱讀順序還是執行順序」——只要把 compose 的函式順序反過來寫，就能得到跟 pipe 一樣的執行順序，兩者算出來的結果會完全一致。這只是兩種不同的閱讀慣例，不是兩種不同的組合邏輯。",
+      "verify": { "manual": "概念題：以 compose 與 pipe 排列順序互換的具體對照取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-4-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "pipe 由左到右：跟反過來寫的 compose 算出同樣的結果",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "這段程式分別用 pipe（由左到右）跟 compose（由右到左）組出同一條邏輯管線，只是函式列表的排列順序相反。這段程式會印出什麼？",
+      "code": "function pipe(...fns) {\n  return (x) => fns.reduce((acc, fn) => fn(acc), x);\n}\nfunction compose(...fns) {\n  return (x) => fns.reduceRight((acc, fn) => fn(acc), x);\n}\n\nconst addOne = (x) => x + 1;\nconst double = (x) => x * 2;\n\nconst pipeline1 = pipe(addOne, double);\nconst pipeline2 = compose(double, addOne);\n\nconsole.log(pipeline1(3), pipeline2(3));",
+      "options": [
+        { "id": "a", "text": "8 8" },
+        { "id": "b", "text": "8 7" },
+        { "id": "c", "text": "7 8" },
+        { "id": "d", "text": "6 8" }
+      ],
+      "answer": "a",
+      "explanation": "pipeline1 用 pipe 由左到右執行：先 addOne 再 double；pipeline2 用 compose 由右到左執行：函式列表反過來寫，一樣是先執行 addOne 再執行 double。兩者實際的執行順序完全一樣，算出來的結果自然也一樣，都是 8——這證明 compose 和 pipe 只是排列習慣不同，不是兩種不同的組合邏輯。",
+      "verify": {
+        "checks": [
+          { "code": "function pipe(...fns) {\n  return (x) => fns.reduce((acc, fn) => fn(acc), x);\n}\nfunction compose(...fns) {\n  return (x) => fns.reduceRight((acc, fn) => fn(acc), x);\n}\nconst addOne = (x) => x + 1;\nconst double = (x) => x * 2;\nconst pipeline1 = pipe(addOne, double);\nconst pipeline2 = compose(double, addOne);\nconsole.log(pipeline1(3), pipeline2(3));", "expected": "8 8" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-4-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "通用組合：compose 應該能接受任意數量的函式，不是只能組合兩個",
+      "docs": "",
+      "story": "",
+      "prompt": "如果 compose 只硬寫死支援兩個函式，遇到需要串接四、五個步驟的 workflow 時會有什麼限制？怎麼寫才能讓 compose 支援任意數量的函式？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "只支援兩個函式的版本，遇到更多步驟時就得手動巢狀呼叫，使用起來很不方便；應該用 rest 參數（...fns）收集任意數量的函式，內部用 reduceRight 把整個函式列表由右到左摺疊成一條管線（compose 慣例上由右到左執行，所以要用 reduceRight；若想改用 reduce，必須先把函式列表反過來排列才能得到一樣的順序，因為 reduce 是由左到右摺疊，不能直接拿來替代 reduceRight），這樣不管要組合兩個、五個還是十個步驟都能用同一個 compose 處理" },
+        { "id": "b", "text": "compose 天生就只能支援固定兩個函式，沒有辦法擴充成支援任意數量" },
+        { "id": "c", "text": "應該把每多一個步驟，就寫一個新的 compose3、compose4、compose5 函式各自處理" },
+        { "id": "d", "text": "支援任意數量的函式，會讓 compose 的執行結果變得不可預測" }
+      ],
+      "answer": "a",
+      "explanation": "只支援兩個函式的 compose，遇到更多步驟時得手動巢狀呼叫、很不方便。用 rest 參數收集任意數量的函式，內部用 reduceRight 由右到左把整個函式列表摺疊成一條管線，就能讓同一個 compose 函式處理任意數量的組合步驟，不用為每種步驟數量各寫一個版本。reduce 本身是由左到右摺疊，跟 reduceRight 的順序相反，若要改用 reduce 達到一樣的效果，必須先把函式列表反過來排列，不能直接把兩者當成等價的寫法互換。",
+      "verify": { "manual": "概念題：以固定兩個函式的限制取代抽象通用組合敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-4-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "組合即抽象：替組合出來的管線取名，隱藏內部個別步驟",
+      "docs": "",
+      "story": "",
+      "prompt": "把 pipe(validateOrder, priceOrder, confirmOrder) 這整條管線取名成 placeOrder，之後系統裡其他地方只呼叫 placeOrder(order)。這種「幫組合結果取名」的做法，帶來了什麼抽象層次上的好處？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "呼叫端只需要知道「有一個叫 placeOrder 的東西可以處理下訂單」，完全不需要知道它內部其實是由 validateOrder、priceOrder、confirmOrder 這三個步驟組合而成——組合出來的管線本身變成了一個新的、更高層次的抽象單位，內部由哪些步驟構成、步驟順序是什麼，都被隱藏在 placeOrder 這個名字底下，呼叫端可以專心使用它，不用理解它的內部組成" },
+        { "id": "b", "text": "幫組合結果取名只是方便閱讀，不會產生任何新的抽象層次" },
+        { "id": "c", "text": "呼叫端必須知道 placeOrder 內部依序呼叫了哪些步驟，才能正確使用它" },
+        { "id": "d", "text": "組合出來的管線一旦取了名字，就不能再被其他程式碼當成函式呼叫" }
+      ],
+      "answer": "a",
+      "explanation": "幫組合出來的管線取名，讓它變成一個全新的、更高層次的抽象單位——呼叫端只需要知道「有一個 placeOrder 可以用」，完全不需要知道它內部由哪些步驟組成、順序是什麼，這些細節都被隱藏在這個名字底下。這正是「組合即抽象」的具體體現：組合本身就是一種建立新抽象層次的方式，不只是把程式碼串在一起而已。",
+      "verify": { "manual": "概念題：以 placeOrder 命名隱藏內部步驟的具體例子取代抽象敘述，無可執行程式碼。" }
+    }
+  ]
+}

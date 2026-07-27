@@ -1,0 +1,132 @@
+{
+  "id": "sicp-4-1",
+  "title": "4.1 Metacircular 直譯器",
+  "questions": [
+    {
+      "id": "sicp-4-1-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "eval／apply 循環：求值跟施用互相呼叫",
+      "docs": "",
+      "story": "",
+      "prompt": "要對 (square 5) 這種函式呼叫求值，直譯器要做兩件事：先求出 square 和 5 各自的值，再把 square「施用」在 5 上——而「施用」square 時，又要對 square 的函式本體求值。這種「求值呼叫施用、施用又呼叫求值」的關係說明了什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "eval（求值）跟 apply（施用）是互相遞迴的一對函式：eval 遇到函式呼叫時會呼叫 apply 去執行；apply 執行函式本體時又需要呼叫 eval 去求出本體裡每個運算式的值——直譯器的核心運作方式，就是這兩個函式彼此呼叫、一層層往下展開，直到遇到不能再往下分解的基本運算式為止" },
+        { "id": "b", "text": "eval 和 apply 是完全獨立、彼此不會呼叫對方的兩個函式" },
+        { "id": "c", "text": "只有 apply 會呼叫 eval，eval 不會呼叫 apply" },
+        { "id": "d", "text": "這種循環呼叫在實務上一定會導致無窮遞迴，永遠不會結束" }
+      ],
+      "answer": "a",
+      "explanation": "這正是 eval-apply 循環：eval 遇到需要「呼叫函式」的情況（像 (square 5)）就把工作交給 apply；apply 執行函式本體時，本體本身又是需要求值的運算式，所以又交回給 eval——兩者彼此呼叫、一層層往下拆解問題，直到拆到數字、變數這種不能再往下分解的基本情況才停下來。這正是直譯器的核心骨架。",
+      "verify": { "manual": "概念題：以具體函式呼叫展開過程取代抽象循環敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-4-1-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "把運算式資料求值成實際的數字",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Recursion",
+      "story": "",
+      "prompt": "myEval 讀進來的是像符號微分那一節用過的那種「運算式資料」，但這次不是求導函式，而是直接算出數值。這段程式會印出什麼？",
+      "code": "function myEval(expr) {\n  if (typeof expr === 'number') return expr;\n  if (expr[0] === '+') return myEval(expr[1]) + myEval(expr[2]);\n  if (expr[0] === '*') return myEval(expr[1]) * myEval(expr[2]);\n  throw new Error('unsupported expression');\n}\n\nconsole.log(myEval(['+', 2, ['*', 3, 4]]));",
+      "options": [
+        { "id": "a", "text": "14" },
+        { "id": "b", "text": "20" },
+        { "id": "c", "text": "9" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "myEval 遇到加法標籤 '+' 就遞迴求出兩個運算元的值再相加，遇到乘法標籤 '*' 就遞迴求出兩個運算元的值再相乘。['+', 2, ['*', 3, 4]] 先算出內層 ['*', 3, 4] = 12，再算 2 + 12 = 14。跟符號微分一樣，這裡的運算式也是一份資料，myEval 只是換了一種方式讀這份資料（算出值，而不是算出導函式）。",
+      "verify": {
+        "checks": [
+          { "code": "function myEval(expr) {\n  if (typeof expr === 'number') return expr;\n  if (expr[0] === '+') return myEval(expr[1]) + myEval(expr[2]);\n  if (expr[0] === '*') return myEval(expr[1]) * myEval(expr[2]);\n  throw new Error('unsupported expression');\n}\nconsole.log(myEval(['+', 2, ['*', 3, 4]]));", "expected": "14" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-4-1-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "環境是求值的一部分：myEval 需要知道「變數目前的值」",
+      "docs": "",
+      "story": "",
+      "prompt": "myEval 如果要能處理變數（例如 ['+', 'x', 2] 代表 x + 2），只知道運算式本身還不夠，還缺少什麼東西才能正確求值？",
+      "code": "const expr = ['+', 'x', 2]; // x 目前的值是多少，運算式本身看不出來",
+      "options": [
+        { "id": "a", "text": "需要一個「環境」（environment）：一份記錄「目前每個變數對應到什麼值」的資料，myEval 求值時如果遇到變數，要去這份環境裡查它目前的值，同一個運算式在不同環境下查到的變數值不同，算出來的結果也會不同" },
+        { "id": "b", "text": "不需要任何額外資訊，myEval 可以直接看變數名稱字串本身推算出它的值" },
+        { "id": "c", "text": "只要把變數名稱改成英文字母，myEval 就能自動算出正確的值" },
+        { "id": "d", "text": "myEval 應該要求呼叫者先手動把運算式裡的變數換成數字，myEval 自己完全不需要處理變數" }
+      ],
+      "answer": "a",
+      "explanation": "運算式本身（['+', 'x', 2]）只描述了「結構長什麼樣子」，不包含「x 現在等於多少」這個資訊——這正是為什麼 myEval 需要多接收一個環境參數：環境負責記錄「目前每個變數對應到什麼值」，myEval 遇到變數就去環境裡查，同一份運算式在不同環境下求值，結果可能完全不同。",
+      "verify": { "manual": "概念題：呼應環境模型，以具體變數查詢需求取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "sicp-4-1-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "擴充 myEval：加入環境查詢變數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "請填入正確的查詢方式，讓 myEval 在遇到變數（字串）時，去 env 裡查出對應的值。",
+      "code": "function myEval(expr, env) {\n  if (typeof expr === 'number') return expr;\n  if (typeof expr === 'string') return ____;\n  if (expr[0] === '+') return myEval(expr[1], env) + myEval(expr[2], env);\n  throw new Error('unsupported expression');\n}\n\nconsole.log(myEval(['+', 'x', 2], { x: 10 }));",
+      "options": [
+        { "id": "a", "text": "env[expr]" },
+        { "id": "b", "text": "expr" },
+        { "id": "c", "text": "env" },
+        { "id": "d", "text": "env[0]" }
+      ],
+      "answer": "a",
+      "explanation": "expr 是變數名稱字串（例如 'x'），要用它當 key 去 env 這份環境物件裡查出對應的值，所以要填 env[expr]。myEval(['+', 'x', 2], { x: 10 }) 遇到 'x' 就去 env 查到 10，算出 10 + 2 = 12。",
+      "verify": {
+        "checks": [
+          { "code": "function myEval(expr, env) {\n  if (typeof expr === 'number') return expr;\n  if (typeof expr === 'string') return env[expr];\n  if (expr[0] === '+') return myEval(expr[1], env) + myEval(expr[2], env);\n  throw new Error('unsupported expression');\n}\nconsole.log(myEval(['+', 'x', 2], { x: 10 }));", "expected": "12" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-4-1-q5",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "擴充 myEval：處理條件式",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Recursion",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function myEval(expr, env) {\n  if (typeof expr === 'number') return expr;\n  if (typeof expr === 'string') return env[expr];\n  if (expr[0] === '+') return myEval(expr[1], env) + myEval(expr[2], env);\n  if (expr[0] === '>') return myEval(expr[1], env) > myEval(expr[2], env);\n  if (expr[0] === 'if') {\n    return myEval(expr[1], env) ? myEval(expr[2], env) : myEval(expr[3], env);\n  }\n  throw new Error('unsupported expression');\n}\n\nconst env = { x: 3, big: 100, small: 11 };\nconst expr = ['if', ['>', 'x', 5], 'big', 'small'];\nconsole.log(myEval(expr, env));",
+      "options": [
+        { "id": "a", "text": "11" },
+        { "id": "b", "text": "100" },
+        { "id": "c", "text": "3" },
+        { "id": "d", "text": "true" }
+      ],
+      "answer": "a",
+      "explanation": "myEval 先求出條件 ['>', 'x', 5] 的值：x 在 env 裡是 3，3 > 5 是 false，所以走 else 分支，求值 'small' 這個變數，在 env 裡查到 11。整個過程都是遞迴呼叫同一個 myEval：條件式本身也是要先求值的運算式，求出布林結果後才決定接下來要對哪一個分支繼續求值。",
+      "verify": {
+        "checks": [
+          { "code": "function myEval(expr, env) {\n  if (typeof expr === 'number') return expr;\n  if (typeof expr === 'string') return env[expr];\n  if (expr[0] === '+') return myEval(expr[1], env) + myEval(expr[2], env);\n  if (expr[0] === '>') return myEval(expr[1], env) > myEval(expr[2], env);\n  if (expr[0] === 'if') {\n    return myEval(expr[1], env) ? myEval(expr[2], env) : myEval(expr[3], env);\n  }\n  throw new Error('unsupported expression');\n}\nconst env = { x: 3, big: 100, small: 11 };\nconst expr = ['if', ['>', 'x', 5], 'big', 'small'];\nconsole.log(myEval(expr, env));", "expected": "11" }
+        ]
+      }
+    },
+    {
+      "id": "sicp-4-1-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Metacircular：用同一種語言寫這種語言自己的直譯器",
+      "docs": "",
+      "story": "",
+      "prompt": "用 JavaScript 寫一個「能執行 JavaScript 子集合」的直譯器（也就是 myEval 這種東西的完整版），這種「用某語言寫該語言自己的直譯器」的作法叫做 metacircular evaluator。這樣做的價值是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "因為直譯器本身也是用同一種語言寫的，你可以清楚看到「這個語言的每一個語法結構（函式呼叫、條件式、變數查詢……）分別對應到直譯器裡的哪一段邏輯」，等於是用這個語言自己的話，把這個語言的求值規則講得清清楚楚——是一種釐清語言本身運作方式的絕佳工具，不是為了做出一個真正拿去取代原生引擎的直譯器" },
+        { "id": "b", "text": "metacircular evaluator 的唯一目的是讓程式執行得比原生引擎快" },
+        { "id": "c", "text": "這種寫法在邏輯上是不可能的，一種語言不可能用自己寫出自己的直譯器" },
+        { "id": "d", "text": "metacircular evaluator 寫出來之後，就可以完全取代瀏覽器原生的 JavaScript 引擎" }
+      ],
+      "answer": "a",
+      "explanation": "metacircular evaluator 的價值不在效能（用直譯器裡的 myEval 執行程式碼，一定比原生引擎慢很多），而在於「解釋」：把一個語言的求值規則，用同一個語言的程式碼具體寫出來，每個語法結構都能對應到直譯器裡清楚的一段邏輯，是理解「這個語言到底是怎麼運作的」最直接的方式之一。",
+      "verify": { "manual": "概念題：以具體直譯器範例取代抽象 metacircular 定義敘述，無可執行程式碼。" }
+    }
+  ]
+}

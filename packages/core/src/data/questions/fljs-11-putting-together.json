@@ -1,0 +1,128 @@
+{
+  "id": "fljs-11",
+  "title": "Ch11：整合應用",
+  "questions": [
+    {
+      "id": "fljs-11-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "整合應用：小技巧組合起來，不需要換一套全新的思維",
+      "docs": "",
+      "story": "",
+      "prompt": "最後一章用一個「股票報價機」的小型應用程式，把前面學過的純函式、組合、不可變性、currying 等技巧全部用在一起。這一章想傳達的重點是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "這些技巧不是各自獨立、只能用在小範例裡的花招，而是可以自然地組合起來，撐起一個具備真實互動的應用程式——「整合應用」想證明的是，寫一個真正的應用程式不需要拋棄前面學過的東西、換一套完全不同的思維，這些小技巧本來就是設計來互相搭配使用的" },
+        { "id": "b", "text": "這一章想說明，前面學過的技巧在真實應用程式裡完全派不上用場，只能當作教學範例" },
+        { "id": "c", "text": "這一章的重點是介紹一個全新的、跟前面章節毫無關聯的技巧" },
+        { "id": "d", "text": "整合應用程式一定要用物件導向的方式重寫，不能繼續用函數式風格" }
+      ],
+      "answer": "a",
+      "explanation": "這一章想證明的是，純函式、組合、不可變性、currying 這些技巧不是各自獨立、只能用在教學小範例裡的花招，而是可以自然地組合起來，撐起一個具備真實互動的應用程式。寫一個真正的應用不需要拋棄前面學過的東西、換一套完全不同的思維，這些技巧本來就是設計成可以互相搭配使用的。",
+      "verify": { "manual": "概念題：以股票報價機整合範例的目的取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-11-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "整合示範：把 curry 過的函式塞進 compose 管線裡",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions",
+      "story": "",
+      "prompt": "這段程式把一個 curry 過的函式（先固定稅率），跟另一個函式組合成一條管線。這段程式會印出什麼？",
+      "code": "function curry2(fn) {\n  return (a) => (b) => fn(a, b);\n}\nfunction compose(...fns) {\n  return (x) => fns.reduceRight((acc, fn) => fn(acc), x);\n}\n\nconst applyTax = curry2((rate, amount) => amount * (1 + rate));\nconst roundToInt = (x) => Math.round(x);\n\nconst applyTaxAndRound = compose(roundToInt, applyTax(0.05));\n\nconsole.log(applyTaxAndRound(100));",
+      "options": [
+        { "id": "a", "text": "105" },
+        { "id": "b", "text": "100" },
+        { "id": "c", "text": "5" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "applyTax(0.05) 是先用 curry 固定稅率 0.05 之後，還等著吃金額的函式；compose(roundToInt, applyTax(0.05)) 由右到左執行：先把 100 丟給 applyTax(0.05) 算出 105，再交給 roundToInt 四捨五入（結果本來就是整數，不變）。這段程式展示了 curry 和 compose 這兩個各自獨立學過的技巧，可以直接搭配在同一條管線裡使用。",
+      "verify": {
+        "checks": [
+          { "code": "function curry2(fn) {\n  return (a) => (b) => fn(a, b);\n}\nfunction compose(...fns) {\n  return (x) => fns.reduceRight((acc, fn) => fn(acc), x);\n}\nconst applyTax = curry2((rate, amount) => amount * (1 + rate));\nconst roundToInt = (x) => Math.round(x);\nconst applyTaxAndRound = compose(roundToInt, applyTax(0.05));\nconsole.log(applyTaxAndRound(100));", "expected": "105" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-11-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "整合時的分工：計算邏輯保持純粹，畫面更新才是有副作用的部分",
+      "docs": "",
+      "story": "",
+      "prompt": "股票報價機裡，「算出下一筆報價要顯示的顏色（漲是綠色、跌是紅色）」跟「把顏色實際畫到畫面上」，建議放在同一個函式裡一起做，還是分開？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "建議分開：「算出顏色」是一個單純的資料轉換，只依照報價漲跌決定顏色字串，可以寫成純函式、獨立測試；「把顏色畫到畫面上」則是真正碰到 DOM、有副作用的操作，應該放在另一層——這種分工讓計算邏輯保持單純可測試，副作用被侷限在一個小範圍，呼應了整本書「盡量把邏輯寫成純函式、讓副作用侷限在邊界」的核心精神" },
+        { "id": "b", "text": "應該放在同一個函式裡，這樣程式碼比較簡潔" },
+        { "id": "c", "text": "畫面更新這種副作用應該散落在程式的各個角落，不需要集中處理" },
+        { "id": "d", "text": "「算出顏色」這種邏輯不需要寫成函式，直接在需要的地方重複貼上程式碼即可" }
+      ],
+      "answer": "a",
+      "explanation": "「算出顏色」是單純的資料轉換，適合寫成純函式、可以獨立測試；「把顏色畫到畫面上」是真正碰到 DOM 的副作用，應該放在另一層。這種分工讓計算邏輯保持單純可測試、副作用侷限在小範圍，呼應了整本書一路強調的「盡量把邏輯寫成純函式、讓副作用侷限在邊界」的核心精神，在整合應用程式裡一樣適用。",
+      "verify": { "manual": "概念題：以顏色計算與畫面更新的分工取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-11-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "不可變地處理一連串股票事件：每次都產生新的狀態，不修改舊的",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "processEvents 用 reduce 依序套用每筆股票事件，每次都回傳一份全新的狀態物件，不修改前一份。這段程式會印出什麼？",
+      "code": "function applyEvent(state, event) {\n  return { ...state, [event.symbol]: event.price };\n}\n\nconst events = [\n  { symbol: 'AAPL', price: 150 },\n  { symbol: 'GOOG', price: 2800 },\n  { symbol: 'AAPL', price: 155 },\n];\n\nconst initialState = {};\nconst finalState = events.reduce(applyEvent, initialState);\n\nconsole.log(finalState);\nconsole.log(initialState);",
+      "options": [
+        { "id": "a", "text": "{ AAPL: 155, GOOG: 2800 }\n{}" },
+        { "id": "b", "text": "{ AAPL: 155, GOOG: 2800 }\n{ AAPL: 155, GOOG: 2800 }" },
+        { "id": "c", "text": "{ AAPL: 150, GOOG: 2800 }\n{}" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "applyEvent 每次都用展開運算子建立一份全新的狀態物件，從來沒有直接修改傳進來的 state——所以 initialState 從頭到尾都維持原本的空物件 {}，完全沒被污染，finalState 則是依序套用完三筆事件後的最終結果。這正是不可變性在整合應用裡的具體展現：處理一連串隨時間發生的事件，也能保持每一步都不修改舊狀態。",
+      "verify": {
+        "checks": [
+          { "code": "function applyEvent(state, event) {\n  return { ...state, [event.symbol]: event.price };\n}\nconst events = [\n  { symbol: 'AAPL', price: 150 },\n  { symbol: 'GOOG', price: 2800 },\n  { symbol: 'AAPL', price: 155 },\n];\nconst initialState = {};\nconst finalState = events.reduce(applyEvent, initialState);\nconsole.log(finalState);\nconsole.log(initialState);", "expected": "{ AAPL: 155, GOOG: 2800 }\n{}" }
+        ]
+      }
+    },
+    {
+      "id": "fljs-11-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "整合裡的平衡：不是每一行都要 curry／無點風格，能清楚就好",
+      "docs": "",
+      "story": "",
+      "prompt": "在整合應用裡，有些地方用了 curry、無點風格這種技巧讓程式碼精簡，但也有些地方直接寫一般的具名函式、清楚描述每一步在做什麼。這種「不是每個角落都套用同一套技巧」的做法，符合本書一開始強調的什麼態度？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "符合「找到平衡」（functional-light）的態度：技巧該用在能提升清晰度、可測試性的地方，不是為了炫技或追求形式上的一致，硬要每一行都套用 curry 或無點風格；有些地方直接寫清楚的具名函式反而更好懂，這種因地制宜的選擇，正是全書從第一章就一直強調的務實立場" },
+        { "id": "b", "text": "這種不一致的寫法是錯誤示範，整個程式碼庫必須從頭到尾使用同一種技巧" },
+        { "id": "c", "text": "只有完全使用無點風格的程式碼才算是「正確」的函數式程式碼" },
+        { "id": "d", "text": "這種做法違反了函數式程式設計的所有原則，不應該被接受" }
+      ],
+      "answer": "a",
+      "explanation": "這正是「找到平衡」的具體實踐：技巧該用在真正能提升清晰度、可測試性的地方，不是為了形式一致而每一行都套用 curry 或無點風格。有些地方直接寫清楚的具名函式反而更好懂，這種因地制宜的選擇，呼應了全書從第一章就強調的務實立場——函數式輕量，不是函數式教條。",
+      "verify": { "manual": "概念題：呼應第一章找到平衡的主題，以因地制宜的具體選擇取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "fljs-11-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "全書的核心主軸：技巧要為信心、溝通、可讀性服務，不是為了炫技",
+      "docs": "",
+      "story": "",
+      "prompt": "回顧全書從「為什麼要函數式」一路到整合應用，貫穿所有章節的核心判斷標準是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "「這個技巧，有沒有讓我對這段程式碼更有信心、讓我更容易跟其他人溝通這段程式碼在做什麼、讓程式碼更容易讀懂」——不管是純函式、組合、currying、不可變性，還是 Observable，選用每一個技巧的判斷標準都回到第一章提出的這幾個核心價值，不是為了展示自己懂多少函數式術語" },
+        { "id": "b", "text": "核心判斷標準是「這段程式碼有沒有用到盡可能多的函數式術語」" },
+        { "id": "c", "text": "核心判斷標準是「這段程式碼的行數有沒有盡可能地少」" },
+        { "id": "d", "text": "全書沒有任何一以貫之的核心標準，每一章談的都是互不相關的獨立主題" }
+      ],
+      "answer": "a",
+      "explanation": "貫穿全書的核心判斷標準，就是第一章提出的那幾個價值：信心、溝通、可讀性。不管後面介紹了多少技巧，選用哪一個技巧、用到什麼程度，最終都該回頭問「這樣做有沒有讓程式碼更符合這幾個核心價值」，不是為了展示自己懂多少函數式程式設計的術語。",
+      "verify": { "manual": "概念題：呼應第一章核心價值，總結全書一以貫之的判斷標準，無可執行程式碼。" }
+    }
+  ]
+}

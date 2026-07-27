@@ -1,0 +1,128 @@
+{
+  "id": "dmmf-13",
+  "title": "Ch13：演進設計，保持乾淨",
+  "questions": [
+    {
+      "id": "dmmf-13-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "新增運費計算：好的 pipeline 用「插入新步驟」吸收新需求",
+      "docs": "",
+      "story": "",
+      "prompt": "原本的下訂單 pipeline 是「驗證 → 計價 → 確認」，現在多了「運費計算」這項新需求。如果原本的 pipeline 是用各自獨立、可以自由組合的步驟函式構成，新增這項需求該怎麼做？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "寫一個新的 calculateShipping 步驟函式，把它插進既有的 pipe 串列裡（例如「驗證 → 計價 → 計算運費 → 確認」），既有的 validateOrder、priceOrder、confirmOrder 完全不需要修改一行——這正是「各自獨立、可自由組合的步驟」帶來的好處：新增一項需求，通常只需要新增一個步驟並插入正確的位置，不需要動到其他既有步驟的內部邏輯" },
+        { "id": "b", "text": "必須把 validateOrder、priceOrder、confirmOrder 全部重寫一遍，才能加進運費計算這項需求" },
+        { "id": "c", "text": "應該把運費計算的邏輯直接塞進 priceOrder 內部，讓 priceOrder 同時負責計價和計算運費" },
+        { "id": "d", "text": "新增運費計算這種需求沒辦法用 pipeline 的方式處理，必須整個系統重新設計" }
+      ],
+      "answer": "a",
+      "explanation": "因為既有 pipeline 是由各自獨立、可以自由組合的步驟函式構成，新增「運費計算」這項需求，只需要寫一個新的 calculateShipping 步驟、插進既有的串列裡，其他既有步驟完全不用修改——這正是把 workflow 拆成獨立步驟能帶來的具體好處：新增需求時，改動範圍通常侷限在「新增一個步驟」，不會牽連到既有步驟的內部邏輯。",
+      "verify": { "manual": "概念題：以插入新步驟的具體做法取代抽象演進設計敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-13-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "插入新步驟：既有步驟完全不需要修改",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "這段程式在既有的 validateOrder、priceOrder、confirmOrder 之間插入一個新的 calculateShipping 步驟。這段程式會印出什麼？",
+      "code": "function pipe(...fns) {\n  return (input) => fns.reduce((acc, fn) => fn(acc), input);\n}\n\nfunction validateOrder(order) { return { ...order, validated: true }; }\nfunction priceOrder(order) { return { ...order, price: 100 }; }\nfunction calculateShipping(order) { return { ...order, shipping: 20 }; }\nfunction confirmOrder(order) { return { ...order, confirmed: true }; }\n\nconst placeOrder = pipe(validateOrder, priceOrder, calculateShipping, confirmOrder);\n\nconsole.log(placeOrder({ customerId: 'C1' }));",
+      "options": [
+        { "id": "a", "text": "{\n  customerId: 'C1',\n  validated: true,\n  price: 100,\n  shipping: 20,\n  confirmed: true\n}" },
+        { "id": "b", "text": "{ customerId: 'C1', validated: true, price: 100, confirmed: true }" },
+        { "id": "c", "text": "{\n  customerId: 'C1',\n  shipping: 20,\n  validated: true,\n  price: 100,\n  confirmed: true\n}" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "calculateShipping 被插進 priceOrder 和 confirmOrder 之間，pipe 依序執行每個步驟，最終物件同時擁有 validated、price、shipping、confirmed 四個欄位——validateOrder、priceOrder、confirmOrder 這三個既有步驟的程式碼完全沒有被修改，新需求靠插入一個新步驟就吸收掉了。",
+      "verify": {
+        "checks": [
+          { "code": "function pipe(...fns) {\n  return (input) => fns.reduce((acc, fn) => fn(acc), input);\n}\nfunction validateOrder(order) { return { ...order, validated: true }; }\nfunction priceOrder(order) { return { ...order, price: 100 }; }\nfunction calculateShipping(order) { return { ...order, shipping: 20 }; }\nfunction confirmOrder(order) { return { ...order, confirmed: true }; }\nconst placeOrder = pipe(validateOrder, priceOrder, calculateShipping, confirmOrder);\nconsole.log(placeOrder({ customerId: 'C1' }));", "expected": "{\n  customerId: 'C1',\n  validated: true,\n  price: 100,\n  shipping: 20,\n  confirmed: true\n}" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-13-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "替既有的 OR 型別新增一種情況：型別檢查能幫你找出所有需要更新的地方",
+      "docs": "",
+      "story": "",
+      "prompt": "原本 CustomerType 只有 Normal 一種情況，現在要新增 VIP 這個新情況。如果系統裡有好幾個地方用 switch/if-else 依照 CustomerType 分派邏輯，型別系統能幫上什麼忙？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "如果型別系統支援「窮盡性檢查」（exhaustiveness checking），只要 CustomerType 這個 OR 型別新增了 VIP 這個情況，型別檢查器就能在編譯期間，把所有「依照 CustomerType 分派邏輯、卻沒有處理到 VIP 這個新情況」的地方統統標記出來——開發者不用自己再去翻遍整個專案，靠人工記憶找出遺漏的地方，型別系統會直接告訴你" },
+        { "id": "b", "text": "型別系統完全幫不上任何忙，新增一種情況後，必須靠開發者自己記得所有需要更新的地方" },
+        { "id": "c", "text": "只要程式能正常執行，就代表所有地方都已經正確處理了新增的 VIP 情況" },
+        { "id": "d", "text": "窮盡性檢查只能檢查程式碼的縮排格式，不會檢查邏輯有沒有遺漏" }
+      ],
+      "answer": "a",
+      "explanation": "支援窮盡性檢查的型別系統，能在編譯期間主動把「依照 CustomerType 分派邏輯、卻沒處理到新增的 VIP 情況」的地方全部標記出來——開發者不需要憑記憶去翻遍整個專案找出所有需要更新的地方，型別系統會直接指出來。這正是用 OR 型別表示這種「有限種類的情況」的實務好處。",
+      "verify": { "manual": "概念題：以新增 VIP 客戶類型的具體情境取代抽象窮盡性檢查敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-13-q4",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "遺漏新情況的代價：沒有窮盡性檢查時，悄悄套用錯誤的預設邏輯",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Strict_equality",
+      "story": "",
+      "prompt": "getDiscountRate 新增 VIP 客戶類型時，忘記在這段程式碼裡加上對應的判斷分支，導致 VIP 客戶被悄悄套用了錯誤的折扣。這段程式碼有什麼問題？",
+      "code": "function getDiscountRate(customerType) {\n  if (customerType === 'Normal') return 0;\n  return 0.05;\n}\n\nconsole.log(getDiscountRate('VIP'));",
+      "options": [
+        { "id": "a", "text": "getDiscountRate 只明確處理了 'Normal' 這個情況，其餘所有情況（包含後來才新增的 'VIP'）都被無差別地套用同一個 0.05 的預設折扣——VIP 客戶理應有自己專屬的折扣規則，卻因為這段程式碼沒有跟著新增 VIP 情況更新，被悄悄套用了跟其他未知類型一樣的保守預設值，而且程式不會報任何錯，錯誤的結果只會靜靜地流通下去" },
+        { "id": "b", "text": "這段程式碼完全正確，0.05 這個折扣對 VIP 客戶來說已經足夠合理" },
+        { "id": "c", "text": "問題出在字串 'VIP' 拼寫錯誤，應該改成其他拼法" },
+        { "id": "d", "text": "問題出在 console.log 印出結果的方式，跟折扣邏輯無關" }
+      ],
+      "answer": "a",
+      "explanation": "getDiscountRate 只明確處理了 'Normal' 這個情況，其餘所有情況都被無差別地套用同一個 0.05 保守預設值——VIP 客戶理應有專屬的折扣規則，卻因為這段程式碼在新增 VIP 情況時沒有同步更新，被悄悄套用了預設值，而且程式不會報任何錯。如果 CustomerType 是一個有窮盡性檢查的 OR 型別，型別檢查器會在新增 VIP 情況時，直接標記出這段程式碼「沒有處理到 VIP」，逼開發者明確決定 VIP 該套用什麼折扣。",
+      "verify": {
+        "checks": [
+          { "code": "function getDiscountRate(customerType) {\n  if (customerType === 'Normal') return 0;\n  return 0.05;\n}\nconsole.log(getDiscountRate('VIP'));", "expected": "0.05" }
+        ]
+      }
+    },
+    {
+      "id": "dmmf-13-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "新增促銷碼：用 Optional 表示新欄位，不會打壞既有呼叫端",
+      "docs": "",
+      "story": "",
+      "prompt": "下訂單 workflow 想新增一個「可選的促銷碼」欄位。如果新增一個 promoCode: Option<...> 欄位，但把它設計成「輸入型別上真正 optional（可以整個省略不填、或有預設值）」，而不是「型別上必填、只是值可能是 None」，對既有已經在使用這個 workflow 的呼叫端有什麼影響？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "幾乎不受影響：只要 promoCode 在輸入型別上是真正 optional（可省略欄位或有預設值），既有呼叫端完全不用改任何一行程式碼就能繼續運作；只有真的想使用促銷碼的新呼叫端，才需要主動傳入 { tag: 'Some', code }。但要注意這跟「把 promoCode 宣告成必填的 Option<...> 型別」不一樣——如果是必填的 Option 欄位，型別檢查器會要求每個既有呼叫端的建構式都明確補上 { tag: 'None' }，仍然是一次要改的程式碼，只是改動內容單純、不影響原本行為" },
+        { "id": "b", "text": "既有呼叫端全部都會壞掉，因為新增了一個必填欄位" },
+        { "id": "c", "text": "Optional 型別只能用在資料庫欄位上，不能用在 workflow 的輸入參數上" },
+        { "id": "d", "text": "新增促銷碼這種需求，一定要把整個 workflow 的簽章打掉重寫，沒有辦法用 Optional 的方式漸進新增" }
+      ],
+      "answer": "a",
+      "explanation": "關鍵在於「Optional」用的是哪一種意思。如果 promoCode 在輸入型別上真的是可省略的欄位（或給了預設值），既有呼叫端完全不用修改就能繼續運作，只有想用促銷碼的新呼叫端才需要提供 Some(code)。但如果只是把欄位型別換成 Option<...> 卻仍然宣告成必填，那麼每個既有呼叫端的建構式都會被型別檢查器要求明確補上 { tag: 'None' }——這仍然比「重新設計整個資料結構」輕量很多，但不是「完全不用改程式碼」，這兩者不能混為一談。",
+      "verify": { "manual": "概念題：以促銷碼 Optional 設計的具體例子取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "dmmf-13-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "新增營業時間限制：呼應全書「型別驅動設計讓改動侷限」的核心承諾",
+      "docs": "",
+      "story": "",
+      "prompt": "新規定「只能在營業時間內下訂單」，這條規則加進 validateOrder 這個既有的驗證步驟裡，而不是另外開一個新步驟或散落到其他地方檢查。回顧整本書從「用型別表達業務規則」到「把 workflow 拆成獨立步驟」的種種做法，這種「新規則能準確加進對的地方、不會意外牽連其他程式碼」的效果，說明了什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "這正是型別驅動設計貫穿全書想達成的核心承諾：把業務概念誠實地刻進型別，把 workflow 拆成各自獨立、輸入輸出清楚的步驟，讓「新增或修改一條業務規則」這種變動，通常能準確定位到該修改的那一小塊地方，不需要因為一個小改動就得擔心牽連整個系統——複雜的領域邏輯，透過型別和函式組合被馴服成「改動侷限、容易推理」的系統" },
+        { "id": "b", "text": "型別驅動設計沒有辦法讓改動侷限在特定範圍，任何小改動都必須重新設計整個系統" },
+        { "id": "c", "text": "這種效果只在這個特定例子裡出現，沒辦法推廣成一般性的設計原則" },
+        { "id": "d", "text": "應該把所有業務規則統一寫進同一個巨大的函式裡，才能確保新規則不會被遺漏" }
+      ],
+      "answer": "a",
+      "explanation": "這正是全書從頭到尾想傳達的核心承諾：把業務概念誠實地刻進型別（讓不合法狀態無法表示）、把 workflow 拆成各自獨立、輸入輸出清楚的步驟，讓系統在面對新增或修改業務規則時，改動範圍通常能準確侷限在該修改的那一小塊地方——不需要因為一個小小的新規則，就得擔心牽連到整個系統的其他角落。這是型別驅動設計換來的長期可維護性。",
+      "verify": { "manual": "概念題：總結全書型別驅動設計的核心承諾，無可執行程式碼。" }
+    }
+  ]
+}
