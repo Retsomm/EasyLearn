@@ -657,6 +657,105 @@ export const chapterSummaries: Record<string, LevelSummary[]> = {
       ],
     },
   ],
+  'js-basics': [
+    {
+      levelId: 'jsb-1',
+      keyPoints: [
+        'JavaScript 有三種變數宣告方式：var 在函式或全域作用域內有效，let 和 const 則限制在區塊作用域內；var 會發生提升（hoisting）使其值為 undefined，但 let 和 const 會進入暫時死區而拋出 ReferenceError。',
+        'const 宣告後無法重新指派，但物件和陣列的內容仍可修改（例如 MY_OBJECT.key = \'newValue\' 是允許的），因為 const 只防止重新指派而不防止變動。',
+        'JavaScript 的八種資料型別包含七個原始型別（布林值、null、undefined、數字、BigInt、字串、Symbol）和物件型別；原始型別是不可變的，而物件和陣列是參考型別。',
+        'JavaScript 在 + 運算子時會自動將數字轉換成字串（\'37\' + 7 結果是 \'377\'），但其他運算子則反向轉換（\'37\' - 7 結果是 30）；可用 parseInt()、parseFloat() 或 Number() 明確將字串轉為數字。',
+        '物件字面值和陣列字面值中的額外逗號會建立空位槽（empty slot），其行為不同於 undefined；遍歷方法會跳過空位，但直接索引存取仍回傳 undefined。',
+        '模板字面值（用反引號括住）支援多行字串和插值語法 ${變數}，並可搭配標籤函式做自訂處理，比雙引號或單引號字串更靈活。',
+      ],
+    },
+    {
+      levelId: 'jsb-2',
+      keyPoints: [
+        '函式宣告會被提升（hoisting）到作用域頂部，所以可以在宣告前呼叫；但函式表達式（用 const/let 指派）不會被提升，呼叫會拋出 ReferenceError。',
+        '箭頭函式不會綁定自己的 this，而是繼承外層作用域的 this，解決了傳統函式在回呼函式中 this 指向錯誤的常見問題（例如 setInterval 內的 this）。',
+        '閉包（closure）讓內層函式能記憶並存取外層函式的變數，即使外層函式已執行完畢；常用於資料隱藏和工廠函式模式。',
+        '函式參數預設值語法（如 function multiply(a, b = 1)）比手動檢查 undefined 更簡潔；其他可選參數用 rest 參數（...args）收集任意數量的引數成陣列。',
+        '遞迴函式透過自我呼叫實現迴圈邏輯，特別適合處理樹狀結構（如 DOM 走訪），但需要明確的終止條件避免無限遞迴；遞迴本質上使用函式堆疊（function stack）。',
+        '物件和陣列作為參數是以參考傳遞，函式內修改它們的屬性會影響原始物件；但若完全重新指派參數變數則不會影響外部，這是 JavaScript 參數傳遞的重要特性。',
+      ],
+    },
+    {
+      levelId: 'jsb-3',
+      keyPoints: [
+        'JavaScript 陣列本質上是以索引為屬性名的標準物件，透過 length 屬性追蹤最高索引位置；設定 length 可以截斷陣列（如 arr.length = 2 會移除後續元素）或建立稀疏陣列（empty slots）。',
+        'push/pop/shift/unshift 直接修改原陣列，而 slice/concat 回傳新陣列；splice 可同時移除與插入元素，map/filter/reduce 等迭代方法在稀疏陣列中會跳過 empty slots，但 forEach/for...of 則視之為 undefined。',
+        '多維陣列透過巢狀迴圈建立（如二維表格 a[i][j]），可用於矩陣運算或結構化資料儲存，但 JavaScript 不提供原生多維陣列支援，需手動管理。',
+        'Array-like 物件（如 NodeList、arguments）擁有 length 屬性與索引存取但缺少陣列方法，可使用 Array.prototype.forEach.call(arrayLike, fn) 或展開語法 [...arrayLike] 來借用陣列功能。',
+        'TypedArray（如 Uint8Array、Int32Array）與普通陣列類似但儲存固定型別數值，效能更優且可直接對應二進位資料；empty slots 在 TypedArray 中無效，所有位置預設為 0。',
+        'Object.groupBy() 與 Map.groupBy() 可依回呼函式的回傳值分類陣列元素，前者用字串鍵回傳物件，後者用任意值鍵回傳 Map，兩者都參照原始元素而非深拷貝。',
+      ],
+    },
+    {
+      levelId: 'jsb-4',
+      keyPoints: [
+        '物件可以用三種方式建立：物件字面值（最簡單）、建構函式搭配 new 運算子（適合建立多個同類型物件）、以及 Object.create() 方法（可指定原型鏈）。',
+        '存取物件屬性有兩種語法：點記法（myObj.name）只能用於有效的識別符，中括號記法（myObj[\'name\']）則可處理包含空格、數字開頭或動態屬性名的情況。',
+        '刪除屬性用 delete 運算子移除物件的非繼承屬性；存取不存在的屬性會回傳 undefined 而非 null。',
+        '列舉物件屬性有三種方法：for...in 會遍歷所有可列舉屬性包括原型鏈、Object.keys() 只回傳自身可列舉屬性、Object.getOwnPropertyNames() 則回傳所有自身屬性無論是否可列舉。',
+        '方法就是作為物件屬性的函式，通常定義在建構函式的 prototype 上讓所有實例共用；方法內的 this 關鍵字自動指向呼叫它的物件實例。',
+        'Getter 和 Setter 讓你能對屬性的取值和賦值進行攔截和驗證，可在物件字面值中以 get/set 前綴定義，或用 Object.defineProperties() 後續新增到現有物件。',
+      ],
+    },
+    {
+      levelId: 'jsb-5',
+      keyPoints: [
+        '區塊陳述式（block statement）使用大括號 {} 包含多個陳述式，但 var 宣告的變數不受區塊限制，其作用域仍為整個函式或腳本；若要有區塊作用域應使用 let 或 const。',
+        'if...else 陳述式可以嵌套多個 else if 來依序測試條件，且只有第一個評估為 true 的條件會執行；falsy 值包括 false、undefined、null、0、NaN 和空字串。',
+        'switch 陳述式透過 case 標籤比對表達式值，若未加 break 陳述式會導致「fall-through」（繼續執行下一個 case），default 子句會在沒有任何 case 符合時執行。',
+        'throw 陳述式可拋出任意型態的值（字串、數字、布林或物件），try...catch 區塊會捕捉拋出的例外；finally 區塊無論是否拋出例外都一定會執行，且 finally 的 return 值會覆蓋 try 或 catch 中的回傳值。',
+        'Error 物件具有 name 和 message 屬性，拋出自訂例外時應使用 new Error("訊息") 以便與系統例外區分；ECMAScript 提供多種特定錯誤型別（如 RangeError、TypeError），DOM 環境則有 DOMException。',
+        '巢狀 try...catch 時，內層的 try 區塊若無對應 catch 子句，必須包含 finally 區塊，且例外會被外層的 catch 捕捉；這種設計讓錯誤處理更具彈性。',
+      ],
+    },
+    {
+      levelId: 'jsb-6',
+      keyPoints: [
+        'for 迴圈會依序執行初始化、條件檢查、陳述式執行、更新表達式等步驟，直到條件為假才停止，適合已知迴圈次數的情況。',
+        'do...while 迴圈保證至少執行一次陳述式，因為條件檢查發生在每次迭代結束後，不像 while 迴圈在執行前就檢查條件。',
+        'for...in 迴圈遍歷物件的所有可列舉屬性名稱（包括自訂屬性），但不應用於陣列因為會包含非數字索引；遍歷陣列應使用傳統 for 迴圈或 for...of。',
+        'for...of 迴圈只遍歷可迭代物件的值（如陣列元素），不會包含自訂屬性，比 for...in 更適合處理陣列和集合型別的資料。',
+        'break 陳述式立即終止最內層的迴圈或 switch，搭配標籤可以跳出多層嵌套迴圈；continue 則是跳過本次迭代進入下一輪，在 while 中跳回條件檢查、在 for 中跳到增量表達式。',
+        '標籤陳述式搭配 break 或 continue 可以控制多層迴圈的執行流程，例如在內層迴圈的特定條件下直接跳出整個外層迴圈，避免需要額外的旗標變數。',
+      ],
+    },
+    {
+      levelId: 'jsb-7',
+      keyPoints: [
+        'JavaScript 的數字採用 IEEE 754 雙精度 64 位浮點格式，整數只能精確表示到 ±2^53 − 1（Number.MAX_SAFE_INTEGER），超過此範圍會失去精度，因此需要用 BigInt（以 n 後綴定義，如 123n）處理更大的整數，但 BigInt 不支援小數運算（5n / 2n 會得到 2n 而非 2.5）。',
+        'Number 物件提供靜態方法如 Number.isFinite()、Number.isInteger()、Number.isSafeInteger()、Number.isNaN() 用來檢驗數值特性，這些方法比全域同名函式更可靠（例如 Number.isNaN() 不會做型別強制轉換）。',
+        'Date 物件把日期儲存成自 1970 年 1 月 1 日 UTC 午夜起算的毫秒數（epoch），可以用不帶參數（目前時間）、日期字串、或整數年月日時分秒等四種方式建立。',
+        'Date 用 get/set 方法存取日期時間元件：月份用 0-11 表示（0 是一月）、星期用 0-6 表示（0 是星期日），但 getDay() 只能讀取星期幾、無法設定（由日期自動算出）。',
+        'getTime()／setTime() 回傳或設定毫秒時間戳，適合做日期比較與計算（例如兩個日期相減再除以一天的毫秒數）；Date.parse() 可以把日期字串轉成毫秒時間戳，常搭配 setTime() 使用。',
+        'MDN 文件目前已將 Date 物件標示為過時（legacy），建議新程式碼未來改用更現代的日期時間標準（如 Temporal API），這點在規劃新功能時值得留意。',
+      ],
+    },
+    {
+      levelId: 'jsb-8',
+      keyPoints: [
+        'JavaScript 的字串是由 16 位元無符號整數值（UTF-16 碼元）組成的序列，每個字元都有對應的索引位置，可以用單引號或雙引號宣告，但字串內的反斜線會啟動逸出序列、引號會終止字串。',
+        '逸出序列提供多種編碼方式：十六進位逸出（\\xHH）用於基本字元、Unicode 逸出（\\uHHHH）需至少四位十六進位、Unicode 碼點逸出（\\u{HHHHH}）則可表示到 0x10FFFF 的任意字元。',
+        '字串物件提供四大類方法：查詢類（charAt、charCodeAt 等）取得特定位置的字元或碼、搜尋類（indexOf、includes、match 等）尋找子字串或符合模式的內容、組合類（concat、repeat 等）合併字串、分解類（split、slice、trim 等）拆解或清理字串。',
+        '字串方法可以直接在字面值上呼叫（如 \'hello\'.toUpperCase()），因為 JavaScript 引擎會自動把原始字串值暫時包裝成 String 物件以存取方法，不需要手動建立 String 實例。',
+        '模板字面值使用反引號（`）包圍，內部可以直接換行且視為字串的一部分，並透過 ${表達式} 語法做變數插值，比傳統字串串接更簡潔可讀。',
+      ],
+    },
+    {
+      levelId: 'jsb-9',
+      keyPoints: [
+        '正規表達式有兩種建立方式：字面值 /pattern/ 適合固定模式（編譯時期就載入），而 new RegExp("pattern") 適合動態模式（執行時才編譯），兩者在效能和使用情境上有差異。',
+        '旗標 g（全域搜尋）、i（不區分大小寫）、m（多行模式）可以組合使用，其中 g 旗標會讓 exec() 每次呼叫回傳下一個匹配並更新 lastIndex，而 match() 則一次回傳所有匹配。',
+        '括號在正規表達式中有兩種用途：捕獲群組 (x) 會記錄匹配的子字串供後續使用，非捕獲群組 (?:x) 則單純用於分組而不記錄，兩者在 replace() 等方法中的效果不同。',
+        '特殊字元需用反斜線轉義（如 /a\\*b/ 搜尋 \'a*b\'），或改用字元類別 /a[*]b/；test() 和 search() 只回傳布林值或位置，exec() 和 match() 則回傳完整的匹配陣列含位置資訊，replace() 和 split() 可直接對字串做轉換。',
+        '反向參照 \\1 指向第一個捕獲群組，例如 /([\\-/.])\\d{3}\\1\\d{4}/ 可以確保電話號碼的分隔符前後一致，這對驗證特定格式的字串特別有用。',
+      ],
+    },
+  ],
 }
 
 export const getChapterSummary = (chapterId: string): LevelSummary[] | undefined =>
