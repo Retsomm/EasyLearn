@@ -665,7 +665,7 @@ export const chapterSummaries: Record<string, LevelSummary[]> = {
         'const 宣告後無法重新指派，但物件和陣列的內容仍可修改（例如 MY_OBJECT.key = \'newValue\' 是允許的），因為 const 只防止重新指派而不防止變動。',
         'JavaScript 的八種資料型別包含七個原始型別（布林值、null、undefined、數字、BigInt、字串、Symbol）和物件型別；原始型別是不可變的，而物件和陣列是參考型別。',
         'JavaScript 在 + 運算子時會自動將數字轉換成字串（\'37\' + 7 結果是 \'377\'），但其他運算子則反向轉換（\'37\' - 7 結果是 30）；可用 parseInt()、parseFloat() 或 Number() 明確將字串轉為數字。',
-        '物件字面值和陣列字面值中的額外逗號會建立空位槽（empty slot），其行為不同於 undefined；遍歷方法會跳過空位，但直接索引存取仍回傳 undefined。',
+        '陣列字面值中省略元素（如 [1, , 3]）會建立空位槽（empty slot），其行為不同於明確賦值的 undefined；物件字面值中的逗號只是屬性之間的分隔符，並不會產生空位槽這種概念。forEach、map、filter、reduce 等方法都會跳過陣列中的空位槽（不對空位呼叫回呼函式），但 for...of 迴圈會將空位視為 undefined 逐一走訪，不會跳過。',
         '模板字面值（用反引號括住）支援多行字串和插值語法 ${變數}，並可搭配標籤函式做自訂處理，比雙引號或單引號字串更靈活。',
       ],
     },
@@ -684,7 +684,7 @@ export const chapterSummaries: Record<string, LevelSummary[]> = {
       levelId: 'jsb-3',
       keyPoints: [
         'JavaScript 陣列本質上是以索引為屬性名的標準物件，透過 length 屬性追蹤最高索引位置；設定 length 可以截斷陣列（如 arr.length = 2 會移除後續元素）或建立稀疏陣列（empty slots）。',
-        'push/pop/shift/unshift 直接修改原陣列，而 slice/concat 回傳新陣列；splice 可同時移除與插入元素，map/filter/reduce 等迭代方法在稀疏陣列中會跳過 empty slots，但 forEach/for...of 則視之為 undefined。',
+        'push/pop/shift/unshift 直接修改原陣列，而 slice/concat 回傳新陣列；splice 可同時移除與插入元素，map/filter/reduce/forEach 等方法在稀疏陣列中都會跳過 empty slots（不對空位呼叫回呼函式），但 for...of 迴圈會將空位視為 undefined 逐一走訪，不會跳過。',
         '多維陣列透過巢狀迴圈建立（如二維表格 a[i][j]），可用於矩陣運算或結構化資料儲存，但 JavaScript 不提供原生多維陣列支援，需手動管理。',
         'Array-like 物件（如 NodeList、arguments）擁有 length 屬性與索引存取但缺少陣列方法，可使用 Array.prototype.forEach.call(arrayLike, fn) 或展開語法 [...arrayLike] 來借用陣列功能。',
         'TypedArray（如 Uint8Array、Int32Array）與普通陣列類似但儲存固定型別數值，效能更優且可直接對應二進位資料；empty slots 在 TypedArray 中無效，所有位置預設為 0。',
@@ -765,7 +765,7 @@ export const chapterSummaries: Record<string, LevelSummary[]> = {
         'Function.prototype.bind() 建立一個新函式並永久綁定 this 值，即使再次用 bind() 重新綁定也不會改變（bind 只生效一次）；而 call() 和 apply() 則是在單次呼叫時臨時指定 this 值，前者逐一傳遞參數，後者用陣列傳遞。',
         '在類別中，實例方法的 this 指向實例物件，靜態方法的 this 指向類別本身；但若將方法解除綁定後再呼叫，嚴格模式下會因 this 為 undefined 而拋出錯誤。',
         '非嚴格模式會進行 this 替換機制：若 this 值為 null 或 undefined 會被替換為全域物件，若為原始值則被轉換為對應的包裝物件；嚴格模式則保持 this 為原始值，不進行任何替換。',
-        '在 DOM 事件監聽器中，this 通常綁定到觸發事件的 DOM 元素；但內聯事件處理程式（如 onclick 屬性）內部的函式則不會自動綁定到該元素，其 this 會遵循一般函式規則。',
+        '在 DOM 事件監聽器中，this 通常綁定到觸發事件的 DOM 元素；內聯事件處理程式（如 onclick 屬性）本身也會將 this 綁定到註冊該處理程式的 DOM 元素，但若處理程式內部呼叫其他獨立定義的函式，該巢狀函式的 this 則遵循一般函式呼叫規則，不會自動指向該元素。',
       ],
     },
     {
@@ -783,7 +783,7 @@ export const chapterSummaries: Record<string, LevelSummary[]> = {
       keyPoints: [
         '同步程式會一行一行依序執行，瀏覽器必須等待每一行完成才能繼續下一行，這導致如果某個函式執行時間長（如計算大量質數），整個程式會被卡住無法回應使用者輸入。',
         '非同步程式設計讓長時間執行的工作能在背景進行，主程式仍能持續回應其他事件（如使用者點擊、輸入文字），待工作完成後才取得結果，解決了同步函式造成的 UI 阻塞問題。',
-        'JavaScript 是單執行緒語言，瀏覽器提供的非同步 API（如 fetch()、getUserMedia()、showOpenFilePicker()）會在內部啟動新執行緒執行，不會佔用主執行緒，避免畫面卡頓。',
+        'JavaScript 是單執行緒語言，瀏覽器提供的非同步 API（如 fetch()、getUserMedia()、showOpenFilePicker()）背後的實際工作是在 JavaScript 主執行緒之外完成（由瀏覽器或作業系統層級處理），而不是另外啟動新的 JavaScript 執行緒；完成後透過事件迴圈（event loop）將回呼排入佇列才回到主執行緒執行。若是高耗運算的 JavaScript 程式碼本身，仍會佔用並卡住主執行緒，必須改用 Web Worker 才能達成真正的平行 JavaScript 執行。',
         '事件處理器是非同步程式的早期實現方式，透過監聽事件（如 XMLHttpRequest 的 loadend 事件）來得知操作完成並取得結果，但這種方式在複雜流程中容易形成「回呼地獄」。',
         '回呼函式寫法會造成「金字塔厄運」問題：多個非同步操作需要依序執行時，會產生深層巢狀的回呼，使程式碼難以閱讀、維護和進行錯誤處理，這促使 JavaScript 發展出 Promise 等更好的非同步模式。',
       ],
@@ -839,7 +839,7 @@ export const chapterSummaries: Record<string, LevelSummary[]> = {
         'iterable 物件必須實現 [Symbol.iterator]() 方法，才能被 for...of 迴圈、展開語法等語法識別；單次迭代的迭代器（如 Generator）應讓 [Symbol.iterator]() 回傳 this，多次迭代的則應每次回傳新的迭代器。',
         'generator 的 next(value) 方法可以接收參數，該值會作為前一個 yield 表達式的結果被注入，藉此改變 generator 的內部狀態，例如費氏數列產生器可透過 next(true) 重設數列。',
         '內建物件如 String、Array、Map、Set 都實現了 Symbol.iterator，因此原生支援 for...of 迴圈和解構語法，讓開發者不用手寫迭代邏輯即可遍歷集合元素。',
-        'generator 提供 throw() 和 return() 方法分別用於注入例外和結束迭代，throw() 會在暫停點拋出例外導致 done 設為 true，return() 則直接回傳給定值並完成 generator。',
+        'generator 提供 throw() 和 return() 方法分別用於注入例外和結束迭代，throw() 會在目前暫停的 yield 點拋出例外，若 generator 內部沒有 try/catch 攔截，例外會往外傳播並使 done 設為 true；若該 yield 被內部 try/catch 包住，則可能攔截例外並繼續執行到下一個 yield（此時 done 仍為 false），return() 則直接回傳給定值並完成 generator。',
       ],
     },
     {
