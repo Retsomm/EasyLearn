@@ -370,6 +370,150 @@ export const chapterSummaries: Record<string, LevelSummary[]> = {
       ],
     },
   ],
+  dmmf: [
+    {
+      levelId: 'dmmf-1',
+      keyPoints: [
+        'DDD 的核心主張是讓程式碼、開發團隊與領域專家共用同一套心智模型，而不是由開發者把需求「翻譯」成程式碼——書中用「電話遊戲」比喻：每經過一手轉譯，訊息就會失真一點。',
+        '理解需求要從「領域事件」（一律用過去式描述，例如「訂單已建立」）切入，而不是先想資料表結構，因為業務的價值來自對資料做轉換的過程，靜態擺著的資料本身不創造價值。',
+        'Event Storming 是找齊所有利害關係人在牆上貼便利貼、按時間軸排出事件的協作工作坊；書中 Widgets Inc 訂單案例裡，帳務部門的 Blake 提醒大家別忘了他們也需要「訂單已建立」事件，藉此當場揪出原本被忽略的部門與需求缺口。',
+        'Command（命令，祈使句「請做這件事」，例如「請下這張訂單」）觸發 workflow，workflow 執行成功後才產生對應的 Domain Event（例如「訂單已下」），這種事件驅動的輸入輸出鏈天生跟函數式程式設計的思維方式相容。',
+        '解法設計時要把大問題拆成多個 subdomain（依領域專家所屬部門劃分，如訂單、出貨、帳務），對應到 bounded context；每個 bounded context 有自己一套 Ubiquitous Language 的「方言」，同一個詞（如「Order」）在出貨部門和帳務部門眼中可以代表不同東西。',
+        '要分辨 core／supportive／generic domain 的優先順序：core domain 是帶來業務差異化優勢的部分，值得投入資源精心打造；generic domain 可以外包或用現成方案，避免每個 bounded context 都想齊頭並進反而拖垮整個專案。',
+      ],
+    },
+    {
+      levelId: 'dmmf-2',
+      keyPoints: [
+        '深訪單一 workflow 時要先問「輸入輸出是什麼」再問細節，避免用自己既有的心智模型套用在領域上——書中案例是開發者一開始以為訂單系統是電商購物車模式，結果 Ollie 澄清 B2B 客戶都是內行採購方，只想直接輸入產品代碼跟數量，完全不需要瀏覽商品頁。',
+        '明確反對「資料庫驅動設計」與「類別驅動設計」：如果用同一個外鍵欄位同時代表 Order 跟 Quote，會抹掉兩者實際業務規則的差異（例如 Order 需要帳單地址而 Quote 不用）；同樣，為了共用程式碼硬造出現實中不存在的 OrderBase 基底類別，也是一種把技術偏見套進領域模型的扭曲。',
+        '訂單其實有生命週期，會經過 unvalidated（剛收到未驗證）、validated（驗證過）、priced（已計價）等不同階段，每個階段資料的完整程度不同；書中建議用不同名稱的型別表示各階段（如 UnvalidatedOrder、ValidatedOrder、PricedOrder），而不是自始至終共用同一個 Order 定義，這樣才能在設計層面就避免「還沒計價的訂單被誤送去出貨」這類錯誤。',
+        '產品代碼與訂單數量都帶有具體的領域限制（例如 Widget 代碼固定是 W 加 4 位數字、Gizmo 是 G 加 3 位數字；Widget 以整數個計價、Gizmo 以公斤計價且有上下限），這些具體規則值得直接寫進型別定義本身，讓型別成為活文件。',
+        '用簡單的文字化虛擬語言（workflow / data，搭配 AND 表示「兩者皆需」、OR 表示「擇一即可」）先記錄需求，而不是急著跳去寫程式碼或畫 UML，這種寫法連非工程背景的領域專家都能一起討論確認，之後才逐步轉譯成正式程式碼。',
+      ],
+    },
+    {
+      levelId: 'dmmf-3',
+      keyPoints: [
+        '借用 C4 model 的分層詞彙（system context／container／component／module）描述架構層級，並主張 bounded context 之間只透過「事件」溝通：訂單處理 context 送出 OrderPlaced 事件，出貨 context 監聽後自行轉成 ShipOrder 命令，兩邊完全不知道對方的存在，才是真正的解耦。',
+        'bounded context 之間傳遞的不是內部使用的 Domain Object，而是專門設計來序列化的 DTO：輸入邊界（gate）負責把不受信任的外部資料驗證轉換成受信任的領域物件，輸出邊界則刻意「遺漏」敏感資訊，例如出貨 context 根本不需要知道客戶的信用卡卡號。',
+        '定義 context 之間契約歸屬的三種模式：Shared Kernel（雙方共同擁有格式、修改需協商）、Customer/Supplier（下游決定契約內容，例如帳務 context 指定自己要哪些欄位，上游只給這些不多給）、Conformist（下游全盤接受上游既有格式，例如訂單處理直接套用產品目錄現成的資料結構）；面對介面落差很大的外部系統則插入 Anti-Corruption Layer 做語彙翻譯，避免外部模型污染內部領域邏輯。',
+        '主張用 Onion（洋蔥）式架構取代傳統水平分層：領域邏輯放在最核心且保持純粹無副作用，所有相依方向一律指向內部，資料庫存取或外部服務呼叫等 I/O 只能發生在 workflow 最外緣的邊界，不能滲進核心商業邏輯裡。',
+        '刻意避免物件導向常見的「內部事件監聽器」模式（一個事件觸發處理器、處理器又觸發下一個事件，關聯藏在隱性的事件系統裡不容易追蹤）；改成把每個後續動作明確串接在同一條 workflow pipeline 的尾端，讓所有依賴關係直接寫在程式碼裡、一眼就能看出全貌。',
+      ],
+    },
+    {
+      levelId: 'dmmf-4',
+      keyPoints: [
+        '函數式程式設計裡的「型別」只是一組可能值的集合，跟物件導向的 class 完全不同——型別本身不附帶方法或行為，純粹描述資料形狀，以及函式輸入輸出的簽章。',
+        '型別有兩種組合方式：「AND 組合」對應 TS 的 interface／object type（例如一張訂單同時需要客戶資訊、地址、品項清單，缺一不可），「OR 組合」對應 TS 的 tagged union（例如付款方式是現金、支票、信用卡三選一，每個分支可以帶不同的關聯資料，像 Card 分支帶卡號、Check 分支帶支票號碼）。',
+        '只包住一個原始型別的「單一案例包裝型別」（例如把單純的 string 包成 ProductCode）看似多此一舉，其實能避免同一個底層型別（像一堆 string）在不同語意情境下被誤用混淆，這在 TS 裡對應到用 branded/nominal type 技巧把 string 區分成不同的具名型別。',
+        '用「可能有可能沒有」的容器型別取代直接允許 null，逼迫呼叫端在型別層級就要處理「沒有值」這個分支，而不是等到執行期才因為 null 噴錯——這正是 JS/TS 生態裡常見的 null-safe 容器寫法（例如把某欄位型別明確標成「有值或沒有值」兩種可能）想解決的問題。',
+        '用「成功或失敗」的容器型別取代丟例外來表示可能失敗的操作，讓函式簽章本身就能看出「這個操作可能會失敗，失敗原因有哪幾種」，對應到 TS 裡常見的 Result 型別（例如付款函式回傳「已付款訂單」或「付款錯誤」兩種可能結果之一），呼叫端可以在編譯期就被要求處理失敗分支。',
+        '刻意用「無意義回傳值」的型別（對應 TS 的 void）去標示一個函式存在副作用，例如寫入資料庫但沒有實質回傳資料；看到這種簽章就代表函式內部正在偷偷改變某處狀態，這也呼應了本書「把 I/O 侷限在邊界、核心邏輯保持純粹」的設計原則。',
+      ],
+    },
+    {
+      levelId: 'dmmf-5',
+      keyPoints: [
+        '書中用訂單領域舉例：WidgetCode、OrderId 底層都是字串或數字，但改用只有單一 case 的包裝型別（對應 TS 裡的 tagged/nominal 型別）包起來，編譯器就能阻止把 CustomerId 誤傳進只接受 OrderId 的函式，即使兩者底層型別相同。',
+        '領域文件裡的 AND／OR 記法可以直接對應到型別：AND 關係轉成 record／interface（Order 由 CustomerInfo、ShippingAddress 等欄位組成），OR 關係轉成 tagged union（ProductCode 是 WidgetCode 或 GizmoCode 兩者之一）。',
+        'Workflow（如 ValidateOrder）本身建模成一個函式型別；若步驟可能失敗就在回傳型別標示類似 Result 的錯誤通道、若是非同步就標示 async，這些「效果」會沿呼叫鏈往上傳染，逼上層一起處理。',
+        '區分 Value Object 與 Entity：PersonalName、Address 這類只要欄位內容相同就視為同一個值（無身分），Order、Customer 這類即使內容變動、身分仍要維持一致的實體則需要專屬 id 欄位，並且相等比較邏輯要改成只比對 id 而非全部欄位。',
+        'Aggregate 概念用 Order／OrderLine 示範：因為資料不可變，修改某條 OrderLine 的價格必須在聚合根 Order 這一層整個重建（複製出新的 lines 陣列、組出新 Order），聚合根同時負責維護總價等一致性規則。',
+        'Order 對 Customer 只保留 CustomerId 參照，而不是整個 Customer 物件內嵌進去，避免「客戶資料一變動、所有相關訂單都要跟著複製」的連鎖效應；聚合同時也是資料庫交易與序列化的最小單位。',
+      ],
+    },
+    {
+      levelId: 'dmmf-6',
+      keyPoints: [
+        'Smart constructor 手法：把型別的建構子設為 private，只能透過像 UnitQuantity.create(qty) 這種會做驗證的函式產生實例，一旦建立成功就保證數值永遠落在合法範圍內，後續程式碼完全不必重複檢查。',
+        '「讓非法狀態無法被表示」的經典案例：email 若用一個 boolean 的 IsVerified 旗標，容易被意外設錯或忘記在 email 變更時重設；改用 Unverified／Verified 兩種 tagged type，且 Verified case 帶的驗證後型別只能由驗證服務建構，未驗證卻被標成已驗證這件事在編譯期就不可能發生。',
+        '聯絡資訊範例：「客戶必須有 email 或地址（或兩者）」這條規則若用兩個 optional 欄位表示，仍可能兩者同時是空值而違反規則；改用三選一的 tagged union（僅 email、僅地址、兩者皆有），讓「兩者都空」這個狀態直接無法被建構出來。',
+        'Aggregate 是一致性邊界：訂單總價等於各明細加總這類規則，最簡單的做法是即時運算而非額外儲存；真要儲存冗餘欄位時，更新一定要在聚合根（Order）這一層統一進行，而不是各自更新明細後期待總價自動同步。',
+        '跨 bounded context 的一致性（例如訂單成立要連動開立發票）不追求立即同步，而是靠事件/訊息達成最終一致性；書中用「Starbucks 不需要兩階段提交」的比喻，說明現實業務通常能容忍短暫不一致，靠補償動作或事後對帳處理少數漏發的訊息。',
+        '同一個 context 內盡量讓一次交易只更新一個 aggregate；若真的需要跨 aggregate 的原子操作（例如帳戶間轉帳），可以考慮把這個操作本身升級成一個有自己 id 的獨立實體（如 MoneyTransfer），藉此釐清領域模型而非硬把兩個聚合塞進同一筆交易。',
+      ],
+    },
+    {
+      levelId: 'dmmf-7',
+      keyPoints: [
+        '整個 workflow 拆成一串管線（pipeline）步驟，每個步驟是無狀態、無副作用的獨立轉換函式（ValidateOrder → PriceOrder → AcknowledgeOrder），可以各自測試後再組合成完整流程，書中稱這種寫法為 transformation-oriented programming。',
+        '訂單狀態改用「每個狀態各自一個型別」取代單一 record 加多個 boolean 旗標（IsValidated、IsPriced）：Unvalidated／Validated／Priced 各自只帶該階段真正需要的欄位，再用一個 tagged union 把所有狀態合併成 Order 型別，避免「明明還沒訂價、AmountToBill 卻是可有可無又可能忘了設」這種隱性錯誤。',
+        'State machine 是本章的通用建模工具，書中用購物車 Empty／Active／Paid 三態示範：每個狀態各自定義能做的操作（空車不能結帳、已付款的車不能再加商品），轉換函式對目前狀態做比對後產生新狀態，並強迫設計者去想清楚每個邊界情況（例如對空車呼叫「移除商品」該怎麼處理）。',
+        '每個步驟的外部依賴（如檢查商品代碼是否存在、查詢商品價格）直接用函式型別當作額外參數傳入，而不是傳一個大介面物件，書中稱為「函式式的依賴注入」；對外公開的整個 workflow 型別則刻意隱藏這些內部依賴，只留輸入輸出。',
+        '「可能失敗」與「非同步」這兩種效果具有傳染性：只要某個依賴（如遠端地址驗證）回傳的型別同時帶有錯誤與非同步兩種效果，呼叫它的步驟乃至整條 pipeline 的型別都要跟著改，書中把這種組合包成一個別名方便重複使用。',
+        '針對執行時間很長的流程（例如需要人工審核），書中提出把工作流拆成多個由事件觸發的小步驟，每步驟前後都要把目前狀態存回、讀出儲存體，這種模式稱為 Saga，是串接長時間流程或微服務時的常見做法。',
+      ],
+    },
+    {
+      levelId: 'dmmf-8',
+      keyPoints: [
+        '函式式程式設計的核心不是偶爾用個 lambda，而是把函式當成「一等公民」到處用：物件導向靠類別/介面做的事（拆分模組、依賴注入、程式碼重用），FP 全部改用函式當參數傳入、當回傳值輸出、甚至存進陣列裡逐一呼叫來達成。',
+        '書中用 adderGenerator(numberToAdd) 這種「產生函式的函式」示範高階函數：與其寫三個重複的 add1/add2/add3，不如寫一個會回傳新函式的產生器，把要加的數字「烤進去」(bake in)，這就是後面章節做依賴注入的基礎手法。',
+        'curry 與 partial application：任何多參數函式理論上都能拆成一串單參數函式，只先餵一部分參數，就能拿到一個「部分設定已經固定」的新函式——這個技巧在第九章會直接拿來把外部服務依賴綁進管線函式。',
+        'total function 與 partial function 的對比：函式簽章不該說謊，例如「除以某數」這種函式如果對輸入 0 會丟例外，簽章卻宣稱一定回傳數字，就是騙人的簽章；解法是要嘛限制輸入型別排除非法值，要嘛把輸出改成「可能沒有值」（對應 TS 的 T | undefined 或 Option 型別），讓每個輸入都對應明確定義的輸出。',
+        '函式組合（composition）：把一個函式的輸出接到下一個函式的輸入（類似 pipe 或串連的 array 操作），組合完成後外部只看得到最終的輸入輸出，中間經過的型別與步驟會被完全隱藏，這就是「資訊隱藏」的效果。',
+        '組合會遇到「形狀對不上」的問題：例如一個函式輸出純數值、下一個函式卻要吃 Option/nullable 包裝的值，這時常見解法是把兩邊都轉換成同一種「最大公約數」型別（例如都包一層 Option）才能接起來，這正是第九、十章要重點解決的問題。',
+      ],
+    },
+    {
+      levelId: 'dmmf-9',
+      keyPoints: [
+        '這章刻意先把 Result（錯誤處理）與非同步效果拿掉，只把 validateOrder、priceOrder、acknowledgeOrder、createEvents 寫成單純的同步資料轉換函式，先把「怎麼組裝管線」學會，下一章才處理錯誤與非同步。',
+        '每個簡單型別（如 OrderId、ProductCode）都搭配一組 smart constructor：一個 create 函式做驗證並建立值（這章先用丟例外代替回傳 Result），一個 value 函式取出內部原始值，讓驗證邏輯集中在建構子，不散落在各處流程程式碼裡。',
+        'function adapter（轉接函式）的實例：checkProductCodeExists 回傳的是布林值，但管線需要的是「驗證通過就把原始值繼續往下傳」的函式，於是寫了一個通用的 predicateToPassthru(errorMsg, predicate, x)，把任何布林判斷函式轉成穿透式函式，這種「餵一個函式、吐出另一個函式」的轉接手法在函式庫（如 array.map）裡也很常見。',
+        'partial application 做函式式的依賴注入：把 checkProductCodeExists、checkAddressExists 這類外部服務當成函式參數傳給 validateOrder，再用 partial application 把依賴「烤進去」，讓管線最後只剩一個輸入參數可以直接串接，取代物件導向常見的 DI 容器。',
+        '「composition root」原則：所有依賴應該在應用程式入口（例如伺服器啟動時）一次組裝好再往下傳，中間層函式不該被迫知道自己用不到的依賴細節（例如某服務要用的網址或密鑰，不該一路往上傳到跟它無關的 validateOrder 參數列）。',
+        '用陣列的 map 把單筆轉換邏輯（如把一行未驗證訂單明細轉成已驗證明細）套用到整張訂單的所有明細上；並用「lifting」技巧把型別形狀不一致的值（例如單一事件 vs 可能不存在的事件）都轉成同一種容器（例如都包成陣列）後再合併，這是解決組合問題的通用招式。',
+      ],
+    },
+    {
+      levelId: 'dmmf-10',
+      keyPoints: [
+        '把錯誤分成三類分開處理：domain error 是業務流程本來就預期會發生的（如商品代碼格式錯、訂單被拒），要建模進型別系統；panic 是像記憶體不足、null reference 這種系統應處於未知狀態的錯誤，直接丟例外讓最外層統一接住；infrastructure error（如逾時、認證失敗）則視架構決定要不要當成 domain error 明確處理。',
+        'Result/Either 的兩軌模型（railway-oriented programming）：把每個步驟想像成一段鐵軌分岔，成功時繼續走「快樂路徑」到下一站，一旦失敗就切到「失敗路徑」直接跳過後續所有步驟直達終點，比起在每一步後面塞 if 判斷或 try/catch 乾淨很多。',
+        'bind（flatMap）與 map 的差異：bind 用來串接本身就會回傳 Result 的函式（一個輸入、兩軌輸出的「switch 函式」），若上一步失敗就直接跳過不呼叫下一步；map 則是把一個「保證成功、單軌輸出」的普通函式包裝成能接在 Result 鏈上的函式，兩者是組裝錯誤處理管線的兩個基本工具。',
+        '統一錯誤型別是串接的關鍵：管線裡每一步驟的錯誤型別可能都不一樣（如 ValidationError、PricingError），必須用 mapError 把各自的錯誤型別收斂成同一個共用的錯誤聯合型別（如 PlaceOrderError）才能用 bind 串起來——這點和成功路徑不同，成功路徑上的型別可以每一步都不同，但失敗路徑從頭到尾必須是同一種型別。',
+        '陣列版本的 Result 聚合（sequence）：對一批訂單明細逐一驗證後會得到「一堆各自獨立的 Result」，但真正需要的是「一個包住整個陣列的 Result」，所以要寫一個 sequence 函式把 Result 陣列轉成「陣列包在 Result 裡」，只要有一筆失敗就回傳該筆錯誤（若想收集所有錯誤而非只留第一筆錯誤，要改用 applicative 風格而非本章示範的作法）。',
+        '把非 Result 形狀的函式也拉進管線：對外部服務呼叫可能丟例外的情形，用 try/catch 包一層 adapter 把它轉成回傳 Result 的版本；對只做副作用、沒有回傳值的函式（如寫 log），用 tee 這種「呼叫它但仍傳回原始輸入」的透傳技巧包裝，讓它也能接進 Result 管線；另外書中也介紹用類似 async/await 語法糖的 computation expression（let!/return）隱藏 bind 呼叫，讓程式碼讀起來像完全沒有包 Result 一樣，同時保留失敗自動短路的行為。',
+      ],
+    },
+    {
+      levelId: 'dmmf-11',
+      keyPoints: [
+        '本章區分「持久化」（persistence，狀態活得比程式行程久）與「序列化」（serialization，把 domain 型別轉成可儲存的表示法如 JSON/XML）：本章專注序列化，下一章才談持久化本身。',
+        '痛點解法是引入 DTO（Data Transfer Object）：domain 型別（例如帶約束的 String50、Birthdate）不直接拿去序列化，而是先轉成欄位皆為原始型別（string、number）的 DTO 再序列化；fromDomain（domain→DTO）保證一定成功，toDomain（DTO→domain）才做欄位驗證，所以回傳值等同 Result／Either，失敗時附上欄位名稱與錯誤訊息。',
+        '序列化／反序列化可以直接接在 workflow 頭尾組成管線：反序列化 JSON字串→DTO→domain物件→執行 workflow→domain物件→DTO→序列化成 JSON字串，對外只曝露這個包好序列化的版本，讓外部基礎設施完全不用碰 domain 型別；第三方序列化函式庫也要包一層轉接，把丟出的例外轉成 Result。',
+        'DTO 是不同 bounded context 之間的契約（contract），格式要自己完全掌控、謹慎變更，不能放給函式庫自動產生格式，否則其他 context 可能解析不了。',
+        'domain 型別轉 DTO 有具體對照規則：single-case 的簡單型別直接用底層原始型別；option 用 null／nullable 表示；list/array 直接轉陣列；只有名稱沒有資料的列舉式聯合型別可轉成整數或字串；tuple 因大多數格式不支援，要轉成具名的 record/物件；真正的 choice type（discriminated union，多案例且各自帶不同資料）則轉成一個帶 tag 欄位＋每個案例各自一個欄位的 DTO，未使用的案例欄位填 null。',
+        '另一種做法是把整個 record 或 choice type 序列化成 key-value map（字典），優點是不同 context 間耦合極低，缺點是完全沒有明確契約結構，難以及早發現 producer/consumer 之間的欄位對不上。',
+      ],
+    },
+    {
+      levelId: 'dmmf-12',
+      keyPoints: [
+        '「把持久化推到邊界」（push persistence to the edges）：把純商業邏輯（例如付款邏輯）寫成不碰資料庫的純函式，輸入所需資料當參數、輸出一個代表決策的 choice type（例如 FullyPaid / PartiallyPaid），實際讀寫資料庫的 I/O 呼叫只包在外層的「三明治」結構（I/O →純邏輯→I/O）裡，讓核心邏輯可單獨單元測試。',
+        'FP 風格不需要 Repository Pattern：不用一個囊括幾十個方法的資料存取介面，而是替每個具體需要的 I/O 操作各自定義一個小函式（例如單獨的 loadInvoice、markAsFullyPaid），只用到什麼就定義什麼。',
+        '命令查詢分離（CQS）：讀取（query）函式不該有副作用，寫入（insert/update/delete）函式不該回傳有意義的資料；延伸成 CQRS（命令查詢職責分離）——讀取模型與寫入模型用不同型別甚至不同資料庫（寫入端重交易正規化、讀取端重效能可反正規化），兩者可各自獨立演進，代價是讀取端可能與寫入端有短暫不一致（最終一致性）。',
+        'Bounded context 必須擁有自己的資料儲存，其他系統不能直接存取；跨 context 的報表／分析需求要當成獨立的「Reporting/BI」domain 處理，透過訂閱事件或 ETL 把資料複製過去，而不是讓 BI 系統直接連進其他 context 的資料庫。',
+        '文件資料庫（如 blob storage）的持久化很單純：沿用上一章的 DTO 轉換，把 domain 物件轉 DTO 再序列化成 JSON 字串存入即可；關聯式資料庫則要處理「阻抗不匹配」——choice type 在關聯表有兩種映射法：單一表＋多組可為 null 的欄位加上旗標欄位（one-table），或每個案例各自建一張子表共用主鍵（multi-table，欄位可設 NOT NULL 但較複雜）。',
+        '從關聯式資料庫讀出的資料要當成「不可信來源」，跟其他外部輸入一樣需要驗證轉換成 domain 型別（toDomain 回傳 Result），並明確決定「查無資料」屬於可預期的錯誤（回傳 Result.Error），還是「查到多筆」這種不該發生的情況直接視為例外（panic）。',
+        '多筆操作要一起成功或失敗時，優先用資料庫原生的交易機制（同連線內的 transaction）；但跨服務、跨系統沒有真正的分散式交易可用時（引用「星巴克不用兩階段提交」的比喻），改用事後偵測不一致的對帳流程搭配補償性交易（compensating transaction）來修正錯誤，而不是強求即時的跨系統原子性。',
+      ],
+    },
+    {
+      levelId: 'dmmf-13',
+      keyPoints: [
+        '新增運費規則的案例：先把「地址屬於哪個運費分類」（美國本地州／美國偏遠州／國外）的分類邏輯，跟「分類對應多少運費」的定價邏輯拆開成兩層，分類邏輯改動時定價函式完全不用動；接著用新增一個管線階段（PricedOrder → PricedOrderWithShippingInfo）的方式插入運費計算，而不是去修改原本能動的訂價階段，避免動到穩定程式碼、也用型別確保階段順序不會被排錯。',
+        '新增 VIP 客戶支援時，示範「該存業務規則的輸入，不要存業務規則算出的輸出」：不是直接在訂單上加一個 isFreeShipping 布林旗標，而是替 CustomerInfo 加一個小型 choice type 欄位 VipStatus（Normal／Vip），未來業務規則（要不要免運費）如何變化都不用改動這個欄位本身。',
+        '新增促銷碼的案例展現型別變更的連鎖反應：把「取得商品價格」的相依函式從單純的 GetProductPrice 換成一個依 PricingMethod（Standard／Promotion of code）回傳對應定價函式的「工廠函式」GetPricingFunction；同時因為要在訂單上標示「套用了促銷折扣」，被迫把 PricedOrderLine 從單純商品列改成商品列／備註列的 choice type，示範一個小需求可能牽動好幾層型別。',
+        '促銷碼案例也帶出「消費者驅動契約」：新增的備註列會讓對外的 OrderPlaced 事件跟著改變，容易破壞和出貨等下游 bounded context 的契約；解法是重新設計一個只含下游真正需要欄位（商品、數量、地址）的精簡事件型別（如 ShippableOrderPlaced），而不是讓下游被迫跟著訂單內部結構的每次異動一起變動。',
+        '新增「只能在營業時間下單」這種限制時，不修改原本的 placeOrder 函式本身，而是寫一個通用的高階包裝函式（businessHoursOnly），接收 onSuccess/onError 兩個處理函式，把整個既有 workflow 函式包成一個輸入輸出簽章完全相同的「代理」函式，可以直接原地替換使用，展示了透過函式組合整體轉換 workflow 行為的手法。',
+        '型別驅動設計在改需求時提供的安全網：只要替既有的 record 型別（例如 CustomerInfo）加一個新欄位，所有建構該型別的地方就會立刻出現編譯錯誤，逼著開發者一一補齊資料來源，改完所有錯誤消失後就能高度信任修改沒有遺漏或悄悄弄壞其他地方。',
+      ],
+    },
+  ],
 }
 
 export const getChapterSummary = (chapterId: string): LevelSummary[] | undefined =>
