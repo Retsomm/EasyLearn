@@ -1,0 +1,132 @@
+{
+  "id": "gfp-9",
+  "title": "Ch9：Stream 視為值",
+  "questions": [
+    {
+      "id": "gfp-9-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Stream 上的 zip：把兩條資料流依位置配對起來",
+      "docs": "",
+      "story": "",
+      "prompt": "zip(['a', 'b', 'c'], [1, 2, 3]) 想把兩個序列依照位置一一配對，得到 [['a',1], ['b',2], ['c',3]] 這種配對結果。這種操作的核心邏輯是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "zip 依序走訪兩個序列，把「第一個序列的第 i 個元素」跟「第二個序列的第 i 個元素」湊成一組，直到其中一個序列的元素被用完為止——這讓兩份原本各自獨立的序列，能依照位置關係組合成「配對後」的新序列，是處理「兩份資料互相對應」這種需求的標準工具" },
+        { "id": "b", "text": "zip 會把兩個序列的所有元素隨機打亂配對，不保證位置對應關係" },
+        { "id": "c", "text": "zip 只能用在長度剛好相等的兩個序列上，長度不同就會直接報錯" },
+        { "id": "d", "text": "zip 的作用是把兩個序列合併成一個序列，元素直接接在一起，不做任何配對" }
+      ],
+      "answer": "a",
+      "explanation": "zip 依序走訪兩個序列，把「第一個序列的第 i 個元素」跟「第二個序列的第 i 個元素」湊成一組，讓兩份原本各自獨立的序列能依照位置關係組合成配對後的新序列。這是處理「兩份資料互相對應」這種需求的標準工具。",
+      "verify": { "manual": "概念題：以姓名與年齡配對的具體例子取代抽象 zip 定義，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-9-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "驗證：zip 把兩個陣列依位置配對成一組組 tuple",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      "story": "",
+      "prompt": "這段程式手動實作 zip，把姓名清單跟年齡清單依位置配對。這段程式會印出什麼？",
+      "code": "function zip(arr1, arr2) {\n  const length = Math.min(arr1.length, arr2.length);\n  const result = [];\n  for (let i = 0; i < length; i++) {\n    result.push([arr1[i], arr2[i]]);\n  }\n  return result;\n}\n\nconsole.log(zip(['小明', '小華'], [20, 25]));",
+      "options": [
+        { "id": "a", "text": "[ [ '小明', 20 ], [ '小華', 25 ] ]" },
+        { "id": "b", "text": "[ '小明', 20, '小華', 25 ]" },
+        { "id": "c", "text": "[ [ '小明', '小華' ], [ 20, 25 ] ]" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "zip 依序把兩個陣列同一個位置的元素湊成一組：位置 0 是小明配 20，位置 1 是小華配 25，得到 [['小明', 20], ['小華', 25]]——這正是「依位置配對」的具體效果，跟單純把兩個陣列接在一起完全不同。",
+      "verify": {
+        "checks": [
+          { "code": "function zip(arr1, arr2) {\n  const length = Math.min(arr1.length, arr2.length);\n  const result = [];\n  for (let i = 0; i < length; i++) {\n    result.push([arr1[i], arr2[i]]);\n  }\n  return result;\n}\nconsole.log(zip(['小明', '小華'], [20, 25]));", "expected": "[ [ '小明', 20 ], [ '小華', 25 ] ]" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-9-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "zip 遇到長度不同的序列：停在比較短的那一個",
+      "docs": "",
+      "story": "",
+      "prompt": "如果 zip 的兩個輸入序列長度不一樣，zip 的結果會有幾組配對？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "結果只會有比較短的那個長度組配對：一旦比較短的序列已經沒有元素可以配對，zip 就沒辦法再繼續產生新的配對組合，較長那個序列多出來的元素會被直接忽略——zip 的配對數量永遠受限於「比較短的那一個序列」的長度" },
+        { "id": "b", "text": "結果的組數會等於較長序列的長度，較短序列缺少的位置會自動用 undefined 補齊" },
+        { "id": "c", "text": "這種長度不一致的情況會讓 zip 直接報錯，無法產生任何結果" },
+        { "id": "d", "text": "結果的組數會等於兩個序列長度相加" }
+      ],
+      "answer": "a",
+      "explanation": "zip 的配對數量永遠受限於「比較短的那一個序列」的長度——一旦較短的序列已經沒有元素可以配對，zip 就沒辦法再產生新的配對組合，較長序列多出來的元素直接被忽略，不會用 undefined 或任何預設值硬湊出額外的配對。",
+      "verify": { "manual": "概念題：以長度不一致情境取代抽象 zip 行為敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-9-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：zip 配對數量等於較短序列的長度",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Math/min",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function zip(arr1, arr2) {\n  const length = Math.min(arr1.length, arr2.length);\n  const result = [];\n  for (let i = 0; i < length; i++) {\n    result.push([arr1[i], arr2[i]]);\n  }\n  return result;\n}\n\nconst names = ['小明', '小華', '小美'];\nconst scores = [90, 85];\n\nconsole.log(zip(names, scores));",
+      "options": [
+        { "id": "a", "text": "[ [ '小明', 90 ], [ '小華', 85 ] ]" },
+        { "id": "b", "text": "[ [ '小明', 90 ], [ '小華', 85 ], [ '小美', undefined ] ]" },
+        { "id": "c", "text": "報錯" },
+        { "id": "d", "text": "[]" }
+      ],
+      "answer": "a",
+      "explanation": "names 有 3 個元素，scores 只有 2 個，zip 只能配對到比較短的那個長度（2 組），'小美' 因為 scores 已經沒有對應的元素可以配對，直接被忽略——結果只有兩組配對，不會用 undefined 硬湊出第三組。",
+      "verify": {
+        "checks": [
+          { "code": "function zip(arr1, arr2) {\n  const length = Math.min(arr1.length, arr2.length);\n  const result = [];\n  for (let i = 0; i < length; i++) {\n    result.push([arr1[i], arr2[i]]);\n  }\n  return result;\n}\nconst names = ['小明', '小華', '小美'];\nconst scores = [90, 85];\nconsole.log(zip(names, scores));", "expected": "[ [ '小明', 90 ], [ '小華', 85 ] ]" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-9-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "IO 值構成的 Stream：一連串「還沒執行」的動作",
+      "docs": "",
+      "story": "",
+      "prompt": "如果把「每 5 秒打一次 API」這種需求，表示成一個「無限長的 stream，每個元素本身都是一個 IO 值」，這種表示方式跟直接用一個迴圈連續打 API 比起來，有什麼不同？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "用 IO 值構成的 stream，「描述這個 stream 長什麼樣子」跟「真正執行了多少次」是分開的兩件事——建立這個 stream 本身不會觸發任何一次真正的 API 呼叫，只有真正走訪、對某個元素呼叫 run() 時，那一次 API 呼叫才會真的發生；直接用迴圈打 API，則是建立跟執行綁在一起，沒辦法只描述「要做什麼」卻不立刻真的做" },
+        { "id": "b", "text": "兩種寫法完全等價，沒有任何差異" },
+        { "id": "c", "text": "用 IO 值構成的 stream，一旦建立就會立刻把所有 API 呼叫都執行完" },
+        { "id": "d", "text": "這種表示方式只能用於同步操作，沒辦法用於任何跟網路相關的非同步操作" }
+      ],
+      "answer": "a",
+      "explanation": "用 IO 值構成的 stream，「描述這個 stream 長什麼樣子」跟「真正執行了多少次」是分開的兩件事——建立這個 stream 本身不會觸發任何一次真正的 API 呼叫，只有真正走訪、對某個元素呼叫 run() 時，那一次呼叫才會真的發生。這正是把 IO 和 Stream 的想法結合在一起的具體應用。",
+      "verify": { "manual": "概念題：以 API 輪詢情境取代抽象 IO stream 敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-9-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "驗證：無限長的 IO stream，只執行被要求的那幾次",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function*",
+      "story": "",
+      "prompt": "apiCallStream 是一個無限產生「打 API」IO 動作的 generator，take 只從中取出、執行前 N 個。這段程式會印出什麼？",
+      "code": "function IO(thunk) { return { run: thunk }; }\n\nlet callCount = 0;\nfunction* apiCallStream() {\n  while (true) {\n    callCount += 1;\n    const currentCall = callCount;\n    yield IO(() => `第 ${currentCall} 次呼叫的結果`);\n  }\n}\n\nfunction take(gen, n) {\n  const results = [];\n  for (let i = 0; i < n; i++) {\n    results.push(gen.next().value.run());\n  }\n  return results;\n}\n\nconsole.log(take(apiCallStream(), 3));\nconsole.log('總共建立了幾個 IO 動作（callCount）：', callCount);",
+      "options": [
+        { "id": "a", "text": "[ '第 1 次呼叫的結果', '第 2 次呼叫的結果', '第 3 次呼叫的結果' ]\n總共建立了幾個 IO 動作（callCount）： 3" },
+        { "id": "b", "text": "[ '第 1 次呼叫的結果', '第 2 次呼叫的結果', '第 3 次呼叫的結果' ]\n總共建立了幾個 IO 動作（callCount）： 0" },
+        { "id": "c", "text": "程式陷入無限迴圈，永遠不會印出任何東西" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "apiCallStream 雖然邏輯上是一個無限迴圈，但因為它是 generator，每次呼叫 next() 才會往前推進一步、yield 出一個新的 IO 動作，take 只呼叫了 3 次 next()，所以 callCount 也只增加到 3，不會真的陷入無限迴圈把整個程式卡死。這正是「無限長的 stream」加上「惰性求值」加上「IO 值延遲執行」三個技巧疊在一起的效果：定義可以是無限的，但實際執行的次數完全由呼叫端決定要拿多少。",
+      "verify": {
+        "checks": [
+          { "code": "function IO(thunk) { return { run: thunk }; }\nlet callCount = 0;\nfunction* apiCallStream() {\n  while (true) {\n    callCount += 1;\n    const currentCall = callCount;\n    yield IO(() => `第 ${currentCall} 次呼叫的結果`);\n  }\n}\nfunction take(gen, n) {\n  const results = [];\n  for (let i = 0; i < n; i++) {\n    results.push(gen.next().value.run());\n  }\n  return results;\n}\nconsole.log(take(apiCallStream(), 3));\nconsole.log('總共建立了幾個 IO 動作（callCount）：', callCount);", "expected": "[ '第 1 次呼叫的結果', '第 2 次呼叫的結果', '第 3 次呼叫的結果' ]\n總共建立了幾個 IO 動作（callCount）： 3" }
+        ]
+      }
+    }
+  ]
+}

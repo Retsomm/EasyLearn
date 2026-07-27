@@ -1,0 +1,132 @@
+{
+  "id": "gfp-5",
+  "title": "Ch5：循序程式",
+  "questions": [
+    {
+      "id": "gfp-5-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "flatMap = map 加上攤平：一次做完兩件事",
+      "docs": "",
+      "story": "",
+      "prompt": "如果轉換函式本身回傳的是一個陣列，用 map 會得到什麼樣的結果？改用 flatMap 呢？",
+      "code": "const arr = [1, 2];\n// arr.map((x) => [x, x * 10])：會變成 [[1, 10], [2, 20]]，是巢狀陣列\n// arr.flatMap((x) => [x, x * 10])：會變成 [1, 10, 2, 20]，是攤平後的陣列",
+      "options": [
+        { "id": "a", "text": "用 map 會得到「陣列裡裝著陣列」的巢狀結果，因為 map 只負責轉換、不會主動把巢狀結構攤平；flatMap 則是「先做跟 map 一樣的轉換，再把結果攤平一層」，一次做完轉換跟攤平兩件事，得到的是攤平後的扁平陣列——這正是 flatMap 名字裡「flat」跟「map」兩個字合起來的意思" },
+        { "id": "b", "text": "map 和 flatMap 在這種情境下產生的結果完全一樣，沒有任何差異" },
+        { "id": "c", "text": "flatMap 只會把結果攤平，不會做任何轉換，效果等同於單純呼叫轉換函式" },
+        { "id": "d", "text": "map 才會攤平巢狀結果，flatMap 才會產生巢狀結果，跟一般認知剛好相反" }
+      ],
+      "answer": "a",
+      "explanation": "用 map，轉換函式回傳的陣列會直接被當成單一個「元素」放進結果裡，變成「陣列裝著陣列」的巢狀結果；flatMap 則是先做跟 map 一樣的轉換，再把結果攤平一層，一次做完轉換跟攤平兩件事。這正是 flatMap 名字裡「flat」加上「map」的意思。",
+      "verify": { "manual": "概念題：以巢狀 vs 攤平結果的具體對照取代抽象 flatMap 定義，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-5-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "驗證：map 產生巢狀陣列，flatMap 產生攤平後的陣列",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/flatMap",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "const arr = [1, 2];\n\nconst withMap = arr.map((x) => [x, x * 10]);\nconst withFlatMap = arr.flatMap((x) => [x, x * 10]);\n\nconsole.log(withMap);\nconsole.log(withFlatMap);",
+      "options": [
+        { "id": "a", "text": "[ [ 1, 10 ], [ 2, 20 ] ]\n[ 1, 10, 2, 20 ]" },
+        { "id": "b", "text": "[ 1, 10, 2, 20 ]\n[ 1, 10, 2, 20 ]" },
+        { "id": "c", "text": "[ [ 1, 10 ], [ 2, 20 ] ]\n[ [ 1, 10 ], [ 2, 20 ] ]" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "map 把轉換函式回傳的每個陣列直接當成一個元素放進結果，得到 [[1, 10], [2, 20]] 這種巢狀結構；flatMap 則在轉換之後多做一步攤平，得到 [1, 10, 2, 20] 這種扁平的陣列。兩者用的是同一個轉換函式，差別只在於有沒有多做「攤平」這一步。",
+      "verify": {
+        "checks": [
+          { "code": "const arr = [1, 2];\nconst withMap = arr.map((x) => [x, x * 10]);\nconst withFlatMap = arr.flatMap((x) => [x, x * 10]);\nconsole.log(withMap);\nconsole.log(withFlatMap);", "expected": "[ [ 1, 10 ], [ 2, 20 ] ]\n[ 1, 10, 2, 20 ]" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-5-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "值依賴其他值：巢狀 flatMap 算出所有組合",
+      "docs": "",
+      "story": "",
+      "prompt": "想找出「所有顏色跟所有尺寸的組合」，用巢狀的 flatMap（外層走訪顏色、內層走訪尺寸）可以怎麼表達這個需求？",
+      "code": "const colors = ['紅', '藍'];\nconst sizes = ['S', 'M'];\n// colors.flatMap((color) => sizes.map((size) => `${color}${size}`))",
+      "options": [
+        { "id": "a", "text": "外層對每個顏色，內層用 map 對每個尺寸產生一個組合字串，內層 map 的結果是「這個顏色配上所有尺寸」的一份小陣列，外層 flatMap 再把每個顏色產生的這些小陣列全部攤平接在一起，得到「所有顏色跟所有尺寸的完整組合清單」——這正是「值依賴其他值」的具體例子：每一個尺寸組合，都依賴外層目前走訪到的是哪個顏色" },
+        { "id": "b", "text": "應該用兩個獨立的 map，各自算出顏色清單和尺寸清單，再把兩個陣列直接相加" },
+        { "id": "c", "text": "巢狀 flatMap 沒辦法用來算出兩個清單的所有組合，只能個別走訪，不能互相搭配" },
+        { "id": "d", "text": "這種需求只能用巢狀迴圈實現，flatMap 完全無法表達這種「組合」的需求" }
+      ],
+      "answer": "a",
+      "explanation": "外層 colors.flatMap 對每個顏色，內層用 sizes.map 產生「這個顏色配上所有尺寸」的一份小陣列，外層的 flatMap 再把每個顏色各自產生的這些小陣列攤平接在一起，得到所有顏色跟所有尺寸的完整組合清單。這正是「值依賴其他值」的具體例子：內層每個尺寸組合出來的字串，都依賴外層目前走訪到的是哪個顏色。",
+      "verify": { "manual": "概念題：以顏色與尺寸組合的具體例子取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-5-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：巢狀 flatMap 算出顏色與尺寸的所有組合",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/flatMap",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "const colors = ['紅', '藍'];\nconst sizes = ['S', 'M'];\n\nconst combinations = colors.flatMap((color) => sizes.map((size) => `${color}${size}`));\n\nconsole.log(combinations);",
+      "options": [
+        { "id": "a", "text": "[ '紅S', '紅M', '藍S', '藍M' ]" },
+        { "id": "b", "text": "[ [ '紅S', '紅M' ], [ '藍S', '藍M' ] ]" },
+        { "id": "c", "text": "[ '紅S', '藍S' ]" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "外層走訪 colors，對每個顏色，內層 map 產生跟兩個尺寸各自組合的字串，外層的 flatMap 把這兩份小陣列攤平接在一起，得到完整的四種組合。如果外層用的是 map 而不是 flatMap，結果會是巢狀的兩個子陣列，不會攤平成這樣一份完整清單。",
+      "verify": {
+        "checks": [
+          { "code": "const colors = ['紅', '藍'];\nconst sizes = ['S', 'M'];\nconst combinations = colors.flatMap((color) => sizes.map((size) => `${color}${size}`));\nconsole.log(combinations);", "expected": "[ '紅S', '紅M', '藍S', '藍M' ]" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-5-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "flatMap 會改變清單長度：不像 map 永遠保持原長度",
+      "docs": "",
+      "story": "",
+      "prompt": "map 轉換後的陣列，長度永遠跟原陣列一樣。flatMap 呢？如果轉換函式對某些輸入回傳空陣列、對某些輸入回傳好幾個元素的陣列，flatMap 的結果長度會怎麼樣？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "flatMap 的結果長度不保證跟原陣列一樣：因為轉換函式對每個輸入可以回傳「零個」「一個」或「好幾個」元素，攤平之後最終結果的長度，取決於每個輸入各自產生了多少元素——可能比原陣列短（有些輸入被過濾掉），也可能比原陣列長（有些輸入展開成好幾個元素）" },
+        { "id": "b", "text": "flatMap 的結果長度永遠跟原陣列完全一樣，這是它跟 map 唯一相同的地方" },
+        { "id": "c", "text": "flatMap 只能讓結果長度變短，沒辦法讓結果長度變長" },
+        { "id": "d", "text": "flatMap 只能讓結果長度變長，沒辦法讓結果長度變短" }
+      ],
+      "answer": "a",
+      "explanation": "flatMap 的結果長度不保證跟原陣列一樣——轉換函式對每個輸入可以回傳零個、一個或好幾個元素，攤平之後最終長度取決於每個輸入各自產生了多少元素，可能比原陣列短，也可能比原陣列長。這跟 map「永遠保持一對一、長度不變」是明顯不同的行為。",
+      "verify": { "manual": "概念題：以長度變化的具體說明取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-5-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：flatMap 讓結果長度跟原陣列不一樣",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/flatMap",
+      "story": "",
+      "prompt": "這段程式對每個數字，偶數展開成 [數字, 數字]，奇數變成空陣列。這段程式會印出什麼？",
+      "code": "const nums = [1, 2, 3, 4, 5];\n\nconst result = nums.flatMap((n) => (n % 2 === 0 ? [n, n] : []));\n\nconsole.log(result);\nconsole.log(nums.length, result.length);",
+      "options": [
+        { "id": "a", "text": "[ 2, 2, 4, 4 ]\n5 4" },
+        { "id": "b", "text": "[ 2, 2, 4, 4 ]\n5 5" },
+        { "id": "c", "text": "[ 1, 2, 3, 4, 5 ]\n5 5" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "flatMap 對每個數字分別決定要展開成幾個元素：奇數回傳空陣列，等於直接被濾掉；偶數各自展開成兩份自己。攤平之後最終結果是 [2, 2, 4, 4]，長度是 4，跟原陣列的長度 5 不一樣——這正是 flatMap 跟 map「長度永遠不變」最明顯的差異。",
+      "verify": {
+        "checks": [
+          { "code": "const nums = [1, 2, 3, 4, 5];\nconst result = nums.flatMap((n) => (n % 2 === 0 ? [n, n] : []));\nconsole.log(result);\nconsole.log(nums.length, result.length);", "expected": "[ 2, 2, 4, 4 ]\n5 4" }
+        ]
+      }
+    }
+  ]
+}

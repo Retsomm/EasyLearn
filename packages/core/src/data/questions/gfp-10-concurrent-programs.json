@@ -1,0 +1,132 @@
+{
+  "id": "gfp-10",
+  "title": "Ch10：併行程式",
+  "questions": [
+    {
+      "id": "gfp-10-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "宣告式併行：描述「哪些事情可以同時做」，不用自己管執行緒",
+      "docs": "",
+      "story": "",
+      "prompt": "想同時打三個獨立的 API，用 Promise.all([fetchA(), fetchB(), fetchC()]) 描述「這三件事可以同時進行」，跟自己手動管理三個執行緒、協調它們的完成時機，有什麼差異？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "Promise.all 只需要宣告「這三個獨立的動作可以同時進行」，實際上「怎麼同時執行、怎麼知道三者都完成了」這些底層機制完全交給 Promise.all 處理；自己手動管理執行緒，則要親自處理執行緒建立、同步、等待所有執行緒完成等瑣碎細節——宣告式併行讓開發者只需要描述「哪些事情彼此獨立、可以同時做」，不用手動管理底層的執行機制" },
+        { "id": "b", "text": "Promise.all 沒辦法讓多個非同步操作同時進行，跟依序執行完全一樣" },
+        { "id": "c", "text": "手動管理執行緒完全不需要處理任何同步或等待完成的邏輯，比宣告式併行更簡單" },
+        { "id": "d", "text": "宣告式併行要求開發者自己負責處理所有底層的執行緒排程細節" }
+      ],
+      "answer": "a",
+      "explanation": "Promise.all 只需要宣告「這三個獨立的動作可以同時進行」，實際上怎麼同時執行、怎麼知道三者都完成了，這些底層機制完全交給 Promise.all 處理；自己手動管理執行緒，則要親自處理執行緒建立、同步、等待完成等瑣碎細節。宣告式併行讓開發者專注在「哪些事情彼此獨立、可以同時做」這個問題本身，不用管底層怎麼執行。",
+      "verify": { "manual": "概念題：以 Promise.all 與手動執行緒管理的對照取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-10-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：Promise.all 收集結果的順序，跟啟動順序一致，不是完成順序",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/all",
+      "story": "",
+      "prompt": "這段程式讓三個非同步操作以不同的延遲時間完成，用 Promise.all 收集結果。這段程式會印出什麼？",
+      "code": "function delay(value, ms) {\n  return new Promise((resolve) => setTimeout(() => resolve(value), ms));\n}\n\nasync function main() {\n  const results = await Promise.all([delay('A', 30), delay('B', 10), delay('C', 20)]);\n  console.log(results);\n}\n\nmain();",
+      "options": [
+        { "id": "a", "text": "[ 'A', 'B', 'C' ]" },
+        { "id": "b", "text": "[ 'B', 'C', 'A' ]" },
+        { "id": "c", "text": "[ 'A', 'C', 'B' ]" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "Promise.all 回傳的結果陣列，順序永遠對應「傳入時的陣列順序」，不是「誰先完成」的順序——即使 B（10ms）比 A（30ms）先完成，results 裡 A 的結果還是排在第一個。這正是併行執行帶來的方便之處：Promise.all 已經處理好順序的問題，不用自己煩惱誰先回來就先放誰。",
+      "verify": {
+        "checks": [
+          { "code": "function delay(value, ms) {\n  return new Promise((resolve) => setTimeout(() => resolve(value), ms));\n}\nasync function main() {\n  const results = await Promise.all([delay('A', 30), delay('B', 10), delay('C', 20)]);\n  console.log(results);\n}\nmain();", "expected": "[ 'A', 'B', 'C' ]" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-10-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "原子參照（Ref）：提供安全更新操作，避免遺失更新",
+      "docs": "",
+      "story": "",
+      "prompt": "前面章節示範過「兩個非同步操作各自讀取舊值、各自算出新值再寫回」會導致遺失更新的問題。「原子參照」這種包裝想解決的正是這個問題，它提供的更新操作有什麼特性？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "原子參照提供的更新操作，是把「讀取目前的值」跟「算出並寫回新值」合併成一個不能被其他操作插隊打斷的單一步驟——不像「先個別讀取、各自算好、再各自寫回」那樣，中間有機會被別的操作插隊看到舊值，原子更新保證每一次更新，看到的都是當下最新的值，不會發生遺失更新的問題" },
+        { "id": "b", "text": "原子參照跟一般變數完全一樣，沒有任何額外的安全保證" },
+        { "id": "c", "text": "原子參照只能被讀取，沒辦法被更新" },
+        { "id": "d", "text": "原子參照要求所有操作必須排隊等待整支程式執行完畢後才能存取" }
+      ],
+      "answer": "a",
+      "explanation": "原子參照提供的更新操作，把「讀取目前的值」跟「算出並寫回新值」合併成一個不能被插隊打斷的單一步驟——不像「先個別讀取、各自算好、再各自寫回」那樣，中間有機會被別的操作插隊看到舊值。這保證每一次更新看到的都是當下最新的值，避免遺失更新的問題，是解決共享可變狀態競態問題的具體工具之一。",
+      "verify": { "manual": "概念題：以合併讀寫成單一步驟的具體機制取代抽象 Ref 敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-10-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：把多次「各自讀取、各自寫回」合併成一次安全的累加更新",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce",
+      "story": "",
+      "prompt": "這段程式對照示範「模擬遺失更新」跟「用單一個 reduce 安全地累加更新」，處理同一批扣款請求。這段程式會印出什麼？",
+      "code": "let unsafeBalance = 100;\nconst withdrawals = [30, 40];\n\nconst snapshot = unsafeBalance;\nwithdrawals.forEach((amount) => {\n  unsafeBalance = snapshot - amount;\n});\n\nconst safeBalance = withdrawals.reduce((balance, amount) => balance - amount, 100);\n\nconsole.log('模擬遺失更新的結果：', unsafeBalance);\nconsole.log('安全累加的結果：', safeBalance);",
+      "options": [
+        { "id": "a", "text": "模擬遺失更新的結果： 60\n安全累加的結果： 30" },
+        { "id": "b", "text": "模擬遺失更新的結果： 30\n安全累加的結果： 30" },
+        { "id": "c", "text": "模擬遺失更新的結果： 60\n安全累加的結果： 60" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "模擬遺失更新的版本，每一步都根據同一份「呼叫當下的舊值」計算，後面的寫入會直接覆蓋前面的結果，最終只反映了最後一筆扣款（40），30 這筆扣款完全消失，變成 60；安全累加的版本用 reduce，每一步都基於「上一步已經更新過的結果」繼續往下算，正確反映兩筆扣款，變成 30。",
+      "verify": {
+        "checks": [
+          { "code": "let unsafeBalance = 100;\nconst withdrawals = [30, 40];\nconst snapshot = unsafeBalance;\nwithdrawals.forEach((amount) => {\n  unsafeBalance = snapshot - amount;\n});\nconst safeBalance = withdrawals.reduce((balance, amount) => balance - amount, 100);\nconsole.log('模擬遺失更新的結果：', unsafeBalance);\nconsole.log('安全累加的結果：', safeBalance);", "expected": "模擬遺失更新的結果： 60\n安全累加的結果： 30" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-10-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "批次處理：把大量併行操作分組進行，避免一次發動太多",
+      "docs": "",
+      "story": "",
+      "prompt": "如果要對 10000 筆資料各自打一次 API，一次把 10000 個 Promise 全部丟進 Promise.all，跟「每次只處理 100 筆、分成 100 批依序進行」比起來，有什麼考量上的差異？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "一次併行發動 10000 個請求，可能瞬間對目標服務造成過大負擔（甚至觸發速率限制被拒絕），也會讓本地端同時維持大量待處理的連線、消耗大量記憶體；分批進行則是每批只併行處理一定數量，批次之間依序進行，能把併行的「同時發生量」控制在可接受的範圍內，是「併行」與「資源限制」之間的常見取捨" },
+        { "id": "b", "text": "一次全部併行發動完全沒有任何風險，永遠是最好的選擇" },
+        { "id": "c", "text": "分批處理會讓最終的處理結果跟一次全部併行處理不一樣" },
+        { "id": "d", "text": "批次處理只能用在同步程式碼上，沒辦法套用在非同步的 API 呼叫上" }
+      ],
+      "answer": "a",
+      "explanation": "一次併行發動大量請求，可能瞬間對目標服務造成過大負擔、甚至觸發速率限制，也會讓本地端同時維持大量待處理連線、消耗大量記憶體；分批進行則是把「同時發生的併行量」控制在可接受的範圍內。這是「盡量併行加快速度」跟「不要一次消耗太多資源」之間的常見取捨，最終處理的資料跟結果都一樣，差別只在於資源使用的節奏。",
+      "verify": { "manual": "概念題：以一次發動與分批發動的具體對照取代抽象批次處理敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-10-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：把陣列分成固定大小的批次",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/slice",
+      "story": "",
+      "prompt": "chunk 把一個陣列切成固定大小的小批次，模擬「分批處理」的第一步。這段程式會印出什麼？",
+      "code": "function chunk(arr, size) {\n  const result = [];\n  for (let i = 0; i < arr.length; i += size) {\n    result.push(arr.slice(i, i + size));\n  }\n  return result;\n}\n\nconst items = [1, 2, 3, 4, 5, 6, 7];\nconsole.log(chunk(items, 3));",
+      "options": [
+        { "id": "a", "text": "[ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7 ] ]" },
+        { "id": "b", "text": "[ [ 1, 2, 3, 4, 5, 6, 7 ] ]" },
+        { "id": "c", "text": "[ [ 1 ], [ 2 ], [ 3 ], [ 4 ], [ 5 ], [ 6 ], [ 7 ] ]" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "chunk 每次用 slice 切出固定大小（3 個元素）的一批，直到整個陣列都切完為止——7 個元素被切成 [1,2,3]、[4,5,6]、[7] 三個批次。分批處理的第一步，通常就是先把要處理的資料切成這種固定大小的批次，再依序（而不是全部同時）對每一批做併行處理。",
+      "verify": {
+        "checks": [
+          { "code": "function chunk(arr, size) {\n  const result = [];\n  for (let i = 0; i < arr.length; i += size) {\n    result.push(arr.slice(i, i + size));\n  }\n  return result;\n}\nconst items = [1, 2, 3, 4, 5, 6, 7];\nconsole.log(chunk(items, 3));", "expected": "[ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7 ] ]" }
+        ]
+      }
+    }
+  ]
+}

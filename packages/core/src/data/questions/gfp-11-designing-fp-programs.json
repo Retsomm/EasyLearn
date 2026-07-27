@@ -1,0 +1,128 @@
+{
+  "id": "gfp-11",
+  "title": "Ch11：設計函數式程式",
+  "questions": [
+    {
+      "id": "gfp-11-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "先求有、再求對、最後求快：分階段的設計節奏",
+      "docs": "",
+      "story": "",
+      "prompt": "「先求有、再求對、最後求快」建議在動手設計一支程式時，依照什麼樣的優先順序？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "先寫出一個能動、哪怕粗糙的版本（求有），確認方向對了之後，再回頭把設計整理乾淨、修掉邊界案例的錯誤（求對），最後才考慮效能優化（求快）——這個順序刻意把「效能」放在最後，因為過早追求效能容易在還沒確定整體設計正確之前，就把心力花在優化一個之後可能整個被推翻的架構上" },
+        { "id": "b", "text": "應該先追求效能最佳化，把每一行程式碼都寫到最快，之後才考慮功能對不對" },
+        { "id": "c", "text": "這三個階段應該同時進行，沒有先後順序之分" },
+        { "id": "d", "text": "「求對」應該放在最後一步，效能優化應該是設計程式時最優先考慮的事" }
+      ],
+      "answer": "a",
+      "explanation": "這個順序刻意把「效能」放在最後：先寫出一個能動、哪怕粗糙的版本確認方向，再回頭把設計整理乾淨、處理好邊界案例，最後才考慮效能優化。過早追求效能，容易把心力花在優化一個之後可能整個被推翻的架構上，這正是這個階段化節奏想避免的浪費。",
+      "verify": { "manual": "概念題：以三階段設計節奏的具體說明取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-11-q2",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "業務邏輯保持純粹：跟「怎麼拿到資料」分開",
+      "docs": "",
+      "story": "",
+      "prompt": "calculateShippingCost(order, warehouseDistance) 只根據傳入的訂單和倉庫距離計算運費，完全不自己打 API 查詢倉庫距離。這種設計跟「calculateShippingCost 內部自己呼叫 API 查詢倉庫距離」比起來，好處是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "把「怎麼拿到倉庫距離」（呼叫 API，屬於不純的 IO）跟「拿到距離之後怎麼算運費」（純粹的計算邏輯）分開，calculateShippingCost 只負責後者——這讓運費計算邏輯本身變成一個純函式，可以直接傳入任意距離值測試，不需要真的打 API 才能驗證計算邏輯對不對" },
+        { "id": "b", "text": "兩種設計在可測試性上完全沒有差異" },
+        { "id": "c", "text": "calculateShippingCost 應該同時負責查詢距離跟計算運費，這樣職責才夠完整" },
+        { "id": "d", "text": "業務邏輯只要不涉及金額計算，就不需要考慮跟資料存取分開" }
+      ],
+      "answer": "a",
+      "explanation": "把「怎麼拿到倉庫距離」跟「拿到距離之後怎麼算運費」分開，calculateShippingCost 只負責後者——這讓運費計算邏輯變成一個純函式，可以直接傳入任意距離值測試，不需要真的打 API 才能驗證邏輯對不對，也讓同一套計算邏輯可以套用在「距離資料從哪裡來」完全不同的情境下。",
+      "verify": { "manual": "概念題：以運費計算與 API 查詢分離的具體例子取代抽象敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-11-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：運費計算邏輯不需要真正的 API 就能測試",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions",
+      "story": "",
+      "prompt": "這段程式直接傳入假設的距離值測試 calculateShippingCost，完全沒有呼叫任何 API。這段程式會印出什麼？",
+      "code": "function calculateShippingCost(order, warehouseDistanceKm) {\n  const baseCost = 50;\n  const distanceCost = warehouseDistanceKm * 2;\n  return baseCost + distanceCost;\n}\n\nconsole.log(calculateShippingCost({ id: 'A1' }, 10));\nconsole.log(calculateShippingCost({ id: 'A1' }, 100));",
+      "options": [
+        { "id": "a", "text": "70\n250" },
+        { "id": "b", "text": "70\n70" },
+        { "id": "c", "text": "250\n70" },
+        { "id": "d", "text": "報錯" }
+      ],
+      "answer": "a",
+      "explanation": "calculateShippingCost 完全不知道、也不在乎距離值是怎麼來的，只要傳入 warehouseDistanceKm，就能正確算出運費——距離 10 公里算出 70、距離 100 公里算出 250。這正是把業務邏輯寫成純函式的好處：測試時完全不需要真的打 API，直接傳入想測試的距離值即可。",
+      "verify": {
+        "checks": [
+          { "code": "function calculateShippingCost(order, warehouseDistanceKm) {\n  const baseCost = 50;\n  const distanceCost = warehouseDistanceKm * 2;\n  return baseCost + distanceCost;\n}\nconsole.log(calculateShippingCost({ id: 'A1' }, 10));\nconsole.log(calculateShippingCost({ id: 'A1' }, 100));", "expected": "70\n250" }
+        ]
+      }
+    },
+    {
+      "id": "gfp-11-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "資源洩漏：忘記釋放已經取得的資源，會逐漸累積問題",
+      "docs": "",
+      "story": "",
+      "prompt": "一支程式每次處理請求都會開啟一個資料庫連線，但如果處理過程中發生例外、程式提早中斷，導致「關閉連線」那行程式碼沒有機會執行，會發生什麼問題？",
+      "code": "const conn = openConnection();\ndoSomethingThatMightThrow(conn);\nconn.close();",
+      "options": [
+        { "id": "a", "text": "這個連線會變成「資源洩漏」：它已經被開啟、佔用了資源，卻永遠沒有被正確釋放——如果這種情況反覆發生，佔用的資源會隨時間持續累積，最終可能耗盡資料庫能同時處理的連線數上限，讓後續所有請求都沒辦法再拿到新的連線" },
+        { "id": "b", "text": "連線會在程式下一次執行時自動被清理乾淨，不會造成任何問題" },
+        { "id": "c", "text": "資源洩漏只會影響記憶體使用量，不會影響資料庫連線數這種資源" },
+        { "id": "d", "text": "只要不呼叫 doSomethingThatMightThrow，就完全不需要考慮資源釋放的問題" }
+      ],
+      "answer": "a",
+      "explanation": "一旦處理過程中發生例外、程式提早中斷，導致「關閉連線」那行程式碼沒有機會執行，這個連線就會變成資源洩漏——它已經佔用資源，卻永遠沒有被釋放。如果這種情況反覆發生，佔用的資源會隨時間持續累積，最終可能耗盡資料庫能同時處理的連線數上限。",
+      "verify": { "manual": "概念題：以資料庫連線洩漏的具體情境取代抽象資源洩漏敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-11-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "Resource 值：把「取得、使用、釋放」包成一個保證會釋放的整體",
+      "docs": "",
+      "story": "",
+      "prompt": "如果把「開啟連線、使用連線、關閉連線」包成一個 Resource 值，這個值保證「不管中間使用連線的過程有沒有發生例外，關閉連線這一步一定會被執行」。這種保證解決了上一題的什麼問題？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "解決了資源洩漏的問題：Resource 值把「取得資源」跟「保證釋放資源」綁在一起，不管中間使用資源的過程是正常結束還是拋出例外，都會確保釋放這一步一定會被執行——把「用完一定要釋放」這個保證，變成資源這個抽象本身的責任，而不是每個使用者各自要記得的細節" },
+        { "id": "b", "text": "Resource 值只會在使用過程完全沒有發生任何例外時才釋放資源，跟一般寫法沒有差異" },
+        { "id": "c", "text": "Resource 值會讓資源永遠不會被釋放，需要另外手動呼叫釋放函式" },
+        { "id": "d", "text": "Resource 值只能用來管理記憶體，沒辦法用來管理資料庫連線這種資源" }
+      ],
+      "answer": "a",
+      "explanation": "Resource 值把「取得資源」跟「保證釋放資源」綁在一起，不管中間使用資源的過程是正常結束還是拋出例外，都會確保釋放這一步一定會被執行——把「用完一定要釋放」變成資源這個抽象本身的責任，而不是每個使用者各自要記得的細節，正好解決了資源洩漏的問題。",
+      "verify": { "manual": "概念題：以取得釋放綁定一起的具體機制取代抽象 Resource 敘述，無可執行程式碼。" }
+    },
+    {
+      "id": "gfp-11-q6",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "驗證：即使使用資源時拋出例外，釋放資源的動作依然會執行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/try...catch",
+      "story": "",
+      "prompt": "withResource 保證不管 useFn 有沒有拋出例外，release 一定會被呼叫。這段程式會印出什麼？",
+      "code": "function withResource(acquire, release, useFn) {\n  const resource = acquire();\n  try {\n    return useFn(resource);\n  } finally {\n    release(resource);\n  }\n}\n\nconst log = [];\n\ntry {\n  withResource(\n    () => { log.push('取得連線'); return 'conn'; },\n    () => { log.push('釋放連線'); },\n    () => { log.push('使用連線時發生錯誤'); throw new Error('連線中斷'); },\n  );\n} catch (e) {\n  log.push(`捕捉到例外：${e.message}`);\n}\n\nconsole.log(log);",
+      "options": [
+        { "id": "a", "text": "[ '取得連線', '使用連線時發生錯誤', '釋放連線', '捕捉到例外：連線中斷' ]" },
+        { "id": "b", "text": "[ '取得連線', '使用連線時發生錯誤', '捕捉到例外：連線中斷' ]" },
+        { "id": "c", "text": "[ '取得連線', '釋放連線', '使用連線時發生錯誤', '捕捉到例外：連線中斷' ]" },
+        { "id": "d", "text": "報錯，log 陣列是空的" }
+      ],
+      "answer": "a",
+      "explanation": "useFn 執行到一半拋出例外，但 finally 區塊保證 release（釋放連線）一定會在例外往外傳播之前執行——所以順序是先取得連線、使用時出錯、接著釋放連線（即使發生了錯誤也照樣執行），最後例外才真正往外傳播、被外層的 try/catch 捕捉到。這正是 Resource 抽象想保證的效果：不管使用過程順不順利，釋放這一步永遠不會被跳過。",
+      "verify": {
+        "checks": [
+          { "code": "function withResource(acquire, release, useFn) {\n  const resource = acquire();\n  try {\n    return useFn(resource);\n  } finally {\n    release(resource);\n  }\n}\nconst log = [];\ntry {\n  withResource(\n    () => { log.push('取得連線'); return 'conn'; },\n    () => { log.push('釋放連線'); },\n    () => { log.push('使用連線時發生錯誤'); throw new Error('連線中斷'); },\n  );\n} catch (e) {\n  log.push(`捕捉到例外：${e.message}`);\n}\nconsole.log(log);", "expected": "[ '取得連線', '使用連線時發生錯誤', '釋放連線', '捕捉到例外：連線中斷' ]" }
+        ]
+      }
+    }
+  ]
+}

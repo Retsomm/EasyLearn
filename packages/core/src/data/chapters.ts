@@ -95,6 +95,18 @@ import fljs10 from './questions/fljs-10-functional-async.json'
 import fljs11 from './questions/fljs-11-putting-together.json'
 import fljs12 from './questions/fljs-12-transducing.json'
 import fljs13 from './questions/fljs-13-humble-monad.json'
+import gfp1 from './questions/gfp-1-learning-fp.json'
+import gfp2 from './questions/gfp-2-pure-functions.json'
+import gfp3 from './questions/gfp-3-immutable-values.json'
+import gfp4 from './questions/gfp-4-functions-as-values.json'
+import gfp5 from './questions/gfp-5-sequential-programs.json'
+import gfp6 from './questions/gfp-6-error-handling.json'
+import gfp7 from './questions/gfp-7-requirements-as-types.json'
+import gfp8 from './questions/gfp-8-io-as-values.json'
+import gfp9 from './questions/gfp-9-streams-as-values.json'
+import gfp10 from './questions/gfp-10-concurrent-programs.json'
+import gfp11 from './questions/gfp-11-designing-fp-programs.json'
+import gfp12 from './questions/gfp-12-testing-fp-programs.json'
 import ri1 from './questions/ri-1-router.json'
 import ri2 from './questions/ri-2-i18n.json'
 import ri3 from './questions/ri-3-testing.json'
@@ -188,6 +200,15 @@ export const chapters: Chapter[] = [
     levels: [
       fljs1, fljs2, fljs3, fljs4, fljs5, fljs6, fljs7,
       fljs8, fljs9, fljs10, fljs11, fljs12, fljs13,
+    ].map(asLevel),
+  },
+  {
+    id: 'gfp',
+    title: '函數式程式設計實戰（Grokking Functional Programming）',
+    icon: 'eye',
+    levels: [
+      gfp1, gfp2, gfp3, gfp4, gfp5, gfp6,
+      gfp7, gfp8, gfp9, gfp10, gfp11, gfp12,
     ].map(asLevel),
   },
   {
