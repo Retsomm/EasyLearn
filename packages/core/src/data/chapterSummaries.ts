@@ -854,6 +854,125 @@ export const chapterSummaries: Record<string, LevelSummary[]> = {
       ],
     },
   ],
+  react: [
+    {
+      levelId: 'react-1',
+      keyPoints: [
+        'React 元件就是回傳 JSX 標記的 JavaScript 函式，把 HTML 結構、樣式和互動邏輯整合在一起成為可重複使用的 UI 單元；元件名稱必須以大寫字母開頭（如 Profile），React 才能區分自訂元件跟小寫的原生 HTML 標籤（如 section）。',
+        '不應該在元件函式內部巢狀定義其他元件，這會導致效能問題和狀態管理的 bug；正確做法是把所有元件都定義在頂層，再透過 props 向子元件傳遞所需資料。',
+        'JSX 要求元件只能回傳單一根元素：多個並列標籤必須用一個父標籤或空標籤 <>...</>（Fragment）包起來，因為 JSX 轉譯成 JavaScript 物件後，函式沒辦法直接回傳多個物件。',
+        'JSX 比 HTML 更嚴格：自我封閉標籤（如 <img>）必須寫成 <img />，容器標籤也要完整封閉，不能像 HTML 那樣省略結尾標籤；屬性名稱要改用駝峰式命名（如 strokeWidth）、class 要改成 className（但 aria-*／data-* 例外，仍維持連字號格式）。',
+        '大括號 {} 是 JSX 裡「跳進」JavaScript 運算式的入口，只能用在兩個地方：標籤內的文字內容（如 <h1>{name}</h1>），或屬性值等號後面（如 alt={description}），不能用在標籤名稱上。',
+        '看到 {{backgroundColor: \'black\'}} 這種雙大括號寫法時，第一層是 JSX 的表達式標記，第二層才是 JavaScript 物件字面值——這是傳 inline style 物件時的固定寫法，且 CSS 屬性名稱一樣要改成駝峰式（如 backgroundColor）。',
+      ],
+    },
+    {
+      levelId: 'react-2',
+      keyPoints: [
+        '在 JSX 標籤上直接加入 props（如 <Avatar person={{...}} size={100} />），子元件用函式參數的解構語法（function Avatar({ person, size })）讀取這些值，比逐一存取 props 物件屬性更簡潔。',
+        '解構參數時可以用 = 指定預設值（如 size = 100），只有在沒傳這個 prop 或明確傳 undefined 時才會套用預設值；若傳入 null 或 0 則不會使用預設值。',
+        '用展開語法 <Avatar {...props} /> 可以一次把父元件收到的所有 props 轉傳給子元件，省去逐個列舉的麻煩，但過度依賴展開語法往往代表元件結構該重新檢視了。',
+        '巢狀在元件標籤內的 JSX（如 <Card><Avatar /></Card>）會自動變成 children 這個特殊 prop 傳給父元件，讓 Card 可以渲染任意子內容，是實作通用包裝元件（面板、卡片）的關鍵模式。',
+        'props 是唯讀（immutable）的：每次元件重新渲染都會收到新的 props 物件，若要回應使用者互動改變顯示內容，得改用 state，讓父元件傳入不同的 props 值來觸發變化。',
+        '設計元件時，props 可以選擇拆成多個細粒度欄位（如 imageId、name、profession 各自一個 prop），也可以聚合成單一物件 prop（如 person={{ imageId, name, ... }}），兩種方式在彈性與簡潔度之間各有取捨。',
+      ],
+    },
+    {
+      levelId: 'react-3',
+      keyPoints: [
+        '事件處理常式要傳遞函式參照本身，不能加括號呼叫（onClick={handleClick} 而不是 onClick={handleClick()}），加括號會讓函式在渲染當下就立即執行，而不是等使用者互動才執行；事件會往上冒泡到父元件，可用 e.stopPropagation() 阻止繼續傳播，用 e.preventDefault() 阻止瀏覽器的預設行為（如表單送出會重新整理頁面），兩者處理的是不同的事。',
+        '一般變數在元件重新渲染時不會被保留，也不會觸發重新渲染，所以要用 useState 宣告狀態變數；它回傳一個陣列 [值, setter函式]，呼叫 setter（如 setIndex(index + 1)）會讓 React 記住新值並自動重新渲染，而且每個元件實例的 state 都各自獨立、互不影響。',
+        '呼叫 setState 並不會馬上改變目前這次 render 裡讀到的變數值，而是通知 React 下一次 render 要改用新值；同一個事件處理常式內連續呼叫三次 setNumber(number + 1)，因為 number 在整個事件處理常式執行期間都是同一個「快照」值，三次呼叫其實都在做 number(快照值) + 1，最終只會加 1 而不是加 3。',
+        '事件處理常式（甚至像 setTimeout 這種非同步操作）內讀到的 state 值，就像是該次 render 的一張快照：即使 React 之後更新了 state，已經建立好的那個事件處理常式閉包裡的變數值也不會跟著變，這也是很多人覺得「state 更新怎麼慢半拍」的原因。',
+        'React 會等到事件處理常式裡的程式碼全部執行完，才一次性處理所有排隊的 state 更新（batching），所以同一個事件裡連續多次直接傳值呼叫 setState 沒辦法互相累加；要在單一事件裡累加同一個 state，必須改用更新函式（updater function，如 setNumber(n => n + 1)），React 會把這些函式排進佇列依序執行，前一個的回傳值會餵給下一個當輸入。',
+      ],
+    },
+    {
+      levelId: 'react-4',
+      keyPoints: [
+        'Hooks 必須在 React 函式元件或自訂 Hook 的最頂層呼叫，不能放在條件式、迴圈、巢狀函式或 try/catch 區塊內，否則每次渲染時 Hook 的呼叫順序會改變，導致 React 沒辦法正確追蹤狀態。',
+        'Hooks 只能在 React 函式元件和自訂 Hook 裡使用，不能在一般 JavaScript 函式、事件處理常式或 class 元件內呼叫，這樣才能確保元件所有有狀態的邏輯都能從原始碼一眼看出來。',
+        'useEffect 用來讓元件跟外部系統保持同步，它是在每次渲染「之後」執行，而不是綁在特定事件上——例如控制非 React 元件（video 標籤）或連線伺服器這類需求。',
+        '依賴陣列決定 Effect 何時重新執行：空陣列 [] 代表只在元件掛載時執行一次；陣列裡放了變數，就只在該變數改變時才重新執行，避免不必要的重複同步。',
+        'cleanup 函式（Effect 回傳的函式）會在 Effect 下一次重新執行前、或元件卸載時被呼叫，用來停止連線、取消訂閱或清除計時器，避免記憶體洩漏跟重複連線的問題。',
+        'Effect 不是拿來給每個使用者事件寫特殊邏輯用的：事件驅動的邏輯（例如點擊按鈕才要做的事）該放進 event handler，只有真的是渲染本身觸發的同步需求才用 Effect；Strict Mode 在開發模式下會故意讓元件多掛載一次來測試 cleanup 邏輯，所以看到 Effect 執行兩次是正常現象。',
+      ],
+    },
+    {
+      levelId: 'react-5',
+      keyPoints: [
+        'React 的條件渲染通常用 JavaScript 原生的 if/else、三元運算子（? :）或邏輯 AND（&&）來實現，三者各有適用情境：簡單邏輯用 && 最簡潔，複雜邏輯用 if 搭配變數更清楚。',
+        '用 && 運算子時要避免左側直接放數字（如 messageCount &&），因為 0 會被當成 falsy 但整個運算式仍回傳 0，React 會把這個 0 直接渲染出來而不是什麼都不顯示；正確寫法是明確轉成布林條件（如 messageCount > 0 && ...）。',
+        '三元運算子可以在同一個 JSX 元素裡處理兩種不同內容（如 isPacked ? <del>{name}</del> : name），比寫多個 return 陳述式簡潔，但巢狀三元運算子太多層會傷可讀性，這時該考慮抽出成子元件。',
+        '用陣列的 map() 方法可以把資料陣列轉成 JSX 元素陣列（如 people.map(person => <li key={person.id}>{person.name}</li>)），從清單資料動態產生列表項目。',
+        'key 屬性讓 React 能追蹤每個列表項目的身分，即使項目順序改變、被插入或刪除，React 也能正確對應到原本的元件和 DOM，避免狀態錯亂。',
+        '不該用陣列索引當 key（key={index}），因為清單項目被刪除、插入或重新排序時索引會跟著變，導致 React 認錯項目造成 bug；應該用資料本身穩定的唯一識別碼（如資料庫 ID）。',
+      ],
+    },
+    {
+      levelId: 'react-6',
+      keyPoints: [
+        'state 裡的物件雖然技術上可變，但必須當成唯讀來處理：直接修改物件屬性（如 position.x = 5）不會觸發重新渲染，因為 React 偵測不到這個變化，必須建立一個新物件、透過 setState 傳入才能真的觸發更新。',
+        '用展開語法（...person）可以簡潔地複製物件再更新特定欄位，如 setPerson({...person, firstName: newValue})，這樣其他欄位會被保留，不用整個重新列舉一次；更新巢狀物件則要逐層展開（每層深度都要複製一次），或改用 Immer 函式庫讓「看起來像直接修改」的寫法實際上產生新物件。',
+        '陣列 state 不能直接用 push()、pop()、splice() 這類會就地修改的方法，必須改用 concat()、展開語法 [...arr]、或 filter()、map() 這類會回傳新陣列的方法，才能正確觸發重新渲染。',
+        '更新陣列裡的某個物件時，要同時複製陣列跟該物件本身：常見寫法是用 map() 搭配物件展開語法（{...item, field: newValue}）建立新物件，只做淺層複製陣列而沒複製物件本身，還是會不小心改到原本的 state。',
+        'Immer 函式庫可以簡化這整套更新邏輯：允許在一個 draft 參數上直接寫 push()、直接賦值這類看似會 mutate 的程式碼，Immer 會在背後自動產生一份新的 state 副本，不用手動處理層層展開語法。',
+      ],
+    },
+    {
+      levelId: 'react-7',
+      keyPoints: [
+        'React 元件必須是純函式：相同的 props 輸入必須永遠產生相同的 JSX 輸出，就像數學函式 y = 2x，x 是 3 的時候 y 一定是 6，不會因為時間或其他外部狀態而改變。',
+        '元件在渲染階段不能修改渲染前就已經存在的變數或物件（例如全域變數，或傳進來的 prop），這會導致行為不可預測；但可以自由修改渲染過程中「自己新建立」的變數或物件（local mutation），例如在 render 裡新建的陣列可以隨意 push 元素。',
+        'React 的 Strict Mode 在開發模式下會把每個元件函式呼叫兩次，藉此揪出違反純函式規則的元件——如果同樣的呼叫兩次卻得到不同結果，就代表這個元件有副作用或偷偷依賴了外部狀態。',
+        '副作用（例如更新 DOM、呼叫 API）應該放進事件處理常式執行，而不是寫在元件的 render 邏輯裡，因為 render 應該只是純粹的計算過程；真的沒辦法用事件處理常式解決時，才把 useEffect 當作最後手段。',
+        '把元件寫成純函式能帶來實際好處：可以安全地在伺服器端執行、能被 React 安心地快取結果或跳過重新渲染、也讓 React 可以隨時中斷或重新啟動某次渲染而不會產生錯誤結果。',
+      ],
+    },
+    {
+      levelId: 'react-8',
+      keyPoints: [
+        '當兩個子元件需要同步同一份狀態時，應該把這份 state 從兩者身上移除，統一存放在最近的共同父元件，再透過 props 往下傳，這個手法稱為 lifting state up（狀態提升）。',
+        '以手風琴（Accordion）範例來說：若同時只能展開一個 Panel，不該讓每個 Panel 各自用一個布林值 isActive，而是在父元件用單一的 activeIndex 統一追蹤目前展開的是第幾個。',
+        'controlled（受控）元件的狀態完全由外部 props 驅動（需要父元件傳入 value 和 onChange handler）；uncontrolled（非受控）元件則自己管理內部狀態，用起來較簡單但要協調多個元件之間的狀態時比較麻煩。',
+        '子元件沒辦法直接修改父元件的 state，只能透過父元件傳下來的事件處理常式（如 onShow）呼叫它，才能間接觸發父元件更新自己的 state。',
+        'React 應用裡的每一份狀態都該指定一個明確的「擁有者」元件來存放，而不是在多個元件裡各自重複存放同一份狀態，這就是 single source of truth（單一事實來源）的原則。',
+        'state 該放在哪個元件層級不是一開始就決定好、永遠不變的：隨著應用開發演進，有時需要把 state 從子元件搬到父元件，有時反過來往下搬，這都是正常的重構過程。',
+      ],
+    },
+    {
+      levelId: 'react-9',
+      keyPoints: [
+        'React 是依照元件在 UI 樹裡的「位置」（而不是程式碼裡寫的位置）來追蹤 state 的：同一個位置、同一種型別的元件即使重新渲染，state 也會被保留下來。',
+        '當同一個位置的元件型別被換掉（例如從 <Counter /> 換成 <p>），React 會直接銷毀舊元件連同它底下整棵子樹的 state，再重新建立新元件——state 不會留下來。',
+        '條件渲染時，即使 JSX 程式碼看起來不一樣，只要元件在樹裡的位置相同，state 就會被保留；例如同一個 div 裡依條件顯示同一個元件、只是傳不同的 props，state 並不會被重置。',
+        '可以明確給元件加上 key 屬性，強迫 React 把它當成不同的實例看待——只要 key 改變，state 就會被重置，這在切換聊天對象、編輯不同聯絡人這類情境特別有用。',
+        '不該在父元件函式內部定義子元件的函式本體，因為每次渲染都會產生一個「新的」元件定義，讓 React 誤以為是不同元件，因而無故重置了 state。',
+      ],
+    },
+    {
+      levelId: 'react-10',
+      keyPoints: [
+        'reducer 的核心概念是把複雜的 state 更新邏輯從元件裡抽離出來集中管理：事件處理常式只負責描述「使用者做了什麼」（dispatch 一個 action），reducer 函式才負責依 action 的內容算出新的 state。',
+        'action 物件用來表達「發生了什麼事」，而不是直接指定新的 state 值，通常帶一個 type 屬性描述事件類型（如 \'added\'、\'deleted\'），這讓每一次狀態變化的來源都更容易追蹤和除錯。',
+        'useReducer 用 reducer 函式加初始 state 呼叫，會回傳目前的 state 和 dispatch 函式；事件處理常式呼叫 dispatch(action) 後，React 會把這個 action 交給 reducer 算出新 state，適合用在有多個互相關聯的 state 更新的情境。',
+        'Context 透過 createContext()、useContext()、Provider 三步驟解決 prop drilling（一路手動往下傳 props）的問題：先建立 context 物件，需要資料的元件用 useContext() 讀取，祖先元件用 Provider 包住子樹提供值，資料就能跨越任意層級的中間元件直接傳遞。',
+        'Context 有點像 CSS 的繼承：子元件會自動讀到「離自己最近」的那個 Provider 提供的值，同一個元件也可以同時使用或提供好幾個不同的 Context 而互不干擾。',
+        '使用 Context 前應該先考慮替代方案：直接傳 props（讓資料流保持清楚可追蹤）、或把中間層元件重構成接收 children 來減少層級，真的沒有更好的辦法時才用 Context，過度使用會讓資料來源變得難以追蹤。',
+      ],
+    },
+    {
+      levelId: 'react-11',
+      keyPoints: [
+        'useRef 會建立一個帶有 current 屬性的可變物件，修改 ref.current 不會觸發元件重新渲染，適合存放不影響畫面呈現的值，例如 timeout ID 或 DOM 元素參照。',
+        'ref 跟 state 的關鍵差異：state 改變會觸發重新渲染，且每次渲染讀到的都是那次的快照值；ref 則是一個普通的可變物件，改變不會觸發渲染，因此不該在渲染過程中讀寫 ref.current。',
+        '只有當這個資訊只被事件處理常式用到、且不需要反映在畫面上時，才該用 ref（例如存 setInterval 的 ID 供之後 clearInterval 用）；如果這個資訊要顯示在畫面上，就必須用 state，否則畫面不會更新。',
+        '用 useRef 搭配 ref 屬性可以直接拿到 React 管理的真實 DOM 節點，呼叫 focus()、scrollIntoView() 這類瀏覽器原生 API 做焦點管理、捲動定位等 React 宣告式做法本身做不到的事。',
+        '要讓父元件透過 ref 存取子元件內部的 DOM 節點，子元件需要用 forwardRef 包裹、把收到的 ref 轉發給內部真正的 DOM 元素；可以搭配 useImperativeHandle 限制暴露出去的介面，只開放像 focus() 這種特定方法，隱藏其他底層操作。',
+        'ref 操作 DOM 應該當成最後手段（逃生艙），只做非破壞性的操作（如焦點、捲動）；絕對不要手動修改 React 自己在管理的 DOM 節點內容，否則 React 會追蹤不到這個變化，導致畫面跟狀態不一致甚至整個崩潰。',
+      ],
+    },
+  ],
 }
 
 export const getChapterSummary = (chapterId: string): LevelSummary[] | undefined =>
