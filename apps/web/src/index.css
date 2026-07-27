@@ -764,6 +764,88 @@ button {
   flex-shrink: 0;
 }
 
+.recap-level {
+  background: var(--card);
+  border: var(--border-w) var(--border-style) rgba(var(--cyan-rgb), 0.18);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.recap-level-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 16px 18px;
+  text-align: left;
+  color: var(--ink);
+}
+
+.recap-level-title {
+  font-weight: 700;
+  font-size: 15.5px;
+}
+
+.recap-level-chevron {
+  flex-shrink: 0;
+  color: rgba(var(--cyan-rgb), 0.5);
+  transition: transform 0.15s ease;
+}
+
+.recap-level.is-open .recap-level-chevron {
+  transform: rotate(90deg);
+  color: var(--cyan);
+}
+
+.recap-key-points {
+  margin: 0;
+  padding: 0 18px 18px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recap-key-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.recap-key-point::marker {
+  color: var(--cyan);
+}
+
+.recap-key-point-text {
+  flex: 1;
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--ink-strong);
+}
+
+.recap-key-point .save-btn {
+  margin-left: 0;
+  margin-top: 2px;
+}
+
+.keypoint-book-item {
+  background: var(--card);
+  border: var(--border-w) var(--border-style) rgba(var(--cyan-rgb), 0.18);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+
+.keypoint-book-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: rgba(var(--cyan-rgb), 0.5);
+  margin-bottom: 10px;
+}
+
 .book-screen .review-btn {
   max-width: none;
 }

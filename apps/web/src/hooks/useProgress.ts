@@ -20,6 +20,8 @@ const defaultProgress: Progress = {
   wrongIds: {},
   // 收藏題目：{ [questionId]: true }
   savedIds: {},
+  // 收藏章節重點：{ [keyPointId]: true }，keyPointId 見 packages/core 的 keyPointId()
+  savedKeyPointIds: {},
   // 連續學習天數：{ count, last: 'YYYY-MM-DD' }
   streak: { count: 0, last: null },
   // 每日 XP 紀錄：{ [YYYY-MM-DD]: 當日累計 XP }
@@ -149,7 +151,23 @@ export const useProgress = () => {
     }
   }
 
-  const finishLevel = (levelId: string, correct: number, total: number, xpEarned: number) => {
+  // 收藏／取消收藏章節重點
+  const toggleSavedKeyPoint = (keyPointId: string) => {
+    setProgress((p) => {
+      const savedKeyPointIds = { ...p.savedKeyPointIds }
+      if (savedKeyPointIds[keyPointId]) delete savedKeyPointIds[keyPointId]
+      else savedKeyPointIds[keyPointId] = true
+      return { ...p, savedKeyPointIds }
+    })
+
+    if (isSignedIn) {
+      postJson('/api/progress/save-keypoint-toggle', { keyPointId })
+        .then(setProgress)
+        .catch((err) => console.error('toggleSavedKeyPoint sync failed', err))
+    }
+  }
+
+  const finishLevel =(levelId: string, correct: number, total: number, xpEarned: number) => {
     setProgress((p) => {
       const prev = p.completedLevels[levelId]
       return {
@@ -204,6 +222,7 @@ export const useProgress = () => {
     progress,
     answerQuestion,
     toggleSaved,
+    toggleSavedKeyPoint,
     finishLevel,
     finishReview,
     resetLocalProgress,

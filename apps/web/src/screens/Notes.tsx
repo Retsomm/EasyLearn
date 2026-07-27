@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from 'react'
 import Icon from '@/components/Icons'
-import { getWrongQuestions, type Progress } from '@easylearn/core'
+import { getWrongQuestions, getSavedKeyPoints, type Progress } from '@easylearn/core'
 
 const handleActivateKey = (handler: () => void) => (e: KeyboardEvent) => {
   if (e.key === 'Enter' || e.key === ' ') {
@@ -13,13 +13,22 @@ interface NotesProps {
   progress: Progress
   onOpenWrongBook: () => void
   onOpenSavedBook: () => void
+  onOpenSavedKeyPoints: () => void
   onReview: () => void
   onPracticeSaved: () => void
 }
 
-const Notes = ({ progress, onOpenWrongBook, onOpenSavedBook, onReview, onPracticeSaved }: NotesProps) => {
+const Notes = ({
+  progress,
+  onOpenWrongBook,
+  onOpenSavedBook,
+  onOpenSavedKeyPoints,
+  onReview,
+  onPracticeSaved,
+}: NotesProps) => {
   const wrongCount = getWrongQuestions(progress.wrongIds ?? {}).length
   const savedCount = Object.keys(progress.savedIds ?? {}).length
+  const savedKeyPointCount = getSavedKeyPoints(progress.savedKeyPointIds ?? {}).length
 
   return (
     <div className="screen notes-screen">
@@ -74,6 +83,22 @@ const Notes = ({ progress, onOpenWrongBook, onOpenSavedBook, onReview, onPractic
         >
           {savedCount === 0 ? '無收藏題' : '開始練習'}
         </button>
+      </div>
+
+      <div
+        className="note-card note-card-saved"
+        onClick={onOpenSavedKeyPoints}
+        onKeyDown={handleActivateKey(onOpenSavedKeyPoints)}
+        role="button"
+        tabIndex={0}
+      >
+        <div className="note-card-head">
+          <span className="note-card-title">
+            <Icon name="star" size={20} className="icon-filled" />
+            收藏重點
+          </span>
+        </div>
+        <p className="note-card-count">目前累積 {savedKeyPointCount} 條收藏重點</p>
       </div>
     </div>
   )

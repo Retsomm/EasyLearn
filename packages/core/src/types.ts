@@ -96,6 +96,7 @@ export interface Progress {
   completedLevels: Record<string, LevelRecord>
   wrongIds: Record<string, WrongEntryMeta>
   savedIds: Record<string, boolean>
+  savedKeyPointIds: Record<string, boolean>
   streak: Streak
   xpLog: Record<string, number>
   dailyStats: Record<string, DailyStat>

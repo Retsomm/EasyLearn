@@ -18,6 +18,7 @@ const defaultProgress: Progress = {
   completedLevels: {},
   wrongIds: {},
   savedIds: {},
+  savedKeyPointIds: {},
   streak: { count: 0, last: null },
   xpLog: {},
   dailyStats: {},

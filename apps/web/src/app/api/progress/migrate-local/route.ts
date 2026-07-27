@@ -41,6 +41,9 @@ export const POST = async (request: Request) => {
       ...Object.keys(local.savedIds ?? {})
         .filter((questionId) => local.savedIds[questionId])
         .map((questionId) => prisma.savedQuestion.create({ data: { userId, questionId } })),
+      ...Object.keys(local.savedKeyPointIds ?? {})
+        .filter((keyPointId) => local.savedKeyPointIds[keyPointId])
+        .map((keyPointId) => prisma.savedKeyPoint.create({ data: { userId, keyPointId } })),
       ...Object.entries(local.xpLog ?? {}).map(([date, amount]) =>
         prisma.xpLog.create({ data: { userId, date, amount } }),
       ),
