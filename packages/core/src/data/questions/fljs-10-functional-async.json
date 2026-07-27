@@ -93,16 +93,16 @@
       "topic": "Observable 是「惰性」的：沒有訂閱，就完全不會執行",
       "docs": "",
       "story": "",
-      "prompt": "建立一個 Observable，如果建立之後完全沒有呼叫 subscribe()，裡面描述的邏輯會不會執行？跟 Promise 比起來呢？",
+      "prompt": "建立一個預設的 cold Observable，如果建立之後完全沒有呼叫 subscribe()，裡面描述的邏輯會不會執行？跟 Promise 比起來呢？",
       "code": "",
       "options": [
-        { "id": "a", "text": "完全不會執行：Observable 是「惰性」（lazy）的，只有在真的呼叫 subscribe() 訂閱之後，裡面描述的邏輯才會真正開始執行——沒有人訂閱，等於這個 Observable 什麼事都還沒發生，這跟 Promise「建立當下就立刻執行」的急切特性完全相反" },
+        { "id": "a", "text": "完全不會執行：cold Observable 是「惰性」（lazy）的，只有在真的呼叫 subscribe() 訂閱之後，裡面描述的邏輯才會真正開始執行——沒有人訂閱，等於這個 Observable 什麼事都還沒發生，這跟 Promise「建立當下就立刻執行」的急切特性完全相反（注意：像 RxJS 的 shared／multicast Observable 會把同一次執行結果共享給所有訂閱者，不是每次訂閱都重新跑一次，這裡討論的是預設的 cold Observable）" },
         { "id": "b", "text": "Observable 跟 Promise 一樣，建立當下就會立刻執行，跟訂閱與否無關" },
         { "id": "c", "text": "Observable 只有在程式結束前的最後一刻才會自動執行一次" },
         { "id": "d", "text": "Observable 完全不需要訂閱，建立出來就自動會把結果印出來" }
       ],
       "answer": "a",
-      "explanation": "Observable 是「惰性」的：只有在真的呼叫 subscribe() 之後，裡面描述的邏輯才會開始執行；沒有人訂閱，這個 Observable 就什麼事都還沒發生。這跟 Promise「建立當下就立刻執行」的急切特性完全相反——同一個 Observable 甚至可以被訂閱多次，每次訂閱都重新觸發一次執行，這也是 Promise（只會解決一次）做不到的。",
+      "explanation": "cold Observable 是「惰性」的：只有在真的呼叫 subscribe() 之後，裡面描述的邏輯才會開始執行；沒有人訂閱，這個 Observable 就什麼事都還沒發生。這跟 Promise「建立當下就立刻執行」的急切特性完全相反——cold Observable 可以被訂閱多次，每次訂閱都重新觸發一次執行，這也是 Promise（只會解決一次）做不到的；但這個「每次訂閱重新執行」只適用於 cold Observable，RxJS 的 shared／multicast Observable 會讓多個訂閱者共享同一次執行結果，不會每訂閱一次就重跑一次。",
       "verify": { "manual": "概念題：對照 Promise 的急切性，以 Observable 惰性取代抽象敘述，無可執行程式碼。" }
     },
     {
@@ -112,16 +112,16 @@
       "topic": "宣告式的時間：用 map／filter 處理「隨時間發生的一連串事件」",
       "docs": "",
       "story": "",
-      "prompt": "一連串使用者點擊事件，可以用 Observable 表示成「隨時間發生的一連串值」，再用 .map()、.filter() 這種操作處理。這跟手動寫一堆 addEventListener 回呼、自己管理狀態比起來，好處是什麼？",
+      "prompt": "一連串使用者點擊事件，可以用 Observable 表示成「隨時間發生的一連串值」，再用 RxJS 的 pipe(map(...), filter(...)) 這種 operator 組合方式處理（RxJS 的 map、filter 是透過 pipe 串接的獨立 operator 函式，不是直接掛在 Observable 上呼叫的方法）。這跟手動寫一堆 addEventListener 回呼、自己管理狀態比起來，好處是什麼？",
       "code": "",
       "options": [
-        { "id": "a", "text": "讓「處理一連串隨時間發生的事件」這件事，可以用跟處理陣列一樣的宣告式工具（map、filter）來表達，不用手動管理「現在事件觸發到第幾次了」「上一次的值是什麼」這些簿記細節——這正是把 FP 處理靜態資料集合的宣告式風格，延伸套用到「隨時間變化的資料流」上，讓非同步事件也能用同樣熟悉的工具處理" },
+        { "id": "a", "text": "讓「處理一連串隨時間發生的事件」這件事，可以用跟處理陣列一樣的宣告式工具（RxJS 的 map、filter 這些 operator，透過 pipe(map(...), filter(...)) 組合起來）來表達，不用手動管理「現在事件觸發到第幾次了」「上一次的值是什麼」這些簿記細節——這正是把 FP 處理靜態資料集合的宣告式風格，延伸套用到「隨時間變化的資料流」上，讓非同步事件也能用同樣熟悉的工具處理" },
         { "id": "b", "text": "Observable 沒辦法使用 map、filter 這種操作，只能搭配迴圈手動處理" },
         { "id": "c", "text": "使用 Observable 之後，完全不需要考慮事件發生的先後順序" },
         { "id": "d", "text": "這種做法只能用在滑鼠點擊事件上，沒辦法用在其他種類的非同步事件" }
       ],
       "answer": "a",
-      "explanation": "Observable 讓「處理一連串隨時間發生的事件」，可以用跟處理陣列一樣熟悉的宣告式工具（map、filter）表達，不用手動管理事件觸發次數、上一次的值這些簿記細節。這正是把 FP 處理靜態資料集合的宣告式風格，延伸套用到「隨時間變化的資料流」上，讓非同步事件處理也能享受到跟同步陣列操作一樣的表達力。",
+      "explanation": "Observable 讓「處理一連串隨時間發生的事件」，可以用跟處理陣列一樣熟悉的宣告式工具表達——在 RxJS 裡是把 map、filter 這些 operator 透過 pipe(map(...), filter(...)) 串接起來，不用手動管理事件觸發次數、上一次的值這些簿記細節。這正是把 FP 處理靜態資料集合的宣告式風格，延伸套用到「隨時間變化的資料流」上，讓非同步事件處理也能享受到跟同步陣列操作一樣的表達力。",
       "verify": { "manual": "概念題：以 Observable 宣告式處理事件流的具體例子取代抽象敘述，無可執行程式碼。" }
     }
   ]

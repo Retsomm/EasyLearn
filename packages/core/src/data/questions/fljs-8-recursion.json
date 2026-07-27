@@ -94,7 +94,7 @@
       "docs": "",
       "story": "",
       "prompt": "「尾呼叫」指的是遞迴呼叫發生在函式的最後一步，回傳之後沒有其他事要做。ES6 規格裡定義了「正確尾呼叫」（PTC）最佳化。這代表在 JavaScript 裡寫出尾呼叫形式的遞迴，就能保證不會堆疊溢位嗎？",
-      "code": "function factorialTail(n, acc = 1) {\n  if (n <= 1) return acc;\n  return factorialTail(n - 1, n * acc);\n}",
+      "code": "\"use strict\";\n\nfunction factorialTail(n, acc = 1) {\n  if (n <= 1) return acc;\n  return factorialTail(n - 1, n * acc);\n}",
       "options": [
         { "id": "a", "text": "不能保證：雖然 ES6 規格定義了 PTC 這個最佳化，但實務上除了少數引擎之外，主流 JavaScript 引擎（包括 V8）大多沒有真的實作 PTC——即使程式碼寫成尾呼叫形式，在大多數環境裡遞迴深度夠大時，還是可能發生堆疊溢位，不能假設「寫成尾呼叫」就等於「引擎會幫你最佳化」" },
         { "id": "b", "text": "可以保證，因為所有 JavaScript 引擎都完整實作了 ES6 規格裡的 PTC" },
