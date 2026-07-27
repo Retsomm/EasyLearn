@@ -29,7 +29,7 @@
       "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Recursion",
       "story": "",
       "prompt": "這段程式會印出什麼？",
-      "code": "function evalWithStack(expr) {\n  if (typeof expr === 'number') return expr;\n  const [op, leftExpr, rightExpr] = expr;\n  const left = evalWithStack(leftExpr);\n  const right = evalWithStack(rightExpr);\n  if (op === '+') return left + right;\n  if (op === '*') return left * right;\n  throw new Error('unsupported');\n}\n\nconsole.log(evalWithStack(['+', 2, ['*', 3, 4]]));",
+      "code": "function evalRecursive(expr) {\n  if (typeof expr === 'number') return expr;\n  const [op, leftExpr, rightExpr] = expr;\n  const left = evalRecursive(leftExpr);\n  const right = evalRecursive(rightExpr);\n  if (op === '+') return left + right;\n  if (op === '*') return left * right;\n  throw new Error('unsupported');\n}\n\nconsole.log(evalRecursive(['+', 2, ['*', 3, 4]]));",
       "options": [
         { "id": "a", "text": "14" },
         { "id": "b", "text": "20" },
@@ -40,7 +40,7 @@
       "explanation": "不管是用 JS 遞迴呼叫實作，還是改成用明確的堆疊手動管理求值順序，只要邏輯正確，算出來的答案應該完全一樣：['+', 2, ['*', 3, 4]] 一樣是先算內層乘法得到 12，再加上 2 得到 14。顯式控制直譯器的重點不是「答案會不同」，而是「用來管理求值順序的機制，從偷偷倚賴宿主語言的堆疊，換成自己明確處理」。",
       "verify": {
         "checks": [
-          { "code": "function evalWithStack(expr) {\n  if (typeof expr === 'number') return expr;\n  const [op, leftExpr, rightExpr] = expr;\n  const left = evalWithStack(leftExpr);\n  const right = evalWithStack(rightExpr);\n  if (op === '+') return left + right;\n  if (op === '*') return left * right;\n  throw new Error('unsupported');\n}\nconsole.log(evalWithStack(['+', 2, ['*', 3, 4]]));", "expected": "14" }
+          { "code": "function evalRecursive(expr) {\n  if (typeof expr === 'number') return expr;\n  const [op, leftExpr, rightExpr] = expr;\n  const left = evalRecursive(leftExpr);\n  const right = evalRecursive(rightExpr);\n  if (op === '+') return left + right;\n  if (op === '*') return left * right;\n  throw new Error('unsupported');\n}\nconsole.log(evalRecursive(['+', 2, ['*', 3, 4]]));", "expected": "14" }
         ]
       }
     },

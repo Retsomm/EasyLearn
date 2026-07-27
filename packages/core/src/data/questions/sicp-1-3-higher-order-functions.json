@@ -74,7 +74,7 @@
       "topic": "不動點：通用方法與特定函式無關",
       "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Recursion",
       "story": "",
-      "prompt": "不動點方法（fixed-point）不斷把 f(x) 套用在猜測值上，直到結果幾乎不再變動為止，這個「不斷逼近」的通用邏輯跟傳入的 f 是什麼函式無關。請填入正確的引數，讓 fixedPoint 能對任意 f 逼近不動點。",
+      "prompt": "不動點方法（fixed-point）不斷把 f(x) 套用在猜測值上，直到結果幾乎不再變動為止，這個「不斷逼近」的通用邏輯跟傳入的 f 是什麼函式無關。請填入正確的引數，讓 fixedPoint 能對任何「會收斂」的 f 逼近不動點（不是每個 f 從任意起始猜測值都會收斂，但只要會收斂，逼近的邏輯就是同一套，不用因為 f 不同而改寫）。",
       "code": "function fixedPoint(f, guess) {\n  const next = f(guess);\n  if (Math.abs(next - guess) < 0.0001) {\n    return next;\n  }\n  return fixedPoint(f, ____);\n}\n\nconsole.log(fixedPoint((x) => (x + 2 / x) / 2, 1).toFixed(2));",
       "options": [
         { "id": "a", "text": "next" },

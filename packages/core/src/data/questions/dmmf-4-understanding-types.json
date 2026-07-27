@@ -90,15 +90,15 @@
       "docs": "",
       "story": "",
       "prompt": "如果改用「一個帶標籤的物件，tag 只能是 'Cash'、'Card'、'Check' 三選一，每個 tag 各自帶著自己需要的欄位」來表示付款方式，取代上一題那種一堆可為 null 欄位的設計，能解決什麼問題？",
-      "code": "const payment1 = { tag: 'Cash', amount: 100 };\nconst payment2 = { tag: 'Card', cardNumber: '1234' };\n// 沒有辦法建立出「tag 是 Cash，卻又同時帶著 cardNumber」這種矛盾資料",
+      "code": "type Payment =\n  | { tag: 'Cash'; amount: number }\n  | { tag: 'Card'; cardNumber: string }\n  | { tag: 'Check'; checkNumber: string };\n\nconst payment1: Payment = { tag: 'Cash', amount: 100 };\n// const payment2: Payment = { tag: 'Cash', amount: 100, cardNumber: '1234' };\n// ↑ TypeScript 編譯期就會直接報錯：Cash 這個 tag 沒有 cardNumber 這個欄位，\n//   不是靠執行期檢查擋下來的",
       "options": [
-        { "id": "a", "text": "這種設計讓「同時填兩種付款方式」這種矛盾狀態，從資料結構上就沒辦法被建立出來——每一個值永遠只有一個 tag，對應到的欄位也只有那個 tag 專屬的欄位，不可能出現「tag 是 Cash 卻又帶著 cardNumber」這種矛盾組合。這正是「讓不合法的狀態沒辦法被表示出來」：與其寫程式碼去檢查、防堵不合法的組合，不如讓型別設計本身就不允許這種組合存在" },
+        { "id": "a", "text": "這種設計讓「同時填兩種付款方式」這種矛盾狀態，在 TypeScript 這種有靜態型別檢查的語言裡，從編譯期就會被直接擋下來——每一個 Payment 值永遠只對應一個 tag 和它專屬的欄位，型別檢查器不允許出現「tag 是 Cash 卻又帶著 cardNumber」這種矛盾組合。這正是「讓不合法的狀態沒辦法被表示出來」：與其寫程式碼去檢查、防堵不合法的組合，不如讓型別系統本身就不允許這種組合存在——但這個保證要靠像 TypeScript 這樣會做靜態檢查的型別系統才成立，單純的 JavaScript 物件字面量本身沒有這種強制力，寫成 tagged union 這個「形狀」只是慣例，不會阻止你在執行期硬塞進不屬於這個 tag 的欄位" },
         { "id": "b", "text": "這種設計沒辦法解決任何問題，跟上一題可為 null 欄位的設計效果完全一樣" },
         { "id": "c", "text": "這種設計需要額外寫更多執行期檢查程式碼，才能防止不合法組合，型別本身幫不上忙" },
         { "id": "d", "text": "這種設計只是把問題延後到執行期才發現，跟原本的設計沒有本質差異" }
       ],
       "answer": "a",
-      "explanation": "這正是全書最重要的一句口號：「讓不合法的狀態沒辦法被表示出來」。用 tagged union 表示付款方式後，每個值永遠只對應一個 tag 和它專屬的欄位，根本沒有辦法建立出「tag 是 Cash 又同時帶著 cardNumber」這種矛盾資料——不是靠執行期寫更多 if 檢查去防堵，而是讓型別設計從根本上就不允許這種組合存在。",
+      "explanation": "這正是全書最重要的一句口號：「讓不合法的狀態沒辦法被表示出來」。用 tagged union 表示付款方式後，每個值永遠只對應一個 tag 和它專屬的欄位——但這個保證的來源是 TypeScript 編譯期的靜態型別檢查：型別檢查器會直接拒絕「tag 是 Cash 又同時帶著 cardNumber」這種寫法，不需要靠執行期寫更多 if 檢查去防堵。要注意這個強制力來自型別系統，如果只是在純 JavaScript（沒有型別檢查）裡照著這個形狀寫物件字面量，那只是一種命名慣例，執行期本身並不會阻止你建立出矛盾的資料。",
       "verify": { "manual": "概念題：呼應上一題反面案例，以 tagged union 解法取代抽象口號敘述，無可執行程式碼。" }
     },
     {

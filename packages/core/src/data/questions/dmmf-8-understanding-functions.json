@@ -29,7 +29,7 @@
       "docs": "",
       "story": "",
       "prompt": "divide(a, b) 這個函式，如果它的型別簽章宣稱接受「任意兩個 number」，但對「b 是 0」這種輸入完全沒有處理、執行到那一行直接拋出例外中斷程式，這樣算不算一個「全函式」（total function）？",
-      "code": "function divide(a, b) {\n  return a / b;\n}",
+      "code": "function divide(a, b) {\n  if (b === 0) {\n    throw new Error('divide by zero');\n  }\n  return a / b;\n}",
       "options": [
         { "id": "a", "text": "不算：全函式要求「宣稱接受的每一種輸入」都必須有明確定義的輸出，如果簽章宣稱接受任意 number，卻對某些輸入沒有正常回傳值、而是拋出例外中斷執行，這就是一個「偏函式」（partial function）——簽章宣稱能處理的範圍其實藏著沒被覆蓋到的例外情況" },
         { "id": "b", "text": "算，因為大部分情況下 divide 都能正常運作，只有極少數輸入會出問題" },
@@ -70,7 +70,7 @@
       "topic": "改寫成全函式：用 Option 表示「可能沒有值」，不再拋出例外",
       "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object",
       "story": "",
-      "prompt": "firstElementSafe 把「拿不到值」也表示成一個正常的回傳值（{ tag: 'None' }），不再對任何輸入拋出例外。這段程式會印出什麼？",
+      "prompt": "firstElementSafe 接受「字串陣列」，把「拿不到值」也表示成一個正常的回傳值（{ tag: 'None' }），對合法輸入（字串陣列，不管是不是空的）不再拋出例外。這段程式會印出什麼？",
       "code": "function firstElementSafe(arr) {\n  if (arr.length === 0) return { tag: 'None' };\n  return { tag: 'Some', value: arr[0].toUpperCase() };\n}\n\nfunction describe(opt) {\n  return opt.tag === 'Some' ? `拿到：${opt.value}` : '陣列是空的';\n}\n\nconsole.log(describe(firstElementSafe(['hello', 'world'])));\nconsole.log(describe(firstElementSafe([])));",
       "options": [
         { "id": "a", "text": "拿到：HELLO\n陣列是空的" },
@@ -79,7 +79,7 @@
         { "id": "d", "text": "報錯" }
       ],
       "answer": "a",
-      "explanation": "firstElementSafe 對「空陣列」這種輸入，回傳的是一個正常定義好的值（{ tag: 'None' }），不是拋出例外——現在不管傳什麼陣列進去，這個函式對「宣稱能接受的每一種輸入」都有明確的輸出，是一個真正的全函式。呼叫者被迫透過 describe 這種函式檢查 tag，才能拿到裡面的值，不會像原本的 firstElement 那樣，一不小心就讓例外意外中斷整個程式。",
+      "explanation": "firstElementSafe 對「空陣列」這種輸入，回傳的是一個正常定義好的值（{ tag: 'None' }），不是拋出例外——只要傳進來的是它簽章宣稱的「字串陣列」，不管是不是空的，這個函式對「宣稱能接受的每一種輸入」都有明確的輸出，是一個真正的全函式（如果傳進去的陣列第一個元素不是字串，例如數字陣列，呼叫 .toUpperCase() 一樣會拋例外——那是超出簽章宣稱範圍的輸入，不影響這裡「全函式」的判斷）。呼叫者被迫透過 describe 這種函式檢查 tag，才能拿到裡面的值，不會像原本的 firstElement 那樣，一不小心就讓例外意外中斷整個程式。",
       "verify": {
         "checks": [
           { "code": "function firstElementSafe(arr) {\n  if (arr.length === 0) return { tag: 'None' };\n  return { tag: 'Some', value: arr[0].toUpperCase() };\n}\nfunction describe(opt) {\n  return opt.tag === 'Some' ? `拿到：${opt.value}` : '陣列是空的';\n}\nconsole.log(describe(firstElementSafe(['hello', 'world'])));\nconsole.log(describe(firstElementSafe([])));", "expected": "拿到：HELLO\n陣列是空的" }
