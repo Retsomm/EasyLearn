@@ -11,6 +11,20 @@ import {
   NotoSansTC_700Bold,
   NotoSansTC_900Black,
 } from '@expo-google-fonts/noto-sans-tc';
+import { SpaceGrotesk_400Regular, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
+import { Rajdhani_400Regular, Rajdhani_500Medium, Rajdhani_700Bold } from '@expo-google-fonts/rajdhani';
+import {
+  Cinzel_400Regular,
+  Cinzel_500Medium,
+  Cinzel_700Bold,
+  Cinzel_800ExtraBold,
+} from '@expo-google-fonts/cinzel';
+import {
+  Orbitron_400Regular,
+  Orbitron_500Medium,
+  Orbitron_700Bold,
+  Orbitron_800ExtraBold,
+} from '@expo-google-fonts/orbitron';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -23,6 +37,7 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/components/useColorScheme';
 import { tokenCache } from '@/lib/tokenCache';
 import { ProgressProvider } from '@/context/ProgressContext';
+import { AppThemeProvider } from '@/context/AppThemeContext';
 
 // OAuth 登入走系統瀏覽器跳轉回 App 時，讓瀏覽器 session 正常關閉
 WebBrowser.maybeCompleteAuthSession();
@@ -49,8 +64,12 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   // 對照 apps/web/src/app/layout.tsx 從 Google Fonts 載入的同一組字型／weight
-  // （JetBrains Mono 400/500/700/800、Noto Sans TC 400/500/700/900），
-  // 樣式裡要用哪個 weight 直接引用 constants/theme.ts 的 fonts.mono／fonts.sans。
+  // （JetBrains Mono 400/500/700/800、Noto Sans TC 400/500/700/900），內文字型（fonts.sans）
+  // 六個主題都共用同一套，樣式裡要用哪個 weight 直接引用 constants/theme.ts 的 fonts.sans。
+  //
+  // 另外 4 組（Space Grotesk／Rajdhani／Cinzel／Orbitron）是帳號頁「外觀主題」六色切換裡，
+  // 除了 default 以外每個主題各自覆寫的展示用等寬字型（對照各主題 CSS 的 --font-mono），
+  // 只用在 constants/themePalettes.ts 的 THEME_STYLES[..].mono，不透過 fonts.mono 存取。
   const [loaded, error] = useFonts({
     JetBrainsMono_400Regular,
     JetBrainsMono_500Medium,
@@ -60,6 +79,20 @@ export default function RootLayout() {
     NotoSansTC_500Medium,
     NotoSansTC_700Bold,
     NotoSansTC_900Black,
+    SpaceGrotesk_400Regular,
+    SpaceGrotesk_500Medium,
+    SpaceGrotesk_700Bold,
+    Rajdhani_400Regular,
+    Rajdhani_500Medium,
+    Rajdhani_700Bold,
+    Cinzel_400Regular,
+    Cinzel_500Medium,
+    Cinzel_700Bold,
+    Cinzel_800ExtraBold,
+    Orbitron_400Regular,
+    Orbitron_500Medium,
+    Orbitron_700Bold,
+    Orbitron_800ExtraBold,
   });
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
@@ -81,9 +114,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY!} tokenCache={tokenCache}>
-          <ProgressProvider>
-            <RootLayoutNav />
-          </ProgressProvider>
+          <AppThemeProvider>
+            <ProgressProvider>
+              <RootLayoutNav />
+            </ProgressProvider>
+          </AppThemeProvider>
         </ClerkProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

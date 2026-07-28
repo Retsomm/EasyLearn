@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { colors, fonts } from '@/constants/theme';
+import type { ColorPalette, ThemeStyle } from '@/constants/themePalettes';
+import { useAppTheme } from '@/context/AppThemeContext';
 
 interface CodeBlockProps {
   code: string;
@@ -14,7 +15,7 @@ interface CodeBlockProps {
 const TOKEN_RE =
   /(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`)|\b(const|let|var|function|return|if|else|for|of|in|new|typeof|class|import|export|from|true|false|null|undefined)\b|(\b\d+(?:\.\d+)?\b)/g;
 
-const highlight = (code: string): ReactNode[] => {
+const highlight = (code: string, styles: ReturnType<typeof makeStyles>): ReactNode[] => {
   const matches = Array.from(code.matchAll(TOKEN_RE));
   const { parts, last } = matches.reduce<{ parts: ReactNode[]; last: number }>(
     (acc, m, i) => {
@@ -43,31 +44,35 @@ const highlight = (code: string): ReactNode[] => {
 };
 
 export default function CodeBlock({ code, scroll = true }: CodeBlockProps) {
+  const { colors, style: themeStyle } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors, themeStyle), [colors, themeStyle]);
   if (!code) return null;
   if (!scroll) {
     return (
       <View style={styles.wrap}>
-        <Text style={styles.code}>{highlight(code)}</Text>
+        <Text style={styles.code}>{highlight(code, styles)}</Text>
       </View>
     );
   }
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.wrap}>
-      <Text style={styles.code}>{highlight(code)}</Text>
+      <Text style={styles.code}>{highlight(code, styles)}</Text>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.create({
   wrap: {
     backgroundColor: colors.codeBg,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: 'rgba(95, 240, 224, 0.15)',
     marginVertical: 8,
   },
   code: {
     color: colors.ink,
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 13,
     lineHeight: 23,
     padding: 16,

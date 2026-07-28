@@ -3,11 +3,12 @@ import { ActivityIndicator, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { View } from '@/components/Themed';
-import { colors } from '@/constants/theme';
+import { useAppTheme } from '@/context/AppThemeContext';
 import { useProgress } from '@/context/ProgressContext';
 import Notes from '@/screens/Notes';
 import QuestionBook from '@/screens/QuestionBook';
 import Quiz from '@/screens/Quiz';
+import SavedKeyPoints from '@/screens/SavedKeyPoints';
 import {
   getSavedQuestions,
   getWrongEntries,
@@ -22,13 +23,16 @@ type ViewState =
   | { name: 'notes' }
   | { name: 'wrongbook' }
   | { name: 'savedbook' }
+  | { name: 'savedkeypoints' }
   | { name: 'review'; questions: Question[] }
   | { name: 'savedpractice'; questions: Question[] };
 
-// 對照 apps/web App.tsx 裡 notes/wrongbook/savedbook/review/savedpractice 這幾支 view，
-// 差別是這裡範圍只到 Notes tab，跟 Home tab 各自獨立一個狀態機（理由同 index.tsx 的註解）
+// 對照 apps/web App.tsx 裡 notes/wrongbook/savedbook/savedkeypoints/review/savedpractice
+// 這幾支 view，差別是這裡範圍只到 Notes tab，跟 Home tab 各自獨立一個狀態機（理由同 index.tsx 的註解）
 export default function NotesScreen() {
-  const { progress, hydrated, toggleSaved, answerQuestion, finishLevel, finishReview } = useProgress();
+  const { progress, hydrated, toggleSaved, toggleSavedKeyPoint, answerQuestion, finishLevel, finishReview } =
+    useProgress();
+  const { colors } = useAppTheme();
   const [view, setView] = useState<ViewState>({ name: 'notes' });
   const insets = useSafeAreaInsets();
 
@@ -104,12 +108,21 @@ export default function NotesScreen() {
         onBack={() => setView({ name: 'notes' })}
       />
     );
+  } else if (view.name === 'savedkeypoints') {
+    content = (
+      <SavedKeyPoints
+        savedKeyPointIds={progress.savedKeyPointIds}
+        onToggleSavedKeyPoint={toggleSavedKeyPoint}
+        onBack={() => setView({ name: 'notes' })}
+      />
+    );
   } else {
     content = (
       <Notes
         progress={progress}
         onOpenWrongBook={() => setView({ name: 'wrongbook' })}
         onOpenSavedBook={() => setView({ name: 'savedbook' })}
+        onOpenSavedKeyPoints={() => setView({ name: 'savedkeypoints' })}
         onReview={startReview}
         onPracticeSaved={startSavedPractice}
       />

@@ -1,16 +1,14 @@
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
-import { colors, fonts } from '@/constants/theme';
+import { fonts } from '@/constants/theme';
+import type { ColorPalette, ThemeStyle } from '@/constants/themePalettes';
+import { useAppTheme } from '@/context/AppThemeContext';
 import { chapters, LEVEL_SIZE, type Progress } from '@easylearn/core';
 
 type StatusIcon = 'check-circle' | 'play';
-
-const STATUS_COLOR: Record<StatusIcon, string> = {
-  'check-circle': colors.cyan,
-  play: colors.primary,
-};
 
 interface ChapterMapProps {
   chapterId: string | null;
@@ -21,6 +19,12 @@ interface ChapterMapProps {
 
 // 章節清單顯示在 Home 頁；這裡只負責單一章節的關卡清單（對照 apps/web 的同名畫面）
 export default function ChapterMap({ chapterId, progress, onStartLevel, onBack }: ChapterMapProps) {
+  const { colors, style: themeStyle } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors, themeStyle), [colors, themeStyle]);
+  const STATUS_COLOR: Record<StatusIcon, string> = {
+    'check-circle': colors.cyan,
+    play: colors.primary,
+  };
   const chapter = chapters.find((ch) => ch.id === chapterId);
   if (!chapter) return null;
 
@@ -61,7 +65,7 @@ export default function ChapterMap({ chapterId, progress, onStartLevel, onBack }
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.create({
   container: {
     padding: 16,
     gap: 10,
@@ -76,8 +80,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: 'rgba(95, 240, 224, 0.25)',
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
+    borderColor: colors.navbarBorder,
     width: 38,
     height: 38,
   },
@@ -93,7 +99,9 @@ const styles = StyleSheet.create({
     gap: 14,
     width: '100%',
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
     paddingVertical: 16,
     paddingHorizontal: 18,
@@ -112,7 +120,7 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   levelRecord: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 11,
     color: colors.inkFaint,
   },

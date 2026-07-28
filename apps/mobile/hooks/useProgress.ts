@@ -154,6 +154,25 @@ export const useProgressState = () => {
     [isSignedIn, getToken],
   );
 
+  const toggleSavedKeyPoint = useCallback(
+    (keyPointId: string) => {
+      setProgress((p) => {
+        const savedKeyPointIds = { ...p.savedKeyPointIds };
+        if (savedKeyPointIds[keyPointId]) delete savedKeyPointIds[keyPointId];
+        else savedKeyPointIds[keyPointId] = true;
+        return { ...p, savedKeyPointIds };
+      });
+
+      if (isSignedIn && migratedRef.current) {
+        getToken()
+          .then((token) => postJson('/api/progress/save-keypoint-toggle', { keyPointId }, token))
+          .then(setProgress)
+          .catch((err) => console.error('toggleSavedKeyPoint sync failed', err));
+      }
+    },
+    [isSignedIn, getToken],
+  );
+
   const finishLevel = useCallback(
     (levelId: string, correct: number, total: number, xpEarned: number) => {
       setProgress((p) => {
@@ -206,5 +225,5 @@ export const useProgressState = () => {
     [isSignedIn, getToken],
   );
 
-  return { progress, hydrated, answerQuestion, toggleSaved, finishLevel, finishReview };
+  return { progress, hydrated, answerQuestion, toggleSaved, toggleSavedKeyPoint, finishLevel, finishReview };
 };

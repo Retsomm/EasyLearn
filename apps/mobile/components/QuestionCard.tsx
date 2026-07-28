@@ -6,7 +6,9 @@ import Icon from '@/components/Icon';
 import CodeBlock from '@/components/CodeBlock';
 import NotchedView from '@/components/NotchedView';
 import { PrimaryButton } from '@/components/Button';
-import { colors, fonts, notch } from '@/constants/theme';
+import { fonts, notch } from '@/constants/theme';
+import type { ColorPalette, ThemeStyle } from '@/constants/themePalettes';
+import { useAppTheme } from '@/context/AppThemeContext';
 import { shuffle, TYPE_META, type Question } from '@easylearn/core';
 
 interface QuestionCardProps {
@@ -28,6 +30,8 @@ export default function QuestionCard({
   saved,
   onToggleSave,
 }: QuestionCardProps) {
+  const { colors, style: themeStyle } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors, themeStyle), [colors, themeStyle]);
   const answered = selected !== null;
   const correct = answered && selected === question.answer;
   const typeMeta = TYPE_META[question.type];
@@ -118,7 +122,7 @@ export default function QuestionCard({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.create({
   card: {
     padding: 22,
   },
@@ -134,13 +138,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     backgroundColor: colors.badgeBg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 180, 84, 0.4)',
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
+    borderColor: colors.navbarActiveBorder,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   typeBadgeText: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontSize: 11,
     fontWeight: '700',
     color: colors.primary,
@@ -168,7 +174,9 @@ const styles = StyleSheet.create({
   },
   optionBtn: {
     backgroundColor: colors.optionBg,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -200,7 +208,9 @@ const styles = StyleSheet.create({
   },
   feedback: {
     marginTop: 16,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     padding: 18,
   },
   feedbackCorrect: {
@@ -218,7 +228,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   feedbackTitle: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontWeight: '700',
     fontSize: 14,
   },
@@ -247,7 +257,7 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   nextBtnText: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontSize: 14,
     fontWeight: '700',
     color: colors.primaryInk,

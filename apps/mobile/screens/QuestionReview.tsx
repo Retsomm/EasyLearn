@@ -4,7 +4,9 @@ import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
 import CodeBlock from '@/components/CodeBlock';
 import NotchedView from '@/components/NotchedView';
-import { colors, fonts, notch } from '@/constants/theme';
+import { fonts, notch } from '@/constants/theme';
+import type { ColorPalette, ThemeStyle } from '@/constants/themePalettes';
+import { useAppTheme } from '@/context/AppThemeContext';
 import { TYPE_META, type Question, type WrongEntryMeta } from '@easylearn/core';
 
 interface QuestionReviewProps {
@@ -16,6 +18,8 @@ interface QuestionReviewProps {
 
 // 唯讀題目卡：錯題本／收藏瀏覽頁用，直接看答案與解釋，不用重考（對照 apps/web 同名元件）
 export default function QuestionReview({ question, saved, onToggleSave, meta }: QuestionReviewProps) {
+  const { colors, style: themeStyle } = useAppTheme();
+  const styles = makeStyles(colors, themeStyle);
   const typeMeta = TYPE_META[question.type];
 
   return (
@@ -79,7 +83,7 @@ export default function QuestionReview({ question, saved, onToggleSave, meta }: 
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.create({
   card: {
     padding: 22,
   },
@@ -95,13 +99,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     backgroundColor: colors.badgeBg,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: 'rgba(255, 180, 84, 0.4)',
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   typeBadgeText: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontSize: 11,
     fontWeight: '700',
     color: colors.primary,
@@ -124,7 +130,7 @@ const styles = StyleSheet.create({
     marginTop: -4,
   },
   reviewMetaText: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 11,
     color: colors.inkFaint,
   },
@@ -141,7 +147,9 @@ const styles = StyleSheet.create({
   },
   optionBtn: {
     backgroundColor: colors.optionBg,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -165,7 +173,9 @@ const styles = StyleSheet.create({
   },
   feedback: {
     marginTop: 16,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     padding: 18,
     backgroundColor: colors.correctSoft,
     borderColor: 'rgba(95, 240, 224, 0.3)',
@@ -177,7 +187,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   feedbackTitle: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontWeight: '700',
     fontSize: 14,
     color: colors.correct,

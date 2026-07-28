@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
 import Mascot from '@/components/Mascot';
 import QuestionCard from '@/components/QuestionCard';
-import { PrimaryButton, buttonTextStyles } from '@/components/Button';
-import { colors, fonts } from '@/constants/theme';
+import { PrimaryButton, makeButtonTextStyles } from '@/components/Button';
+import { fonts } from '@/constants/theme';
+import type { ColorPalette, ThemeStyle } from '@/constants/themePalettes';
+import { useAppTheme } from '@/context/AppThemeContext';
 import { getChapterIdForQuestion, getStage, type Level, type Progress } from '@easylearn/core';
 
 const XP_CORRECT = 10;
@@ -38,6 +40,9 @@ export default function Quiz({
   onExit,
   exitLabel = '返回關卡地圖',
 }: QuizProps) {
+  const { colors, style: themeStyle } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors, themeStyle), [colors, themeStyle]);
+  const buttonTextStyles = useMemo(() => makeButtonTextStyles(colors, themeStyle), [colors, themeStyle]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [correctCount, setCorrectCount] = useState(0);
@@ -162,7 +167,7 @@ export default function Quiz({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.create({
   container: {
     paddingHorizontal: 24,
     paddingTop: 24,
@@ -178,8 +183,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: 'rgba(95, 240, 224, 0.25)',
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
+    borderColor: colors.navbarBorder,
     width: 38,
     height: 38,
   },
@@ -216,7 +223,7 @@ const styles = StyleSheet.create({
     lineHeight: 30,
   },
   counter: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontSize: 12,
     fontWeight: '700',
     color: 'rgba(95, 240, 224, 0.6)',
@@ -226,7 +233,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: 'rgba(95, 240, 224, 0.15)',
     paddingVertical: 12,
     paddingHorizontal: 16,
@@ -252,14 +261,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   resultTitle: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontSize: 20,
     fontWeight: '700',
     color: colors.inkStrong,
   },
   resultStats: {
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
     width: '100%',
     maxWidth: 320,
@@ -275,7 +286,7 @@ const styles = StyleSheet.create({
   },
   statRowDivider: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(95, 240, 224, 0.12)',
+    borderTopColor: colors.hairline,
   },
   statLabel: {
     fontFamily: fonts.sans.regular,
@@ -283,7 +294,7 @@ const styles = StyleSheet.create({
     color: colors.inkSoft,
   },
   statValue: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 15,
     color: colors.cyan,
   },

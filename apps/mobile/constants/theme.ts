@@ -40,6 +40,10 @@ export const colors = {
   chartCount: '#ffb454',
   chartAccuracy: '#5ff0e0',
   heroXpIconBg: '#0d1116',
+  tabActiveBg: 'rgba(255, 180, 84, 0.08)',
+  sectionLabel: 'rgba(95, 240, 224, 0.65)',
+  hairline: 'rgba(95, 240, 224, 0.12)',
+  dangerChevron: 'rgba(255, 92, 114, 0.5)',
 } as const;
 
 // RN 自訂字型要用 useFonts 載入後的 postscript 名稱，不能用 fontFamily+fontWeight 組合，

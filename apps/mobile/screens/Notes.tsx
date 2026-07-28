@@ -1,23 +1,37 @@
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
 import NotchedView from '@/components/NotchedView';
-import { colors, fonts, notch } from '@/constants/theme';
-import { getWrongQuestions, type Progress } from '@easylearn/core';
+import { fonts, notch } from '@/constants/theme';
+import type { ColorPalette, ThemeStyle } from '@/constants/themePalettes';
+import { useAppTheme } from '@/context/AppThemeContext';
+import { getSavedKeyPoints, getWrongQuestions, type Progress } from '@easylearn/core';
 
 interface NotesProps {
   progress: Progress;
   onOpenWrongBook: () => void;
   onOpenSavedBook: () => void;
+  onOpenSavedKeyPoints: () => void;
   onReview: () => void;
   onPracticeSaved: () => void;
 }
 
-// 對照 apps/web 的 Notes.tsx：錯題本／收藏題庫兩張入口卡
-export default function Notes({ progress, onOpenWrongBook, onOpenSavedBook, onReview, onPracticeSaved }: NotesProps) {
+// 對照 apps/web 的 Notes.tsx：錯題本／收藏題庫／收藏重點三張入口卡
+export default function Notes({
+  progress,
+  onOpenWrongBook,
+  onOpenSavedBook,
+  onOpenSavedKeyPoints,
+  onReview,
+  onPracticeSaved,
+}: NotesProps) {
+  const { colors, style: themeStyle } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors, themeStyle), [colors, themeStyle]);
   const wrongCount = getWrongQuestions(progress.wrongIds ?? {}).length;
   const savedCount = Object.keys(progress.savedIds ?? {}).length;
+  const savedKeyPointCount = getSavedKeyPoints(progress.savedKeyPointIds ?? {}).length;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -74,11 +88,28 @@ export default function Notes({ progress, onOpenWrongBook, onOpenSavedBook, onRe
           </Pressable>
         </NotchedView>
       </Pressable>
+
+      <Pressable onPress={onOpenSavedKeyPoints}>
+        <NotchedView
+          notch={notch}
+          corners="tr-bl"
+          backgroundColor={colors.noteSavedBg}
+          borderColor={colors.noteSavedBorder}
+          borderWidth={1}
+          contentStyle={styles.card}
+        >
+          <View style={styles.cardHead}>
+            <Icon name="star" size={20} color={colors.primary} fill={colors.primary} />
+            <Text style={[styles.cardTitle, { color: colors.primary }]}>收藏重點</Text>
+          </View>
+          <Text style={styles.cardCountLast}>目前累積 {savedKeyPointCount} 條收藏重點</Text>
+        </NotchedView>
+      </Pressable>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.create({
   container: {
     paddingHorizontal: 24,
     paddingTop: 24,
@@ -94,7 +125,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   cardTitle: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -105,10 +136,18 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 16,
   },
+  cardCountLast: {
+    fontFamily: fonts.sans.regular,
+    fontSize: 13,
+    color: colors.inkSoft,
+    marginTop: 8,
+  },
   cardBtn: {
     alignSelf: 'flex-start',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     paddingVertical: 11,
     paddingHorizontal: 22,
   },
@@ -116,7 +155,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   cardBtnText: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontSize: 13,
     fontWeight: '700',
     color: colors.inkFaint,

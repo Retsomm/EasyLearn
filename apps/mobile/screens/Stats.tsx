@@ -1,9 +1,11 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
-import { colors, fonts } from '@/constants/theme';
+import { fonts } from '@/constants/theme';
+import type { ColorPalette, ThemeStyle } from '@/constants/themePalettes';
+import { useAppTheme } from '@/context/AppThemeContext';
 import { chapters, todayStr, type Progress } from '@easylearn/core';
 
 const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
@@ -52,9 +54,6 @@ const activityLevel = (total: number): number => {
   return 4;
 };
 
-// 對照 index.css 的 --heat-0..4（sequential 色階，經 dataviz skill 驗證過）
-const HEAT_COLORS = [colors.heat0, colors.heat1, colors.heat2, colors.heat3, colors.heat4];
-
 interface StatsProps {
   progress: Progress;
 }
@@ -62,6 +61,11 @@ interface StatsProps {
 // 對照 apps/web 的 Stats.tsx；熱力圖／迷你長條圖沒有 hover title，觸控裝置沒有對應行為，
 // 是刻意的簡化（跟 Phase 3 CodeBlock/Icon 的 MVP 簡化同一個原則）
 export default function Stats({ progress }: StatsProps) {
+  const { colors, style: themeStyle } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors, themeStyle), [colors, themeStyle]);
+  // 對照 index.css 的 --heat-0..4（sequential 色階，經 dataviz skill 驗證過）；原本是
+  // module-scope 常數，改用 useAppTheme() 之後 colors 只存在於元件內部，改成隨 render 算出來
+  const HEAT_COLORS = [colors.heat0, colors.heat1, colors.heat2, colors.heat3, colors.heat4];
   const dailyStats = progress.dailyStats ?? {};
   const chapterStats = progress.chapterStats ?? {};
   const heatmapScrollRef = useRef<ScrollView>(null);
@@ -249,7 +253,7 @@ export default function Stats({ progress }: StatsProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.create({
   container: {
     paddingHorizontal: 24,
     paddingTop: 24,
@@ -263,14 +267,18 @@ const styles = StyleSheet.create({
   tile: {
     flex: 1,
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
     padding: 16,
     gap: 8,
   },
   tileWide: {
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: 'rgba(255, 180, 84, 0.25)',
     padding: 16,
     marginTop: 12,
@@ -284,35 +292,34 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   tileLabel: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 11,
     // 一次性淡化標籤用的透明度，跟 colors 裡既有的 cyan/primary 系列 token 沒有對應值
     color: 'rgba(95, 240, 224, 0.55)',
   },
   tileWideLabel: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 11,
     color: 'rgba(255, 180, 84, 0.6)',
   },
   tileValue: {
-    fontFamily: fonts.mono.extraBold,
+    fontFamily: themeStyle.mono.extraBold,
     fontSize: 24,
     fontWeight: '800',
     color: colors.cyan,
   },
   tileWideValue: {
-    fontFamily: fonts.mono.extraBold,
+    fontFamily: themeStyle.mono.extraBold,
     fontSize: 22,
     fontWeight: '800',
     color: colors.primary,
   },
   sectionTitle: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 1.5,
-    // 一次性淡化標籤用的透明度，跟 colors 裡既有的 cyan 系列 token 沒有對應值
-    color: 'rgba(95, 240, 224, 0.65)',
+    color: colors.sectionLabel,
     marginTop: 12,
   },
   sectionHint: {
@@ -324,7 +331,9 @@ const styles = StyleSheet.create({
   },
   heatmapCard: {
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
     padding: 16,
   },
@@ -341,7 +350,7 @@ const styles = StyleSheet.create({
   heatmapWeekday: {
     height: 11,
     lineHeight: 11,
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 9,
     color: colors.inkFaint,
   },
@@ -356,7 +365,7 @@ const styles = StyleSheet.create({
     // （超出 ScrollView 量到的內容寬度那段一樣會被裁掉，尤其是捲到最右邊、沒有下一欄可以
     // 借用空間的最後一個月份），所以改成單純夠寬的固定寬度，不依賴溢出。
     width: 16,
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 9,
     color: colors.inkFaint,
   },
@@ -385,7 +394,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   heatmapLegendText: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 10,
     color: colors.inkFaint,
   },
@@ -393,7 +402,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
     paddingTop: 18,
     paddingHorizontal: 16,
@@ -431,7 +442,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   miniBarValue: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 10,
     color: colors.inkFaint,
     height: 14,
@@ -441,14 +452,14 @@ const styles = StyleSheet.create({
     minWidth: 6,
   },
   miniBarLabel: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 10,
     color: colors.inkFaint,
     marginTop: 6,
   },
   miniBarLabelToday: {
     color: colors.primary,
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontWeight: '700',
   },
   chapterList: {
@@ -456,7 +467,9 @@ const styles = StyleSheet.create({
   },
   chapterCard: {
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
     padding: 16,
     gap: 8,
@@ -472,7 +485,7 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   chapterCardPct: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontSize: 14,
     fontWeight: '700',
     color: colors.cyan,
@@ -487,7 +500,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cyan,
   },
   chapterCardSub: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 10,
     color: colors.inkFaint,
   },

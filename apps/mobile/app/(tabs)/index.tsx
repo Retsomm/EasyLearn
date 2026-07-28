@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { View } from '@/components/Themed';
-import { colors } from '@/constants/theme';
+import { useAppTheme } from '@/context/AppThemeContext';
 import { useProgress } from '@/context/ProgressContext';
 import Home from '@/screens/Home';
 import ChapterMap from '@/screens/ChapterMap';
@@ -31,6 +31,7 @@ type ViewState =
 // 同一個狀態機。進度資料（訪客 AsyncStorage／登入後打 API）統一由 ProgressProvider 提供，
 // 跟 Profile tab 共用同一份 state。
 export default function HomeScreen() {
+  const { colors } = useAppTheme();
   const { progress, hydrated, answerQuestion, toggleSaved, finishLevel, finishReview } = useProgress();
   const [view, setView] = useState<ViewState>({ name: 'home' });
   const insets = useSafeAreaInsets();

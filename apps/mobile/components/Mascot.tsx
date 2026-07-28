@@ -2,7 +2,9 @@ import { StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import XpBar from '@/components/XpBar';
-import { colors, fonts } from '@/constants/theme';
+import { fonts } from '@/constants/theme';
+import type { ColorPalette, ThemeStyle } from '@/constants/themePalettes';
+import { useAppTheme } from '@/context/AppThemeContext';
 import { getNextStage, getStage, getStageProgress } from '@easylearn/core';
 
 interface MascotProps {
@@ -13,6 +15,8 @@ interface MascotProps {
 // 對照 apps/web 的 Mascot.tsx；沒有搬 mood="happy" 的彈跳動畫，Phase 3 CodeBlock/Icon
 // 已經確立「先求功能完整」的簡化原則，這裡先只做靜態顯示
 export default function Mascot({ xp, size = 'lg' }: MascotProps) {
+  const { colors, style: themeStyle } = useAppTheme();
+  const styles = makeStyles(colors, themeStyle);
   const stage = getStage(xp);
   const next = getNextStage(xp);
   const progressToNext = getStageProgress(xp);
@@ -33,7 +37,7 @@ export default function Mascot({ xp, size = 'lg' }: MascotProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.create({
   container: {
     alignItems: 'center',
     marginBottom: 8,
@@ -50,7 +54,7 @@ const styles = StyleSheet.create({
     lineHeight: 38,
   },
   name: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontWeight: '700',
     fontSize: 18,
     color: colors.inkStrong,

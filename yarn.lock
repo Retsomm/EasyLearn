@@ -840,6 +840,11 @@
   resolved "https://registry.npmmirror.com/@esbuild/win32-x64/-/win32-x64-0.28.1.tgz#10064ee44f4347b90c9a02b446bbf80a91632b12"
   integrity sha512-bm4Mowrv+GXMlpWX++EcXw/iLyd1o3+bJkC2DkWXYVvgZCqD/bSj9ctZeAMC3cIxgjRVR2Dufaiu4YPxr5gW1A==
 
+"@expo-google-fonts/cinzel@^0.4.2":
+  version "0.4.2"
+  resolved "https://registry.npmmirror.com/@expo-google-fonts/cinzel/-/cinzel-0.4.2.tgz#26f376cf7f883fb0e14006cae0513152db05dc38"
+  integrity sha512-UAlyuHCGjmKpMt2MoCKYueHz8ZEzjHO1VEol2G7NcPW54UH+85SWIGzpor05YNqUvr/aoqS8Qrfnswxg1RsNMw==
+
 "@expo-google-fonts/jetbrains-mono@^0.4.1":
   version "0.4.1"
   resolved "https://registry.npmmirror.com/@expo-google-fonts/jetbrains-mono/-/jetbrains-mono-0.4.1.tgz#39d1390c386a7dd5ed5171e8acbbf41b86afd099"
@@ -854,6 +859,21 @@
   version "0.4.3"
   resolved "https://registry.npmmirror.com/@expo-google-fonts/noto-sans-tc/-/noto-sans-tc-0.4.3.tgz#1731f33484d429c08e9c32a5529223aae1c60faf"
   integrity sha512-69XAOTLPz0WlAxL6qJEKlDMxHsBd4J1M39HjV0gPF2o1xWVALOsVWvDgistnecVockA9wbU/tH5C/gyS2PdnHg==
+
+"@expo-google-fonts/orbitron@^0.4.2":
+  version "0.4.2"
+  resolved "https://registry.npmmirror.com/@expo-google-fonts/orbitron/-/orbitron-0.4.2.tgz#3c8284a0832f9b2af7afe84626fcedc33324265e"
+  integrity sha512-lp92oZ6FF1tA9dzJxKYPHae8hVxfVJzh5jRvjPCN8P1kkF615n/mq0U4ZQ7EXiEJvO7Cpwg+lZlkSbRw7CiDug==
+
+"@expo-google-fonts/rajdhani@^0.4.1":
+  version "0.4.1"
+  resolved "https://registry.npmmirror.com/@expo-google-fonts/rajdhani/-/rajdhani-0.4.1.tgz#766523f7a4fcb0a7c27ac78558256538ab2dde1d"
+  integrity sha512-AQS+20ymwULMvlT9AJlsrgjK2KSI6jW+WenVeFdZgmjC2ZYbWQSotm6PQe9tZx74mBvw+J6X6WorW2B+ISmncg==
+
+"@expo-google-fonts/space-grotesk@^0.4.1":
+  version "0.4.1"
+  resolved "https://registry.npmmirror.com/@expo-google-fonts/space-grotesk/-/space-grotesk-0.4.1.tgz#cb1f58e17e9bc91d2b87270d37cb26cd6b6773ac"
+  integrity sha512-ZVQYw4Ok/pgcSJiufP8oRZE3AVxS9xtmKEUfsurbHkHNdMc/GA1gDXP9G4Cr7KL4KqSc0haexR2TuMigotCn4Q==
 
 "@expo/cli@^57.0.6":
   version "57.0.6"

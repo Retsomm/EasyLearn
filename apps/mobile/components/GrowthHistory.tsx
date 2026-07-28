@@ -1,7 +1,9 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
-import { colors, fonts } from '@/constants/theme';
+import { fonts } from '@/constants/theme';
+import type { ColorPalette, ThemeStyle } from '@/constants/themePalettes';
+import { useAppTheme } from '@/context/AppThemeContext';
 import { STAGES, getStage } from '@easylearn/core';
 
 interface GrowthHistoryProps {
@@ -11,6 +13,8 @@ interface GrowthHistoryProps {
 // 對照 apps/web 的 GrowthHistory.tsx：吉祥物成長史清單。mobile 這裡改用 Modal 彈窗顯示
 // （見 app/(tabs)/profile.tsx），本體清單樣式仍照抄 index.css 的 .growth-history 系列。
 export default function GrowthHistory({ xp }: GrowthHistoryProps) {
+  const { colors, style: themeStyle } = useAppTheme();
+  const styles = makeStyles(colors, themeStyle);
   const current = getStage(xp);
 
   return (
@@ -37,7 +41,7 @@ export default function GrowthHistory({ xp }: GrowthHistoryProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.create({
   list: {
     gap: 6,
   },
@@ -48,7 +52,9 @@ const styles = StyleSheet.create({
     padding: 8,
     paddingHorizontal: 10,
     backgroundColor: colors.optionBg,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: 'transparent',
     opacity: 0.5,
   },
@@ -74,7 +80,7 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   xp: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 11,
     color: colors.inkFaint,
   },
