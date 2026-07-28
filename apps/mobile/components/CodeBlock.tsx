@@ -67,7 +67,7 @@ const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.
     borderWidth: themeStyle.borderWidth,
     borderStyle: themeStyle.borderStyle,
     borderRadius: themeStyle.radius,
-    borderColor: 'rgba(95, 240, 224, 0.15)',
+    borderColor: colors.optionBorder,
     marginVertical: 8,
   },
   code: {

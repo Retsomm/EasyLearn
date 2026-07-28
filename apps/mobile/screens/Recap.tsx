@@ -46,7 +46,7 @@ export default function Recap({ onOpenChapter, onOpenTopic }: RecapProps) {
                   {hasSummary
                     ? isGroup
                       ? `共 ${topic.chapters.length} 章、${levelCount} 關重點整理`
-                      : `共 ${levelCount} 章重點整理`
+                      : `共 ${levelCount} 關重點整理`
                     : '重點整理籌備中'}
                 </Text>
               </View>

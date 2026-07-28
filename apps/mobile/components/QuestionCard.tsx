@@ -215,11 +215,11 @@ const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.
   },
   feedbackCorrect: {
     backgroundColor: colors.correctSoft,
-    borderColor: 'rgba(95, 240, 224, 0.3)',
+    borderColor: colors.correctBorder,
   },
   feedbackWrong: {
     backgroundColor: colors.wrongSoft,
-    borderColor: 'rgba(255, 92, 114, 0.3)',
+    borderColor: colors.wrongBorder,
   },
   feedbackTitleRow: {
     flexDirection: 'row',

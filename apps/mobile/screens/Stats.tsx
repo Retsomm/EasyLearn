@@ -279,7 +279,7 @@ const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.
     borderWidth: themeStyle.borderWidth,
     borderStyle: themeStyle.borderStyle,
     borderRadius: themeStyle.radius,
-    borderColor: 'rgba(255, 180, 84, 0.25)',
+    borderColor: colors.navbarActiveBorder,
     padding: 16,
     marginTop: 12,
     flexDirection: 'row',

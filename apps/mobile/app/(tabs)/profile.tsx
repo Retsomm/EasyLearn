@@ -197,6 +197,8 @@ export default function ProfileScreen() {
                     key={t.id}
                     style={[styles.themeSwatch, active && styles.themeSwatchActive]}
                     onPress={() => setThemeId(t.id)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
                   >
                     <View style={[styles.themeSwatchDot, { backgroundColor: t.swatch }]} />
                     <Text style={[styles.themeSwatchLabel, active && styles.themeSwatchLabelActive]}>

@@ -42,6 +42,9 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
   const [themeId, setThemeIdState] = useState<ThemeId>(DEFAULT_THEME_ID);
   const [hydrated, setHydrated] = useState(false);
   const syncedRef = useRef(false);
+  const signOutResetRef = useRef(false);
+  const pendingThemeSaveRef = useRef<ThemeId | null>(null);
+  const savingThemeRef = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -50,9 +53,11 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  // 訪客模式：主題變動就寫回 AsyncStorage
+  // 訪客模式：主題變動就寫回 AsyncStorage。登出瞬間 themeId 可能還是登入時的舊值（下面
+  // 登出分支的 loadLocal() 還沒 resolve），這段期間跳過寫入，避免把登入時的主題誤寫回本機、
+  // 蓋掉訪客真正的本機偏好
   useEffect(() => {
-    if (!hydrated || isSignedIn) return;
+    if (!hydrated || isSignedIn || signOutResetRef.current) return;
     AsyncStorage.setItem(STORAGE_KEY, themeId).catch(() => {});
   }, [themeId, isSignedIn, hydrated]);
 
@@ -61,7 +66,11 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
     if (!isLoaded || !hydrated) return;
     if (!isSignedIn) {
       syncedRef.current = false;
-      loadLocal().then(setThemeIdState);
+      signOutResetRef.current = true;
+      loadLocal().then((local) => {
+        setThemeIdState(local);
+        signOutResetRef.current = false;
+      });
       return;
     }
     if (syncedRef.current) return;
@@ -93,13 +102,35 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [isLoaded, isSignedIn, hydrated, getToken]);
 
+  // 存檔請求一次只送一個，快速連續切換主題時只保留最後一個待存的值，等目前這個請求落地後
+  // 才送下一個——避免多個 POST 同時飛在外面，因為網路延遲不保證誰先送誰先到，先送的
+  // 舊選擇可能反而晚到，把伺服器上的主題蓋回舊值
+  const flushThemeSave = (token: string | null) => {
+    if (savingThemeRef.current) return;
+    const next = pendingThemeSaveRef.current;
+    if (next === null) return;
+    pendingThemeSaveRef.current = null;
+    savingThemeRef.current = true;
+    request('/api/theme', { method: 'POST', body: { theme: next }, token })
+      .catch((err) => console.error('theme save failed', err))
+      .finally(() => {
+        savingThemeRef.current = false;
+        if (pendingThemeSaveRef.current !== null) {
+          getToken()
+            .then(flushThemeSave)
+            .catch((err) => console.error('theme save failed', err));
+        }
+      });
+  };
+
   const setThemeId = (next: ThemeId) => {
     if (!isValidThemeId(next)) return;
     setThemeIdState(next);
     AsyncStorage.setItem(STORAGE_KEY, next).catch(() => {});
     if (isSignedIn) {
+      pendingThemeSaveRef.current = next;
       getToken()
-        .then((token) => request('/api/theme', { method: 'POST', body: { theme: next }, token }))
+        .then(flushThemeSave)
         .catch((err) => console.error('theme save failed', err));
     }
   };

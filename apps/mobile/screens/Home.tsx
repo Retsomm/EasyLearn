@@ -153,7 +153,7 @@ const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.
     borderWidth: themeStyle.borderWidth,
     borderStyle: themeStyle.borderStyle,
     borderRadius: themeStyle.radius,
-    borderColor: 'rgba(255, 180, 84, 0.35)',
+    borderColor: colors.navbarActiveBorder,
     padding: 20,
     gap: 10,
   },
@@ -164,7 +164,7 @@ const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.
   streakTopText: {
     fontFamily: themeStyle.mono.regular,
     fontSize: 12,
-    color: 'rgba(95, 240, 224, 0.6)',
+    color: colors.sectionLabel,
     letterSpacing: 0.5,
   },
   streakCount: {
@@ -214,7 +214,7 @@ const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.
     fontWeight: '700',
   },
   streakDayTextToday: {
-    color: '#241300',
+    color: colors.primaryInk,
     fontFamily: themeStyle.mono.bold,
     fontWeight: '700',
   },

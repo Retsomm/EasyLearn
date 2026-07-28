@@ -203,7 +203,7 @@ const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.
     borderRadius: 4.5,
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: 'rgba(95, 240, 224, 0.3)',
+    borderColor: colors.navbarBorder,
   },
   dotDone: {
     backgroundColor: colors.primary,
@@ -226,7 +226,7 @@ const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.
     fontFamily: themeStyle.mono.bold,
     fontSize: 12,
     fontWeight: '700',
-    color: 'rgba(95, 240, 224, 0.6)',
+    color: colors.sectionLabel,
   },
   banner: {
     flexDirection: 'row',
@@ -236,7 +236,7 @@ const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.
     borderWidth: themeStyle.borderWidth,
     borderStyle: themeStyle.borderStyle,
     borderRadius: themeStyle.radius,
-    borderColor: 'rgba(95, 240, 224, 0.15)',
+    borderColor: colors.optionBorder,
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginBottom: 12,

@@ -48,7 +48,7 @@ export default function RecapTopicChapters({ topicId, onOpenChapter, onBack }: R
                   第 {i + 1} 章：{ch.title}
                 </Text>
                 <Text style={styles.chapterProgress}>
-                  {hasSummary ? `共 ${levelCount} 章重點整理` : '重點整理籌備中'}
+                  {hasSummary ? `共 ${levelCount} 關重點整理` : '重點整理籌備中'}
                 </Text>
               </View>
               <Icon name="chevron-right" size={22} color={colors.navbarTabInactive} />

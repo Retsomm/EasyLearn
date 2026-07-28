@@ -50,7 +50,7 @@ export default function RecapScreen() {
     content = (
       <RecapChapter
         chapterId={view.chapterId}
-        savedKeyPointIds={progress.savedKeyPointIds}
+        savedKeyPointIds={progress.savedKeyPointIds ?? {}}
         onToggleSavedKeyPoint={toggleSavedKeyPoint}
         onBack={() => setView(backView)}
       />
