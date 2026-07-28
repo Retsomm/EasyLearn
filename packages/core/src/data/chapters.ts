@@ -137,6 +137,43 @@ import ri27 from './questions/ri-27-misc-error-boundaries.json'
 import ri28 from './questions/ri-28-misc-component-conventions.json'
 import ri29 from './questions/ri-29-misc-forms-composition.json'
 import ri30 from './questions/ri-30-misc-state-alternatives-internals.json'
+import ydkjsSc1 from './questions/ydkjs-sc-1-what-is-scope.json'
+import ydkjsSc2 from './questions/ydkjs-sc-2-lexical-scope.json'
+import ydkjsSc3 from './questions/ydkjs-sc-3-function-block-scope.json'
+import ydkjsSc4 from './questions/ydkjs-sc-4-hoisting.json'
+import ydkjsSc5 from './questions/ydkjs-sc-5-closures.json'
+import ydkjsSc6 from './questions/ydkjs-sc-6-dynamic-scope.json'
+import ydkjsSc7 from './questions/ydkjs-sc-7-block-scope-alternatives.json'
+import ydkjsTp1 from './questions/ydkjs-tp-1-about-this.json'
+import ydkjsTp2 from './questions/ydkjs-tp-2-this-all-explained.json'
+import ydkjsTp3 from './questions/ydkjs-tp-3-objects.json'
+import ydkjsTp4 from './questions/ydkjs-tp-4-mixing-objects-classes.json'
+import ydkjsTp5 from './questions/ydkjs-tp-5-prototypes.json'
+import ydkjsTp6 from './questions/ydkjs-tp-6-behavior-delegation.json'
+import ydkjsTp7 from './questions/ydkjs-tp-7-es6-class.json'
+import ydkjsTg1 from './questions/ydkjs-tg-1-types.json'
+import ydkjsTg2 from './questions/ydkjs-tg-2-values.json'
+import ydkjsTg3 from './questions/ydkjs-tg-3-native-functions.json'
+import ydkjsTg4 from './questions/ydkjs-tg-4-coercion.json'
+import ydkjsTg5 from './questions/ydkjs-tg-5-syntax.json'
+import ydkjsAp1 from './questions/ydkjs-ap-1-async-now-and-later.json'
+import ydkjsAp2 from './questions/ydkjs-ap-2-callbacks.json'
+import ydkjsAp3 from './questions/ydkjs-ap-3-promises.json'
+import ydkjsAp4 from './questions/ydkjs-ap-4-generators.json'
+import ydkjsAp5 from './questions/ydkjs-ap-5-program-performance.json'
+import ydkjsAp6 from './questions/ydkjs-ap-6-benchmarking-tuning.json'
+import ydkjsAp7 from './questions/ydkjs-ap-7-advanced-async.json'
+import ydkjsUg1 from './questions/ydkjs-ug-1-into-programming.json'
+import ydkjsUg2 from './questions/ydkjs-ug-2-into-javascript.json'
+import ydkjsUg3 from './questions/ydkjs-ug-3-series-overview.json'
+import ydkjsEs6_1 from './questions/ydkjs-es6-1-now-and-future.json'
+import ydkjsEs6_2 from './questions/ydkjs-es6-2-syntax.json'
+import ydkjsEs6_3 from './questions/ydkjs-es6-3-code-organization.json'
+import ydkjsEs6_4 from './questions/ydkjs-es6-4-async-flow-control.json'
+import ydkjsEs6_5 from './questions/ydkjs-es6-5-collections.json'
+import ydkjsEs6_6 from './questions/ydkjs-es6-6-new-apis.json'
+import ydkjsEs6_7 from './questions/ydkjs-es6-7-metaprogramming.json'
+import ydkjsEs6_8 from './questions/ydkjs-es6-8-beyond-es6.json'
 import type { Chapter, Level, Question, WrongEntry, WrongEntryMeta } from '../types'
 
 // 題目 JSON 的 type 欄位在匯入時只會被推斷成 string，用 as 收斂回字面量聯合型別
@@ -209,6 +246,45 @@ export const chapters: Chapter[] = [
     levels: [
       gfp1, gfp2, gfp3, gfp4, gfp5, gfp6,
       gfp7, gfp8, gfp9, gfp10, gfp11, gfp12,
+    ].map(asLevel),
+  },
+  {
+    id: 'ydkjs-sc',
+    title: '作用域和閉包',
+    icon: 'lock',
+    levels: [ydkjsSc1, ydkjsSc2, ydkjsSc3, ydkjsSc4, ydkjsSc5, ydkjsSc6, ydkjsSc7].map(asLevel),
+  },
+  {
+    id: 'ydkjs-tp',
+    title: 'this和物件原型',
+    icon: 'user',
+    levels: [ydkjsTp1, ydkjsTp2, ydkjsTp3, ydkjsTp4, ydkjsTp5, ydkjsTp6, ydkjsTp7].map(asLevel),
+  },
+  {
+    id: 'ydkjs-tg',
+    title: '類型和語法',
+    icon: 'download',
+    levels: [ydkjsTg1, ydkjsTg2, ydkjsTg3, ydkjsTg4, ydkjsTg5].map(asLevel),
+  },
+  {
+    id: 'ydkjs-ap',
+    title: '異步和性能',
+    icon: 'clock',
+    levels: [ydkjsAp1, ydkjsAp2, ydkjsAp3, ydkjsAp4, ydkjsAp5, ydkjsAp6, ydkjsAp7].map(asLevel),
+  },
+  {
+    id: 'ydkjs-ug',
+    title: '起步上路',
+    icon: 'flag',
+    levels: [ydkjsUg1, ydkjsUg2, ydkjsUg3].map(asLevel),
+  },
+  {
+    id: 'ydkjs-es6',
+    title: 'ES6及更新版本',
+    icon: 'trophy',
+    levels: [
+      ydkjsEs6_1, ydkjsEs6_2, ydkjsEs6_3, ydkjsEs6_4,
+      ydkjsEs6_5, ydkjsEs6_6, ydkjsEs6_7, ydkjsEs6_8,
     ].map(asLevel),
   },
   {

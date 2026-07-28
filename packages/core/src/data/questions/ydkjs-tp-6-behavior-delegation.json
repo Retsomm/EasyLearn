@@ -1,0 +1,144 @@
+{
+  "id": "ydkjs-tp-6",
+  "title": "Ch6：行為委托",
+  "questions": [
+    {
+      "id": "ydkjs-tp-6-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "委托呼叫：方法在自己身上找不到，往上委托給連結的物件執行，但 this 依然綁在最初被呼叫的那個物件上",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/create",
+      "story": "",
+      "prompt": "Bar 身上沒有 init、speak，是靠 Object.create(Foo) 連結到 Foo 才能呼叫。這段程式會印出什麼？",
+      "code": "var Foo = {\n  init: function (who) {\n    this.me = who;\n  },\n  speak: function () {\n    console.log('Hello, ' + this.me);\n  },\n};\nvar Bar = Object.create(Foo);\nBar.init('Bar1');\nBar.speak();",
+      "options": [
+        { "id": "a", "text": "Hello, Bar1" },
+        { "id": "b", "text": "Hello, undefined" },
+        { "id": "c", "text": "TypeError：Bar.init is not a function" },
+        { "id": "d", "text": "Hello, Foo" }
+      ],
+      "answer": "a",
+      "explanation": "Bar.init('Bar1') 呼叫時，Bar 自己身上沒有 init，查詢會沿著 [[Prototype]] 鏈往上委托給 Foo.init 執行——但執行時的 this 依然是「一開始被呼叫的那個物件」Bar，不是 Foo。所以 this.me = who 是在 Bar 身上新增 me 屬性。接著 Bar.speak() 一樣委托給 Foo.speak，this 還是 Bar，讀到 Bar 自己的 me，印出 Hello, Bar1。委托的重點就在這裡：往上找「行為」（函式邏輯），但操作的「資料」永遠是最初呼叫的那個物件。",
+      "verify": {
+        "checks": [
+          { "code": "var Foo = {\n  init: function (who) {\n    this.me = who;\n  },\n  speak: function () {\n    console.log('Hello, ' + this.me);\n  },\n};\nvar Bar = Object.create(Foo);\nBar.init('Bar1');\nBar.speak();", "expected": "Hello, Bar1" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-6-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "多個物件各自委托到同一個共用物件，各自的資料還是互相獨立，不會混在一起",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/create",
+      "story": "",
+      "prompt": "Bar1 和 Bar2 都用 Object.create(Foo) 連結到同一個 Foo。這段程式會印出什麼？",
+      "code": "var Foo = {\n  init: function (who) {\n    this.me = who;\n  },\n  speak: function () {\n    console.log('Hello, ' + this.me);\n  },\n};\nvar Bar1 = Object.create(Foo);\nvar Bar2 = Object.create(Foo);\nBar1.init('Bar1');\nBar2.init('Bar2');\nBar1.speak();\nBar2.speak();",
+      "options": [
+        { "id": "a", "text": "Hello, Bar1\nHello, Bar2" },
+        { "id": "b", "text": "Hello, Bar2\nHello, Bar2" },
+        { "id": "c", "text": "Hello, undefined\nHello, undefined" },
+        { "id": "d", "text": "Hello, Bar1\nHello, Bar1" }
+      ],
+      "answer": "a",
+      "explanation": "Bar1、Bar2 雖然都委托到同一個 Foo（共用同一份 init、speak 邏輯），但 init 執行時的 this 永遠是「當初呼叫的那個物件」——Bar1.init(...) 的 this 是 Bar1，Bar2.init(...) 的 this 是 Bar2。兩者各自的 me 屬性是分開存在各自身上，不會互相覆蓋，所以 Bar1.speak()、Bar2.speak() 分別印出自己的 me。這就是委托模式底下，多個物件共用行為、卻各自保有獨立資料的方式。",
+      "verify": {
+        "checks": [
+          { "code": "var Foo = {\n  init: function (who) {\n    this.me = who;\n  },\n  speak: function () {\n    console.log('Hello, ' + this.me);\n  },\n};\nvar Bar1 = Object.create(Foo);\nvar Bar2 = Object.create(Foo);\nBar1.init('Bar1');\nBar2.init('Bar2');\nBar1.speak();\nBar2.speak();", "expected": "Hello, Bar1\nHello, Bar2" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-6-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "委托可以連續往上好幾層，this 一路都維持是最底層那個被呼叫的物件",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/create",
+      "story": "",
+      "prompt": "$btn1 委托給 Button，Button 又委托給 Widget，一共兩層委托鏈。這段程式會印出什麼？",
+      "code": "var Widget = {\n  init: function (width, height) {\n    this.width = width || 50;\n    this.height = height || 50;\n  },\n  insert: function (el) {\n    console.log('Inserting widget with size ' + this.width + 'x' + this.height);\n  },\n};\nvar Button = Object.create(Widget);\nButton.setup = function (width, height, label) {\n  this.init(width, height); // 委托給 Widget.init\n  this.label = label || 'Button';\n};\nButton.build = function () {\n  this.insert(); // 委托給 Widget.insert\n  console.log('Button label: ' + this.label);\n};\nvar $btn1 = Object.create(Button);\n$btn1.setup(125, 30, 'Hello');\n$btn1.build();",
+      "options": [
+        { "id": "a", "text": "Inserting widget with size 125x30\nButton label: Hello" },
+        { "id": "b", "text": "Inserting widget with size 50x50\nButton label: Button" },
+        { "id": "c", "text": "TypeError：$btn1.init is not a function" },
+        { "id": "d", "text": "Inserting widget with size undefinedxundefined\nButton label: Hello" }
+      ],
+      "answer": "a",
+      "explanation": "$btn1.setup(...) 委托給 Button.setup 執行，this 是 $btn1；裡面的 this.init(...) 再往上委托給 Widget.init，this 依然是 $btn1，所以 width、height、label 都設定在 $btn1 自己身上。$btn1.build() 同理，this.insert() 委托給 Widget.insert，this 還是 $btn1，讀到的是 $btn1 自己的 width/height，印出 Inserting widget with size 125x30，接著印出 Button label: Hello。不管委托鏈有幾層，this 從頭到尾只認「最初是被誰呼叫的」。",
+      "verify": {
+        "checks": [
+          { "code": "var Widget = {\n  init: function (width, height) {\n    this.width = width || 50;\n    this.height = height || 50;\n  },\n  insert: function (el) {\n    console.log('Inserting widget with size ' + this.width + 'x' + this.height);\n  },\n};\nvar Button = Object.create(Widget);\nButton.setup = function (width, height, label) {\n  this.init(width, height);\n  this.label = label || 'Button';\n};\nButton.build = function () {\n  this.insert();\n  console.log('Button label: ' + this.label);\n};\nvar $btn1 = Object.create(Button);\n$btn1.setup(125, 30, 'Hello');\n$btn1.build();", "expected": "Inserting widget with size 125x30\nButton label: Hello" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-6-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "行為委托一律要用 Object.create 建立真正的 [[Prototype]] 連結，不能隨便用其他 Object 方法代替",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/create",
+      "story": "",
+      "prompt": "把空格填起來，讓 Bar 真正委托到 Foo，印出 Foo speaking, my name is Bar1",
+      "code": "var Foo = {\n  speak: function () {\n    console.log('Foo speaking, my name is ' + this.name);\n  },\n};\nvar Bar = Object.____(Foo);\nBar.name = 'Bar1';\nBar.speak();",
+      "options": [
+        { "id": "a", "text": "create" },
+        { "id": "b", "text": "keys" },
+        { "id": "c", "text": "defineProperty" },
+        { "id": "d", "text": "values" }
+      ],
+      "answer": "a",
+      "explanation": "Object.create(Foo) 建立一個新物件、把它的 [[Prototype]] 連結到 Foo，Bar 才能委托到 Foo.speak，同時保有自己獨立的 name 屬性。選項 b 的 Object.keys(Foo) 回傳的是一個裝著 Foo 自身可列舉屬性名稱的陣列（這裡是 ['speak']），Bar 會變成一個陣列，陣列上根本沒有 speak 方法，Bar.speak() 會直接丟出 TypeError。選項 c 的 Object.defineProperty 呼叫時少給了必要的屬性描述符參數，會直接在那一行丟出錯誤，程式根本執行不到後面。",
+      "verify": {
+        "checks": [
+          { "code": "var Foo = {\n  speak: function () {\n    console.log('Foo speaking, my name is ' + this.name);\n  },\n};\nvar Bar = Object.create(Foo);\nBar.name = 'Bar1';\nBar.speak();", "expected": "Foo speaking, my name is Bar1" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-6-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "沒有「類別」可以檢查時，用 isPrototypeOf 確認某個物件是不是在另一個物件的委托鏈上",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/isPrototypeOf",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var Foo = {};\nvar Bar = Object.create(Foo);\nconsole.log(Foo.isPrototypeOf(Bar));\nconsole.log(Bar.isPrototypeOf(Foo));",
+      "options": [
+        { "id": "a", "text": "true\nfalse" },
+        { "id": "b", "text": "false\ntrue" },
+        { "id": "c", "text": "true\ntrue" },
+        { "id": "d", "text": "false\nfalse" }
+      ],
+      "answer": "a",
+      "explanation": "委托風格的寫法裡沒有「類別」可以用 instanceof 檢查，isPrototypeOf 是另一種內省手法：Foo.isPrototypeOf(Bar) 問的是「Foo 在不在 Bar 的原型鏈上」——Bar 是用 Object.create(Foo) 建的，Foo 確實在 Bar 的原型鏈上，所以是 true。反過來 Bar.isPrototypeOf(Foo) 問「Bar 在不在 Foo 的原型鏈上」，Foo 是更早建立、更上游的物件，它的原型鏈上根本沒有 Bar，所以是 false。",
+      "verify": {
+        "checks": [
+          { "code": "var Foo = {};\nvar Bar = Object.create(Foo);\nconsole.log(Foo.isPrototypeOf(Bar));\nconsole.log(Bar.isPrototypeOf(Foo));", "expected": "true\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-6-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "委托是「即時查詢」，共用物件之後被修改，所有委托到它的物件下次呼叫都會看到新行為——這跟混入（複製一次）完全不同",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/create",
+      "story": "",
+      "prompt": "$btn 委托給 Button，Button 又委托給 Widget。Widget.insert 在第一次呼叫之後才被整個換掉。這段程式會印出什麼？",
+      "code": "var Widget = {\n  insert: function () {\n    console.log('original insert');\n  },\n};\nvar Button = Object.create(Widget);\nButton.build = function () {\n  this.insert();\n};\nvar $btn = Object.create(Button);\n$btn.build(); // 修改 Widget.insert 之前\n\nWidget.insert = function () {\n  console.log('updated insert'); // 之後才修改 Widget 上的方法\n};\n$btn.build(); // 修改之後",
+      "options": [
+        { "id": "a", "text": "original insert\nupdated insert" },
+        { "id": "b", "text": "original insert\noriginal insert" },
+        { "id": "c", "text": "updated insert\nupdated insert" },
+        { "id": "d", "text": "original insert\nTypeError：Widget.insert is not a function" }
+      ],
+      "answer": "a",
+      "explanation": "委托鏈上的每一次屬性查詢，都是「呼叫當下」才沿著 [[Prototype]] 鏈即時去找，不是在連結建立的那一刻就把行為複製了一份下來。第一次 $btn.build() 呼叫時，沿著鏈往上找到的 insert 還是原本那個，印出 original insert。接著 Widget.insert 被整個換掉，第二次 $btn.build() 呼叫時，沿著同一條鏈往上查詢，直接看到 Widget 身上「現在」的 insert，印出 updated insert。這跟上一章（混入）用 mixin 函式在建立的當下把值複製一份、之後來源物件再改也不會回頭影響（見 ydkjs-tp-4-q3）是完全相反的行為——委托連結是活的、每次查詢都即時反映當下狀態，混入複製只是某一個時間點的快照。",
+      "verify": {
+        "checks": [
+          { "code": "var Widget = {\n  insert: function () {\n    console.log('original insert');\n  },\n};\nvar Button = Object.create(Widget);\nButton.build = function () {\n  this.insert();\n};\nvar $btn = Object.create(Button);\n$btn.build();\n\nWidget.insert = function () {\n  console.log('updated insert');\n};\n$btn.build();", "expected": "original insert\nupdated insert" }
+        ]
+      }
+    }
+  ]
+}

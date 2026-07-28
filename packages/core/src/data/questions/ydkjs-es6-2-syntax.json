@@ -1,0 +1,144 @@
+{
+  "id": "ydkjs-es6-2",
+  "title": "Ch2：語法",
+  "questions": [
+    {
+      "id": "ydkjs-es6-2-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "展開運算子 ... 可以把一個陣列「攤開」成一個一個獨立的元素，用在函式呼叫的引數或陣列字面量裡都可以",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Spread_syntax",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function sum(a, b, c) {\n  return a + b + c;\n}\nvar nums = [1, 2, 3];\nconsole.log(sum(...nums));\nconsole.log([...nums, 4, 5]);",
+      "options": [
+        { "id": "a", "text": "6\n[ 1, 2, 3, 4, 5 ]" },
+        { "id": "b", "text": "NaN\n[ 1, 2, 3, [ 4, 5 ] ]" },
+        { "id": "c", "text": "[1,2,3]\n[ 1, 2, 3, 4, 5 ]" },
+        { "id": "d", "text": "6\n[ [ 1, 2, 3 ], 4, 5 ]" }
+      ],
+      "answer": "a",
+      "explanation": "...nums 在函式呼叫裡把陣列攤開成三個獨立的引數，等同直接寫 sum(1, 2, 3)，回傳 6。在陣列字面量 [...nums, 4, 5] 裡，...nums 一樣把陣列攤開成獨立的元素，跟後面手動寫的 4、5 合併成一個新的、扁平的陣列 [1, 2, 3, 4, 5]，不會巢狀成 [[1,2,3], 4, 5]。",
+      "verify": {
+        "checks": [
+          { "code": "function sum(a, b, c) {\n  return a + b + c;\n}\nvar nums = [1, 2, 3];\nconsole.log(sum(...nums));\nconsole.log([...nums, 4, 5]);", "expected": "6\n[ 1, 2, 3, 4, 5 ]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-2-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "剩餘參數 ...rest 寫在函式參數列表最後，會把「剩下沒被前面參數對應到」的引數收集成一個真正的陣列",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/rest_parameters",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function foo(first, ...rest) {\n  console.log(first);\n  console.log(rest);\n}\nfoo(1, 2, 3, 4);",
+      "options": [
+        { "id": "a", "text": "1\n[ 2, 3, 4 ]" },
+        { "id": "b", "text": "1\n[ 1, 2, 3, 4 ]" },
+        { "id": "c", "text": "[ 1, 2, 3, 4 ]\nundefined" },
+        { "id": "d", "text": "1\narguments" }
+      ],
+      "answer": "a",
+      "explanation": "first 對應到第一個引數 1，...rest 把「剩下」的引數（2、3、4）收集成一個真正的陣列 [2, 3, 4]。跟舊式的 arguments 物件不同，rest 參數是貨真價實的 Array 實例，可以直接呼叫 map、filter 這些陣列方法，不用像 arguments 那樣還要先轉換。",
+      "verify": {
+        "checks": [
+          { "code": "function foo(first, ...rest) {\n  console.log(first);\n  console.log(rest);\n}\nfoo(1, 2, 3, 4);", "expected": "1\n[ 2, 3, 4 ]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-2-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "解構賦值可以同時做「改名」「給預設值」「跳過某個元素」，不需要拆成好幾行分別處理",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var { a: x = 10, b: y = 20 } = { a: 1 };\nconsole.log(x, y);\nvar [first, , third] = [1, 2, 3]; // 中間留空，跳過第二個元素\nconsole.log(first, third);",
+      "options": [
+        { "id": "a", "text": "1 20\n1 3" },
+        { "id": "b", "text": "1 undefined\n1 3" },
+        { "id": "c", "text": "10 20\n1 2" },
+        { "id": "d", "text": "1 20\n1 2" }
+      ],
+      "answer": "a",
+      "explanation": "{ a: x = 10, b: y = 20 } = { a: 1 } 做了兩件事：把物件的 a 屬性解構出來、改名成 x（值是 1，不需要用到預設值 10）；b 屬性在來源物件裡不存在，改名成 y 之後套用預設值 20。陣列解構 [first, , third] 裡，中間那個位置留空（兩個逗號中間什麼都不寫），代表刻意跳過來源陣列的第二個元素（2），first 拿到第一個元素 1，third 直接對應到第三個元素 3。",
+      "verify": {
+        "checks": [
+          { "code": "var { a: x = 10, b: y = 20 } = { a: 1 };\nconsole.log(x, y);\nvar [first, , third] = [1, 2, 3];\nconsole.log(first, third);", "expected": "1 20\n1 3" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-2-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "標籤模板字面量：在模板字面量前面加一個函式名稱，這個函式可以完全接管字串怎麼拼接、怎麼處理插入的值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Template_literals",
+      "story": "",
+      "prompt": "upper 是一個標籤函式，接收模板字面量拆解出來的固定字串片段和插入的值。這段程式會印出什麼？",
+      "code": "function upper(strings, ...values) {\n  var result = '';\n  strings.forEach(function (str, i) {\n    result += str;\n    if (i < values.length) {\n      result += String(values[i]).toUpperCase();\n    }\n  });\n  return result;\n}\nvar name = 'kyle';\nconsole.log(upper`Hello, ${name}!`);",
+      "options": [
+        { "id": "a", "text": "Hello, KYLE!" },
+        { "id": "b", "text": "Hello, kyle!" },
+        { "id": "c", "text": "HELLO, KYLE!" },
+        { "id": "d", "text": "TypeError：upper 不是有效的標籤函式" }
+      ],
+      "answer": "a",
+      "explanation": "upper`Hello, ${name}!` 這種「函式名稱緊接著模板字面量」的寫法，不會直接把模板字面量拼成字串，而是呼叫 upper 這個標籤函式：strings 拿到固定文字片段組成的陣列（['Hello, ', '!']），values 拿到所有插入表達式算出來的值（['kyle']）。upper 內部把每個插入值轉成大寫再拼回固定文字片段之間，'kyle' 變成 'KYLE'，其餘固定文字保持原樣，最終組成 'Hello, KYLE!'。標籤模板字面量讓開發者能完全客製化字串插值的處理邏輯，不只是單純的字串拼接。",
+      "verify": {
+        "checks": [
+          { "code": "function upper(strings, ...values) {\n  var result = '';\n  strings.forEach(function (str, i) {\n    result += str;\n    if (i < values.length) {\n      result += String(values[i]).toUpperCase();\n    }\n  });\n  return result;\n}\nvar name = 'kyle';\nconsole.log(upper`Hello, ${name}!`);", "expected": "Hello, KYLE!" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-2-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "計算屬性名：物件字面量的屬性名稱可以用 [表達式] 動態算出來，不用先建好物件再用中括號補一個屬性",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Object_initializer#computed_property_names",
+      "story": "",
+      "prompt": "把空格填起來，讓物件字面量的屬性名稱直接用 key 變數的值來決定，印出 value",
+      "code": "var key = 'dynamicKey';\nvar obj = {\n  [____]: 'value',\n};\nconsole.log(obj.dynamicKey);",
+      "options": [
+        { "id": "a", "text": "key" },
+        { "id": "b", "text": "'key'" },
+        { "id": "c", "text": "key.toString" },
+        { "id": "d", "text": "typeof key" }
+      ],
+      "answer": "a",
+      "explanation": "[key] 這種寫法會先計算中括號裡的表達式（也就是變數 key 的值 'dynamicKey'），再拿這個計算結果當成屬性名稱，等同於寫 obj.dynamicKey = 'value'。如果寫成 'key'（選項 b，帶引號的字串常值），屬性名稱就會直接是字面上的 'key' 這個字，而不是變數 key 的值，obj.dynamicKey 會是 undefined，物件上多出來的反而是一個叫 key 的屬性。這是 ES6 之前想要「動態決定屬性名稱」，得先建好物件、再用 obj[key] = ... 額外補一行才能做到的事，現在可以直接寫在物件字面量裡。",
+      "verify": {
+        "checks": [
+          { "code": "var key = 'dynamicKey';\nvar obj = {\n  [key]: 'value',\n};\nconsole.log(obj.dynamicKey);", "expected": "value" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-2-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "Symbol 是一種永遠獨一無二的原始值，即使描述文字一樣，也不會有兩個 Symbol 是相等的，而且不會出現在 Object.keys 這類列舉一般屬性的方法裡",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Symbol",
+      "story": "",
+      "prompt": "s1 和 s2 都用同樣的描述文字 'id' 建立。這段程式會印出什麼？",
+      "code": "var s1 = Symbol('id');\nvar s2 = Symbol('id');\nconsole.log(s1 === s2);\nvar obj = {};\nobj[s1] = 'first';\nobj[s2] = 'second';\nconsole.log(obj[s1], obj[s2]);\nconsole.log(Object.keys(obj).length); // symbol 屬性不會列在裡面",
+      "options": [
+        { "id": "a", "text": "false\nfirst second\n0" },
+        { "id": "b", "text": "true\nsecond second\n0" },
+        { "id": "c", "text": "false\nfirst second\n2" },
+        { "id": "d", "text": "true\nfirst first\n2" }
+      ],
+      "answer": "a",
+      "explanation": "Symbol('id') 每次呼叫都會建立一個全新、獨一無二的值，即使兩次傳的描述文字都是 'id'，'id' 只是方便除錯時辨識用的標籤，不影響 Symbol 本身的唯一性，s1 === s2 是 false。obj[s1] 和 obj[s2] 因此是兩個完全獨立的屬性，各自存了 'first'、'second'，不會互相覆蓋。Symbol 型別的屬性刻意被設計成不會出現在 Object.keys、for...in 這些一般用來列舉屬性的機制裡，所以 Object.keys(obj).length 印出 0——這也是 Symbol 常被拿來當「不會跟一般字串屬性名稱衝突、也不容易被意外列舉出來」的特殊屬性鍵的原因。",
+      "verify": {
+        "checks": [
+          { "code": "var s1 = Symbol('id');\nvar s2 = Symbol('id');\nconsole.log(s1 === s2);\nvar obj = {};\nobj[s1] = 'first';\nobj[s2] = 'second';\nconsole.log(obj[s1], obj[s2]);\nconsole.log(Object.keys(obj).length);", "expected": "false\nfirst second\n0" }
+        ]
+      }
+    }
+  ]
+}

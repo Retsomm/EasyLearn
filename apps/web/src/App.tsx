@@ -7,6 +7,7 @@ import {
   getWrongEntries,
   getSavedQuestions,
   chapters,
+  getTopicForChapter,
   sampleQuestions,
   sampleFixedQuestions,
   REVIEW_SIZE,
@@ -19,6 +20,7 @@ import Notes from '@/screens/Notes'
 import Stats from '@/screens/Stats'
 import Profile from '@/screens/Profile'
 import ChapterMap from '@/screens/ChapterMap'
+import TopicBooks from '@/screens/TopicBooks'
 import Quiz from '@/screens/Quiz'
 import QuestionBook from '@/screens/QuestionBook'
 import Recap from '@/screens/Recap'
@@ -34,6 +36,7 @@ type View =
   | { name: 'wrongbook' }
   | { name: 'savedbook' }
   | { name: 'savedkeypoints' }
+  | { name: 'topicbooks'; topicId: string }
   | { name: 'levellist'; chapterId: string | null }
   | { name: 'quiz'; levelId: string; questions: Question[] }
   | { name: 'review'; questions: Question[] }
@@ -189,15 +192,30 @@ const App = () => {
             onBack={() => setView({ name: 'notes' })}
           />
         )
-      case 'levellist':
+      case 'topicbooks':
+        return (
+          <TopicBooks
+            topicId={view.topicId}
+            progress={progress}
+            onOpenChapter={(chapterId) => setView({ name: 'levellist', chapterId })}
+            onBack={() => setView({ name: 'home' })}
+          />
+        )
+      case 'levellist': {
+        // 如果這一章屬於「一本書底下有好幾章」的分組，返回鍵要回到章節列表，不是直接回首頁
+        const topic = view.chapterId ? getTopicForChapter(view.chapterId) : undefined
+        const backView: View = topic && topic.chapters.length > 1
+          ? { name: 'topicbooks', topicId: topic.id }
+          : { name: 'home' }
         return (
           <ChapterMap
             chapterId={view.chapterId}
             progress={progress}
             onStartLevel={startLevel}
-            onBack={() => setView({ name: 'home' })}
+            onBack={() => setView(backView)}
           />
         )
+      }
       case 'recap':
         return <Recap onOpenChapter={(chapterId) => setView({ name: 'recap-chapter', chapterId })} />
       case 'recap-chapter':
@@ -244,6 +262,7 @@ const App = () => {
           <Home
             progress={progress}
             onOpenChapter={(chapterId) => setView({ name: 'levellist', chapterId })}
+            onOpenTopic={(topicId) => setView({ name: 'topicbooks', topicId })}
             onMixedPractice={startMixedPractice}
           />
         )

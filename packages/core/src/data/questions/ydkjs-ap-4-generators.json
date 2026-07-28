@@ -1,0 +1,144 @@
+{
+  "id": "ydkjs-ap-4",
+  "title": "Ch4：生成器",
+  "questions": [
+    {
+      "id": "ydkjs-ap-4-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "generator 執行到 yield 就會暫停，回傳 { value, done }，下次呼叫 next() 才會從暫停的地方繼續往下跑",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function*",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function* foo() {\n  console.log('start');\n  yield 1;\n  console.log('middle');\n  yield 2;\n  console.log('end');\n}\nvar it = foo();\nconsole.log(it.next());\nconsole.log(it.next());\nconsole.log(it.next());",
+      "options": [
+        { "id": "a", "text": "start\n{ value: 1, done: false }\nmiddle\n{ value: 2, done: false }\nend\n{ value: undefined, done: true }" },
+        { "id": "b", "text": "start\nmiddle\nend\n{ value: 1, done: false }\n{ value: 2, done: false }\n{ value: undefined, done: true }" },
+        { "id": "c", "text": "{ value: 1, done: false }\n{ value: 2, done: false }\n{ value: undefined, done: true }" },
+        { "id": "d", "text": "start\n{ value: 1, done: true }\nmiddle\n{ value: 2, done: true }\nend\n{ value: undefined, done: true }" }
+      ],
+      "answer": "a",
+      "explanation": "呼叫 foo() 本身不會執行函式主體，只會建立一個生成器物件 it。第一次 it.next() 才真正開始執行，印出 start，跑到第一個 yield 1 就暫停，回傳 { value: 1, done: false }（done 是 false，代表生成器還沒結束）。第二次 it.next() 從暫停處繼續，印出 middle，跑到 yield 2 又暫停，回傳 { value: 2, done: false }。第三次 it.next() 繼續執行剩下的部分，印出 end，函式主體執行完畢，回傳 { value: undefined, done: true }，done 變成 true 代表生成器已經結束。",
+      "verify": {
+        "checks": [
+          { "code": "function* foo() {\n  console.log('start');\n  yield 1;\n  console.log('middle');\n  yield 2;\n  console.log('end');\n}\nvar it = foo();\nconsole.log(it.next());\nconsole.log(it.next());\nconsole.log(it.next());", "expected": "start\n{ value: 1, done: false }\nmiddle\n{ value: 2, done: false }\nend\n{ value: undefined, done: true }" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-4-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "generator 本身就是可迭代的（iterable），可以直接用展開語法或 for...of 走訪",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/for...of",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function* range(n) {\n  for (var i = 1; i <= n; i++) {\n    yield i;\n  }\n}\nconsole.log([...range(3)]);\nfor (var v of range(3)) {\n  console.log(v);\n}",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3 ]\n1\n2\n3" },
+        { "id": "b", "text": "{ value: 1, done: false }\n1\n2\n3" },
+        { "id": "c", "text": "[ 1, 2, 3 ]" },
+        { "id": "d", "text": "1\n2\n3\n[ 1, 2, 3 ]" }
+      ],
+      "answer": "a",
+      "explanation": "generator 呼叫之後回傳的物件，不只是有 next() 方法，本身就實作了可迭代協定（iterable），可以直接被展開語法 [...range(3)] 或 for...of 消費，不需要手動一直呼叫 next()。展開語法會把每次 yield 出來的值收集成一個陣列 [1, 2, 3]；for...of 則是逐一走訪，每次印出一個值。這兩種寫法背後都是自動重複呼叫 next() 直到 done 變成 true 為止。",
+      "verify": {
+        "checks": [
+          { "code": "function* range(n) {\n  for (var i = 1; i <= n; i++) {\n    yield i;\n  }\n}\nconsole.log([...range(3)]);\nfor (var v of range(3)) {\n  console.log(v);\n}", "expected": "[ 1, 2, 3 ]\n1\n2\n3" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-4-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "generator 跟外部是雙向溝通：next(值) 傳進去的值，會變成上一個 yield 表達式的運算結果",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/yield",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function* foo() {\n  var x = yield 'first';\n  console.log('received:', x);\n  var y = yield 'second';\n  console.log('received:', y);\n}\nvar it = foo();\nconsole.log(it.next()); // 還沒有東西可以接收\nconsole.log(it.next('A')); // 這個值會變成第一個 yield 的結果\nconsole.log(it.next('B'));",
+      "options": [
+        { "id": "a", "text": "{ value: 'first', done: false }\nreceived: A\n{ value: 'second', done: false }\nreceived: B\n{ value: undefined, done: true }" },
+        { "id": "b", "text": "{ value: 'first', done: false }\nreceived: undefined\n{ value: 'second', done: false }\nreceived: undefined\n{ value: undefined, done: true }" },
+        { "id": "c", "text": "received: A\n{ value: 'first', done: false }\nreceived: B\n{ value: 'second', done: false }" },
+        { "id": "d", "text": "{ value: 'first', done: false }\nreceived: first\n{ value: 'second', done: false }\nreceived: second" }
+      ],
+      "answer": "a",
+      "explanation": "第一次 it.next()（沒有參數）啟動生成器，跑到 var x = yield 'first' 這一行，先把 'first' 丟出來暫停，這時候 x 還沒有被賦值。第二次 it.next('A')，傳進去的 'A' 會變成剛剛那個 yield 表達式的運算結果，所以 x 被賦值成 'A'，印出 received: A，接著跑到 var y = yield 'second' 又暫停。第三次 it.next('B')，'B' 變成第二個 yield 的結果，y 是 'B'，印出 received: B，函式跑完，回傳 { value: undefined, done: true }。next() 傳進去的值，永遠是「餵給上一次暫停處的 yield 表達式」，不是餵給下一個 yield。",
+      "verify": {
+        "checks": [
+          { "code": "function* foo() {\n  var x = yield 'first';\n  console.log('received:', x);\n  var y = yield 'second';\n  console.log('received:', y);\n}\nvar it = foo();\nconsole.log(it.next());\nconsole.log(it.next('A'));\nconsole.log(it.next('B'));", "expected": "{ value: 'first', done: false }\nreceived: A\n{ value: 'second', done: false }\nreceived: B\n{ value: undefined, done: true }" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-4-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "yield* 把另一個 generator 的所有 yield 值，依序委托轉交出去，像是把兩個 generator 接在一起",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/yield*",
+      "story": "",
+      "prompt": "outer 用 yield* inner() 把 inner 整個接進來。這段程式會印出什麼？",
+      "code": "function* inner() {\n  yield 'a';\n  yield 'b';\n}\nfunction* outer() {\n  yield 1;\n  yield* inner();\n  yield 2;\n}\nconsole.log([...outer()]);",
+      "options": [
+        { "id": "a", "text": "[ 1, 'a', 'b', 2 ]" },
+        { "id": "b", "text": "[ 1, 2 ]" },
+        { "id": "c", "text": "[ 1, [ 'a', 'b' ], 2 ]" },
+        { "id": "d", "text": "[ 'a', 'b', 1, 2 ]" }
+      ],
+      "answer": "a",
+      "explanation": "yield* inner() 不是把 inner() 的結果當成單一一個值 yield 出去，而是把控制權整個委托給 inner，inner 裡每一次 yield 的值，都會依序原封不動地被 outer 接力丟出去，直到 inner 執行完畢，控制權才交還給 outer 繼續往下跑。所以走訪 outer() 依序拿到 1（outer 自己的 yield）、'a'、'b'（委托給 inner 的兩個 yield）、2（outer 自己剩下的 yield），四個值攤平成同一層，不是巢狀的陣列。",
+      "verify": {
+        "checks": [
+          { "code": "function* inner() {\n  yield 'a';\n  yield 'b';\n}\nfunction* outer() {\n  yield 1;\n  yield* inner();\n  yield 2;\n}\nconsole.log([...outer()]);", "expected": "[ 1, 'a', 'b', 2 ]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-4-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "function 後面加一個 * 才是宣告 generator，函式主體裡才能使用 yield",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function*",
+      "story": "",
+      "prompt": "把空格填起來，讓 counter 變成一個合法的 generator 函式，印出 [ 1, 2 ]",
+      "code": "function ____ counter() {\n  yield 1;\n  yield 2;\n}\nconsole.log([...counter()]);",
+      "options": [
+        { "id": "a", "text": "*" },
+        { "id": "b", "text": "" },
+        { "id": "c", "text": "async" },
+        { "id": "d", "text": "static" }
+      ],
+      "answer": "a",
+      "explanation": "function 後面加一個 * 才是宣告 generator 函式，函式主體裡才允許使用 yield 這個關鍵字。如果空格留空（選項 b），counter 會被當成一般函式，一般函式的主體裡不能使用 yield，會直接丟出 SyntaxError，程式根本無法執行。選項 c 的 async 是宣告非同步函式（讓函式主體可以用 await），跟 generator 是完全不同的機制，也不允許在裡面用 yield。",
+      "verify": {
+        "checks": [
+          { "code": "function* counter() {\n  yield 1;\n  yield 2;\n}\nconsole.log([...counter()]);", "expected": "[ 1, 2 ]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-4-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "生成器＋Promise：用一個小驅動函式，讓每個 yield 出來的 Promise 決議之後自動呼叫 next() 繼續執行，寫出看起來像同步的非同步程式碼",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function*",
+      "story": "",
+      "prompt": "run 這個驅動函式會不斷用 Promise 決議的結果去呼叫 next()，直到 generator 執行完畢。這段程式會印出什麼？",
+      "code": "function* main() {\n  var result = yield Promise.resolve(21);\n  var doubled = yield Promise.resolve(result * 2);\n  return doubled;\n}\nfunction run(gen) {\n  var it = gen();\n  function step(val) {\n    var res = it.next(val);\n    if (res.done) {\n      console.log('final:', res.value);\n      return;\n    }\n    res.value.then(step);\n  }\n  step();\n}\nrun(main);",
+      "options": [
+        { "id": "a", "text": "final: 42" },
+        { "id": "b", "text": "final: 21" },
+        { "id": "c", "text": "final: undefined" },
+        { "id": "d", "text": "final: [object Promise]" }
+      ],
+      "answer": "a",
+      "explanation": "main 裡的兩個 yield 各自丟出一個 Promise。run 的驅動邏輯是：每次呼叫 it.next(val)，如果還沒結束（res.done 是 false），就對這次拿到的 Promise 呼叫 .then(step)——等這個 Promise 決議完成，用它決議的值再呼叫一次 step，等於再呼叫一次 next()，把結果餵回上一個 yield（呼應 Q3 的雙向溝通）。第一輪：yield Promise.resolve(21) 決議成 21，step(21) 呼叫 it.next(21)，result 變成 21；第二輪：yield Promise.resolve(21 * 2) 決議成 42，step(42) 呼叫 it.next(42)，doubled 變成 42，generator return 42，done 變成 true，印出 final: 42。這個小小的驅動函式，正是後來 async/await 這個語法糖底層在做的事情。",
+      "verify": {
+        "checks": [
+          { "code": "function* main() {\n  var result = yield Promise.resolve(21);\n  var doubled = yield Promise.resolve(result * 2);\n  return doubled;\n}\nfunction run(gen) {\n  var it = gen();\n  function step(val) {\n    var res = it.next(val);\n    if (res.done) {\n      console.log('final:', res.value);\n      return;\n    }\n    res.value.then(step);\n  }\n  step();\n}\nrun(main);", "expected": "final: 42" }
+        ]
+      }
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
 import { PrimaryButton, buttonTextStyles } from '@/components/Button';
 import { colors, fonts } from '@/constants/theme';
-import { chapters, todayStr, yesterdayStr, type Progress } from '@easylearn/core';
+import { topics, todayStr, yesterdayStr, type Progress } from '@easylearn/core';
 
 const DAILY_GOAL = 20;
 const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日'];
@@ -28,10 +28,11 @@ const getWeekDates = (): string[] => {
 interface HomeProps {
   progress: Progress;
   onOpenChapter: (chapterId: string) => void;
+  onOpenTopic: (topicId: string) => void;
   onMixedPractice: () => void;
 }
 
-export default function Home({ progress, onOpenChapter, onMixedPractice }: HomeProps) {
+export default function Home({ progress, onOpenChapter, onOpenTopic, onMixedPractice }: HomeProps) {
   const today = todayStr();
   const yesterday = yesterdayStr();
   const todayStats = progress.dailyStats[today] ?? { total: 0, correct: 0 };
@@ -106,17 +107,23 @@ export default function Home({ progress, onOpenChapter, onMixedPractice }: HomeP
 
       <Text style={styles.sectionTitle}>分科高效刷題</Text>
       <View style={styles.chapterList}>
-        {chapters.map((ch, i) => {
-          const done = ch.levels.filter((l) => progress.completedLevels[l.id]).length;
-          const pct = ch.levels.length ? (done / ch.levels.length) * 100 : 0;
+        {topics.map((topic, i) => {
+          const levels = topic.chapters.flatMap((ch) => ch.levels);
+          const done = levels.filter((l) => progress.completedLevels[l.id]).length;
+          const pct = levels.length ? (done / levels.length) * 100 : 0;
           const accent = CHAPTER_ACCENTS[i] ?? colors.ink;
+          const isGroup = topic.chapters.length > 1;
           return (
-            <Pressable key={ch.id} style={styles.chapterCard} onPress={() => onOpenChapter(ch.id)}>
-              <Icon name={ch.icon} size={30} color={accent} />
+            <Pressable
+              key={topic.id}
+              style={styles.chapterCard}
+              onPress={() => (isGroup ? onOpenTopic(topic.id) : onOpenChapter(topic.chapters[0].id))}
+            >
+              <Icon name={topic.icon} size={30} color={accent} />
               <View style={styles.chapterInfo}>
-                <Text style={styles.chapterName}>{ch.title}</Text>
+                <Text style={styles.chapterName}>{topic.title}</Text>
                 <Text style={styles.chapterProgress}>
-                  完成 {done} / {ch.levels.length} 關
+                  {isGroup ? `共 ${topic.chapters.length} 章` : `完成 ${done} / ${levels.length} 關`}
                 </Text>
                 <View style={styles.chapterBar}>
                   <View style={[styles.chapterBarFill, { width: `${pct}%`, backgroundColor: accent }]} />

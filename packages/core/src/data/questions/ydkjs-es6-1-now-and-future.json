@@ -1,0 +1,132 @@
+{
+  "id": "ydkjs-es6-1",
+  "title": "Ch1：ES?現在與未來",
+  "questions": [
+    {
+      "id": "ydkjs-es6-1-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "JS 語言改成每年固定改版之後，不會再有一個明確的「大版本號」，判斷某個功能能不能用，最實際的做法是直接偵測這個功能存不存在",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/includes",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "console.log(typeof Array.prototype.includes);\nconsole.log([1, 2, 3].includes(2));",
+      "options": [
+        { "id": "a", "text": "function\ntrue" },
+        { "id": "b", "text": "undefined\ntrue" },
+        { "id": "c", "text": "function\nfalse" },
+        { "id": "d", "text": "boolean\ntrue" }
+      ],
+      "answer": "a",
+      "explanation": "includes 是 ES7（ES2016）才加進 Array.prototype 的方法，在支援它的引擎裡 typeof Array.prototype.includes 是 function，[1,2,3].includes(2) 正常判斷 2 在陣列裡，印出 true。ES6 之後語言改成每年固定改版，不再有像早期「ES5、ES6」這種間隔好幾年、界線分明的大版本，與其去記「這個功能是哪個版本加的」，實務上更常見的做法是像這樣直接用 typeof 偵測這個功能存不存在。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(typeof Array.prototype.includes);\nconsole.log([1, 2, 3].includes(2));", "expected": "function\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-1-q2",
+      "type": "fill-in",
+      "difficulty": 1,
+      "topic": "在還不確定執行環境支不支援某個新方法之前，先做特性測試（feature test），沒有的話退回舊寫法，這是應對「語言持續在演進」最務實的做法",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf",
+      "story": "",
+      "prompt": "把空格填起來，讓 safeIncludes 在 includes 方法不存在時，安全地退回用 indexOf 判斷，印出 true 和 false",
+      "code": "function safeIncludes(arr, val) {\n  if (typeof arr.includes === ____) {\n    return arr.includes(val);\n  }\n  return arr.indexOf(val) !== -1;\n}\nconsole.log(safeIncludes([1, 2, 3], 2));\nconsole.log(safeIncludes([1, 2, 3], 9));",
+      "options": [
+        { "id": "a", "text": "'function'" },
+        { "id": "b", "text": "'undefined'" },
+        { "id": "c", "text": "true" },
+        { "id": "d", "text": "'boolean'" }
+      ],
+      "answer": "a",
+      "explanation": "typeof arr.includes === 'function' 判斷 includes 這個方法是不是真的存在（型別是不是函式），存在的話才呼叫它，這是目前執行環境確實支援 includes 的情況，直接回傳 [1,2,3].includes(2) 的結果 true 和 includes(9) 的結果會走到下一次的 false。如果選 b 的 'undefined'，邏輯完全顛倒（變成「這個方法不存在時才呼叫它」），會直接對 undefined 呼叫，丟出 TypeError。這種「先測試特性存不存在，再決定要不要用」的寫法，讓程式碼可以同時兼顧支援和不支援新語法的環境。",
+      "verify": {
+        "checks": [
+          { "code": "function safeIncludes(arr, val) {\n  if (typeof arr.includes === 'function') {\n    return arr.includes(val);\n  }\n  return arr.indexOf(val) !== -1;\n}\nconsole.log(safeIncludes([1, 2, 3], 2));\nconsole.log(safeIncludes([1, 2, 3], 9));", "expected": "true\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-1-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "轉譯器（transpiler）把新語法轉寫成舊語法時，本質上是機械化地做開發者原本就可以手動做的事——箭頭函式轉譯後大致就是「用一個一般變數存住 this」的寫法",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/Arrow_functions",
+      "story": "",
+      "prompt": "arrowStyle 用箭頭函式讓內部的 later 繼承外層的 this；transpiledStyle 手動模擬轉譯器會做的事：先把 this 存進 self，讓一般函式透過 self 拿到同樣的值。這段程式會印出什麼？",
+      "code": "var obj = {\n  name: 'obj',\n  arrowStyle: function () {\n    var later = () => {\n      console.log(this.name);\n    };\n    later();\n  },\n  transpiledStyle: function () {\n    var self = this; // 轉譯器大致會做的事：把 this 存進一個一般變數\n    var later = function () {\n      console.log(self.name);\n    };\n    later();\n  },\n};\nobj.arrowStyle();\nobj.transpiledStyle();",
+      "options": [
+        { "id": "a", "text": "obj\nobj" },
+        { "id": "b", "text": "obj\nundefined" },
+        { "id": "c", "text": "undefined\nobj" },
+        { "id": "d", "text": "undefined\nundefined" }
+      ],
+      "answer": "a",
+      "explanation": "arrowStyle 裡的箭頭函式 later 沒有自己的 this，繼承外層 arrowStyle 呼叫時的 this（也就是 obj），印出 obj。transpiledStyle 手動模擬了轉譯器在把箭頭函式轉成舊語法時常見的做法：先在外層用一般變數 self 把 this（同樣是 obj）存起來，內部改寫成一般函式，透過 self 而不是 this 去讀取，效果完全一樣，也印出 obj。這示範了轉譯器並不是變出什麼魔法，只是把「開發者原本就能手動做到」的事情自動化、機械化地做一遍。",
+      "verify": {
+        "checks": [
+          { "code": "var obj = {\n  name: 'obj',\n  arrowStyle: function () {\n    var later = () => {\n      console.log(this.name);\n    };\n    later();\n  },\n  transpiledStyle: function () {\n    var self = this;\n    var later = function () {\n      console.log(self.name);\n    };\n    later();\n  },\n};\nobj.arrowStyle();\nobj.transpiledStyle();", "expected": "obj\nobj" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-1-q4",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "新語法（不是新方法）沒辦法用 Q1/Q2 那種 typeof 特性測試偵測，因為連解析程式碼的第一步都會直接失敗",
+      "docs": "",
+      "story": "",
+      "prompt": "Q1、Q2 都是偵測「方法存不存在」（Array.prototype.includes）。如果今天想偵測的是「這個環境支不支援箭頭函式這種語法」，能不能也寫成 if (typeof (() => {}) === 'function') 這種特性測試？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不行。Q1、Q2 測試的是『執行期已經解析完成之後，某個方法存不存在』，這種測試本身用的是舊引擎也讀得懂的語法（typeof、if），可以安全執行。但箭頭函式是全新的『語法』，如果引擎的剖析器根本不認得這種語法，程式碼在真正開始執行的第一步（解析階段）就會直接丟出 SyntaxError——包含這個 if 判斷式本身都無法通過解析，整個檔案會直接執行失敗，沒有機會進到 if 判斷的邏輯，所以語法層級的支援與否沒辦法用這種執行期特性測試偵測，只能透過建置流程統一轉譯" },
+        { "id": "b", "text": "可以，typeof 對任何語法都有效，包含偵測引擎認不認得某種全新的語法" },
+        { "id": "c", "text": "可以，只要把這行判斷式包在字串裡再用 eval 執行，就能安全偵測任何新語法" },
+        { "id": "d", "text": "這個問題不存在，因為所有瀏覽器都會自動同步支援所有最新語法" }
+      ],
+      "answer": "a",
+      "explanation": "這正好呼應《起步上路》最後一章教過的：方法缺失（executiontime 才會發現）能用特性測試補救，語法缺失（parsetime 就會失敗）沒辦法補救，只能靠轉譯。Q1、Q2 的 typeof arr.includes 之所以安全，是因為這段判斷式本身是完全合法的舊語法，引擎能正常解析、正常執行到判斷的那一刻。但箭頭函式是新語法，一旦引擎的剖析器不認得，會在還沒開始執行任何一行程式碼之前，就直接因為語法錯誤中止整個檔案，判斷式本身都沒有機會被執行到。",
+      "verify": { "manual": "概念題：以 Q1/Q2 的方法特性測試對照「新語法本身」的偵測情境，重申語法缺失與方法缺失的根本差異，屬於建置工具鏈層面的說明，無法用單一 console.log 驗證。" }
+    },
+    {
+      "id": "ydkjs-es6-1-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "TC39（負責制定 JS 規範的委員會）的提案要經過 Stage 0 到 Stage 4 好幾個階段，愈早期的階段語法愈可能還會改變，貿然在正式環境使用風險愈高",
+      "docs": "",
+      "story": "",
+      "prompt": "小美看到一個還在 TC39 Stage 1（最早期階段）的提案語法很好用，想直接在公司的正式產品程式碼裡使用。這樣做有什麼風險？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "風險是：Stage 1 只代表這個提案「值得繼續討論」，語法的具體細節、甚至提案本身，都還有可能大幅修改或整個被撤回，跟已經到 Stage 4（確定會被收進下一版正式規範）的穩定語法完全不是同一個可信任程度。如果在正式產品裡用了 Stage 1 的語法，一旦之後提案改了語法或作廢，程式碼可能需要大幅修改，甚至原本依賴的轉譯器外掛也可能要跟著調整或失效——愈早期階段的提案，愈應該只在個人實驗或內部技術嘗試裡使用，不建議直接用在正式產品" },
+        { "id": "b", "text": "完全沒有風險，只要 TC39 網站上列出了這個提案，就代表所有瀏覽器都已經正式支援" },
+        { "id": "c", "text": "風險只在於效能，Stage 1 的語法執行起來一定比正式語法慢，跟語法本身會不會改變無關" },
+        { "id": "d", "text": "沒有風險，因為 Stage 1 到 Stage 4 只是提案文件放在哪個資料夾，跟語法本身的穩定度無關" }
+      ],
+      "answer": "a",
+      "explanation": "TC39 的提案流程（Stage 0 到 Stage 4）本身就是一套「愈往後階段愈穩定」的信號機制：Stage 4 代表已經確定會進入下一個正式年度規範，語法幾乎不會再變；Stage 0、1 這種早期階段，只代表委員會覺得這個方向值得討論，實際語法怎麼寫、甚至整個提案會不會通過，都還有相當大的不確定性。在正式產品裡使用這麼早期的語法，等於是在賭這個提案未來會照現在的樣子定案，一旦賭錯，後續要花的修改成本可能不小，這也是為什麼多數團隊的轉譯設定，只會預設開啟已經進入 Stage 4（或至少 Stage 3）的語法。",
+      "verify": { "manual": "概念題：以「使用 Stage 1 提案語法在正式產品」的具體情境取代抽象定義，說明 TC39 提案階段代表的穩定度信號，屬於語言演進流程層面的說明，無法用單一 console.log 驗證。" }
+    },
+    {
+      "id": "ydkjs-es6-1-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "把「開發者實際寫的語法」跟「最終送到使用者手上、實際執行的程式碼」分開來看，是應對 JS 語言持續演進最核心的心態",
+      "docs": "",
+      "story": "",
+      "prompt": "把 Q1/Q2（方法層級用特性測試補救）、Q3（轉譯器把新語法機械化轉寫成舊語法）、Q4（語法層級沒辦法用特性測試補救）、Q5（提案階段代表的穩定度）放在一起看，這一章想建立的核心心態是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "既然 JS 語言年年都在演進、沒有一個固定不變的「支援清單」，開發者最務實的心態，是把「自己實際寫程式碼時用的語法／API」跟「最終真正送到使用者瀏覽器裡執行的程式碼」刻意分成兩件事來看待：平常可以放心用最新、最舒服的語法寫程式（提升自己的開發體驗與生產力），透過穩定的建置流程（轉譯器處理語法落差、polyfill 補方法落差、依照 Q5 的提案階段謹慎篩選要不要提前使用），把寫出來的程式碼轉換成能相容目標使用者環境的版本。這樣一來，語言演進的速度不再是負擔，而是可以隨時享受的紅利" },
+        { "id": "b", "text": "既然轉譯和 polyfill 都能解決問題，開發者根本不需要理解自己用的語法背後對應到哪個 ES 版本、處於什麼提案階段" },
+        { "id": "c", "text": "既然新語法有風險，最安全的做法是永遠只用最早期、最古老的 JS 語法，完全不要理會任何新特性" },
+        { "id": "d", "text": "既然瀏覽器更新很快，開發者應該假設所有使用者的瀏覽器都會在很短時間內自動支援任何新語法，不需要做任何額外處理" }
+      ],
+      "answer": "a",
+      "explanation": "這一章想建立的心態，貫穿了整本《ES6及更新版本》：語言每年都在演進，與其焦慮「這個語法能不能用」，不如把「自己寫的程式碼」和「實際送到使用者手上的程式碼」分開處理——寫程式碼時用最新、最舒服的語法（享受語言演進的好處），交給穩定的建置流程去處理相容性問題：方法層級的落差用特性測試／polyfill 補（Q1、Q2），語法層級的落差用轉譯器處理（Q3、Q4），還沒定案的早期提案則謹慎評估要不要提前使用（Q5）。建立起這套心態和對應的工具鏈之後，語言持續演進就不再是負擔，而是能隨時享受到的紅利。",
+      "verify": { "manual": "概念題：綜合 Q1-Q5 對特性測試、轉譯、提案階段的具體示範，總結「開發時用新語法、交給建置流程處理相容性」的核心心態，屬於整章定位層面的總結，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

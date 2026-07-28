@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-ap-1",
+  "title": "Ch1：異步：現在與將來",
+  "questions": [
+    {
+      "id": "ydkjs-ap-1-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "同步程式碼永遠會先跑完，setTimeout(fn, 0) 的回呼一定要等目前這段程式碼全部執行完才會輪到",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "console.log('one');\nsetTimeout(function () {\n  console.log('two');\n}, 0);\nconsole.log('three');",
+      "options": [
+        { "id": "a", "text": "one\nthree\ntwo" },
+        { "id": "b", "text": "one\ntwo\nthree" },
+        { "id": "c", "text": "two\none\nthree" },
+        { "id": "d", "text": "one\nthree" }
+      ],
+      "answer": "a",
+      "explanation": "setTimeout(fn, 0) 就算延遲設成 0 毫秒，也不代表「立刻」執行——它只是把這個回呼排進佇列，一定要等目前這一輪同步程式碼全部跑完，事件迴圈才會回頭處理佇列裡的工作。所以 console.log('three') 會比 setTimeout 裡的 console.log('two') 早印出，即使 setTimeout 寫在 three 前面。",
+      "verify": {
+        "checks": [
+          { "code": "console.log('one');\nsetTimeout(function () {\n  console.log('two');\n}, 0);\nconsole.log('three');", "expected": "one\nthree\ntwo" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-1-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "所有排進佇列的非同步工作都要等目前這輪同步程式碼跑完才會開始，之後才依各自的延遲時間排隊執行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "console.log('start');\nsetTimeout(function () {\n  console.log('timeout 0');\n}, 0);\nsetTimeout(function () {\n  console.log('timeout 10');\n}, 10);\nconsole.log('end');",
+      "options": [
+        { "id": "a", "text": "start\nend\ntimeout 0\ntimeout 10" },
+        { "id": "b", "text": "start\ntimeout 0\ntimeout 10\nend" },
+        { "id": "c", "text": "start\nend\ntimeout 10\ntimeout 0" },
+        { "id": "d", "text": "start\nend" }
+      ],
+      "answer": "a",
+      "explanation": "不管 setTimeout 的延遲時間設多少，這兩個回呼都得等 console.log('start')、console.log('end') 這段同步程式碼完全跑完才有機會被執行，所以 start、end 一定先印出來。接著才輪到兩個 timeout 回呼，延遲時間比較短的（0 毫秒）比延遲時間比較長的（10 毫秒）先執行，所以最後才印出 timeout 0、timeout 10。",
+      "verify": {
+        "checks": [
+          { "code": "console.log('start');\nsetTimeout(function () {\n  console.log('timeout 0');\n}, 0);\nsetTimeout(function () {\n  console.log('timeout 10');\n}, 10);\nconsole.log('end');", "expected": "start\nend\ntimeout 0\ntimeout 10" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-1-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "「執行完整運行」（run-to-completion）：一個回呼函式一旦開始執行，就會完整跑完，不會被其他排隊中的回呼打斷、插隊",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
+      "story": "",
+      "prompt": "兩個 setTimeout(increment, 0) 都在操作同一個共用變數 a。這段程式會印出什麼？",
+      "code": "var a = 0;\nfunction increment() {\n  var temp = a;\n  temp = temp + 1;\n  a = temp;\n}\nsetTimeout(increment, 0);\nsetTimeout(increment, 0);\nsetTimeout(function () {\n  console.log(a);\n}, 0);",
+      "options": [
+        { "id": "a", "text": "2" },
+        { "id": "b", "text": "1" },
+        { "id": "c", "text": "0" },
+        { "id": "d", "text": "無法預測，每次執行結果可能不同" }
+      ],
+      "answer": "a",
+      "explanation": "JS 是單執行緒，每個回呼函式一旦輪到它執行，就會「完整運行」到結束，中間絕對不會被另一個排隊中的回呼打斷插隊——這跟真正多執行緒環境下兩段程式碼可能交錯執行、造成競態條件（race condition）完全不同。兩次 increment() 各自從讀取 a、加一、寫回 a 這三步，一定是其中一次完整做完，下一次才開始，所以最終結果永遠確定是 2，不會有任何一次增量被覆蓋掉或遺失，也不需要額外加鎖。",
+      "verify": {
+        "checks": [
+          { "code": "var a = 0;\nfunction increment() {\n  var temp = a;\n  temp = temp + 1;\n  a = temp;\n}\nsetTimeout(increment, 0);\nsetTimeout(increment, 0);\nsetTimeout(function () {\n  console.log(a);\n}, 0);", "expected": "2" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-1-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Promise 的回呼（微任務）永遠比 setTimeout 的回呼（巨集任務）更早執行，即使 setTimeout 寫在前面、延遲又設成 0",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "console.log('start');\nsetTimeout(function () {\n  console.log('timeout');\n}, 0);\nPromise.resolve().then(function () {\n  console.log('promise');\n});\nconsole.log('end');",
+      "options": [
+        { "id": "a", "text": "start\nend\npromise\ntimeout" },
+        { "id": "b", "text": "start\nend\ntimeout\npromise" },
+        { "id": "c", "text": "start\npromise\nend\ntimeout" },
+        { "id": "d", "text": "start\ntimeout\npromise\nend" }
+      ],
+      "answer": "a",
+      "explanation": "start、end 一樣是同步程式碼，最先印出。接下來 setTimeout 和 Promise.then 的回呼都要排隊，但它們排的不是同一種佇列：Promise 的回呼屬於「微任務」（microtask），setTimeout 的回呼屬於「巨集任務」（macrotask／task）。事件迴圈的規則是每次同步程式碼跑完後，會先把微任務佇列清空，才會去處理下一個巨集任務——所以即使 setTimeout 寫在 Promise.then 前面、延遲也設成 0，promise 還是會比 timeout 更早印出來。",
+      "verify": {
+        "checks": [
+          { "code": "console.log('start');\nsetTimeout(function () {\n  console.log('timeout');\n}, 0);\nPromise.resolve().then(function () {\n  console.log('promise');\n});\nconsole.log('end');", "expected": "start\nend\npromise\ntimeout" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-1-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用 setTimeout(fn, 0) 把某段邏輯延後到「目前這輪同步程式碼跑完之後」才執行，是常見的排程手法",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
+      "story": "",
+      "prompt": "把空格填起來，讓 later 延後到目前這段同步程式碼跑完之後才執行，印出 A、B、C",
+      "code": "console.log('A');\nfunction later() {\n  console.log('C');\n}\n____(later, 0);\nconsole.log('B');",
+      "options": [
+        { "id": "a", "text": "setTimeout" },
+        { "id": "b", "text": "clearTimeout" },
+        { "id": "c", "text": "Date.now" },
+        { "id": "d", "text": "JSON.stringify" }
+      ],
+      "answer": "a",
+      "explanation": "setTimeout(later, 0) 把 later 排進佇列，一定要等目前這段同步程式碼（console.log('A') 之後、console.log('B') 為止）全部執行完，事件迴圈才會回頭處理它，所以印出順序是 A、B、C。選項 b 的 clearTimeout 是用來取消一個已經排定的計時器，這裡沒有任何計時器可以取消，什麼事都不會發生，later 根本不會被呼叫，C 永遠不會印出來。選項 c、d 的 Date.now、JSON.stringify 都不是排程函式，直接呼叫也不會執行 later。",
+      "verify": {
+        "checks": [
+          { "code": "console.log('A');\nfunction later() {\n  console.log('C');\n}\nsetTimeout(later, 0);\nconsole.log('B');", "expected": "A\nB\nC" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-1-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "JS 是「單執行緒但非阻塞」：程式碼本身一次只跑一段、跑到完，但事件迴圈讓等待中的 I/O／計時器不會卡住整個程式",
+      "docs": "",
+      "story": "",
+      "prompt": "把 Q1（同步程式碼永遠先跑完）、Q3（回呼執行完整運行、不會被打斷）、Q4（微任務比巨集任務優先）放在一起看，為什麼常說 JS 是「單執行緒但非阻塞」？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "「單執行緒」指的是 JS 程式碼本身一次只會執行一段、而且一旦開始就會完整運行到結束，不會有兩段程式碼同時交錯執行（Q3），這讓開發者不用擔心真正多執行緒程式常見的競態條件；「非阻塞」指的是等待計時器、網路請求這類「需要花時間」的操作，不會讓整個程式停在原地空等——這些操作會被交給瀏覽器／Node.js 的底層機制去處理，處理好之後才把對應的回呼（依照微任務優先於巨集任務的順序，見 Q4）排進佇列等執行緒有空時處理（Q1）。兩者合起來，讓 JS 既保有單執行緒程式「不會被打斷」的簡單心智模型，又不會因為要等某個慢操作而整個卡死" },
+        { "id": "b", "text": "「單執行緒」代表 JS 引擎內部其實開了很多條真正的作業系統執行緒，只是對外表現得像只有一條" },
+        { "id": "c", "text": "「非阻塞」代表 setTimeout、Promise 這些非同步 API 的回呼函式，執行到一半也可能被其他回呼打斷，跟同步程式碼不一樣" },
+        { "id": "d", "text": "這兩個詞只是行銷用語，JS 實際上跟其他語言的多執行緒模型沒有任何差別" }
+      ],
+      "answer": "a",
+      "explanation": "「單執行緒」（Q1、Q3 已經證明）讓開發者不用擔心程式碼執行到一半被打斷、或跟另一段程式碼交錯執行造成的競態條件，心智模型相對單純。「非阻塞」則是說：真正需要花時間等待的操作（計時器、網路請求、檔案讀寫）並不會讓這條唯一的執行緒停在原地乾等，而是交給底層機制處理，處理好了才把回呼排進佇列，等執行緒有空（目前的同步程式碼、以及所有微任務都處理完）才輪到它們執行（Q1、Q4）。這兩個特性合起來，才是「非同步：現在與將來」這一章想建立的核心心智模型。",
+      "verify": { "manual": "概念題：綜合 Q1/Q3/Q4 三題，總結「單執行緒但非阻塞」這個核心心智模型，屬於事件迴圈架構層面的說明，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

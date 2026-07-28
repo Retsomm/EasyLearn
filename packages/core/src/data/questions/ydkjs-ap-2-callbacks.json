@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-ap-2",
+  "title": "Ch2：回調",
+  "questions": [
+    {
+      "id": "ydkjs-ap-2-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "巢狀回呼（回呼裡面再放回呼）讓程式碼一層層縮排下去，這正是「回呼地獄」被詬病的外觀來源",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Callback_function",
+      "story": "",
+      "prompt": "step1、step2、step3 用巢狀回呼的方式串接起來。這段程式會印出什麼？",
+      "code": "function step1(cb) {\n  console.log('step1');\n  cb();\n}\nfunction step2(cb) {\n  console.log('step2');\n  cb();\n}\nfunction step3() {\n  console.log('step3');\n}\nstep1(function () {\n  step2(function () {\n    step3();\n  });\n});",
+      "options": [
+        { "id": "a", "text": "step1\nstep2\nstep3" },
+        { "id": "b", "text": "step3\nstep2\nstep1" },
+        { "id": "c", "text": "step1\nstep3\nstep2" },
+        { "id": "d", "text": "step1" }
+      ],
+      "answer": "a",
+      "explanation": "雖然這三個函式在程式碼裡是一層包一層寫的，執行順序依然是由外而內依序展開：step1 執行、印出 step1，接著呼叫自己收到的回呼；那個回呼裡呼叫 step2，印出 step2，再呼叫它收到的回呼，也就是 step3。三層巢狀在這個例子裡都是同步呼叫，所以順序跟直覺一致。但可以想像一下：如果每一層都是非同步的（像 setTimeout 或網路請求），這種「一層包一層」的寫法會迅速讓程式碼往右邊一直縮排下去，變得很難讀——這正是「回呼地獄」被詬病的外觀來源。",
+      "verify": {
+        "checks": [
+          { "code": "function step1(cb) {\n  console.log('step1');\n  cb();\n}\nfunction step2(cb) {\n  console.log('step2');\n  cb();\n}\nfunction step3() {\n  console.log('step3');\n}\nstep1(function () {\n  step2(function () {\n    step3();\n  });\n});", "expected": "step1\nstep2\nstep3" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-2-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "信任問題之一：同一個函式，有時候同步呼叫回呼、有時候非同步呼叫回呼，呼叫端完全猜不到順序",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
+      "story": "",
+      "prompt": "getData 命中快取時直接同步呼叫 cb，沒命中才用 setTimeout 非同步呼叫。這次 key 'a' 剛好在快取裡。這段程式會印出什麼？",
+      "code": "function getData(cache, key, cb) {\n  if (cache[key]) {\n    cb(cache[key]); // 命中快取：同步呼叫\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key); // 沒命中：非同步呼叫\n    }, 0);\n  }\n}\nvar cache = { a: 'cached-a' };\nconsole.log('before');\ngetData(cache, 'a', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');",
+      "options": [
+        { "id": "a", "text": "before\ncallback: cached-a\nafter" },
+        { "id": "b", "text": "before\nafter\ncallback: cached-a" },
+        { "id": "c", "text": "callback: cached-a\nbefore\nafter" },
+        { "id": "d", "text": "before\nafter" }
+      ],
+      "answer": "a",
+      "explanation": "因為這次 'a' 剛好命中快取，getData 走的是同步分支，cb 在 getData 呼叫的當下就立刻執行了，所以 callback: cached-a 會直接插在 before 和 after 中間印出來，跟一般「非同步回呼都排在最後」的直覺不一樣。這正是回呼的信任問題之一：呼叫端完全沒辦法從函式簽名或呼叫方式看出這次呼叫到底是同步還是非同步，行為完全取決於函式內部當下的狀態（這次快取有沒有命中）。",
+      "verify": {
+        "checks": [
+          { "code": "function getData(cache, key, cb) {\n  if (cache[key]) {\n    cb(cache[key]);\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = { a: 'cached-a' };\nconsole.log('before');\ngetData(cache, 'a', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');", "expected": "before\ncallback: cached-a\nafter" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-2-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "同一個函式，換一次呼叫（這次快取沒命中），順序就整個變了——這就是「不可信任」的具體代價",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
+      "story": "",
+      "prompt": "跟 Q2 一模一樣的 getData，這次改查詢 'b'，快取裡沒有 'b'。這段程式會印出什麼？",
+      "code": "function getData(cache, key, cb) {\n  if (cache[key]) {\n    cb(cache[key]);\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = {};\nconsole.log('before');\ngetData(cache, 'b', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');",
+      "options": [
+        { "id": "a", "text": "before\nafter\ncallback: fetched:b" },
+        { "id": "b", "text": "before\ncallback: fetched:b\nafter" },
+        { "id": "c", "text": "callback: fetched:b\nbefore\nafter" },
+        { "id": "d", "text": "before\nafter" }
+      ],
+      "answer": "a",
+      "explanation": "這次 'b' 沒有命中快取，getData 走的是非同步分支，callback 一定要排到 before、after 都印完之後才會執行——順序跟 Q2（命中快取、同步執行）完全相反。同一個函式、只是呼叫時傳的參數不同，回呼到底會不會插在中間執行，呼叫端完全無法預期，這正是回呼機制在「控制權交給別人」這件事上最根本的信任問題。",
+      "verify": {
+        "checks": [
+          { "code": "function getData(cache, key, cb) {\n  if (cache[key]) {\n    cb(cache[key]);\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = {};\nconsole.log('before');\ngetData(cache, 'b', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');", "expected": "before\nafter\ncallback: fetched:b" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-2-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "修好 Q2/Q3 的信任問題：強制永遠非同步呼叫回呼，不管快取有沒有命中，順序永遠一致",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
+      "story": "",
+      "prompt": "把空格填起來，讓命中快取這個分支也強制改成非同步呼叫 cb，這樣不管有沒有命中快取，callback 永遠會排在 before、after 之後，印出 before、after、callback: cached-a",
+      "code": "function getData(cache, key, cb) {\n  if (cache[key]) {\n    ____(function () {\n      cb(cache[key]);\n    }, 0); // 強制永遠非同步呼叫\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = { a: 'cached-a' };\nconsole.log('before');\ngetData(cache, 'a', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');",
+      "options": [
+        { "id": "a", "text": "setTimeout" },
+        { "id": "b", "text": "Promise" },
+        { "id": "c", "text": "Array.from" },
+        { "id": "d", "text": "Object.assign" }
+      ],
+      "answer": "a",
+      "explanation": "在命中快取的分支也包一層 setTimeout(fn, 0)，強迫這裡的 cb 呼叫一律要排到目前這輪同步程式碼跑完之後才執行，跟原本沒命中快取那個分支的非同步時機保持一致。這樣不管呼叫端傳進來的 key 有沒有命中快取，callback 永遠會在 before、after 都印完之後才印出來，順序變得可預期、可信任，不再取決於呼叫當下快取剛好處於什麼狀態。這正是書中「省點回呼」一節建議的其中一種修法：強制讓一個原本行為不一致的函式，永遠保持同一種（非同步）呼叫時機。",
+      "verify": {
+        "checks": [
+          { "code": "function getData(cache, key, cb) {\n  if (cache[key]) {\n    setTimeout(function () {\n      cb(cache[key]);\n    }, 0);\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = { a: 'cached-a' };\nconsole.log('before');\ngetData(cache, 'a', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');", "expected": "before\nafter\ncallback: cached-a" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-2-q5",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "信任問題之二：回呼被呼叫的次數不受控制，忘記加 return 很容易讓同一個回呼被多呼叫一次",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Callback_function",
+      "story": "",
+      "prompt": "processItem 的原意應該是「符合條件就呼叫一次 cb，就結束」。這段程式碼執行會發生什麼事？",
+      "code": "function processItem(item, cb) {\n  if (item.valid) {\n    cb(null, item.value);\n  }\n  cb(null, item.value); // 忘記在 if 裡面加 return\n}\nprocessItem({ valid: true, value: 'x' }, function (err, val) {\n  console.log('got:', val);\n});",
+      "options": [
+        { "id": "a", "text": "cb 被呼叫了兩次，印出 got: x 兩次——if 區塊裡呼叫完 cb 之後沒有 return，跳出 if 之後的程式碼還是會繼續往下執行，第二個沒有條件判斷的 cb(...) 因此又被多呼叫了一次" },
+        { "id": "b", "text": "cb 只會被呼叫一次，印出 got: x 一次，if 判斷式外面那行不會被執行到" },
+        { "id": "c", "text": "cb 完全不會被呼叫，因為 item.valid 判斷失敗" },
+        { "id": "d", "text": "SyntaxError：同一個函式不能呼叫 cb 兩次" }
+      ],
+      "answer": "a",
+      "explanation": "if (item.valid) { cb(...) } 這個區塊執行完之後，如果沒有寫 return，程式碼並不會因為「已經呼叫過 cb 了」就自動跳過後面的邏輯，會繼續往下執行到區塊外那個沒有任何條件保護的 cb(...)，於是同一個回呼被呼叫了兩次。呼叫端原本預期「這個回呼只會被通知一次」，實際上收到了兩次通知，如果回呼裡有像扣款、送出表單這類不該重複執行的邏輯，這種「回呼次數過多」的信任問題會直接造成實際的錯誤。修法很單純：在 if 區塊裡的 cb 呼叫後面加上 return，或是把後面那行包進 else。",
+      "verify": {
+        "checks": [
+          { "code": "function processItem(item, cb) {\n  if (item.valid) {\n    cb(null, item.value);\n  }\n  cb(null, item.value);\n}\nprocessItem({ valid: true, value: 'x' }, function (err, val) {\n  console.log('got:', val);\n});", "expected": "got: x\ngot: x" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-2-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "回呼最根本的問題：把「接下來要怎麼執行」的控制權整個交給別人，別人怎麼呼叫、呼叫幾次、什麼時候呼叫都不受你掌控",
+      "docs": "",
+      "story": "",
+      "prompt": "把 Q2/Q3（同步或非同步不一致）跟 Q5（呼叫次數不受控制）放在一起看，這些「信任問題」的共同根源是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "只要你把一個回呼函式傳給另一段程式碼，你就把「接下來這段邏輯什麼時候執行、執行幾次、用什麼參數執行」的控制權整個交給了對方——你能做的只有相信對方會乖乖遵守某種默契（只呼叫一次、遵循固定的同步或非同步時機、正確傳遞參數），但語言本身完全沒有機制強制對方做到這些事。Q2/Q3 顯示同一個函式可以在不同呼叫下有不同的同步/非同步時機，Q5 顯示回呼可以被呼叫任意次數，這些問題的共同根源都是同一件事：控制權不在你手上，只能靠信任" },
+        { "id": "b", "text": "這些問題只會發生在寫得不好的程式碼裡，只要程式碼品質夠高，回呼機制本身完全不會有任何信任問題" },
+        { "id": "c", "text": "只要把所有回呼都改成用 setTimeout 包起來，就能徹底解決所有信任問題，不需要任何其他機制" },
+        { "id": "d", "text": "這些問題只跟開發者有沒有寫測試有關，跟回呼這種寫法本身完全無關" }
+      ],
+      "answer": "a",
+      "explanation": "回呼模式的本質，就是把一段「接下來要做的事」包成函式，交給另一段程式碼決定何時、如何、呼叫幾次來執行它。這種「控制反轉」（inversion of control）意味著你完全依賴對方會不會遵守某種默契：Q2/Q3 顯示對方可能今天同步呼叫、明天非同步呼叫；Q5 顯示對方可能一次呼叫、也可能不小心呼叫兩次。JS 語言本身沒有任何機制強制回呼一定要「只呼叫一次、時機一致、參數正確」——這些全部只能靠寫程式的人自己小心。這正是下一章要介紹 Promise 的動機：Promise 從語言層級直接保證「只會決議一次」，把這類信任問題變成語言規範保證的事，不再只能靠信任。",
+      "verify": { "manual": "概念題：綜合 Q2/Q3（同步/非同步不一致）與 Q5（呼叫次數不受控制），總結回呼「控制反轉」的共同根源，屬於非同步程式設計模式層面的說明，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

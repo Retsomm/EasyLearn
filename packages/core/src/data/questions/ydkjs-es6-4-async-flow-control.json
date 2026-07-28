@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-es6-4",
+  "title": "Ch4：異步流控制",
+  "questions": [
+    {
+      "id": "ydkjs-es6-4-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "Promise.resolve(...) 如果傳進去的本身已經是一個 Promise，不會再包一層，會直接回傳原本那個 Promise",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/resolve",
+      "story": "",
+      "prompt": "p1 是一個已經決議的 Promise，p2 是用 Promise.resolve(p1) 建出來的。這段程式會印出什麼？",
+      "code": "var p1 = Promise.resolve(42);\nvar p2 = Promise.resolve(p1); // 傳進去的本身就是一個 Promise\nconsole.log(p1 === p2);\np2.then(function (val) {\n  console.log(val);\n});",
+      "options": [
+        { "id": "a", "text": "true\n42" },
+        { "id": "b", "text": "false\n42" },
+        { "id": "c", "text": "false\n[object Promise]" },
+        { "id": "d", "text": "true\n[object Promise]" }
+      ],
+      "answer": "a",
+      "explanation": "Promise.resolve(x) 有一個特別的行為：如果 x 本身已經是一個 Promise，不會把它包進另一層新的 Promise（那樣會變成「Promise 裡面裝著 Promise」，多一層要拆），而是直接把這個既有的 Promise 原封不動地回傳出來，所以 p1 === p2 是 true。p2.then(...) 收到的值也正常是 42，沒有被多包一層。",
+      "verify": {
+        "checks": [
+          { "code": "var p1 = Promise.resolve(42);\nvar p2 = Promise.resolve(p1);\nconsole.log(p1 === p2);\np2.then(function (val) {\n  console.log(val);\n});", "expected": "true\n42" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-4-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "then() 的回呼如果回傳了另一個 Promise，這條鏈會自動「攤平」接上那個 Promise 的結果，不會變成「值本身是一個 Promise」",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/then",
+      "story": "",
+      "prompt": "第一個 then 的回呼回傳了一個全新的 Promise。這段程式會印出什麼？",
+      "code": "Promise.resolve(1)\n  .then(function (v) {\n    return new Promise(function (resolve) {\n      setTimeout(function () {\n        resolve(v + 1);\n      }, 0);\n    });\n  })\n  .then(function (v) {\n    console.log(v);\n  });",
+      "options": [
+        { "id": "a", "text": "2" },
+        { "id": "b", "text": "[object Promise]" },
+        { "id": "c", "text": "1" },
+        { "id": "d", "text": "永遠不會印出任何東西" }
+      ],
+      "answer": "a",
+      "explanation": "第一個 then 的回呼回傳了一個新的 Promise（裡面用 setTimeout 延遲決議），Promise 鏈遇到這種情況會自動把它「攤平」接進來：不是把這個 Promise 物件本身當成下一步的值，而是等這個回傳的 Promise 真正決議完成，用它決議出來的值（v + 1 = 2）繼續往下一個 then 傳。這種自動攤平的行為，正是 Promise 鏈能夠優雅串接「非同步步驟」而不會產生巢狀 Promise 的關鍵。",
+      "verify": {
+        "checks": [
+          { "code": "Promise.resolve(1)\n  .then(function (v) {\n    return new Promise(function (resolve) {\n      setTimeout(function () {\n        resolve(v + 1);\n      }, 0);\n    });\n  })\n  .then(function (v) {\n    console.log(v);\n  });", "expected": "2" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-4-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Promise 鏈不只認得真正的 Promise 物件，任何有 then 方法的物件（thenable）都會被同化、當成 Promise 一樣處理",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/then",
+      "story": "",
+      "prompt": "thenable 不是用 new Promise(...) 建的，只是一個剛好有 then 方法的普通物件。這段程式會印出什麼？",
+      "code": "var thenable = {\n  then: function (resolve) {\n    resolve('from thenable');\n  },\n};\nPromise.resolve(1)\n  .then(function () {\n    return thenable;\n  })\n  .then(function (v) {\n    console.log(v);\n  });",
+      "options": [
+        { "id": "a", "text": "from thenable" },
+        { "id": "b", "text": "[object Object]" },
+        { "id": "c", "text": "TypeError：thenable 不是真正的 Promise" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "Promise 鏈判斷「這個回傳值要不要當成非同步值來攤平」的依據，不是嚴格檢查它是不是用 new Promise(...) 建出來的，而是看它有沒有一個 then 方法（俗稱 thenable，鴨子定型）。thenable 這個物件剛好有 then 方法，Promise 鏈會呼叫它、把它當成一個「等同 Promise」的東西對待，等它透過 resolve 決議出 'from thenable'，才把這個值傳給下一個 then，印出 from thenable。這個設計讓不同套件、不同函式庫各自實作的「類 Promise」物件，都能無縫接進原生 Promise 鏈裡。",
+      "verify": {
+        "checks": [
+          { "code": "var thenable = {\n  then: function (resolve) {\n    resolve('from thenable');\n  },\n};\nPromise.resolve(1)\n  .then(function () {\n    return thenable;\n  })\n  .then(function (v) {\n    console.log(v);\n  });", "expected": "from thenable" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-4-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "生成器＋Promise 的驅動函式，也能把 Promise 拒絕的錯誤，透過 it.throw() 丟回生成器內部的 try/catch 接住",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Generator/throw",
+      "story": "",
+      "prompt": "main 內部用 try/catch 包住 yield，希望能接住 Promise 被拒絕的錯誤。把空格填起來，讓驅動函式在 Promise 被拒絕時，把錯誤丟回生成器內部處理，印出 caught in generator: boom",
+      "code": "function* main() {\n  try {\n    var result = yield Promise.reject('boom');\n    console.log('never:', result);\n  } catch (err) {\n    console.log('caught in generator:', err);\n  }\n}\nfunction run(gen) {\n  var it = gen();\n  function step(err, val) {\n    var res;\n    if (err) {\n      res = it.____(err); // 把錯誤丟回生成器內部的 try/catch\n    } else {\n      res = it.next(val);\n    }\n    if (res.done) return;\n    res.value.then(\n      function (v) { step(null, v); },\n      function (e) { step(e); }\n    );\n  }\n  step();\n}\nrun(main);",
+      "options": [
+        { "id": "a", "text": "throw" },
+        { "id": "b", "text": "next" },
+        { "id": "c", "text": "return" },
+        { "id": "d", "text": "catch" }
+      ],
+      "answer": "a",
+      "explanation": "it.throw(err) 是生成器物件另一個進入點：它會讓生成器從目前暫停的 yield 處，像是那一行程式碼本身丟出了 err 一樣繼續執行——如果那個 yield 剛好被包在 try 區塊裡，就會被對應的 catch 接住。這裡 yield Promise.reject('boom') 的 Promise 被拒絕了，run 函式的 .then 第二個回呼（拒絕處理器）呼叫 step(e)，接著呼叫 it.throw(err)，把 'boom' 這個錯誤丟回 main 內部，被 catch (err) 接住，印出 caught in generator: boom。這種手法讓生成器內部可以用最熟悉的 try/catch 語法，統一處理「同步丟出的例外」和「非同步 Promise 被拒絕」這兩種錯誤來源。",
+      "verify": {
+        "checks": [
+          { "code": "function* main() {\n  try {\n    var result = yield Promise.reject('boom');\n    console.log('never:', result);\n  } catch (err) {\n    console.log('caught in generator:', err);\n  }\n}\nfunction run(gen) {\n  var it = gen();\n  function step(err, val) {\n    var res;\n    if (err) {\n      res = it.throw(err);\n    } else {\n      res = it.next(val);\n    }\n    if (res.done) return;\n    res.value.then(\n      function (v) { step(null, v); },\n      function (e) { step(e); }\n    );\n  }\n  step();\n}\nrun(main);", "expected": "caught in generator: boom" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-4-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "同一套生成器＋Promise 驅動函式，可以串接好幾個依序執行的非同步步驟，寫起來完全像同步的循序程式碼",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function*",
+      "story": "",
+      "prompt": "main 裡連續 yield 了三個 Promise，每一步都用上一步的結果去計算下一步。這段程式會印出什麼？",
+      "code": "function* main() {\n  var a = yield Promise.resolve(1);\n  var b = yield Promise.resolve(a + 10);\n  var c = yield Promise.resolve(b + 100);\n  return c;\n}\nfunction run(gen) {\n  var it = gen();\n  function step(val) {\n    var res = it.next(val);\n    if (res.done) {\n      console.log('result:', res.value);\n      return;\n    }\n    res.value.then(step);\n  }\n  step();\n}\nrun(main);",
+      "options": [
+        { "id": "a", "text": "result: 111" },
+        { "id": "b", "text": "result: 1" },
+        { "id": "c", "text": "result: [object Promise]" },
+        { "id": "d", "text": "result: undefined" }
+      ],
+      "answer": "a",
+      "explanation": "a 是第一個 yield 決議出來的 1；b 是 yield Promise.resolve(a + 10) 決議出來的 11；c 是 yield Promise.resolve(b + 100) 決議出來的 111，main 最後 return c，驅動函式的 res.done 變成 true，印出 result: 111。整段看起來就像三行依序執行的同步賦值，完全不用手動處理 .then 巢狀或串接，卻能正確依序等待三個非同步步驟——這正是生成器＋Promise 這個組合的最大價值，也直接預告了 ES6之後 那一章要介紹的 async/await，本質上就是把這整套驅動邏輯做成語言層級的語法糖。",
+      "verify": {
+        "checks": [
+          { "code": "function* main() {\n  var a = yield Promise.resolve(1);\n  var b = yield Promise.resolve(a + 10);\n  var c = yield Promise.resolve(b + 100);\n  return c;\n}\nfunction run(gen) {\n  var it = gen();\n  function step(val) {\n    var res = it.next(val);\n    if (res.done) {\n      console.log('result:', res.value);\n      return;\n    }\n    res.value.then(step);\n  }\n  step();\n}\nrun(main);", "expected": "result: 111" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-4-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "手寫的生成器＋Promise 驅動函式（Q4、Q5），就是 async/await 語法糖底層在做的事——理解了這套手寫版本，就等於理解了 async/await 的運作原理",
+      "docs": "",
+      "story": "",
+      "prompt": "Q5 用生成器加一個手寫的 run 驅動函式，寫出了「看起來像同步、實際上是依序等待三個非同步步驟」的程式碼。ES6之後那一章會介紹 async/await 這個新語法，跟這裡手寫的模式有什麼關係？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "async/await 本質上就是把 Q4、Q5 這種「生成器 + 手寫驅動函式」的模式，直接做成語言內建的語法糖：一個 async function 大致對應這裡的 function* + run 驅動函式的組合，函式內部的每一個 await 表達式，大致對應這裡的每一個 yield——差別在於 await 不需要開發者自己手寫 run 這種驅動邏輯，JS 引擎在語言層級直接內建了這套「等 Promise 決議、再繼續往下執行」的機制。先理解 Q4、Q5 這種手寫版本背後的運作原理，再去學 async/await，會更清楚這個語法糖底層實際上在做什麼，不會只是死記語法" },
+        { "id": "b", "text": "async/await 跟生成器完全是兩套無關的機制，語法上的相似只是巧合" },
+        { "id": "c", "text": "async/await 的效能比生成器＋Promise 手寫版本差很多，實務上應該優先選擇手寫版本" },
+        { "id": "d", "text": "async/await 只是 Promise.all 的另一種寫法，跟生成器完全沒有關係" }
+      ],
+      "answer": "a",
+      "explanation": "Q4、Q5 手寫的 run 驅動函式，做的事情正是：呼叫 next() 拿到一個 yield 出來的 Promise，等它決議（或拒絕）之後，再把結果（或錯誤）餵回生成器繼續往下跑。async/await 把這整套機制直接內建進語言：宣告成 async function 的函式，內部每一個 await 表達式都會自動暫停、等右邊的 Promise 決議完成才繼續，效果跟這裡手寫的 yield + run 驅動函式幾乎一模一樣，只是不用自己再寫一次那個驅動函式，也不用透過額外的函式包裝來取得類似同步的寫法。這也是為什麼這一章要先帶讀者理解生成器＋Promise 這個底層模式，才進入下一章去看 async/await 這個語法糖。",
+      "verify": { "manual": "概念題：以 Q4/Q5 手寫的生成器驅動函式對照 async/await 語法糖，說明兩者的對應關係，屬於整章與後續章節銜接層面的說明，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

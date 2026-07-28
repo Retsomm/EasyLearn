@@ -1,0 +1,144 @@
+{
+  "id": "ydkjs-sc-4",
+  "title": "Ch4：提升",
+  "questions": [
+    {
+      "id": "ydkjs-sc-4-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "var 的「宣告」會被提前處理，但「賦值」還是留在原地執行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/var",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "console.log(a);\nvar a = 2;",
+      "options": [
+        { "id": "a", "text": "undefined" },
+        { "id": "b", "text": "2" },
+        { "id": "c", "text": "ReferenceError：a 未定義" },
+        { "id": "d", "text": "null" }
+      ],
+      "answer": "a",
+      "explanation": "Compiler 在編譯階段就已經處理過 var a 這個宣告，所以到了 console.log(a) 這行，a 已經存在於作用域裡，不會是 ReferenceError；但 = 2 這個賦值動作，程式碼寫在哪裡、就在執行到那一行時才會真的發生。console.log(a) 執行時賦值還沒發生，所以印出的是「已宣告但還沒賦值」的預設值 undefined，而不是 2。這正是「提升」這個詞常被誤解的地方：只有宣告被提前處理，賦值依然照原本的順序執行。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(a);\nvar a = 2;", "expected": "undefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-4-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "函式宣告連同整個函式主體都會被提前處理，呼叫可以寫在宣告之前",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "foo();\nfunction foo() {\n  console.log('foo called');\n}",
+      "options": [
+        { "id": "a", "text": "foo called" },
+        { "id": "b", "text": "undefined" },
+        { "id": "c", "text": "ReferenceError：foo 未定義" },
+        { "id": "d", "text": "TypeError：foo is not a function" }
+      ],
+      "answer": "a",
+      "explanation": "跟 var 只提升「宣告」不同，function 宣告式連同整個函式主體都會在編譯階段一起被處理好，所以在程式碼裡寫在宣告之前呼叫 foo()，呼叫得到的已經是一個完整可執行的函式，正常印出 foo called。",
+      "verify": {
+        "checks": [
+          { "code": "foo();\nfunction foo() {\n  console.log('foo called');\n}", "expected": "foo called" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-4-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "同名的函式宣告和 var 宣告，函式宣告在提升階段優先",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "foo();\nvar foo = 'variable';\nfunction foo() { console.log('function'); }\nconsole.log(typeof foo);",
+      "options": [
+        { "id": "a", "text": "function\nstring" },
+        { "id": "b", "text": "variable\nstring" },
+        { "id": "c", "text": "TypeError：foo is not a function\nstring" },
+        { "id": "d", "text": "function\nfunction" }
+      ],
+      "answer": "a",
+      "explanation": "編譯階段先處理提升：function foo 是函式宣告，會連同函式主體一起被登記；var foo 也宣告了同一個名字，但因為 foo 已經被函式宣告佔用，這個重複的 var 宣告在提升階段會被直接忽略（只是宣告，沒有提升賦值）。所以程式一開始執行 foo() 時，foo 還是那個函式，印出 function。接著執行到 var foo = 'variable' 這行，賦值才真的發生，把 foo 覆蓋成字串，所以最後 typeof foo 印出 string。",
+      "verify": {
+        "checks": [
+          { "code": "foo();\nvar foo = 'variable';\nfunction foo() { console.log('function'); }\nconsole.log(typeof foo);", "expected": "function\nstring" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-4-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "同一個作用域內重複的函式宣告，提升階段由後面（原始碼裡比較晚出現）的宣告覆蓋前面的",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "foo();\nfunction foo() { console.log(1); }\nvar foo = function() { console.log(2); };\nfunction foo() { console.log(3); }",
+      "options": [
+        { "id": "a", "text": "3" },
+        { "id": "b", "text": "1" },
+        { "id": "c", "text": "2" },
+        { "id": "d", "text": "1\n2\n3" }
+      ],
+      "answer": "a",
+      "explanation": "提升階段會依序處理兩個同名的函式宣告，後面（原始碼裡比較晚出現）的那個會覆蓋前面的，所以提升結束後 foo 對應的是印出 3 的那個版本。var foo = function() {...} 只是賦值，要等執行到那一行才會真的發生，但程式一開始的 foo() 呼叫，發生在那行賦值之前，這時 foo 還是提升階段留下的、印出 3 的函式，所以只會印出 3，後面兩次賦值都沒有機會再被呼叫到。",
+      "verify": {
+        "checks": [
+          { "code": "foo();\nfunction foo() { console.log(1); }\nvar foo = function() { console.log(2); };\nfunction foo() { console.log(3); }", "expected": "3" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-4-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "只有 var／function 宣告會被提升成「已宣告未賦值」，let／const 宣告在賦值前存取會直接報錯",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/let",
+      "story": "",
+      "prompt": "把空格填起來，讓 console.log(a) 印出 undefined，而不是丟出錯誤",
+      "code": "console.log(a);\n____ a = 2;",
+      "options": [
+        { "id": "a", "text": "var" },
+        { "id": "b", "text": "let" },
+        { "id": "c", "text": "const" },
+        { "id": "d", "text": "function" }
+      ],
+      "answer": "a",
+      "explanation": "var a 在提升階段只會登記「有 a 這個宣告」，但不會提升賦值，所以還沒執行到 = 2 之前，a 是已宣告但值為 undefined 的狀態，console.log(a) 印出 undefined、不會報錯。如果換成 let 或 const（選項 b、c），雖然引擎一樣知道這個作用域裡有 a，但在真正執行到宣告那一行之前，a 處於「暫時死區」（temporal dead zone），提前存取會直接丟出 ReferenceError：Cannot access 'a' before initialization，而不是印出 undefined。選項 d 的 function a = 2 不是合法的函式宣告語法。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(a);\nvar a = 2;", "expected": "undefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-4-q6",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "提升是編譯器逐一作用域各自處理，不是把整份原始碼的宣告一次搬到檔案最上面",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function",
+      "story": "",
+      "prompt": "inner() 呼叫時能正常呼叫到 bar()，但 inner() 執行完後，在外面直接呼叫 bar() 會發生什麼事？",
+      "code": "function inner() {\n  bar();\n  function bar() {\n    console.log('bar');\n  }\n}\ninner();\nbar();",
+      "options": [
+        { "id": "a", "text": "先印出 bar，接著外面呼叫 bar() 會丟出 ReferenceError：bar 只在 inner 這個函式自己的作用域裡被提升登記過（提升是逐一作用域各自處理，不是把整份原始碼的宣告一次搬到全域最上面），出了 inner 的作用域，外層完全不知道有 bar 這個宣告" },
+        { "id": "b", "text": "先印出 bar，接著外面呼叫 bar() 也會正常印出 bar，因為提升會把所有函式宣告一起搬到整個檔案最上面" },
+        { "id": "c", "text": "整段程式碼一開始就會丟出 SyntaxError，因為 bar 在宣告之前就被呼叫" },
+        { "id": "d", "text": "兩次呼叫都不會印出任何東西，會靜默失敗" }
+      ],
+      "answer": "a",
+      "explanation": "提升不是把程式碼「物理搬移」到整個檔案最上面，而是編譯器在處理『每一層作用域』時，各自把那一層裡的宣告先登記好。bar 這個函式宣告只存在於 inner 的函式作用域裡，所以 inner 內部呼叫 bar() 沒問題，能正常印出 bar；但出了 inner 之後，外層（這裡是全域）作用域根本沒有 bar 這個宣告，呼叫 bar() 會是一次找不到宣告的 RHS 查詢，直接丟出 ReferenceError。",
+      "verify": {
+        "checks": [
+          { "code": "function inner() {\n  bar();\n  function bar() {\n    console.log('bar');\n  }\n}\ninner();\nbar();", "expected": "bar", "expectError": "bar is not defined" }
+        ]
+      }
+    }
+  ]
+}

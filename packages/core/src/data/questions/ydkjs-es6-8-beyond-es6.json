@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-es6-8",
+  "title": "Ch8：ES6之後",
+  "questions": [
+    {
+      "id": "ydkjs-es6-8-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "async function 呼叫之後，回傳的永遠是一個 Promise，即使函式裡只是單純 return 一個普通值，也會被自動包成已決議的 Promise",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/async_function",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "async function getValue() {\n  return 42;\n}\nvar p = getValue();\nconsole.log(p instanceof Promise);\np.then(function (v) {\n  console.log(v);\n});\nconsole.log('sync end');",
+      "options": [
+        { "id": "a", "text": "true\nsync end\n42" },
+        { "id": "b", "text": "true\n42\nsync end" },
+        { "id": "c", "text": "false\nsync end\n42" },
+        { "id": "d", "text": "42\ntrue\nsync end" }
+      ],
+      "answer": "a",
+      "explanation": "async function 宣告的函式，呼叫之後永遠回傳一個 Promise——即使函式主體只是單純 return 42 這個普通數字，引擎也會自動把它包成一個已決議、值是 42 的 Promise，p instanceof Promise 是 true。p.then(...) 的回呼一樣遵守 Promise 的規則，一定是非同步（微任務）執行，所以 console.log('sync end') 會比 42 先印出來。async function 本質上就是 異步和性能 那本書教過的 Promise，只是搭配了更好寫的語法。",
+      "verify": {
+        "checks": [
+          { "code": "async function getValue() {\n  return 42;\n}\nvar p = getValue();\nconsole.log(p instanceof Promise);\np.then(function (v) {\n  console.log(v);\n});\nconsole.log('sync end');", "expected": "true\nsync end\n42" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-8-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "await 會暫停 async function 內部的執行，直到右邊的 Promise 決議完成；但 async function 本身呼叫時是同步開始執行的，一路跑到第一個 await 才真正暫停",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/await",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "async function main() {\n  console.log('start');\n  var result = await Promise.resolve('done');\n  console.log(result);\n}\nmain();\nconsole.log('after call');",
+      "options": [
+        { "id": "a", "text": "start\nafter call\ndone" },
+        { "id": "b", "text": "start\ndone\nafter call" },
+        { "id": "c", "text": "after call\nstart\ndone" },
+        { "id": "d", "text": "start\nafter call" }
+      ],
+      "answer": "a",
+      "explanation": "main() 呼叫時，函式主體立刻同步開始執行，印出 start，一路執行到 await Promise.resolve('done') 這一行才真正暫停下來——await 之後剩下的程式碼，會被排進微任務佇列，等目前這輪同步程式碼跑完才輪到。所以 main() 呼叫完之後，控制權回到外層，繼續執行 console.log('after call')，接著才輪到 await 之後、被暫停的部分繼續執行，印出 done。這正是 ap-4-q6、es6-4-q5 手寫生成器＋Promise 驅動函式在做的事，只是 async/await 讓這整套機制變成語言內建的語法。",
+      "verify": {
+        "checks": [
+          { "code": "async function main() {\n  console.log('start');\n  var result = await Promise.resolve('done');\n  console.log(result);\n}\nmain();\nconsole.log('after call');", "expected": "start\nafter call\ndone" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-8-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "await 一個被拒絕的 Promise，會像同步程式碼丟出例外一樣，能直接被 try/catch 接住",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/await",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "async function main() {\n  try {\n    await Promise.reject('boom');\n  } catch (err) {\n    console.log('caught:', err);\n  }\n}\nmain();",
+      "options": [
+        { "id": "a", "text": "caught: boom" },
+        { "id": "b", "text": "UnhandledPromiseRejection：boom" },
+        { "id": "c", "text": "什麼都不會印出" },
+        { "id": "d", "text": "TypeError：try/catch 不能用在 async 函式裡" }
+      ],
+      "answer": "a",
+      "explanation": "await 一個最終被拒絕的 Promise，效果就像那一行程式碼直接 throw 了拒絕的原因（'boom'）一樣，能被包住它的 try/catch 正常接住，印出 caught: boom。這正是 es6-4-q4 用生成器搭配手寫 it.throw() 才能做到的事，async/await 讓開發者完全不用理解生成器底層機制，直接用最熟悉的同步錯誤處理語法（try/catch），就能處理非同步的錯誤。",
+      "verify": {
+        "checks": [
+          { "code": "async function main() {\n  try {\n    await Promise.reject('boom');\n  } catch (err) {\n    console.log('caught:', err);\n  }\n}\nmain();", "expected": "caught: boom" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-8-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "冪運算符 ** 是「右結合」的，連續好幾個 ** 疊在一起時，會從最右邊開始先算",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Exponentiation",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "console.log(2 ** 3);\nconsole.log(2 ** 3 ** 2); // 右結合：等同 2 ** (3 ** 2)",
+      "options": [
+        { "id": "a", "text": "8\n512" },
+        { "id": "b", "text": "8\n64" },
+        { "id": "c", "text": "6\n36" },
+        { "id": "d", "text": "8\n8" }
+      ],
+      "answer": "a",
+      "explanation": "2 ** 3 就是 2 的 3 次方，等於 8。2 ** 3 ** 2 這種連續的冪運算，跟大多數其他運算子（由左往右結合）不一樣，** 是「右結合」，會先算最右邊那一組，也就是先算 3 ** 2 = 9，再算 2 ** 9 = 512。如果誤以為 ** 也是由左往右結合，會先算 (2 ** 3) ** 2 = 8 ** 2 = 64，跟正確答案 512 差很多——這是 ** 這個運算子少數需要特別留意的地方，用括號明確標示運算順序通常是更保險的寫法。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(2 ** 3);\nconsole.log(2 ** 3 ** 2);", "expected": "8\n512" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-8-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "物件展開語法（ES2018）可以把好幾個物件的屬性合併成一個全新的物件，後面展開的物件屬性會蓋掉前面同名的屬性",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Spread_syntax",
+      "story": "",
+      "prompt": "把空格填起來，把 obj1 和 obj2 的屬性合併成一個新物件，obj2 的 b 要蓋掉 obj1 的 b，印出 { a: 1, b: 3, c: 4 }",
+      "code": "var obj1 = { a: 1, b: 2 };\nvar obj2 = { b: 3, c: 4 };\nvar merged = { ...obj1, ____obj2 };\nconsole.log(merged);",
+      "options": [
+        { "id": "a", "text": "...（展開運算子）" },
+        { "id": "b", "text": "（什麼都不加，直接寫 obj2）" },
+        { "id": "c", "text": "spread " },
+        { "id": "d", "text": "Object.assign" }
+      ],
+      "answer": "a",
+      "explanation": "{ ...obj1, ...obj2 } 依序把 obj1、obj2 的屬性攤開、合併進新的物件字面量裡。合併規則是「後面出現的同名屬性蓋過前面的」：a 只有 obj1 有，直接帶過來；b 兩邊都有，obj2 的 b（3）寫在後面，蓋掉 obj1 的 b（2）；c 只有 obj2 有，也直接帶過來。最終合併出 { a: 1, b: 3, c: 4 }。如果選 b（什麼都不加），{ ...obj1, obj2 } 會被當成物件字面量的簡寫屬性語法（等同 obj2: obj2），變成把整個 obj2 物件塞進一個叫 obj2 的屬性裡，結果是 { a: 1, b: 2, obj2: { b: 3, c: 4 } }，完全不是合併。這種展開寫法讓「合併多個物件、後面優先」這種常見需求，不用再依賴 Object.assign({}, obj1, obj2) 這種函式呼叫的寫法。",
+      "verify": {
+        "checks": [
+          { "code": "var obj1 = { a: 1, b: 2 };\nvar obj2 = { b: 3, c: 4 };\nvar merged = { ...obj1, ...obj2 };\nconsole.log(merged);", "expected": "{ a: 1, b: 3, c: 4 }" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-8-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "不是每個提案都會走到 Stage 4：Object.observe 曾經進到規範討論、後來卻被整個撤回，這正好呼應了本書一開始（Ch1）提過的提案階段風險",
+      "docs": "",
+      "story": "",
+      "prompt": "書裡提到 Object.observe（原本設計來直接監聽物件屬性變化的 API）一度是很受期待的提案，最後卻被 TC39 整個撤回、從來沒有真正成為正式規範的一部分。這件事跟本書 Ch1（ES?現在與未來）教過的內容有什麼呼應？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "這正是 Ch1（es6-1-q5）提過的風險活生生的例子：提案在還沒走到 Stage 4 之前，具體內容、甚至提案本身能不能通過，都還有相當大的不確定性。Object.observe 一度進到規範討論、也有瀏覽器實驗性支援過，最後卻因為效能疑慮、以及社群開始轉向用 Proxy（Ch7 教過）達成類似效果，被整個撤回。這提醒開發者：看到某個提案「正在討論中」甚至「已經有瀏覽器實作」，都不等於它保證會變成正式語言特性，貿然依賴早期提案在正式產品裡，確實可能承擔提案被撤回的風險" },
+        { "id": "b", "text": "這件事證明 TC39 的提案流程從一開始就沒有意義，任何提案最終都會被撤回" },
+        { "id": "c", "text": "這件事跟提案階段完全無關，Object.observe 只是單純的技術錯誤，被撤回是因為程式碼寫得不好" },
+        { "id": "d", "text": "這件事說明只要提案有瀏覽器願意實作，就一定會成為正式規範，不需要擔心被撤回" }
+      ],
+      "answer": "a",
+      "explanation": "Object.observe 的撤回，是整本書從 Ch1 就強調的「提案階段代表的風險」最具體的真實案例：一個曾經被寄予期待、甚至有瀏覽器實驗性支援過的提案，最終還是因為技術上的疑慮（效能問題）和社群方向的轉變（Proxy 提供了更彈性、也更受歡迎的替代方案）而被整個撤回。這提醒開發者，評估要不要提前使用一個新特性時，除了看它「現在能不能用」，也要意識到愈早期階段的東西，愈有可能改變方向、甚至完全消失，跟 WebAssembly（本章最後提到的、真正穩定落地的技術）形成一個對照——不是每個曾經被看好的方向，最終都能走到終點。",
+      "verify": { "manual": "概念題：以 Object.observe 被撤回的真實案例對照 Ch1 提案階段風險的說明，總結技術演進中「早期提案不保證會落地」的教訓，屬於語言演進歷史層面的說明，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

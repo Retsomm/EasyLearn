@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-sc-3",
+  "title": "Ch3：函數作用域和塊作用域",
+  "questions": [
+    {
+      "id": "ydkjs-sc-3-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "var 宣告屬於整個函式作用域，不管寫在函式裡的哪個區塊，都不會被 if/for 這些區塊「關住」",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/var",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function foo() {\n  if (true) {\n    var a = 2;\n  }\n  console.log(a);\n}\nfoo();",
+      "options": [
+        { "id": "a", "text": "2" },
+        { "id": "b", "text": "undefined" },
+        { "id": "c", "text": "ReferenceError：a 未定義" },
+        { "id": "d", "text": "報錯：a 只存在於 if 區塊內" }
+      ],
+      "answer": "a",
+      "explanation": "var a 雖然寫在 if 區塊裡面，但 var 宣告的變數屬於整個包住它的函式作用域（這裡是 foo），不是屬於 if 這個區塊。不管 if 的條件成不成立，只要程式碼有執行到這行，a 就屬於 foo 整個函式，if 區塊結束後 a 依然存在，所以 console.log(a) 印出 2。",
+      "verify": {
+        "checks": [
+          { "code": "function foo() {\n  if (true) {\n    var a = 2;\n  }\n  console.log(a);\n}\nfoo();", "expected": "2" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-3-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "具名函式表達式的名稱，只在函式自己內部看得到，外部看不到",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/function",
+      "story": "",
+      "prompt": "foo 是一個具名函式表達式，名字叫 bar。這段程式會印出什麼？",
+      "code": "var foo = function bar() {\n  console.log(typeof bar);\n};\nfoo();\nconsole.log(typeof bar);",
+      "options": [
+        { "id": "a", "text": "function\nundefined" },
+        { "id": "b", "text": "function\nfunction" },
+        { "id": "c", "text": "undefined\nundefined" },
+        { "id": "d", "text": "ReferenceError：bar 未定義" }
+      ],
+      "answer": "a",
+      "explanation": "具名函式表達式 function bar() {...} 的名稱 bar，會被引擎額外放進「這個函式自己的作用域」裡，所以函式內部呼叫 typeof bar 找得到自己，印出 function。但這個名稱只存在於函式自己的作用域，不會外洩到外層——外面只能透過變數 foo 呼叫它，外層的 typeof bar 找不到任何叫 bar 的宣告，印出 undefined。",
+      "verify": {
+        "checks": [
+          { "code": "var foo = function bar() {\n  console.log(typeof bar);\n};\nfoo();\nconsole.log(typeof bar);", "expected": "function\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-3-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "IIFE 用函式作用域把內部操作包起來，不會動到外層的變數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/IIFE",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var a = 2;\n(function IIFE(a) {\n  console.log(a);\n  a = 3; // 這裡改的是 IIFE 自己的參數 a\n})(a);\nconsole.log(a);",
+      "options": [
+        { "id": "a", "text": "2\n2" },
+        { "id": "b", "text": "2\n3" },
+        { "id": "c", "text": "3\n3" },
+        { "id": "d", "text": "undefined\n2" }
+      ],
+      "answer": "a",
+      "explanation": "IIFE 立即呼叫時，把外層的 a（值是 2）當參數傳進去，IIFE 內部的 a 只是這個函式自己作用域裡的一個全新變數（剛好也叫 a），跟外層的 a 是兩個完全獨立的容器。IIFE 內部印出的是自己收到的 2，接著把自己的 a 改成 3，但這個修改只發生在 IIFE 自己的作用域裡；外層的 a 完全沒被動到，執行完 IIFE 後外層 console.log(a) 依然是 2。",
+      "verify": {
+        "checks": [
+          { "code": "var a = 2;\n(function IIFE(a) {\n  console.log(a);\n  a = 3;\n})(a);\nconsole.log(a);", "expected": "2\n2" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-3-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "try/catch 的 catch(err) 會替 err 建立一個只存在於 catch 區塊內的區塊作用域",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/try...catch",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "try {\n  throw new Error('boom');\n} catch (err) {\n  console.log(err.message);\n}\nconsole.log(typeof err);",
+      "options": [
+        { "id": "a", "text": "boom\nundefined" },
+        { "id": "b", "text": "boom\nobject" },
+        { "id": "c", "text": "undefined\nundefined" },
+        { "id": "d", "text": "ReferenceError：err 未定義" }
+      ],
+      "answer": "a",
+      "explanation": "catch (err) 裡的 err 只存在於 catch 自己的區塊作用域內，這是 JS 很早期就有的區塊作用域機制（比 let/const 早很多）。catch 區塊內可以正常讀到 err.message，印出 boom；但一離開 catch 區塊，err 就不存在了，外面的 typeof err 印出 undefined，不會因為前面用過而外洩。",
+      "verify": {
+        "checks": [
+          { "code": "try {\n  throw new Error('boom');\n} catch (err) {\n  console.log(err.message);\n}\nconsole.log(typeof err);", "expected": "boom\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-3-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "let 建立真正的區塊作用域，變數只存在於宣告它的那個區塊內",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/let",
+      "story": "",
+      "prompt": "把空格填起來，讓 a 只存在 if 區塊內（可以重新賦值，但區塊外完全看不到），印出 3 和 undefined",
+      "code": "function foo() {\n  if (true) {\n    ____ a = 2;\n    a = a + 1;\n    console.log(a);\n  }\n  console.log(typeof a);\n}\nfoo();",
+      "options": [
+        { "id": "a", "text": "let" },
+        { "id": "b", "text": "var" },
+        { "id": "c", "text": "const" },
+        { "id": "d", "text": "static" }
+      ],
+      "answer": "a",
+      "explanation": "let 宣告的 a 是真正的區塊作用域，只存在於 if 這個區塊裡：區塊內可以正常重新賦值（a = a + 1 印出 3），但一離開 if 區塊 a 就不存在了，typeof a 印出 undefined。選項 b 的 var 沒有區塊作用域，第一行一樣印出 3，但 a 會外洩到整個 foo 函式，typeof a 會印出 number 而不是 undefined。選項 c 的 const 宣告後不能重新賦值，a = a + 1 這行會直接丟出 TypeError，程式根本執行不完。",
+      "verify": {
+        "checks": [
+          { "code": "function foo() {\n  if (true) {\n    let a = 2;\n    a = a + 1;\n    console.log(a);\n  }\n  console.log(typeof a);\n}\nfoo();", "expected": "3\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-3-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "用函式作用域隱藏變數，是避免不同程式碼互相命名衝突的基本手段",
+      "docs": "",
+      "story": "",
+      "prompt": "版本一裡，兩段各自獨立撰寫的程式都直接在全域宣告了同名的 count；版本二裡，兩段程式各自被一個函式包住。這兩個版本在「會不會互相干擾」上有什麼差別？",
+      "code": "// 版本一：都直接寫在全域\nvar count = 0;\nfunction addA() { count++; return count; }\n\nvar count = 100; // 不小心用了同一個名字！\nfunction addB() { count++; return count; }\n\n// 版本二：各自用函式包起來，只暴露需要的介面\nfunction moduleA() {\n  var count = 0;\n  return function add() { count++; return count; };\n}\nfunction moduleB() {\n  var count = 100;\n  return function add() { count++; return count; };\n}\nvar addA2 = moduleA();\nvar addB2 = moduleB();",
+      "options": [
+        { "id": "a", "text": "版本一裡兩個 var count 宣告在同一個全域作用域，後面的 var count = 100 會直接蓋掉前面的宣告（兩個宣告其實是同一個變數容器），addA 和 addB 會不小心共用同一個 count，彼此互相干擾；版本二裡每個 count 都被各自的函式作用域包住，moduleA 和 moduleB 各自擁有獨立、外部完全碰不到的 count，互不影響——這正是「用函式作用域隱藏變數」避免命名衝突的具體好處" },
+        { "id": "b", "text": "兩個版本的行為完全一樣，count 在 JS 裡不管宣告幾次都是各自獨立的變數" },
+        { "id": "c", "text": "版本一會直接拋出 SyntaxError，因為同一個作用域不能用 var 宣告兩次同名的變數" },
+        { "id": "d", "text": "版本二反而更容易衝突，因為函式作用域會讓 moduleA 和 moduleB 裡的 count 變成同一個變數" }
+      ],
+      "answer": "a",
+      "explanation": "var 對同一個作用域內的重複宣告不會報錯，只會被當成同一個變數處理，所以版本一的兩個 var count 其實共用同一個容器，addA、addB 互相干擾對方的計數。版本二把各自的 count 用函式作用域包起來，外部（甚至 moduleA 跟 moduleB 之間）完全看不到彼此的 count，只能透過各自回傳的 add 函式間接操作——這就是本章「隱藏內部實現」的核心價值：把可能造成命名衝突的實作細節收進函式作用域，只暴露真正需要對外溝通的介面。",
+      "verify": { "manual": "概念題：以全域 count 命名衝突 vs 函式作用域隔離的具體對照取代抽象敘述，重點是解釋 var 重複宣告的合併行為，屬於引擎宣告處理機制的說明，不適合單一 console.log 驗證。" }
+    }
+  ]
+}

@@ -66,6 +66,15 @@ export interface Chapter {
   levels: Level[]
 }
 
+// 主題：首頁卡片的顯示單位。大多數主題底下只有一個 Chapter（點卡片直接進關卡列表）；
+// 少數主題（例如一套書拆成好幾本）底下有多個 Chapter，點卡片要先看到「書的列表」
+export interface Topic {
+  id: string
+  title: string
+  icon: IconName
+  chapters: Chapter[]
+}
+
 export interface LevelRecord {
   best: number
   total: number

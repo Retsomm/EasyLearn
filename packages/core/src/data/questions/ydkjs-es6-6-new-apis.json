@@ -1,0 +1,144 @@
+{
+  "id": "ydkjs-es6-6",
+  "title": "Ch6：新增API",
+  "questions": [
+    {
+      "id": "ydkjs-es6-6-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "Array.from 可以把「陣列相似物」（像 arguments）或可迭代物件，轉成一個真正的陣列",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/from",
+      "story": "",
+      "prompt": "arguments 是一個陣列相似物，不是真正的陣列。這段程式會印出什麼？",
+      "code": "function toArray() {\n  return Array.from(arguments);\n}\nconsole.log(toArray(1, 2, 3));\nconsole.log(Array.isArray(toArray(1, 2, 3)));",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3 ]\ntrue" },
+        { "id": "b", "text": "[Arguments] { '0': 1, '1': 2, '2': 3 }\nfalse" },
+        { "id": "c", "text": "[ 1, 2, 3 ]\nfalse" },
+        { "id": "d", "text": "TypeError：arguments 不能被轉換" }
+      ],
+      "answer": "a",
+      "explanation": "arguments 有 length 和數字索引，長得像陣列，但不是真正的 Array 實例，沒有 map、filter 這些陣列方法。Array.from(arguments) 把它轉換成一個貨真價實的新陣列 [1, 2, 3]，Array.isArray 對它的判斷是 true。ES6 之前想做同樣的事，通常得寫 Array.prototype.slice.call(arguments) 這種比較迂迴的寫法，Array.from 讓這個常見需求變得直接明瞭。",
+      "verify": {
+        "checks": [
+          { "code": "function toArray() {\n  return Array.from(arguments);\n}\nconsole.log(toArray(1, 2, 3));\nconsole.log(Array.isArray(toArray(1, 2, 3)));", "expected": "[ 1, 2, 3 ]\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-6-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "Array.of 修好了 Types & Grammar 教過的 new Array(數字) 坑：Array.of 永遠把引數當成「陣列的內容」，不管只給一個引數還是好幾個",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/of",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "console.log(Array.of(3));\nconsole.log(Array(3));",
+      "options": [
+        { "id": "a", "text": "[ 3 ]\n[ <3 empty items> ]" },
+        { "id": "b", "text": "[ 3 ]\n[ 3 ]" },
+        { "id": "c", "text": "[ <3 empty items> ]\n[ 3 ]" },
+        { "id": "d", "text": "[ <3 empty items> ]\n[ <3 empty items> ]" }
+      ],
+      "answer": "a",
+      "explanation": "Array(3) 只給一個數字引數時，是 Types & Grammar 教過的特殊建構規則：會建出長度是 3、但裡面沒有真正元素的稀疏陣列，容易造成意外行為。Array.of(3) 就沒有這個特殊規則，一律把收到的引數當成陣列的內容，Array.of(3) 就是一個裡面裝著單一個元素 3 的陣列 [3]，不管引數是一個還是好幾個，行為都一致、可預期，這正是 Array.of 存在的目的。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(Array.of(3));\nconsole.log(Array(3));", "expected": "[ 3 ]\n[ <3 empty items> ]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-6-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "find 找到第一個符合條件的元素本身（不是索引），findIndex 找到的是索引；兩者都找不到時，分別回傳 undefined 和 -1",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/find",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var users = [{ id: 1 }, { id: 2 }, { id: 3 }];\nconsole.log(users.find(function (u) { return u.id === 2; }));\nconsole.log(users.findIndex(function (u) { return u.id === 2; }));\nconsole.log(users.find(function (u) { return u.id === 99; }));",
+      "options": [
+        { "id": "a", "text": "{ id: 2 }\n1\nundefined" },
+        { "id": "b", "text": "1\n{ id: 2 }\n-1" },
+        { "id": "c", "text": "{ id: 2 }\n1\n-1" },
+        { "id": "d", "text": "2\n1\nundefined" }
+      ],
+      "answer": "a",
+      "explanation": "find 回傳「第一個讓判斷函式回傳 true 的元素本身」，這裡是 { id: 2 } 這個物件。findIndex 回傳的是這個元素在陣列裡的索引，id 是 2 的物件排在索引 1。如果沒有任何元素符合條件（像找 id 是 99 的），find 回傳 undefined（不是 -1），這點跟 findIndex 找不到時回傳 -1 不一樣，容易搞混。",
+      "verify": {
+        "checks": [
+          { "code": "var users = [{ id: 1 }, { id: 2 }, { id: 3 }];\nconsole.log(users.find(function (u) { return u.id === 2; }));\nconsole.log(users.findIndex(function (u) { return u.id === 2; }));\nconsole.log(users.find(function (u) { return u.id === 99; }));", "expected": "{ id: 2 }\n1\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-6-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "字串新增了 padStart（補齊到指定長度）和 repeat（重複整個字串）這兩個實用方法",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/padStart",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "console.log('5'.padStart(3, '0'));\nconsole.log('abc'.repeat(3));",
+      "options": [
+        { "id": "a", "text": "005\nabcabcabc" },
+        { "id": "b", "text": "500\nabcabcabc" },
+        { "id": "c", "text": "005\nabc3" },
+        { "id": "d", "text": "5\nabcabcabc" }
+      ],
+      "answer": "a",
+      "explanation": "'5'.padStart(3, '0') 把字串補到總長度 3，補的方式是在「開頭」補上指定的字元（這裡是 '0'），直到達到目標長度，'5' 補完變成 '005'。'abc'.repeat(3) 把整個字串重複 3 次接在一起，變成 'abcabcabc'。padStart 常拿來補零（像時間格式化），repeat 則常拿來產生重複樣式的字串。",
+      "verify": {
+        "checks": [
+          { "code": "console.log('5'.padStart(3, '0'));\nconsole.log('abc'.repeat(3));", "expected": "005\nabcabcabc" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-6-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "indexOf 用 === 判斷相等，找不到 NaN（因為 NaN === NaN 是 false）；includes 用比較寬鬆的規則判斷，可以正確找到 NaN",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/includes",
+      "story": "",
+      "prompt": "把空格填起來，讓第二行能正確判斷陣列裡有沒有 NaN，印出 -1 和 true",
+      "code": "var arr = [1, NaN, 3];\nconsole.log(arr.indexOf(NaN));\nconsole.log(arr.____(NaN));",
+      "options": [
+        { "id": "a", "text": "includes" },
+        { "id": "b", "text": "indexOf" },
+        { "id": "c", "text": "find" },
+        { "id": "d", "text": "join" }
+      ],
+      "answer": "a",
+      "explanation": "indexOf 底層用 === 比較每個元素，但 NaN === NaN 永遠是 false（Types & Grammar 教過的特性），所以就算陣列裡明明有 NaN，indexOf(NaN) 還是找不到，回傳 -1，容易誤導人以為陣列裡沒有 NaN。includes 用的判斷規則跟 Set（Ch5 教過）一樣，特別把 NaN 當成能被找到的值，arr.includes(NaN) 正確回傳 true。想準確判斷陣列裡有沒有 NaN，includes 比 indexOf 可靠。",
+      "verify": {
+        "checks": [
+          { "code": "var arr = [1, NaN, 3];\nconsole.log(arr.indexOf(NaN));\nconsole.log(arr.includes(NaN));", "expected": "-1\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-6-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "浮點數運算天生有精度誤差，Number.EPSILON 提供了一個「可接受的極小誤差範圍」，讓浮點數的相等比較變得可靠",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "console.log(0.1 + 0.2 === 0.3);\nconsole.log(Math.abs(0.1 + 0.2 - 0.3) < Number.EPSILON);",
+      "options": [
+        { "id": "a", "text": "false\ntrue" },
+        { "id": "b", "text": "true\ntrue" },
+        { "id": "c", "text": "false\nfalse" },
+        { "id": "d", "text": "true\nfalse" }
+      ],
+      "answer": "a",
+      "explanation": "浮點數在電腦裡用二進位表示，0.1 加 0.2 實際運算出來的結果，因為二進位沒辦法精確表示某些十進位小數，會有極其微小的誤差，導致 0.1 + 0.2 === 0.3 是 false（這正是本書之前提過「浮點數不能直接用 === 比較」的具體示範）。Number.EPSILON 是 ES6 新增的一個極小數值常數，代表浮點數運算「可接受的最小誤差範圍」，用 Math.abs(實際值 - 期望值) < Number.EPSILON 這種寫法，可以正確判斷兩個浮點數在容許誤差內是不是「實質上相等」，印出 true。這是處理浮點數比較最推薦的實務做法。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(0.1 + 0.2 === 0.3);\nconsole.log(Math.abs(0.1 + 0.2 - 0.3) < Number.EPSILON);", "expected": "false\ntrue" }
+        ]
+      }
+    }
+  ]
+}
