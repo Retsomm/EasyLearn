@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-tg-1",
+  "title": "Ch1：類型",
+  "questions": [
+    {
+      "id": "ydkjs-tg-1-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "typeof 回傳的是內建型別的字串名稱，null 回傳 object 是一個公認的語言老 bug",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/typeof",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "console.log(typeof undefined);\nconsole.log(typeof true);\nconsole.log(typeof 42);\nconsole.log(typeof '42');\nconsole.log(typeof { a: 1 });\nconsole.log(typeof null);\nconsole.log(typeof function () {});",
+      "options": [
+        { "id": "a", "text": "undefined\nboolean\nnumber\nstring\nobject\nobject\nfunction" },
+        { "id": "b", "text": "undefined\nboolean\nnumber\nstring\nobject\nnull\nfunction" },
+        { "id": "c", "text": "undefined\nboolean\nnumber\nstring\nobject\nobject\nobject" },
+        { "id": "d", "text": "undeclared\nboolean\nnumber\nstring\nobject\nobject\nfunction" }
+      ],
+      "answer": "a",
+      "explanation": "typeof null 印出 object，不是 null——這是 JS 從最早期版本就留下來的 bug（null 原本設計上要表示「空的物件參照」，但因為太多既有程式碼依賴這個行為，一直沒被修正）。function 雖然本質上也是物件的一種，但 typeof 特別把它獨立標示成 function，方便直接判斷「這是不是一個可呼叫的東西」。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(typeof undefined);\nconsole.log(typeof true);\nconsole.log(typeof 42);\nconsole.log(typeof '42');\nconsole.log(typeof { a: 1 });\nconsole.log(typeof null);\nconsole.log(typeof function () {});", "expected": "undefined\nboolean\nnumber\nstring\nobject\nobject\nfunction" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-1-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "「undefined」和「undeclared」是兩回事：一個是宣告了但沒賦值，一個是根本沒宣告過，但 typeof 對兩者都一樣安全",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/typeof",
+      "story": "",
+      "prompt": "a 有宣告但沒賦值，b 完全沒有宣告過。這段程式會印出什麼？",
+      "code": "var a;\nconsole.log(typeof a); // a 宣告了，但沒賦值\nconsole.log(typeof b); // b 從來沒宣告過",
+      "options": [
+        { "id": "a", "text": "undefined\nundefined" },
+        { "id": "b", "text": "undefined\nReferenceError" },
+        { "id": "c", "text": "undeclared\nundefined" },
+        { "id": "d", "text": "ReferenceError\nReferenceError" }
+      ],
+      "answer": "a",
+      "explanation": "typeof a 印出 undefined，這是因為 a 有宣告、只是還沒被賦值，值本來就是 undefined。typeof b 也印出 undefined，即使 b 從來沒被宣告過——typeof 是少數對「完全沒宣告過的識別字」也安全的運算子，不會像直接讀取那樣丟出錯誤（下一題會示範直接讀取 b 會發生什麼事）。「值是 undefined」跟「這個名稱根本沒宣告過（undeclared）」是兩個不同的概念，但 typeof 對兩者的回傳結果剛好都一樣。",
+      "verify": {
+        "checks": [
+          { "code": "var a;\nconsole.log(typeof a);\nconsole.log(typeof b);", "expected": "undefined\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-1-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "typeof 對未宣告的識別字是安全的，但直接讀取未宣告的識別字依然會丟出 ReferenceError",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/typeof",
+      "story": "",
+      "prompt": "b 完全沒有宣告過。這段程式碼執行會發生什麼事？",
+      "code": "console.log(typeof b); // 用 typeof 查詢\nconsole.log(b); // 直接讀取",
+      "options": [
+        { "id": "a", "text": "先印出 undefined，接著丟出 ReferenceError：typeof 對未宣告的識別字有特別的安全防護，直接回傳 undefined；但直接讀取一個未宣告的識別字（RHS 查詢），完全沒有這種防護，會直接丟出 ReferenceError" },
+        { "id": "b", "text": "兩行都印出 undefined，typeof 跟直接讀取對未宣告的識別字行為完全一樣" },
+        { "id": "c", "text": "兩行都丟出 ReferenceError，typeof 對未宣告的識別字並不安全" },
+        { "id": "d", "text": "先丟出 ReferenceError，因為 typeof 必須先讀取到值才能判斷型別" }
+      ],
+      "answer": "a",
+      "explanation": "typeof 是刻意設計成對「未宣告的識別字」也安全的運算子，這是為了讓程式碼可以安全地探測某個可能不存在的全域變數（例如某個 polyfill 或外部套件是否已載入），不用擔心因為它不存在而讓整段程式碼直接崩潰。但這個安全防護僅限於 typeof 本身，一旦真的想「讀取」這個未宣告識別字的值（例如直接 console.log(b)），一樣會觸發跟 Scope & Closures 那本書教過的一樣的 RHS 查詢，找不到宣告就直接丟出 ReferenceError。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(typeof b);\nconsole.log(b);", "expected": "undefined", "expectError": "b is not defined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-1-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用 typeof === 'undefined' 安全地偵測一個可能根本沒被宣告過的全域變數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/typeof",
+      "story": "",
+      "prompt": "把空格填起來，安全地判斷 DEBUG 這個全域變數存不存在（DEBUG 從頭到尾都沒被宣告過），印出 DEBUG not declared, skip",
+      "code": "if (typeof DEBUG ____ 'undefined') {\n  console.log('DEBUG not declared, skip');\n} else {\n  console.log('DEBUG is', DEBUG);\n}",
+      "options": [
+        { "id": "a", "text": "===" },
+        { "id": "b", "text": "==" },
+        { "id": "c", "text": "instanceof" },
+        { "id": "d", "text": "in" }
+      ],
+      "answer": "a",
+      "explanation": "typeof DEBUG === 'undefined' 是 JS 裡經典的「安全存在性檢查」寫法：因為 typeof 對未宣告的識別字也是安全的，不用先確定 DEBUG 有沒有宣告過，就能直接判斷它是不是「未定義」的狀態，藉此決定要不要使用它。這裡故意用 === 而不是 ==，避免任何型別轉換造成的意外（例如某些寬鬆比較下的邊界情況），字串比較永遠用嚴格相等最保險。",
+      "verify": {
+        "checks": [
+          { "code": "if (typeof DEBUG === 'undefined') {\n  console.log('DEBUG not declared, skip');\n} else {\n  console.log('DEBUG is', DEBUG);\n}", "expected": "DEBUG not declared, skip" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-1-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "陣列本質上也是物件的一種，typeof 沒辦法分辨陣列跟一般物件，要用 Array.isArray 才行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/isArray",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var arr = [1, 2, 3];\nconsole.log(typeof arr);\nconsole.log(Array.isArray(arr));\nconsole.log(Object.prototype.toString.call(arr));",
+      "options": [
+        { "id": "a", "text": "object\ntrue\n[object Array]" },
+        { "id": "b", "text": "array\ntrue\n[object Array]" },
+        { "id": "c", "text": "object\nfalse\n[object Object]" },
+        { "id": "d", "text": "object\ntrue\n[object Object]" }
+      ],
+      "answer": "a",
+      "explanation": "陣列在 JS 的型別系統裡本質上就是一種特化過的物件，typeof arr 只會印出 object，不會有專屬的 array 型別名稱。要真的分辨一個值是不是陣列，得用 Array.isArray（回傳 true），或是更底層的 Object.prototype.toString.call（會印出 [object Array]，內部標記了這個物件真正的分類）——這個內部分類機制正是下一章「原生函數」要深入介紹的 [[Class]]。",
+      "verify": {
+        "checks": [
+          { "code": "var arr = [1, 2, 3];\nconsole.log(typeof arr);\nconsole.log(Array.isArray(arr));\nconsole.log(Object.prototype.toString.call(arr));", "expected": "object\ntrue\n[object Array]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-1-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "typeof null 是已知的 bug，但這不影響 typeof 整體依然是「探測型別最安全」的運算子",
+      "docs": "",
+      "story": "",
+      "prompt": "Q1 證明了 typeof null 回傳 object（一個已知的語言 bug），Q3 又證明了 typeof 對完全沒宣告過的識別字也不會報錯。把這兩點放在一起看，為什麼 typeof 依然被認為是「探測一個值的型別」時最安全的做法？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "typeof null 回傳 object 只是「這一個特定值」的分類結果不準確，並不影響 typeof 這個運算子面對「完全沒宣告過、無法解析的識別字」時不會讓程式崩潰這個安全特性——換成直接讀取一個沒宣告過的識別字會直接拋出 ReferenceError，但 typeof 面對同樣的識別字永遠只會平靜地回傳字串 'undefined'；只要使用時額外記得對 null 做特別判斷（例如先用 === null 排除），typeof 依然是探測型別、順便安全檢查識別字存不存在時最不容易讓程式意外崩潰的手法" },
+        { "id": "b", "text": "因為 typeof null 回傳 object 這件事已經在最新的 JS 版本修正了，現在改回傳 null" },
+        { "id": "c", "text": "typeof 不安全，應該永遠改用 === 直接比較值本身，不要用 typeof 判斷型別" },
+        { "id": "d", "text": "typeof 只有在判斷 null 的時候才安全，判斷其他型別都不可靠" }
+      ],
+      "answer": "a",
+      "explanation": "typeof null 回傳 object 是型別分類「不準確」的問題，但這是唯一的已知例外，且問題發生前提是你已經拿到一個值；typeof 更核心的安全性，是它面對「完全沒被宣告過、無法解析的識別字」（Q3）時，永遠都只會平靜地回傳字串 'undefined'，不會像直接讀取那樣拋出 ReferenceError 讓程式崩潰。這個安全網僅限於「未宣告」的情況：如果識別字已經用 let／const 宣告、只是目前還在暫時性死區（TDZ）內、宣告那行還沒執行到，對它做 typeof 一樣會拋出 ReferenceError，不會被靜靜吞掉。只要使用時記得對 null 這一個特例額外處理（通常搭配 === null 一起判斷），並清楚 typeof 的安全網只保護未宣告的識別字，typeof 依然是探測型別最務實、最不容易讓程式意外崩潰的做法，這也是為什麼 Q4 那種安全存在性檢查的寫法在 JS 裡這麼常見。",
+      "verify": { "manual": "概念題：綜合 Q1（typeof null 的已知 bug）與 Q3（typeof 對未宣告識別字的安全性），說明 typeof 整體上仍是安全的型別探測手法，屬於語言設計取捨的說明，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

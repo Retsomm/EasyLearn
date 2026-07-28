@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-sc-6",
+  "title": "附錄A：動態作用域",
+  "questions": [
+    {
+      "id": "ydkjs-sc-6-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "this 是依照函式「被呼叫的方式」決定，不是依照函式「寫在哪裡」決定",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/this",
+      "story": "",
+      "prompt": "showValue 是同一個函式，這段程式會印出什麼？",
+      "code": "var obj = {\n  value: 42,\n  showValue: function () {\n    console.log(this.value);\n  },\n};\n\nobj.showValue(); // 用 obj.showValue() 呼叫\nvar detached = obj.showValue;\ndetached(); // 同一個函式，改成直接呼叫",
+      "options": [
+        { "id": "a", "text": "42\nundefined" },
+        { "id": "b", "text": "42\n42" },
+        { "id": "c", "text": "undefined\nundefined" },
+        { "id": "d", "text": "ReferenceError：this 未定義" }
+      ],
+      "answer": "a",
+      "explanation": "obj.showValue() 是用「物件.方法」的方式呼叫，this 綁定到 obj，this.value 印出 42。detached 雖然指向同一個函式，但用 detached() 直接呼叫時，this 不再綁定到 obj，而是綁定到全域物件（非嚴格模式下），全域物件上沒有 value 這個屬性，所以印出 undefined。同一個函式、同一段函式主體，this 綁定到誰完全取決於「呼叫當下怎麼呼叫」，跟這個函式寫在程式碼的哪個位置無關——這跟一般變數的詞法作用域（由撰寫位置決定）是完全不同的機制。",
+      "verify": {
+        "checks": [
+          { "code": "var obj = {\n  value: 42,\n  showValue: function () {\n    console.log(this.value);\n  },\n};\n\nobj.showValue();\nvar detached = obj.showValue;\ndetached();", "expected": "42\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-6-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "同一個函式裡，this 依呼叫方式改變，但一般變數的查詢永遠是固定的詞法作用域，不受呼叫方式影響",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/this",
+      "story": "",
+      "prompt": "whoAmI 裡同時讀了 this.name 和 name（一般變數）。這段程式會印出什麼？",
+      "code": "var context = { name: 'object-name' };\nvar name = 'global-name';\n\nfunction whoAmI() {\n  console.log(this.name); // this 綁定：依呼叫方式而變\n  console.log(name); // 一般變數查詢：永遠依撰寫位置決定\n}\n\nwhoAmI();\ncontext.whoAmI = whoAmI;\ncontext.whoAmI();",
+      "options": [
+        { "id": "a", "text": "global-name\nglobal-name\nobject-name\nglobal-name" },
+        { "id": "b", "text": "global-name\nglobal-name\nobject-name\nobject-name" },
+        { "id": "c", "text": "object-name\nglobal-name\nobject-name\nglobal-name" },
+        { "id": "d", "text": "undefined\nglobal-name\nundefined\nglobal-name" }
+      ],
+      "answer": "a",
+      "explanation": "whoAmI() 直接呼叫時 this 綁定到全域物件，this.name 印出 global-name（跟全域變數 name 剛好同名）；第二行的 name 是一般變數查詢，永遠往 whoAmI 撰寫時的詞法作用域找，找到全域的 name，印出 global-name。改成 context.whoAmI() 呼叫後，this 綁定變成 context，this.name 印出 object-name；但第二行的 name 查詢完全不受呼叫方式影響，還是印出 global-name。同一個函式主體裡，this 的值會隨呼叫方式改變（很像「動態」），一般變數的查詢卻永遠固定（詞法），這正是本附錄要凸顯的對比。",
+      "verify": {
+        "checks": [
+          { "code": "var context = { name: 'object-name' };\nvar name = 'global-name';\n\nfunction whoAmI() {\n  console.log(this.name);\n  console.log(name);\n}\n\nwhoAmI();\ncontext.whoAmI = whoAmI;\ncontext.whoAmI();", "expected": "global-name\nglobal-name\nobject-name\nglobal-name" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-6-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "JS 不是動態作用域：一般變數的查詢完全不會沿著呼叫堆疊往回找",
+      "docs": "https://developer.mozilla.org/en-US/docs/Glossary/Scope",
+      "story": "",
+      "prompt": "如果 JS 是「動態作用域」的語言，bar 內部應該能沿著呼叫堆疊（bar 被 foo 呼叫、foo 被 baz 呼叫）往回找到 baz 裡的 secret。這段程式實際執行會發生什麼事？",
+      "code": "function baz() {\n  var secret = 'baz-secret';\n  foo();\n}\nfunction foo() {\n  bar();\n}\nfunction bar() {\n  console.log(secret); // bar 找得到 baz 的 secret 嗎？\n}\nbaz();",
+      "options": [
+        { "id": "a", "text": "丟出 ReferenceError：bar 是在全域作用域定義的，查詢 secret 只會往 bar 自己「撰寫時」的詞法作用域鏈找（bar 自己 → 全域），完全不管呼叫堆疊上是誰呼叫了它；baz 裡的 secret 對 bar 來說完全不存在，跟 baz 有沒有呼叫過 bar 無關" },
+        { "id": "b", "text": "印出 baz-secret，因為 bar 是被 foo 間接呼叫，foo 又是被 baz 呼叫的，所以能沿著呼叫堆疊找到 baz 裡的 secret" },
+        { "id": "c", "text": "印出 undefined，因為 secret 會被提升到全域但沒有被賦值" },
+        { "id": "d", "text": "程式會無限遞迴，因為 baz、foo、bar 互相呼叫" }
+      ],
+      "answer": "a",
+      "explanation": "這正是 JS「詞法作用域」和「動態作用域」的根本差異：動態作用域語言會沿著『函式呼叫的堆疊』去找變數，bar 被 foo 呼叫、foo 被 baz 呼叫，理論上應該找得到 baz 的 secret。但 JS 是詞法作用域，bar 查詢 secret 只看「bar 這段程式碼寫在哪裡」——bar 是寫在全域作用域，往外找就是全域，完全不會理會「呼叫它的人是誰」。baz 的 secret 只存在於 baz 自己的函式作用域，bar 完全看不到，所以丟出 ReferenceError。",
+      "verify": {
+        "checks": [
+          { "code": "function baz() {\n  var secret = 'baz-secret';\n  foo();\n}\nfunction foo() {\n  bar();\n}\nfunction bar() {\n  console.log(secret);\n}\nbaz();", "expectError": "secret is not defined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-6-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用 call／apply 明確指定 this，是 JS 少數真的可以在執行期改變綁定結果的機制",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Function/call",
+      "story": "",
+      "prompt": "把空格填起來，讓 whoAmI 執行時的 this 明確指向 obj，印出 obj-name",
+      "code": "var name = 'global-name';\nvar obj = { name: 'obj-name' };\n\nfunction whoAmI() {\n  console.log(this.name);\n}\n\nwhoAmI.____(obj);",
+      "options": [
+        { "id": "a", "text": "call" },
+        { "id": "b", "text": "bind" },
+        { "id": "c", "text": "toString" },
+        { "id": "d", "text": "name" }
+      ],
+      "answer": "a",
+      "explanation": "whoAmI.call(obj) 會立刻執行 whoAmI，並明確把這次呼叫的 this 指定成 obj，所以 this.name 印出 obj-name。選項 b 的 bind(obj) 不會立刻執行，只會回傳一個「this 已經被綁死成 obj」的新函式，如果沒有再呼叫這個新函式（例如 whoAmI.bind(obj)），畫面上什麼都不會印出來。這也呼應本附錄的重點：this 雖然表現得很像「依呼叫堆疊決定」的動態作用域，但實際上是可以透過 call／apply／bind 這幾個特定 API 明確控制的獨立綁定機制，不是真正的變數作用域查詢。",
+      "verify": {
+        "checks": [
+          { "code": "var name = 'global-name';\nvar obj = { name: 'obj-name' };\n\nfunction whoAmI() {\n  console.log(this.name);\n}\n\nwhoAmI.call(obj);", "expected": "obj-name" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-6-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "this 只看「最近一次的呼叫方式」，不會沿著整條呼叫鏈往上找，這點跟真正的動態作用域也不一樣",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/this",
+      "story": "",
+      "prompt": "relay 是被 obj2.relay() 呼叫的，relay 裡面又呼叫了 obj1.say()。這段程式會印出什麼？",
+      "code": "var obj1 = { name: 'obj1' };\nvar obj2 = { name: 'obj2' };\n\nfunction whoAmI() {\n  console.log(this.name);\n}\n\nobj1.say = whoAmI;\nobj2.relay = function () {\n  obj1.say(); // 這裡的呼叫方式，才是決定 this 的關鍵\n};\n\nobj2.relay();",
+      "options": [
+        { "id": "a", "text": "obj1" },
+        { "id": "b", "text": "obj2" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "obj1\nobj2" }
+      ],
+      "answer": "a",
+      "explanation": "obj2.relay() 呼叫的當下，relay 裡面的 this 是 obj2，但 whoAmI 根本不是被 relay 直接呼叫的——它是透過 obj1.say() 被呼叫，this 只看「這一次呼叫 whoAmI 的當下，是用什麼方式呼叫的」，也就是 obj1.say()，所以 this 綁定到 obj1，印出 obj1。就算 relay 本身是被 obj2 呼叫的，這件事對 whoAmI 的 this 完全沒有影響——this 只在意最近一次、直接呼叫自己的那個呼叫點，不會像真正的動態作用域那樣沿著整條呼叫鏈逐層往上找。",
+      "verify": {
+        "checks": [
+          { "code": "var obj1 = { name: 'obj1' };\nvar obj2 = { name: 'obj2' };\n\nfunction whoAmI() {\n  console.log(this.name);\n}\n\nobj1.say = whoAmI;\nobj2.relay = function () {\n  obj1.say();\n};\n\nobj2.relay();", "expected": "obj1" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-6-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "this 只是「表面上很像」動態作用域，實際上跟真正的動態作用域是兩套不同的機制",
+      "docs": "",
+      "story": "",
+      "prompt": "把 Q3（一般變數 secret 完全找不到，即使呼叫堆疊上有同名變數）跟 Q1、Q5（this 會隨呼叫方式改變）放在一起看，為什麼說「this 讓 JS 表現得有點像動態作用域，但 JS 本身其實完全不是動態作用域語言」？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "因為「動態作用域」指的是連一般變數的查詢都會沿著呼叫堆疊去找（Q3 已經證明 JS 完全沒有這種行為，一般變數永遠只看詞法位置）；this 會依呼叫方式改變，看起來像是「在執行期依呼叫狀況決定綁定結果」，表面上跟動態作用域的精神有點像，但 this 只是一個獨立的、僅限於 this 這個特殊關鍵字的綁定機制，並不是 JS 的變數查詢規則被改成動態的——JS 的作用域鏈（一般變數）從頭到尾都是詞法、靜態的" },
+        { "id": "b", "text": "因為 this 跟一般變數其實是同一套查詢機制，只是 this 剛好被排除在詞法作用域規則之外，本質上兩者沒有任何差異" },
+        { "id": "c", "text": "因為 JS 引擎在執行期會隨機決定要用詞法作用域還是動態作用域來查詢變數" },
+        { "id": "d", "text": "因為 this 其實也是完全固定在撰寫位置決定的，跟呼叫方式無關，Q1、Q5 的結果只是特例" }
+      ],
+      "answer": "a",
+      "explanation": "真正的動態作用域是「連一般變數的查詢都要沿著呼叫堆疊找」，Q3 已經證明 JS 完全不是這樣——bar 裡的 secret 查詢只認詞法位置，完全不管呼叫堆疊上有沒有同名變數，直接報錯。this 之所以容易讓人聯想到動態作用域，是因為它確實「依呼叫當下的狀況決定值」（Q1、Q5），但這只是 this 這個特定機制自己的行為，跟 JS 的一般變數查詢規則（作用域鏈）完全是兩回事——作用域鏈永遠是詞法、在程式碼寫下的當下就固定，this 則是另一套獨立的、跟呼叫方式綁定的機制，兩者不能混為一談。",
+      "verify": { "manual": "概念題：以 Q1/Q3/Q5 三題的具體對照取代抽象定義，綜合說明 this 綁定機制與詞法作用域查詢的本質差異，屬於機制辨析，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

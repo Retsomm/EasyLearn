@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-ug-1",
+  "title": "Ch1：深入編程",
+  "questions": [
+    {
+      "id": "ydkjs-ug-1-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "運算子的其中一個運算元是字串時，另一邊會被轉成字串一起拼接——這是「型別轉換」最早會遇到的例子",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Addition",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var a = 16;\nvar b = 'a suffix';\nvar c = a + b; // 運算子的其中一個運算元是字串\nconsole.log(c);\nconsole.log(typeof c);",
+      "options": [
+        { "id": "a", "text": "16a suffix\nstring" },
+        { "id": "b", "text": "16a suffix\nnumber" },
+        { "id": "c", "text": "NaN\nnumber" },
+        { "id": "d", "text": "TypeError：不能把數字和字串相加" }
+      ],
+      "answer": "a",
+      "explanation": "+ 運算子只要其中一個運算元是字串，就會把另一個運算元也轉成字串，做字串拼接而不是數字相加。a（16）被轉成字串 '16'，跟 b（'a suffix'）拼接成 '16a suffix'，結果自然是字串型別。這種「其中一邊型別不一樣，就被轉換成同一種型別再運算」的行為，就是「型別轉換」（coercion）——後面 Types & Grammar 那本書會更完整地拆解它的規則。",
+      "verify": {
+        "checks": [
+          { "code": "var a = 16;\nvar b = 'a suffix';\nvar c = a + b;\nconsole.log(c);\nconsole.log(typeof c);", "expected": "16a suffix\nstring" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ug-1-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "// 開頭的單行註解，從 // 到這一行結尾整段都不會被引擎執行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Lexical_grammar",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var a = 5; // 這是註解\n// var a = 10;\nconsole.log(a);",
+      "options": [
+        { "id": "a", "text": "5" },
+        { "id": "b", "text": "10" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "SyntaxError" }
+      ],
+      "answer": "a",
+      "explanation": "// 開頭一路到這一行結尾的內容，都是給人看的註解，引擎完全不會執行——包含第二行整行 var a = 10; 雖然看起來是一段合法的程式碼，但因為前面有 //，整行都被當成註解跳過，根本沒有被執行到。所以 a 依然是第一行賦值的 5，console.log(a) 印出 5。",
+      "verify": {
+        "checks": [
+          { "code": "var a = 5;\n// var a = 10;\nconsole.log(a);", "expected": "5" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ug-1-q3",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "if 的條件不一定要寫成明確的布林比較，直接放一個數字，0 會被當成 false、非 0 會被當成 true",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/if...else",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var items = [];\nif (items.length) {\n  console.log('有東西');\n} else {\n  console.log('是空的');\n}\nitems.push('a');\nif (items.length) {\n  console.log('有東西');\n} else {\n  console.log('是空的');\n}",
+      "options": [
+        { "id": "a", "text": "是空的\n有東西" },
+        { "id": "b", "text": "有東西\n有東西" },
+        { "id": "c", "text": "是空的\n是空的" },
+        { "id": "d", "text": "有東西\n是空的" }
+      ],
+      "answer": "a",
+      "explanation": "items.length 直接放進 if 的條件裡，會先被轉成布林值再判斷：陣列一開始是空的，length 是 0，0 是 falsy，走進 else，印出 是空的。push('a') 之後，length 變成 1，1 是 truthy，這次走進 if，印出 有東西。直接拿一個數字（或任何值）當條件，讓 JS 自動判斷 truthy／falsy，是很常見、也很簡潔的寫法。",
+      "verify": {
+        "checks": [
+          { "code": "var items = [];\nif (items.length) {\n  console.log('有東西');\n} else {\n  console.log('是空的');\n}\nitems.push('a');\nif (items.length) {\n  console.log('有東西');\n} else {\n  console.log('是空的');\n}", "expected": "是空的\n有東西" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ug-1-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "函式可以被「回傳」出去，回傳的函式依然記得自己是在哪個作用域裡定義的（這裡先預告一下，正式的名稱和細節留到 Scope & Closures 那本書）",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function",
+      "story": "",
+      "prompt": "greet 是在 makeGreeting 內部定義的，makeGreeting 把它 return 出來。這段程式會印出什麼？",
+      "code": "function makeGreeting(name) {\n  function greet() {\n    console.log('Hello, ' + name + '!');\n  }\n  return greet;\n}\nvar greetKyle = makeGreeting('Kyle');\ngreetKyle();",
+      "options": [
+        { "id": "a", "text": "Hello, Kyle!" },
+        { "id": "b", "text": "Hello, undefined!" },
+        { "id": "c", "text": "ReferenceError：name 未定義" },
+        { "id": "d", "text": "Hello, !" }
+      ],
+      "answer": "a",
+      "explanation": "makeGreeting('Kyle') 執行完、回傳了 greet 這個函式，理論上 makeGreeting 執行完之後，它的參數 name 應該已經「用不到了」。但 greet 是在 makeGreeting 內部定義的，即使被回傳到外面、透過 greetKyle 呼叫，依然記得自己當初是在哪個作用域裡誕生的，還是能正確讀到 name（'Kyle'），印出 Hello, Kyle!。這種函式「隨身帶著自己出生時的作用域」的能力，正式名稱和完整規則，會在 Scope & Closures 那本書深入介紹。",
+      "verify": {
+        "checks": [
+          { "code": "function makeGreeting(name) {\n  function greet() {\n    console.log('Hello, ' + name + '!');\n  }\n  return greet;\n}\nvar greetKyle = makeGreeting('Kyle');\ngreetKyle();", "expected": "Hello, Kyle!" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ug-1-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "累加迴圈是很基本的程式模式：每一輪迴圈都把當下的值加進累加器裡",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/for",
+      "story": "",
+      "prompt": "把空格填起來，讓 sum 累加迴圈裡每一輪的 i，最後印出 1+2+3+4+5 的總和 15",
+      "code": "var sum = 0;\nfor (var i = 1; i <= 5; i++) {\n  sum ____ i;\n}\nconsole.log(sum);",
+      "options": [
+        { "id": "a", "text": "+=" },
+        { "id": "b", "text": "=" },
+        { "id": "c", "text": "-=" },
+        { "id": "d", "text": "*=" }
+      ],
+      "answer": "a",
+      "explanation": "sum += i 是「把 sum 目前的值，加上這一輪的 i，再存回 sum」的簡寫，每一輪都會累加上去，五輪跑完是 1+2+3+4+5 = 15。選項 b 的 = 是直接覆蓋，每一輪都會把 sum 蓋成當下的 i，迴圈跑完 sum 只會是最後一輪的 i（也就是 5），完全沒有累加的效果。選項 c、d 的 -=、*= 則是累減、累乘，跟「累加總和」的需求完全不符。",
+      "verify": {
+        "checks": [
+          { "code": "var sum = 0;\nfor (var i = 1; i <= 5; i++) {\n  sum += i;\n}\nconsole.log(sum);", "expected": "15" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ug-1-q6",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "這一章刻意只「預告」型別轉換（Q1）、作用域（Q4）這些概念，沒有深入講完整規則，是因為後面各自有專屬的書會整本完整拆解",
+      "docs": "",
+      "story": "",
+      "prompt": "Q1 稍微提到了「+ 遇到字串會轉型別」，Q4 稍微提到了「函式會記得自己出生的作用域」，但兩題都只點到為止，沒有講完整規則（例如型別轉換所有情況、閉包的正式定義）。這一章為什麼要這樣安排？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "這一本《起步上路》的定位是給完全沒寫過程式、或剛接觸 JS 的讀者，快速建立起「大概讀得懂程式碼在做什麼」的能力，先讓讀者對型別轉換、作用域這些概念有個初步印象，知道「有這回事」；至於完整、精確的規則（== 的每一條轉換規則、詞法作用域的查詢機制、閉包的正式定義），則刻意留給後面 Types & Grammar、Scope & Closures 這些各自獨立成冊的專書去完整拆解——這正是「你不知道的JavaScript」整個系列的編排邏輯：先建立地圖全貌，再逐一深入每個區域" },
+        { "id": "b", "text": "因為這些概念其實不重要，作者原本想完全省略不提，只是隨手帶過幾個例子湊字數" },
+        { "id": "c", "text": "因為型別轉換和作用域這兩個主題，在後面的書裡完全不會再出現，這一章其實是唯一會講到它們的地方" },
+        { "id": "d", "text": "這一章的寫法只是編輯疏漏，正式版本應該要把所有細節都寫在這一章裡" }
+      ],
+      "answer": "a",
+      "explanation": "《起步上路》整本書的定位就是給新手的入門地圖，用意是先讓讀者對「JS 裡有型別轉換、有作用域、有 this、有原型」這些重要概念有個初步印象，能大致讀懂基礎程式碼，不會被完全陌生的名詞卡住。真正完整、精確的規則，作者刻意留給後面各自獨立成冊的專書（Types & Grammar、Scope & Closures、this & Object Prototypes...）逐一深入拆解——這正是整個「你不知道的JavaScript」系列的編排邏輯，也是這一本書最後一章（Ch3）會直接列出其他 5 本書分別在講什麼的原因。",
+      "verify": { "manual": "概念題：以 Q1（型別轉換預告）與 Q4（作用域預告）的具體對照，說明《起步上路》作為入門導覽書的編排邏輯，屬於整個系列架構層面的說明，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

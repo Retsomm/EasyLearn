@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-tg-2",
+  "title": "Ch2：值",
+  "questions": [
+    {
+      "id": "ydkjs-tg-2-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "字串是不可變的（immutable），對字串的某個字元位置賦值不會報錯，也不會真的生效",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var a = 'foo';\na[0] = 'O'; // 嘗試改字串的第一個字元\nconsole.log(a);",
+      "options": [
+        { "id": "a", "text": "foo" },
+        { "id": "b", "text": "Ooo" },
+        { "id": "c", "text": "TypeError：字串是唯讀的" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "字串原始值在 JS 裡是不可變的（immutable），一旦建立就不能被就地修改。a[0] = 'O' 這種賦值語法看起來像是在改陣列的元素，但套用在字串上，非嚴格模式下會靜默失敗，完全不影響原本的字串，a 還是 foo。想要「修改」字串，唯一的辦法是用字串方法（例如切割、拼接）產生一個全新的字串，再把它指派回同一個變數，而不是直接改動原本那個字串。",
+      "verify": {
+        "checks": [
+          { "code": "var a = 'foo';\na[0] = 'O';\nconsole.log(a);", "expected": "foo" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-2-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "NaN 的型別其實是 number，而且是 JS 裡唯一「不等於自己」的值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/NaN",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var a = 2 / 'foo';\nconsole.log(a);\nconsole.log(typeof a);\nconsole.log(a === a);\nconsole.log(Number.isNaN(a));",
+      "options": [
+        { "id": "a", "text": "NaN\nnumber\nfalse\ntrue" },
+        { "id": "b", "text": "NaN\nnumber\ntrue\ntrue" },
+        { "id": "c", "text": "NaN\nNaN\nfalse\ntrue" },
+        { "id": "d", "text": "TypeError：不能對字串做除法" }
+      ],
+      "answer": "a",
+      "explanation": "2 除以一個沒辦法轉成數字的字串，結果是 NaN（Not a Number），但 typeof NaN 印出的依然是 number——NaN 本質上就是數字型別裡的一個特殊值，不是另一種型別。NaN 還有一個獨一無二的特性：它是 JS 裡唯一「不等於自己」的值，a === a 印出 false。要正確判斷一個值是不是 NaN，不能用 === NaN 比較，得靠 Number.isNaN 這種專門的函式。",
+      "verify": {
+        "checks": [
+          { "code": "var a = 2 / 'foo';\nconsole.log(a);\nconsole.log(typeof a);\nconsole.log(a === a);\nconsole.log(Number.isNaN(a));", "expected": "NaN\nnumber\nfalse\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-2-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "全域的 isNaN 會先偷偷做強制型別轉換，容易誤判；Number.isNaN 不轉換，判斷更準確",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Number/isNaN",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "console.log(isNaN('foo'));\nconsole.log(Number.isNaN('foo'));\nconsole.log(isNaN(NaN));\nconsole.log(Number.isNaN(NaN));",
+      "options": [
+        { "id": "a", "text": "true\nfalse\ntrue\ntrue" },
+        { "id": "b", "text": "true\ntrue\ntrue\ntrue" },
+        { "id": "c", "text": "false\nfalse\ntrue\ntrue" },
+        { "id": "d", "text": "true\nfalse\nfalse\ntrue" }
+      ],
+      "answer": "a",
+      "explanation": "全域的 isNaN('foo') 會先把參數強制轉成數字再判斷——'foo' 轉成數字會變成 NaN，所以印出 true，但這其實是誤判：'foo' 本身根本不是數字型別，跟「這個值是不是 NaN」是兩回事。Number.isNaN('foo') 完全不做任何轉換，直接看這個值本身是不是真正的 NaN，'foo' 不是，印出 false。對真正的 NaN 而言，兩者都正確判斷成 true。這正是為什麼 ES6 之後建議一律用 Number.isNaN，不要用全域的 isNaN。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(isNaN('foo'));\nconsole.log(Number.isNaN('foo'));\nconsole.log(isNaN(NaN));\nconsole.log(Number.isNaN(NaN));", "expected": "true\nfalse\ntrue\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-2-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "陣列／物件是「以參照複製」傳遞：呼叫內部的變更方法會影響外部，但整個重新賦值只會換掉區域變數自己指向的目標，不影響外部",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Array/push",
+      "story": "",
+      "prompt": "foo 內部先呼叫 x.push(4)，接著把 x 重新賦值成一個全新的陣列。這段程式會印出什麼？",
+      "code": "function foo(x) {\n  x.push(4); // 修改陣列本身\n  x = [0]; // 重新賦值，讓 x 改指向一個全新的陣列\n}\nvar a = [1, 2, 3];\nfoo(a);\nconsole.log(a);",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3, 4 ]" },
+        { "id": "b", "text": "[ 0 ]" },
+        { "id": "c", "text": "[ 1, 2, 3 ]" },
+        { "id": "d", "text": "[ 1, 2, 3, 4, 0 ]" }
+      ],
+      "answer": "a",
+      "explanation": "呼叫 foo(a) 時，a 這個陣列的參照被複製了一份給參數 x，x 和 a 這時候指向同一個陣列。x.push(4) 是直接對這個共用的陣列做修改，所以外部的 a 也會看到多了一個 4。但接下來 x = [0] 只是讓區域變數 x 改指向一個全新建立的陣列，這個動作只影響 x 自己，跟外部的 a 完全無關——a 依然指向原本那個、已經被 push 過的陣列。所以最後印出 [1, 2, 3, 4]。",
+      "verify": {
+        "checks": [
+          { "code": "function foo(x) {\n  x.push(4);\n  x = [0];\n}\nvar a = [1, 2, 3];\nfoo(a);\nconsole.log(a);", "expected": "[ 1, 2, 3, 4 ]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-2-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "+0 跟 -0 用 === 比較是相等的，只有 Object.is 能真正分辨兩者不同",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/is",
+      "story": "",
+      "prompt": "把空格填起來，讓第二行能真正分辨出 a（+0）和 b（-0）其實是不同的值，印出 true 和 false",
+      "code": "var a = 0;\nvar b = -0;\nconsole.log(a === b);\nconsole.log(Object.____(a, b));",
+      "options": [
+        { "id": "a", "text": "is" },
+        { "id": "b", "text": "assign" },
+        { "id": "c", "text": "freeze" },
+        { "id": "d", "text": "keys" }
+      ],
+      "answer": "a",
+      "explanation": "=== 在比較 +0 和 -0 時，特別把兩者視為相等，所以 a === b 印出 true，即使它們在底層的位元表示上其實不一樣。Object.is(a, b) 用的是更嚴格的「SameValue」演算法，這是少數幾個能真正分辨出 +0 和 -0 不同的方式，印出 false。這是 JS 數字系統裡少見、容易被忽略的邊界情況，日常開發很少需要分辨，但 ES6 特別提供了 Object.is 來因應這種需求。",
+      "verify": {
+        "checks": [
+          { "code": "var a = 0;\nvar b = -0;\nconsole.log(a === b);\nconsole.log(Object.is(a, b));", "expected": "true\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-2-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "「值傳遞」跟「參照傳遞」的分野，不是看「型別是原始值還是物件」，而是看「這次操作是修改共用的東西、還是重新指向別的東西」",
+      "docs": "",
+      "story": "",
+      "prompt": "在 Q4 的例子裡，x.push(4) 影響了外部的 a，但 x = [0] 卻沒有。同樣都是操作參數 x，為什麼一個會影響外部、一個不會？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "呼叫函式時，陣列（物件）是把「參照」複製一份給參數，x 和外部的 a 在呼叫當下指向同一個陣列——x.push(4) 是透過這個共用參照去修改陣列本身的內容，兩邊當然都看得到；但 x = [0] 是把 x 這個區域變數整個改成指向一個全新建立的陣列，這只是「換掉 x 自己手上拿的參照」，不會影響外部的 a 手上拿的是哪一個參照，a 依然指向原本那個陣列——差別不在「陣列是不是物件」，而在「這個操作是動了共用的東西本身，還是只是讓區域變數改拿別的東西」" },
+        { "id": "b", "text": "因為 push 是唯一會影響外部的陣列方法，其他陣列方法都不會影響外部" },
+        { "id": "c", "text": "因為 x = [0] 這種賦值語法在 JS 裡本來就會自動同步回外部的 a，只是這個例子剛好例外" },
+        { "id": "d", "text": "因為函式參數在 JS 裡永遠是參照傳遞，沒有例外，x = [0] 理論上應該也要影響 a，這是一個少見的引擎 bug" }
+      ],
+      "answer": "a",
+      "explanation": "關鍵不在「這個值是不是物件」，而在「這個操作到底做了什麼」：呼叫函式時，物件（包含陣列）的參照會被複製一份給參數，所以呼叫當下 x 和外部的 a 指向同一個陣列。任何「透過這個參照去修改陣列內容」的操作（像 push、修改屬性）都會反映到外部，因為兩邊看的是同一份資料。但 x = [0] 不是在修改陣列內容，而是讓 x 這個區域變數本身改拿另一個全新的參照——這只影響 x 自己接下來指向誰，完全不會回頭改變外部的 a 手上拿的參照是哪一個。這正是「以參照複製傳遞」的正確理解：複製的是參照本身，不是共用同一個變數容器。",
+      "verify": { "manual": "概念題：以 Q4 push vs 重新賦值的具體對照，解釋 JS 參數傳遞「複製參照」的正確模型，屬於記憶體/參照語意的說明，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "id": "ydkjs-es6-7",
+  "title": "Ch7：元編程",
+  "questions": [
+    {
+      "id": "ydkjs-es6-7-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "函式賦值給變數、或當成物件的方法時，引擎會自動推斷出一個 name，方便除錯時在呼叫堆疊裡辨識",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Function/name",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var foo = function () {};\nconsole.log(foo.name);\nfunction bar() {}\nconsole.log(bar.name);\nvar obj = {\n  baz: function () {},\n};\nconsole.log(obj.baz.name);",
+      "options": [
+        { "id": "a", "text": "foo\nbar\nbaz" },
+        { "id": "b", "text": "\nbar\n" },
+        { "id": "c", "text": "anonymous\nbar\nanonymous" },
+        { "id": "d", "text": "foo\nbar\nobj" }
+      ],
+      "answer": "a",
+      "explanation": "function bar() {} 是具名函式宣告，name 本來就是 bar。foo = function () {} 這種匿名函式表達式賦值給變數時，ES6 開始引擎會自動把變數名稱 foo 推斷成這個函式的 name。同樣地，物件字面量裡 baz: function () {} 這種寫法，也會自動把屬性名稱 baz 推斷成函式的 name。這個自動推斷讓開發者不用每次都手動幫函式表達式取名，除錯時呼叫堆疊上顯示的名稱依然清楚。",
+      "verify": {
+        "checks": [
+          { "code": "var foo = function () {};\nconsole.log(foo.name);\nfunction bar() {}\nconsole.log(bar.name);\nvar obj = {\n  baz: function () {},\n};\nconsole.log(obj.baz.name);", "expected": "foo\nbar\nbaz" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-7-q2",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "new.target 這個元屬性，讓函式內部可以判斷自己這次是被 new 呼叫、還是被一般呼叫",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/new.target",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function Foo() {\n  if (!new.target) {\n    console.log('called without new');\n  } else {\n    console.log('called with new');\n  }\n}\nFoo();\nnew Foo();",
+      "options": [
+        { "id": "a", "text": "called without new\ncalled with new" },
+        { "id": "b", "text": "called with new\ncalled without new" },
+        { "id": "c", "text": "called without new\ncalled without new" },
+        { "id": "d", "text": "TypeError：new.target 不能在函式外使用" }
+      ],
+      "answer": "a",
+      "explanation": "new.target 是一個只能在函式內部使用的元屬性：如果這個函式是用 new 呼叫的，new.target 會指向這個函式本身；如果是一般呼叫，new.target 是 undefined。Foo() 是一般呼叫，new.target 是 undefined（falsy），印出 called without new；new Foo() 用 new 呼叫，new.target 有值（truthy），印出 called with new。這讓函式可以在內部強制要求或禁止用 new 呼叫，不用再靠 this instanceof Foo 這種比較迂迴的舊手法。",
+      "verify": {
+        "checks": [
+          { "code": "function Foo() {\n  if (!new.target) {\n    console.log('called without new');\n  } else {\n    console.log('called with new');\n  }\n}\nFoo();\nnew Foo();", "expected": "called without new\ncalled with new" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-7-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Proxy 可以攔截對一個物件的操作（像讀取屬性），在真正的讀取行為之前或之外插入自訂邏輯",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Proxy",
+      "story": "",
+      "prompt": "p 是 target 的 Proxy，get 攔截器會在每次讀取屬性時被呼叫。這段程式會印出什麼？",
+      "code": "var target = { message: 'hello' };\nvar handler = {\n  get: function (obj, prop) {\n    if (prop in obj) {\n      return obj[prop];\n    }\n    return 'property not found: ' + prop;\n  },\n};\nvar p = new Proxy(target, handler);\nconsole.log(p.message);\nconsole.log(p.nonExistent);",
+      "options": [
+        { "id": "a", "text": "hello\nproperty not found: nonExistent" },
+        { "id": "b", "text": "hello\nundefined" },
+        { "id": "c", "text": "undefined\nundefined" },
+        { "id": "d", "text": "property not found: message\nproperty not found: nonExistent" }
+      ],
+      "answer": "a",
+      "explanation": "每次透過 p 讀取屬性（不管屬性存不存在），都會先觸發 handler.get，由這個函式決定真正回傳什麼。讀取 p.message 時，'message' in target 是 true，get 攔截器回傳 target.message，也就是 'hello'。讀取 p.nonExistent 時，target 上根本沒有這個屬性，攔截器走進 else 分支，回傳一個自訂的提示字串 'property not found: nonExistent'，而不是預設行為的 undefined。Proxy 讓開發者能完全客製化「存取一個物件」這個動作背後實際發生的事。",
+      "verify": {
+        "checks": [
+          { "code": "var target = { message: 'hello' };\nvar handler = {\n  get: function (obj, prop) {\n    if (prop in obj) {\n      return obj[prop];\n    }\n    return 'property not found: ' + prop;\n  },\n};\nvar p = new Proxy(target, handler);\nconsole.log(p.message);\nconsole.log(p.nonExistent);", "expected": "hello\nproperty not found: nonExistent" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-7-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Reflect API 提供了跟 Proxy 攔截器一一對應的預設行為函式，攔截器裡想「做完自訂邏輯之後，繼續走預設行為」時，常會呼叫對應的 Reflect 方法",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Reflect/set",
+      "story": "",
+      "prompt": "set 攔截器先印出一行紀錄，再用 Reflect.set 把值真正寫進去。這段程式會印出什麼？",
+      "code": "var target = {};\nvar handler = {\n  set: function (obj, prop, value) {\n    console.log('setting', prop, 'to', value);\n    return Reflect.set(obj, prop, value); // 委托給預設行為，真的把值寫進去\n  },\n};\nvar p = new Proxy(target, handler);\np.name = 'Kyle';\nconsole.log(target.name);",
+      "options": [
+        { "id": "a", "text": "setting name to Kyle\nKyle" },
+        { "id": "b", "text": "setting name to Kyle\nundefined" },
+        { "id": "c", "text": "Kyle" },
+        { "id": "d", "text": "setting name to Kyle" }
+      ],
+      "answer": "a",
+      "explanation": "p.name = 'Kyle' 觸發 set 攔截器，先印出 setting name to Kyle 這行自訂的紀錄；接著呼叫 Reflect.set(obj, prop, value)，這是 Proxy 沒有攔截時「原本該發生的預設行為」，真的把 name 屬性寫進 target。因為攔截器裡確實呼叫了 Reflect.set 把值寫進去，target.name 之後讀取時能正確拿到 'Kyle'。Reflect 提供的這一組方法，讓攔截器可以「先做點自己的事，再委托回預設行為」，不用自己重新實作一次寫入屬性的邏輯。",
+      "verify": {
+        "checks": [
+          { "code": "var target = {};\nvar handler = {\n  set: function (obj, prop, value) {\n    console.log('setting', prop, 'to', value);\n    return Reflect.set(obj, prop, value);\n  },\n};\nvar p = new Proxy(target, handler);\np.name = 'Kyle';\nconsole.log(target.name);", "expected": "setting name to Kyle\nKyle" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-7-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "Reflect.has(obj, prop) 是 in 運算子的函式版本，效果完全一樣，但可以當一般函式傳遞或呼叫",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Reflect/has",
+      "story": "",
+      "prompt": "把空格填起來，用 Reflect API 判斷屬性存不存在，印出 true 和 false",
+      "code": "var obj = { a: 1 };\nconsole.log(____.has(obj, 'a'));\nconsole.log(Reflect.has(obj, 'b'));",
+      "options": [
+        { "id": "a", "text": "Reflect" },
+        { "id": "b", "text": "Object" },
+        { "id": "c", "text": "Proxy" },
+        { "id": "d", "text": "Symbol" }
+      ],
+      "answer": "a",
+      "explanation": "Reflect.has(obj, 'a') 跟 'a' in obj 做的是同一件事，判斷 a 這個屬性名稱在 obj（或它的原型鏈）上存不存在，只是包裝成一個可以像一般函式那樣呼叫、傳遞的 API，而不是運算子語法。obj 有 a 屬性，Reflect.has(obj, 'a') 是 true；沒有 b 屬性，Reflect.has(obj, 'b') 是 false。Reflect 底下這一整組方法，大多是把原本只能用特殊語法（in、delete、Object.keys 等）做的事，統一包成一致的函式介面。",
+      "verify": {
+        "checks": [
+          { "code": "var obj = { a: 1 };\nconsole.log(Reflect.has(obj, 'a'));\nconsole.log(Reflect.has(obj, 'b'));", "expected": "true\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-7-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "公開符號（像 Symbol.hasInstance）讓開發者能客製化 instanceof 這種內建運算子的行為，不再侷限於檢查原型鏈",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Symbol/hasInstance",
+      "story": "",
+      "prompt": "EvenNumber 不是用 function 或 class 定義的建構函式，而是一個定義了 Symbol.hasInstance 方法的一般物件。這段程式會印出什麼？",
+      "code": "var EvenNumber = {\n  [Symbol.hasInstance]: function (num) {\n    return Number.isInteger(num) && num % 2 === 0;\n  },\n};\nconsole.log(4 instanceof EvenNumber);\nconsole.log(5 instanceof EvenNumber);",
+      "options": [
+        { "id": "a", "text": "true\nfalse" },
+        { "id": "b", "text": "false\nfalse" },
+        { "id": "c", "text": "TypeError：EvenNumber 右側必須是函式" },
+        { "id": "d", "text": "true\ntrue" }
+      ],
+      "answer": "a",
+      "explanation": "回顧 this和物件原型 那本書 Ch5：instanceof 原本的語意是檢查右側物件的 prototype 有沒有出現在左側值的原型鏈上。但 Symbol.hasInstance 這個公開符號可以整個覆寫這個行為：只要右側物件定義了 [Symbol.hasInstance] 方法，instanceof 運算子就會改成呼叫這個方法來決定結果。這裡 EvenNumber 的 hasInstance 邏輯，判斷左側的值是不是「偶數整數」，4 符合，印出 true；5 不符合，印出 false——完全脫離了原本原型鏈的語意，變成一個自訂的邏輯判斷。",
+      "verify": {
+        "checks": [
+          { "code": "var EvenNumber = {\n  [Symbol.hasInstance]: function (num) {\n    return Number.isInteger(num) && num % 2 === 0;\n  },\n};\nconsole.log(4 instanceof EvenNumber);\nconsole.log(5 instanceof EvenNumber);", "expected": "true\nfalse" }
+        ]
+      }
+    }
+  ]
+}

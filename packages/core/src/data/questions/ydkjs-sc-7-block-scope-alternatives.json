@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-sc-7",
+  "title": "附錄B：塊作用域的替代方案",
+  "questions": [
+    {
+      "id": "ydkjs-sc-7-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "顯式區塊作用域：特地用一對沒有附加在 if/for 上的裸 { } 包住 let，明確標示「這裡是刻意的區塊作用域」",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/block",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function foo() {\n  {\n    let x = 'inside a bare block';\n    console.log(x);\n  }\n  console.log(typeof x);\n}\nfoo();",
+      "options": [
+        { "id": "a", "text": "inside a bare block\nundefined" },
+        { "id": "b", "text": "inside a bare block\nstring" },
+        { "id": "c", "text": "undefined\nundefined" },
+        { "id": "d", "text": "SyntaxError：裸區塊不能單獨使用" }
+      ],
+      "answer": "a",
+      "explanation": "這對 { } 沒有附加在 if、for 這些控制結構上，單純就是一個「裸區塊」（bare block），語法上完全合法，唯一的作用就是建立一個新的區塊作用域。let x 只存在於這對大括號之間，區塊結束後就不存在了，所以 console.log(x) 正常印出字串，但區塊外的 typeof x 印出 undefined。跟只是「剛好用 if(true) 借來當作用域」比起來，這種寫法讓讀者一眼就能看出「這裡是刻意要建立一個獨立的作用域」，不會誤以為漏寫了條件判斷。",
+      "verify": {
+        "checks": [
+          { "code": "function foo() {\n  {\n    let x = 'inside a bare block';\n    console.log(x);\n  }\n  console.log(typeof x);\n}\nfoo();", "expected": "inside a bare block\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-7-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "相鄰但各自獨立的裸區塊，各自都是全新的作用域，可以放心重複使用同一個變數名稱",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/let",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function foo() {\n  {\n    let a = 1;\n    console.log(a);\n  }\n  {\n    let a = 2;\n    console.log(a);\n  }\n  {\n    let a = 3;\n    console.log(a);\n  }\n}\nfoo();",
+      "options": [
+        { "id": "a", "text": "1\n2\n3" },
+        { "id": "b", "text": "SyntaxError：a 重複宣告" },
+        { "id": "c", "text": "3\n3\n3" },
+        { "id": "d", "text": "1\n1\n1" }
+      ],
+      "answer": "a",
+      "explanation": "三對裸區塊彼此是各自獨立的作用域，即使都宣告了同名的 let a，也完全不會衝突——每個區塊結束時，那個區塊的 a 就已經不存在了，下一個區塊重新宣告一個全新的 a 完全合法。所以依序印出 1、2、3。這跟直接在同一層作用域裡連續宣告兩次 let a（下一題會看到）是完全不同的情況。",
+      "verify": {
+        "checks": [
+          { "code": "function foo() {\n  {\n    let a = 1;\n    console.log(a);\n  }\n  {\n    let a = 2;\n    console.log(a);\n  }\n  {\n    let a = 3;\n    console.log(a);\n  }\n}\nfoo();", "expected": "1\n2\n3" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-7-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "在同一層作用域裡用 let 重複宣告同名變數，會直接丟出 SyntaxError",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/let",
+      "story": "",
+      "prompt": "對照上一題：這次兩個 let a 都直接寫在 foo 自己的作用域裡，沒有用裸區塊分開。這段程式碼會發生什麼事？",
+      "code": "function foo() {\n  let a = 1;\n  console.log(a);\n  let a = 2; // 跟上面同一層作用域，重複宣告了 a\n  console.log(a);\n}\nfoo();",
+      "options": [
+        { "id": "a", "text": "丟出 SyntaxError：Identifier 'a' has already been declared——這兩個 let a 屬於同一層作用域，let 不允許在同一個作用域裡重複宣告同名變數，這是解析階段就會擋下的錯誤，函式連執行都不會開始" },
+        { "id": "b", "text": "印出 1，然後印出 2，第二個 let a 會直接覆蓋第一個" },
+        { "id": "c", "text": "印出 1，然後印出 1，第二個 let a 宣告會被忽略" },
+        { "id": "d", "text": "印出 undefined，然後印出 2" }
+      ],
+      "answer": "a",
+      "explanation": "跟上一題三個各自獨立的裸區塊不同，這裡兩個 let a 都屬於 foo 自己同一層作用域，let 明確禁止在同一個作用域裡對同一個名稱重複宣告，這在程式碼還沒開始執行、只是解析階段就會被擋下來，直接丟出 SyntaxError，函式完全不會被呼叫。這正是為什麼「刻意用裸區塊把需要重複使用某個變數名稱的邏輯分開」是有實際用途的寫法，不只是風格問題。",
+      "verify": {
+        "checks": [
+          { "code": "function foo() {\n  let a = 1;\n  console.log(a);\n  let a = 2;\n  console.log(a);\n}\nfoo();", "expectError": "Identifier 'a' has already been declared" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-7-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "裸區塊只有搭配 let／const 才有意義，搭配 var 完全達不到隔離效果",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/var",
+      "story": "",
+      "prompt": "把空格填起來，讓 tmp 只存在裸區塊內部，不會外洩到 foo 的其餘部分（印出 42 和 undefined）",
+      "code": "function computeExpensiveThing() { return 42; }\nfunction foo() {\n  console.log('start');\n  {\n    ____ tmp = computeExpensiveThing();\n    console.log(tmp);\n  }\n  console.log(typeof tmp);\n}\nfoo();",
+      "options": [
+        { "id": "a", "text": "let" },
+        { "id": "b", "text": "var" },
+        { "id": "c", "text": "" },
+        { "id": "d", "text": "static" }
+      ],
+      "answer": "a",
+      "explanation": "let 才有真正的區塊作用域，tmp 只存在裸區塊內，區塊結束後 foo 剩下的部分完全看不到它，typeof tmp 印出 undefined。如果選 var（選項 b），var 完全不理會裸區塊的邊界，會直接把 tmp 宣告到整個 foo 函式的作用域，區塊外的 typeof tmp 反而會印出 number——這樣一來，特地寫一個裸區塊就完全沒有意義了，因為 var 根本不受它約束。這說明了裸區塊這個技巧，價值完全建立在搭配 let／const 使用之上。",
+      "verify": {
+        "checks": [
+          { "code": "function computeExpensiveThing() { return 42; }\nfunction foo() {\n  console.log('start');\n  {\n    let tmp = computeExpensiveThing();\n    console.log(tmp);\n  }\n  console.log(typeof tmp);\n}\nfoo();", "expected": "start\n42\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-7-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "裸區塊結束後才定義的閉包，完全構不到裸區塊裡的 let 變數，跟這個變數是不是「很占空間」無關",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "later 這個閉包是在裸區塊結束之後才定義的。這段程式會印出什麼？",
+      "code": "function foo() {\n  var bigButOnlyNeededBriefly = 'temp data';\n  {\n    let onlyUsedHere = bigButOnlyNeededBriefly.toUpperCase();\n    console.log(onlyUsedHere);\n  }\n  return function later() {\n    console.log(typeof onlyUsedHere); // later 構得到 onlyUsedHere 嗎？\n  };\n}\nvar later = foo();\nlater();",
+      "options": [
+        { "id": "a", "text": "TEMP DATA\nundefined" },
+        { "id": "b", "text": "TEMP DATA\nstring" },
+        { "id": "c", "text": "ReferenceError：onlyUsedHere 未定義" },
+        { "id": "d", "text": "temp data\nundefined" }
+      ],
+      "answer": "a",
+      "explanation": "later 是在裸區塊已經結束之後才被定義、回傳出去的，onlyUsedHere 屬於那個已經結束的裸區塊作用域，不在 later 的詞法作用域鏈上（later 能往外找到的只有 foo 自己的作用域，構不到裡面那個已經關閉的區塊）。所以 later 裡的 typeof onlyUsedHere 印出 undefined（一般變數用 typeof 查詢完全查不到的識別字，不會拋錯，只會回傳 undefined）。這正是裸區塊實際的效能價值：只要某個值只在區塊內短暫用得到，就可以放心讓它用 let 關在裡面，即使外層之後還會建立新的閉包，也不會意外把這個值也一起關住、拖長它被回收的時間。",
+      "verify": {
+        "checks": [
+          { "code": "function foo() {\n  var bigButOnlyNeededBriefly = 'temp data';\n  {\n    let onlyUsedHere = bigButOnlyNeededBriefly.toUpperCase();\n    console.log(onlyUsedHere);\n  }\n  return function later() {\n    console.log(typeof onlyUsedHere);\n  };\n}\nvar later = foo();\nlater();", "expected": "TEMP DATA\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-7-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "裸區塊 + let 讓短暫使用的資料能提早被判定「用不到了」，是區塊作用域少數看得到效能意義的地方",
+      "docs": "",
+      "story": "",
+      "prompt": "在 Q5 的例子裡，如果把 let onlyUsedHere 改成 var onlyUsedHere（其他都不變），later 這個閉包印出的 typeof onlyUsedHere 還會是 undefined 嗎？這個差異跟「效能」有什麼關係？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "改成 var 之後，typeof onlyUsedHere 會變成 string，因為 var 沒有區塊作用域，onlyUsedHere 會外洩成 foo 整個函式作用域的一部分，later 這個閉包因此也構得到它——這代表這個值會一直被 later 閉包間接參照著，即使它早就用不到了，引擎也沒辦法提早判定它可以被回收；改用 let 把它關在裸區塊裡，區塊一結束、後面定義的 later 就完全構不到它，值可以更早被視為「用不到了」，這正是裸區塊搭配 let 除了可讀性以外，額外帶來的效能／記憶體回收上的好處" },
+        { "id": "b", "text": "不管 let 還是 var，later 印出的結果都完全一樣，這兩種宣告方式對閉包能構到什麼變數沒有任何影響" },
+        { "id": "c", "text": "改成 var 會讓程式在解析階段就丟出 SyntaxError，因為 var 不能宣告在裸區塊裡" },
+        { "id": "d", "text": "這個差異只跟語法有沒有報錯有關，跟記憶體回收完全無關" }
+      ],
+      "answer": "a",
+      "explanation": "var 沒有區塊作用域，把 Q5 的 let 改成 var 之後，onlyUsedHere 會變成 foo 整個函式作用域的一部分，later 這個之後才定義的閉包也構得到它，typeof onlyUsedHere 會印出 string。這代表只要 later 這個閉包還活著，onlyUsedHere 就會一直被它間接參照住，就算實際上早就用不到了，引擎也沒辦法提早判斷「這個值可以回收了」。改用 let 搭配裸區塊，能明確劃出「這個值只在這個區塊裡有用」的邊界，區塊一結束，後面才定義的閉包就完全構不到它，讓這類只是短暫需要、佔用空間可能不小的資料，有機會比原本更早被判定用不到、進而被回收——這是裸區塊除了讓程式碼更好讀之外，唯一比較看得到具體效能意義的地方。",
+      "verify": { "manual": "概念題：以 Q5 範例把 let 換成 var 的對照結果，說明裸區塊搭配 let 對閉包可及範圍與記憶體回收時機的實際影響，屬於引擎記憶體管理層面的推論，無法用單一 console.log 直接量測。" }
+    }
+  ]
+}

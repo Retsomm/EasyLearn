@@ -1,5 +1,5 @@
 import Icon from '@/components/Icons'
-import { chapters, todayStr, yesterdayStr, type Progress } from '@easylearn/core'
+import { topics, todayStr, yesterdayStr, type Progress } from '@easylearn/core'
 
 const DAILY_GOAL = 20
 const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
@@ -20,10 +20,11 @@ const getWeekDates = (): string[] => {
 interface HomeProps {
   progress: Progress
   onOpenChapter: (chapterId: string) => void
+  onOpenTopic: (topicId: string) => void
   onMixedPractice: () => void
 }
 
-const Home = ({ progress, onOpenChapter, onMixedPractice }: HomeProps) => {
+const Home = ({ progress, onOpenChapter, onOpenTopic, onMixedPractice }: HomeProps) => {
   const today = todayStr()
   const yesterday = yesterdayStr()
   const todayStats = progress.dailyStats[today] ?? { total: 0, correct: 0 }
@@ -84,21 +85,29 @@ const Home = ({ progress, onOpenChapter, onMixedPractice }: HomeProps) => {
 
       <h2 className="section-title">分科高效刷題</h2>
       <div className="chapter-list">
-        {chapters.map((ch) => {
-          const done = ch.levels.filter((l) => progress.completedLevels[l.id]).length
+        {topics.map((topic) => {
+          const levels = topic.chapters.flatMap((ch) => ch.levels)
+          const done = levels.filter((l) => progress.completedLevels[l.id]).length
+          const isGroup = topic.chapters.length > 1
           return (
-            <button key={ch.id} className="chapter-card" onClick={() => onOpenChapter(ch.id)}>
+            <button
+              key={topic.id}
+              className="chapter-card"
+              onClick={() => (isGroup ? onOpenTopic(topic.id) : onOpenChapter(topic.chapters[0].id))}
+            >
               <span className="chapter-emoji">
-                <Icon name={ch.icon} size={30} />
+                <Icon name={topic.icon} size={30} />
               </span>
               <span className="chapter-info">
-                <span className="chapter-name">{ch.title}</span>
-                <span className="chapter-progress">完成 {done} / {ch.levels.length} 關</span>
+                <span className="chapter-name">{topic.title}</span>
+                <span className="chapter-progress">
+                  {isGroup ? `共 ${topic.chapters.length} 章` : `完成 ${done} / ${levels.length} 關`}
+                </span>
               </span>
               <span className="chapter-bar">
                 <span
                   className="chapter-bar-fill"
-                  style={{ width: `${ch.levels.length ? (done / ch.levels.length) * 100 : 0}%` }}
+                  style={{ width: `${levels.length ? (done / levels.length) * 100 : 0}%` }}
                 />
               </span>
               <span className="chapter-arrow">

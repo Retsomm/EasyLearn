@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-tg-5",
+  "title": "Ch5：語法",
+  "questions": [
+    {
+      "id": "ydkjs-tg-5-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "try 裡的 return 不會馬上讓函式結束，finally 一定會先執行完，函式才真的返回",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/try...catch",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function foo() {\n  try {\n    return 42;\n  } finally {\n    console.log('finally runs');\n  }\n}\nconsole.log(foo());",
+      "options": [
+        { "id": "a", "text": "finally runs\n42" },
+        { "id": "b", "text": "42\nfinally runs" },
+        { "id": "c", "text": "finally runs" },
+        { "id": "d", "text": "42" }
+      ],
+      "answer": "a",
+      "explanation": "try 區塊裡的 return 42 並不會讓函式立刻結束返回——JS 會先「記住」這個要返回的值，接著一定會執行完 finally 區塊，finally 執行完之後，函式才真的把值返回出去。所以 finally 裡的 console.log('finally runs') 一定會在 foo() 真正回傳 42 之前先印出來。這也是 finally 這個關鍵字命名的用意：不管 try 裡發生什麼（正常返回、拋出例外），finally 永遠會被執行到。",
+      "verify": {
+        "checks": [
+          { "code": "function foo() {\n  try {\n    return 42;\n  } finally {\n    console.log('finally runs');\n  }\n}\nconsole.log(foo());", "expected": "finally runs\n42" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-5-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "switch 用 === 嚴格相等比對每個 case，不會像 == 那樣做隱式型別轉換",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/switch",
+      "story": "",
+      "prompt": "a 是字串 '1'，不是數字 1。這段程式會印出什麼？",
+      "code": "var a = '1';\nswitch (a) {\n  case 1:\n    console.log('matched number 1');\n    break;\n  case '1':\n    console.log('matched string 1');\n    break;\n  default:\n    console.log('no match');\n}",
+      "options": [
+        { "id": "a", "text": "matched string 1" },
+        { "id": "b", "text": "matched number 1" },
+        { "id": "c", "text": "no match" },
+        { "id": "d", "text": "matched number 1\nmatched string 1" }
+      ],
+      "answer": "a",
+      "explanation": "switch 底層是用 === 嚴格相等去比對 a 跟每一個 case 的值，不會像 == 那樣先做隱式型別轉換。a 是字串 '1'，case 1（數字）用 === 比對型別不同、不會匹配；case '1'（字串）型別和值都一樣，才會匹配成功，印出 matched string 1。如果誤以為 switch 跟 == 一樣寬鬆，很容易在數字/字串混用的情境下踩到這個坑。",
+      "verify": {
+        "checks": [
+          { "code": "var a = '1';\nswitch (a) {\n  case 1:\n    console.log('matched number 1');\n    break;\n  case '1':\n    console.log('matched string 1');\n    break;\n  default:\n    console.log('no match');\n}", "expected": "matched string 1" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-5-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "finally 裡如果自己也有 return，會直接蓋過 try 裡原本要返回的值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/try...catch",
+      "story": "",
+      "prompt": "承接 Q1，這次 finally 裡自己也寫了一個 return。這段程式會印出什麼？",
+      "code": "function foo() {\n  try {\n    return 42;\n  } finally {\n    return 99; // 這裡的 return 會蓋過上面的 42 嗎？\n  }\n}\nconsole.log(foo());",
+      "options": [
+        { "id": "a", "text": "99" },
+        { "id": "b", "text": "42" },
+        { "id": "c", "text": "42\n99" },
+        { "id": "d", "text": "SyntaxError：finally 裡不能寫 return" }
+      ],
+      "answer": "a",
+      "explanation": "Q1 已經證明 try 裡的 return 42 只是「先記住要返回 42」，真正返回動作要等 finally 執行完才發生。這裡 finally 自己也寫了一個 return 99——finally 是「最後一個決定函式到底返回什麼」的地方，它的 return 會直接蓋過 try 原本記住的 42，函式最終返回的是 99。這種「finally 裡的 return 蓋過 try 的 return」是相當違反直覺、也容易造成隱藏 bug 的行為，實務上通常會建議避免在 finally 裡寫 return。",
+      "verify": {
+        "checks": [
+          { "code": "function foo() {\n  try {\n    return 42;\n  } finally {\n    return 99;\n  }\n}\nconsole.log(foo());", "expected": "99" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-5-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "switch 沒寫 break 會一直「貫穿」（fall-through）到下一個 case，不會自動停在匹配到的那個 case",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/switch",
+      "story": "",
+      "prompt": "case 2 匹配之後沒有寫 break。這段程式會印出什麼？",
+      "code": "var a = 2;\nswitch (a) {\n  case 1:\n    console.log('one');\n  case 2:\n    console.log('two');\n  case 3:\n    console.log('three');\n    break;\n  default:\n    console.log('other');\n}",
+      "options": [
+        { "id": "a", "text": "two\nthree" },
+        { "id": "b", "text": "two" },
+        { "id": "c", "text": "one\ntwo\nthree" },
+        { "id": "d", "text": "two\nthree\nother" }
+      ],
+      "answer": "a",
+      "explanation": "a 是 2，比對到 case 2，印出 two；但 case 2 底下沒有寫 break，程式會直接「貫穿」（fall-through）繼續往下執行 case 3 的內容，印出 three，直到遇到 case 3 的 break 才真正跳出整個 switch。case 1 因為根本沒有被匹配到，不會執行到，也不會印出 one。這種貫穿行為是 switch 的預設語意，忘記寫 break 是很常見的錯誤來源。",
+      "verify": {
+        "checks": [
+          { "code": "var a = 2;\nswitch (a) {\n  case 1:\n    console.log('one');\n  case 2:\n    console.log('two');\n  case 3:\n    console.log('three');\n    break;\n  default:\n    console.log('other');\n}", "expected": "two\nthree" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-5-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "函式參數的預設值，只在收到的引數「明確是 undefined」（包含完全沒傳）時才會生效，明確傳 null 不會觸發預設值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/Default_parameters",
+      "story": "",
+      "prompt": "把空格填起來，讓第三次呼叫因為明確傳了 null（不是 undefined），不會觸發 b 的預設值，b 就是 null 本身，印出 5 10、5 10、5 null",
+      "code": "function foo(a, b = a * 2) {\n  console.log(a, b);\n}\nfoo(5);\nfoo(5, undefined);\nfoo(5, ____);",
+      "options": [
+        { "id": "a", "text": "null" },
+        { "id": "b", "text": "undefined" },
+        { "id": "c", "text": "0" },
+        { "id": "d", "text": "NaN" }
+      ],
+      "answer": "a",
+      "explanation": "ES6 預設參數值的觸發條件很明確：只有當這個位置收到的引數「就是 undefined」（不管是完全沒傳、還是明確傳了 undefined）時，才會套用預設值。foo(5) 和 foo(5, undefined) 都會讓 b 套用預設值 a * 2 = 10。但 null 是一個明確的值，不等於 undefined，foo(5, null) 不會觸發預設值，b 就是傳進去的 null 本身，印出 5 null。這是很多人容易搞混的地方：以為「沒給有效值」都會觸發預設值，實際上只有 undefined 才算數。",
+      "verify": {
+        "checks": [
+          { "code": "function foo(a, b = a * 2) {\n  console.log(a, b);\n}\nfoo(5);\nfoo(5, undefined);\nfoo(5, null);", "expected": "5 10\n5 10\n5 null" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-5-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "finally 裡的 return／throw 會完全蓋掉 try 原本要傳出去的結果，這是實務上要避免在 finally 裡寫 return 的根本原因",
+      "docs": "",
+      "story": "",
+      "prompt": "把 Q1（finally 一定會在返回前執行）跟 Q3（finally 裡的 return 會蓋過 try 的 return）放在一起看，為什麼實務上會建議「finally 區塊裡不要寫 return」？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "finally 本來的用途應該是做「收尾」的工作（像關閉檔案、釋放資源、記錄 log），而不是決定函式最終要回傳什麼。Q1 證明 finally 一定會在函式真正返回前執行，Q3 又證明如果 finally 裡自己也寫了 return，它會直接蓋過 try（甚至 catch）原本要回傳的值——這代表只要 finally 裡混進一個 return，try/catch 裡辛苦算出來的返回值可能在完全沒有任何錯誤訊息或警告的情況下被靜默替換掉，之後除錯會很難查出問題到底出在哪裡，所以 finally 應該只做收尾動作，不要在裡面寫會影響返回值或拋出例外的邏輯" },
+        { "id": "b", "text": "因為 finally 裡寫 return 在語法上是不合法的，會直接讓程式碼無法執行" },
+        { "id": "c", "text": "因為 finally 裡的 return 效能比 try 裡的 return 慢很多，只是效能考量，不是正確性考量" },
+        { "id": "d", "text": "這只是一種寫作風格偏好，finally 裡寫不寫 return 對程式實際行為完全沒有任何差別" }
+      ],
+      "answer": "a",
+      "explanation": "finally 設計上的定位是「不管前面發生什麼都要執行的收尾動作」，例如關閉連線、釋放資源、寫記錄檔。但 Q1、Q3 一起證明了一件危險的事：finally 有能力完全蓋掉 try（甚至 catch）原本要回傳的值，而且這個「蓋掉」的動作沒有任何錯誤或警告，非常安靜地就發生了。如果 finally 裡混進了 return（或是拋出新的例外），原本 try 裡精心算出來的結果可能就這樣憑空消失，之後追這種 bug 會非常痛苦，因為表面上程式碼完全沒有出錯的跡象。這正是為什麼實務上會建議 finally 只保留單純的收尾工作，不要讓它去影響函式的返回值或拋出新的例外。",
+      "verify": { "manual": "概念題：綜合 Q1（finally 必定執行）與 Q3（finally 的 return 會蓋過 try），總結「finally 不該寫 return」的實務建議，屬於程式撰寫慣例的說明，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

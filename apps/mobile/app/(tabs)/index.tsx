@@ -7,11 +7,21 @@ import { colors } from '@/constants/theme';
 import { useProgress } from '@/context/ProgressContext';
 import Home from '@/screens/Home';
 import ChapterMap from '@/screens/ChapterMap';
+import TopicBooks from '@/screens/TopicBooks';
 import Quiz from '@/screens/Quiz';
-import { chapters, getLevel, LEVEL_SIZE, MIXED_SIZE, sampleFixedQuestions, type Question } from '@easylearn/core';
+import {
+  chapters,
+  getTopicForChapter,
+  getLevel,
+  LEVEL_SIZE,
+  MIXED_SIZE,
+  sampleFixedQuestions,
+  type Question,
+} from '@easylearn/core';
 
 type ViewState =
   | { name: 'home' }
+  | { name: 'topicbooks'; topicId: string }
   | { name: 'levellist'; chapterId: string }
   | { name: 'quiz'; levelId: string; questions: Question[] }
   | { name: 'mixed'; questions: Question[] };
@@ -77,13 +87,26 @@ export default function HomeScreen() {
         exitLabel="回首頁"
       />
     );
+  } else if (view.name === 'topicbooks') {
+    content = (
+      <TopicBooks
+        topicId={view.topicId}
+        progress={progress}
+        onOpenChapter={(chapterId) => setView({ name: 'levellist', chapterId })}
+        onBack={() => setView({ name: 'home' })}
+      />
+    );
   } else if (view.name === 'levellist') {
+    // 如果這一章屬於「一本書底下有好幾章」的分組，返回鍵要回到章節列表，不是直接回首頁
+    const topic = getTopicForChapter(view.chapterId);
+    const backView: ViewState =
+      topic && topic.chapters.length > 1 ? { name: 'topicbooks', topicId: topic.id } : { name: 'home' };
     content = (
       <ChapterMap
         chapterId={view.chapterId}
         progress={progress}
         onStartLevel={startLevel}
-        onBack={() => setView({ name: 'home' })}
+        onBack={() => setView(backView)}
       />
     );
   } else {
@@ -91,6 +114,7 @@ export default function HomeScreen() {
       <Home
         progress={progress}
         onOpenChapter={(chapterId) => setView({ name: 'levellist', chapterId })}
+        onOpenTopic={(topicId) => setView({ name: 'topicbooks', topicId })}
         onMixedPractice={startMixedPractice}
       />
     );

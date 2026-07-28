@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-tp-1",
+  "title": "Ch1：關於this",
+  "questions": [
+    {
+      "id": "ydkjs-tp-1-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "誤解一：this 不會自動指向函式自己，即使你在函式身上加了屬性",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/this",
+      "story": "",
+      "prompt": "foo.count 一開始被設成 0，foo 內部用 this.count++ 想要累加它。這段程式會印出什麼？",
+      "code": "function foo(num) {\n  console.log('foo: ' + num);\n  this.count++;\n}\nfoo.count = 0;\nvar i;\nfor (i = 0; i < 10; i++) {\n  if (i > 5) {\n    foo(i);\n  }\n}\nconsole.log(foo.count);",
+      "options": [
+        { "id": "a", "text": "foo: 6\nfoo: 7\nfoo: 8\nfoo: 9\n0" },
+        { "id": "b", "text": "foo: 6\nfoo: 7\nfoo: 8\nfoo: 9\n4" },
+        { "id": "c", "text": "foo: 6\nfoo: 7\nfoo: 8\nfoo: 9\nundefined" },
+        { "id": "d", "text": "TypeError：Cannot read properties of undefined" }
+      ],
+      "answer": "a",
+      "explanation": "很多人直覺以為「this 就是指這個函式自己」，所以以為 this.count++ 會累加 foo.count。但 foo(i) 是用一般函式呼叫（不是 foo.call(foo, i) 這種明確指定），非嚴格模式下 this 綁定到全域物件，this.count++ 累加的其實是全域物件上的 count（一個跟 foo.count 完全無關的屬性）。foo.count 從頭到尾都沒被動過，還是 0。this 到底指向誰，永遠要看「呼叫當下怎麼呼叫」，不是看它寫在哪個函式裡面。",
+      "verify": {
+        "checks": [
+          { "code": "function foo(num) {\n  console.log('foo: ' + num);\n  this.count++;\n}\nfoo.count = 0;\nvar i;\nfor (i = 0; i < 10; i++) {\n  if (i > 5) {\n    foo(i);\n  }\n}\nconsole.log(foo.count);", "expected": "foo: 6\nfoo: 7\nfoo: 8\nfoo: 9\n0" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-1-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "誤解二：this 不是函式自己的作用域，碰不到函式內部用 var 宣告的變數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/this",
+      "story": "",
+      "prompt": "foo 內部宣告了 var a = 2，接著用 this.bar() 呼叫 bar，bar 想讀 this.a。這段程式會印出什麼？",
+      "code": "function foo() {\n  var a = 2;\n  this.bar();\n}\nfunction bar() {\n  console.log(this.a);\n}\nfoo();",
+      "options": [
+        { "id": "a", "text": "undefined" },
+        { "id": "b", "text": "2" },
+        { "id": "c", "text": "ReferenceError：a 未定義" },
+        { "id": "d", "text": "NaN" }
+      ],
+      "answer": "a",
+      "explanation": "foo() 是一般函式呼叫，this 綁定到全域物件；this.bar() 等於呼叫全域物件上的 bar（頂層宣告的函式在非嚴格模式下也會變成全域物件的屬性），這次呼叫的 this 一樣是全域物件。bar 裡的 this.a，找的是全域物件上的 a 屬性——但 foo 裡的 var a = 2 只存在於 foo 自己的詞法作用域裡，從來沒有變成全域物件的屬性，所以 this.a 印出 undefined。this 完全沒辦法拿來讀取一個函式內部用 var／let 宣告的區域變數，它跟詞法作用域是兩套毫無關係的機制。",
+      "verify": {
+        "checks": [
+          { "code": "function foo() {\n  var a = 2;\n  this.bar();\n}\nfunction bar() {\n  console.log(this.a);\n}\nfoo();", "expected": "undefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-1-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "this 讓同一個函式可以重複用在不同物件身上，不用另外加一個「情境參數」",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Function/call",
+      "story": "",
+      "prompt": "identify 和 speak 都只定義了一次，卻分別用 me 和 you 呼叫了兩次。這段程式會印出什麼？",
+      "code": "function identify() {\n  return this.name.toUpperCase();\n}\nfunction speak() {\n  var greeting = 'Hello, I am ' + identify.call(this);\n  console.log(greeting);\n}\nvar me = { name: 'Kyle' };\nvar you = { name: 'Reader' };\nconsole.log(identify.call(me));\nconsole.log(identify.call(you));\nspeak.call(me);\nspeak.call(you);",
+      "options": [
+        { "id": "a", "text": "KYLE\nREADER\nHello, I am KYLE\nHello, I am READER" },
+        { "id": "b", "text": "KYLE\nKYLE\nHello, I am KYLE\nHello, I am KYLE" },
+        { "id": "c", "text": "undefined\nundefined\nHello, I am undefined\nHello, I am undefined" },
+        { "id": "d", "text": "TypeError：this 未定義" }
+      ],
+      "answer": "a",
+      "explanation": "identify、speak 都完全沒有寫死要用哪個物件，靠的是呼叫時用 .call(me) 或 .call(you) 明確指定 this。同一份函式定義，靠著 this 在每次呼叫時各自綁定到不同物件，就能重複用在 me 和 you 身上，印出對應各自 name 的結果。如果沒有 this，這兩個函式勢必要多一個「情境物件」參數，呼叫端每次都要手動多傳一個參數，且更容易漏傳或傳錯——this 把「這次呼叫是代表哪個物件」這件事，直接綁進呼叫語法本身。",
+      "verify": {
+        "checks": [
+          { "code": "function identify() {\n  return this.name.toUpperCase();\n}\nfunction speak() {\n  var greeting = 'Hello, I am ' + identify.call(this);\n  console.log(greeting);\n}\nvar me = { name: 'Kyle' };\nvar you = { name: 'Reader' };\nconsole.log(identify.call(me));\nconsole.log(identify.call(you));\nspeak.call(me);\nspeak.call(you);", "expected": "KYLE\nREADER\nHello, I am KYLE\nHello, I am READER" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-1-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用 call 明確指定 this，修好 Q1 那種「this 沒有真的指向函式自己」的問題",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Function/call",
+      "story": "",
+      "prompt": "把空格填起來，讓 this 在 foo 內部真的指向 foo 自己，讓 foo.count 正確累加成 2",
+      "code": "function foo(num) {\n  this.count++;\n}\nfoo.count = 0;\nfor (var i = 0; i < 5; i++) {\n  if (i > 2) {\n    foo.____(foo, i);\n  }\n}\nconsole.log(foo.count);",
+      "options": [
+        { "id": "a", "text": "call" },
+        { "id": "b", "text": "bind" },
+        { "id": "c", "text": "prototype" },
+        { "id": "d", "text": "name" }
+      ],
+      "answer": "a",
+      "explanation": "foo.call(foo, i) 立刻執行 foo，並明確把這次呼叫的 this 指定成 foo 自己，這樣 this.count++ 才真的累加到 foo.count。迴圈裡 i 是 3、4 時觸發呼叫，foo.count 從 0 累加兩次變成 2。選項 b 的 bind(foo, i) 只會回傳一個新函式，不會立刻執行，如果沒有再呼叫這個回傳的函式，foo.count 完全不會變。選項 c、d 的 prototype、name 都不是函式，foo.prototype(foo, i) 會直接丟出 TypeError。",
+      "verify": {
+        "checks": [
+          { "code": "function foo(num) {\n  this.count++;\n}\nfoo.count = 0;\nfor (var i = 0; i < 5; i++) {\n  if (i > 2) {\n    foo.call(foo, i);\n  }\n}\nconsole.log(foo.count);", "expected": "2" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-1-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "方法內部又呼叫了一個一般函式，this 綁定不會自動延續下去",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/this",
+      "story": "",
+      "prompt": "increment 是用 obj.increment() 呼叫的，但它內部又呼叫了一個一般函式 inner()。這段程式會印出什麼？",
+      "code": "var obj = {\n  count: 0,\n  increment: function () {\n    function inner() {\n      this.count++; // 這裡的 this 還是 obj 嗎？\n    }\n    inner();\n  },\n};\nobj.increment();\nconsole.log(obj.count);",
+      "options": [
+        { "id": "a", "text": "0" },
+        { "id": "b", "text": "1" },
+        { "id": "c", "text": "NaN" },
+        { "id": "d", "text": "undefined" }
+      ],
+      "answer": "a",
+      "explanation": "obj.increment() 呼叫時，increment 內部的 this 確實是 obj。但 inner() 是一次獨立、一般的函式呼叫（不是 obj.inner()、也沒有用 call／apply 明確綁定），this 綁定不會自動「繼承」外層 increment 的 this，而是重新依這次呼叫的方式決定——非嚴格模式下綁定到全域物件。inner 裡的 this.count++ 動到的是全域物件上的 count，obj.count 完全沒被碰到，還是 0。這是實務上很常見的錯誤來源：只要函式呼叫換了一層、沒有明確處理 this，綁定就可能悄悄跑掉。",
+      "verify": {
+        "checks": [
+          { "code": "var obj = {\n  count: 0,\n  increment: function () {\n    function inner() {\n      this.count++;\n    }\n    inner();\n  },\n};\nobj.increment();\nconsole.log(obj.count);", "expected": "0" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-1-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "為什麼要用 this：把「這次呼叫代表哪個物件」直接綁進呼叫語法，不用另外加參數",
+      "docs": "",
+      "story": "",
+      "prompt": "Q3 的 identify 函式用 this.name，而不是改成 function identify(context) { return context.name.toUpperCase(); } 讓呼叫者自己多傳一個參數。這兩種寫法在函式簽名和實際使用上有什麼差別？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "用 this 隱含傳遞情境物件，讓同一個函式在不同物件間重複使用時，函式簽名不用多一個「情境參數」，呼叫語法也更直接（fn.call(obj) 或 obj.method()）；如果改成顯式參數，函式簽名要多一個參數，呼叫端也要記得每次都手動正確傳入，多一個容易忘記傳或傳錯物件的地方——this 讓「這次呼叫代表哪個物件」直接從呼叫方式本身表達出來，不用額外用參數講清楚" },
+        { "id": "b", "text": "兩種寫法在任何情況下都完全等價，沒有任何實際差異，純粹是寫法喜好問題" },
+        { "id": "c", "text": "用 this 的版本效能一定比較差，因為多了一層動態綁定的運算成本" },
+        { "id": "d", "text": "用顯式參數的版本才能重複用在不同物件上，this 的版本只能綁死給固定的一個物件用" }
+      ],
+      "answer": "a",
+      "explanation": "两種寫法都能讓函式重複用在不同物件上（這點兩者其實一樣），差別在「怎麼把物件傳進去」：this 版本把物件綁進呼叫語法本身（obj.method() 或 fn.call(obj)），函式簽名維持乾淨、不用額外參數；顯式參數版本則是把物件當成普通參數傳，函式簽名要多一個參數位置，呼叫端也得每次記得手動傳對物件，多一個出錯的機會。this 存在的實際價值，就是把「這次呼叫代表哪個物件」這件事，直接寫進呼叫語法裡，讓函式簽名不用為了「支援多種情境」而多背一個參數。",
+      "verify": { "manual": "概念題：以 Q3 identify/speak 範例對照顯式參數寫法，說明 this 存在的實際價值，屬於 API 設計取捨的說明，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

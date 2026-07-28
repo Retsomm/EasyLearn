@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-sc-2",
+  "title": "Ch2：詞法作用域",
+  "questions": [
+    {
+      "id": "ydkjs-sc-2-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "巢狀作用域查詢：從最內層開始找，找到第一個符合名稱的宣告就停止",
+      "docs": "https://developer.mozilla.org/en-US/docs/Glossary/Scope",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function foo(a) {\n  var b = a * 2;\n  function bar(c) {\n    console.log(a, b, c);\n  }\n  bar(b * 3);\n}\nfoo(2);",
+      "options": [
+        { "id": "a", "text": "2 4 12" },
+        { "id": "b", "text": "2 4 6" },
+        { "id": "c", "text": "undefined undefined 12" },
+        { "id": "d", "text": "報錯：bar 找不到 a 和 b" }
+      ],
+      "answer": "a",
+      "explanation": "bar 巢狀在 foo 裡面，查詢 a、b 時會先看自己的作用域（只有參數 c），沒找到就往外一層到 foo 的作用域，找到 a（參數 2）和 b（4）。呼叫 bar(b * 3) 時 b 是 4，所以傳進去的 c 是 12。三層作用域（bar、foo、全域）在程式碼寫下的當下就已經固定巢狀關係，跟程式實際怎麼執行無關——這正是「詞法」作用域的意思。",
+      "verify": {
+        "checks": [
+          { "code": "function foo(a) {\n  var b = a * 2;\n  function bar(c) {\n    console.log(a, b, c);\n  }\n  bar(b * 3);\n}\nfoo(2);", "expected": "2 4 12" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-2-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "詞法作用域由函式「寫在哪裡」決定，不是由「在哪裡被呼叫」決定",
+      "docs": "https://developer.mozilla.org/en-US/docs/Glossary/Scope",
+      "story": "",
+      "prompt": "foo 印出 x 的時候，會拿到全域的 'global'，還是 bar 裡面的 'bar-local'？這段程式會印出什麼？",
+      "code": "var x = 'global';\nfunction foo() {\n  console.log(x);\n}\nfunction bar() {\n  var x = 'bar-local';\n  foo(); // foo 是在這裡被呼叫的，但它的作用域跟這裡有關嗎？\n}\nbar();",
+      "options": [
+        { "id": "a", "text": "global" },
+        { "id": "b", "text": "bar-local" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "報錯：x 未定義" }
+      ],
+      "answer": "a",
+      "explanation": "foo 印出全域的 'global'，完全不受 bar 內部 x 的影響。foo 的作用域是在「foo 這個函式被寫在程式碼的哪個位置」時就決定好了——foo 是寫在全域，所以它裡面找不到的變數會往全域找，跟它「實際被誰呼叫、在哪裡呼叫」完全無關。這就是詞法作用域跟其他語言裡「動態作用域」（依呼叫堆疊決定）最大的不同（詳見附錄 A）。",
+      "verify": {
+        "checks": [
+          { "code": "var x = 'global';\nfunction foo() {\n  console.log(x);\n}\nfunction bar() {\n  var x = 'bar-local';\n  foo();\n}\nbar();", "expected": "global" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-2-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "eval() 可以在執行期偷偷修改外層的詞法作用域（「欺騙」詞法作用域）",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/eval",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function foo(str, a) {\n  eval(str); // 插入 \"var b = 3;\"\n  console.log(a, b);\n}\nfoo('var b = 3;', 1);",
+      "options": [
+        { "id": "a", "text": "1 3" },
+        { "id": "b", "text": "1 undefined" },
+        { "id": "c", "text": "報錯：b 未定義" },
+        { "id": "d", "text": "3 1" }
+      ],
+      "answer": "a",
+      "explanation": "eval(str) 執行了字串裡的 \"var b = 3;\"，這行程式碼在非嚴格模式下等於真的被寫在 foo 的作用域裡，會實際幫 foo 新增一個變數 b。所以下一行 console.log(a, b) 印出 1 和 3——foo 的詞法作用域在執行期被 eval 動態改變了，這正是「欺騙詞法作用域」的意思：作用域本來應該在寫程式碼的當下就固定，但 eval 讓它在執行期還能被修改。",
+      "verify": {
+        "checks": [
+          { "code": "function foo(str, a) {\n  eval(str);\n  console.log(a, b);\n}\nfoo('var b = 3;', 1);", "expected": "1 3" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-2-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "嚴格模式下 eval() 有自己的詞法作用域，不會修改外層作用域",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Strict_mode",
+      "story": "",
+      "prompt": "跟 Q3 幾乎一樣的程式碼，只多了 'use strict'，這段程式會印出什麼？",
+      "code": "'use strict';\nfunction foo(str, a) {\n  eval(str);\n  console.log(a, typeof b);\n}\nfoo('var b = 3;', 1);",
+      "options": [
+        { "id": "a", "text": "1 undefined" },
+        { "id": "b", "text": "1 number" },
+        { "id": "c", "text": "報錯：b 未定義" },
+        { "id": "d", "text": "undefined undefined" }
+      ],
+      "answer": "a",
+      "explanation": "嚴格模式下，eval() 執行的程式碼會擁有自己獨立的詞法作用域，eval 內部宣告的 var b 只存在於 eval 自己的作用域裡，不會外洩、修改到 foo 的作用域。所以 foo 裡面完全看不到 b，typeof b 是 undefined。對照 Q3：同樣一段程式，差別只在有沒有嚴格模式，結果就從「eval 成功欺騙作用域」變成「eval 被關進自己的小房間，完全影響不到外面」。",
+      "verify": {
+        "checks": [
+          { "code": "'use strict';\nfunction foo(str, a) {\n  eval(str);\n  console.log(a, typeof b);\n}\nfoo('var b = 3;', 1);", "expected": "1 undefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-2-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "with 語句把物件的屬性當成該作用域內的變數來查詢",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/with",
+      "story": "",
+      "prompt": "把空格填起來，讓 with 區塊裡的 a = 2 真的寫進 obj 的屬性，讓 obj.a 最後印出 2",
+      "code": "var obj = { ____: 3 };\nfunction foo() {\n  with (obj) {\n    a = 2; // 這個 a 到底是指向哪裡，取決於 obj 有沒有同名屬性\n  }\n}\nfoo();\nconsole.log(obj.a);",
+      "options": [
+        { "id": "a", "text": "a" },
+        { "id": "b", "text": "b" },
+        { "id": "c", "text": "value" },
+        { "id": "d", "text": "x" }
+      ],
+      "answer": "a",
+      "explanation": "with(obj) 會用 obj 的屬性建立一個臨時的作用域，區塊裡對 a 的查詢會先在這個「obj 作用域」裡找有沒有叫 a 的屬性。obj 一開始就有 a: 3 這個屬性，所以 a = 2 會被當成對 obj.a 的賦值，執行完 obj.a 就變成 2。如果 obj 裡宣告的是 b（選項 b）而不是 a，with 區塊裡就找不到叫 a 的屬性，a = 2 這個 LHS 查詢會往外層落到全域、意外建立一個全域變數 a，obj.a 反而還是 undefined——這就是 with 被稱為「欺騙詞法作用域」的另一種方式：它讓作用域查詢的結果取決於一個物件執行期當下有哪些屬性，而不是程式碼寫在哪裡。",
+      "verify": {
+        "checks": [
+          { "code": "var obj = { a: 3 };\nfunction foo() {\n  with (obj) {\n    a = 2;\n  }\n}\nfoo();\nconsole.log(obj.a);", "expected": "2" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-2-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "欺騙詞法作用域的代價：引擎沒辦法在編譯期提前確定變數位置，只好放棄優化",
+      "docs": "",
+      "story": "",
+      "prompt": "同一個函式，版本一完全沒有用 eval 或 with，版本二裡面有一段 eval(someString)。JS 引擎在「編譯期」能不能對這兩個版本裡的變數查詢做一樣程度的效能優化？",
+      "code": "// 版本一：沒有 eval / with\nfunction calc(a, b) {\n  var total = a + b;\n  return total * 2;\n}\n\n// 版本二：包含 eval\nfunction calcWithEval(a, b, extra) {\n  eval(extra); // 執行期才知道這段字串會不會新增變數、甚至改到 a、b\n  var total = a + b;\n  return total * 2;\n}",
+      "options": [
+        { "id": "a", "text": "不能一樣：版本一的所有變數在編譯期就能確定屬於哪一層作用域，引擎可以放心做各種查詢優化；版本二因為 eval(extra) 執行期才知道字串內容會不會新增或修改變數，引擎沒辦法在編譯期保證作用域結構不會被改變，只好放棄大部分針對變數查詢的優化，讓 calcWithEval 通常比 calc 執行得慢" },
+        { "id": "b", "text": "兩者完全一樣快，eval 只是多執行一段字串，不影響其他程式碼的效能" },
+        { "id": "c", "text": "版本二反而比較快，因為 eval 可以讓引擎跳過不必要的變數宣告" },
+        { "id": "d", "text": "這個差異只在瀏覽器環境才存在，Node.js 環境不受影響" }
+      ],
+      "answer": "a",
+      "explanation": "JS 引擎在編譯期會盡量提前把「某個變數屬於哪一層作用域」計算好，執行時才能直接命中，不用每次都重新一層層查找。eval 和 with 都會讓引擎沒辦法在編譯期百分之百確定作用域結構——因為 eval 執行的字串內容、with 綁定的物件屬性，都要等到執行期才知道實際會不會新增或改變變數。引擎沒辦法保證優化後的結果還正確，只好悲觀地放棄這些優化，這就是「欺騙詞法作用域」除了讓程式碼難懂之外，另一個實際會拖慢效能的代價。",
+      "verify": { "manual": "概念題：以 eval 對編譯期優化的具體影響取代抽象效能敘述，屬於引擎內部行為說明，無法用 console.log 直接量測驗證。" }
+    }
+  ]
+}

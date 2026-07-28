@@ -1,0 +1,144 @@
+{
+  "id": "ydkjs-es6-5",
+  "title": "Ch5：集合",
+  "questions": [
+    {
+      "id": "ydkjs-es6-5-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "Map 可以用任何值（包含物件本身）當 key，不像一般物件的屬性名稱只能是字串或 Symbol",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Map",
+      "story": "",
+      "prompt": "keyObj 這個物件本身被拿來當 key，另外又用字串 'keyObj' 存了一次，兩者是完全不同的 key。這段程式會印出什麼？",
+      "code": "var keyObj = {};\nvar map = new Map();\nmap.set(keyObj, 'value for object key');\nmap.set('keyObj', 'value for string key'); // 剛好字串長得跟變數名一樣，但完全是不同的 key\nconsole.log(map.get(keyObj));\nconsole.log(map.get('keyObj'));\nconsole.log(map.size);",
+      "options": [
+        { "id": "a", "text": "value for object key\nvalue for string key\n2" },
+        { "id": "b", "text": "value for string key\nvalue for string key\n1" },
+        { "id": "c", "text": "value for object key\nvalue for object key\n1" },
+        { "id": "d", "text": "undefined\nvalue for string key\n2" }
+      ],
+      "answer": "a",
+      "explanation": "Map 的 key 可以是任何值，物件本身（keyObj）和字串 'keyObj' 是完全不同、互不相干的兩個 key，即使變數名稱和字串內容長得一樣。map.get(keyObj) 用物件參照去查，找到對應 'value for object key'；map.get('keyObj') 用字串去查，找到另一個對應 'value for string key'。size 是 2，代表 Map 裡確實存了兩筆各自獨立的資料。",
+      "verify": {
+        "checks": [
+          { "code": "var keyObj = {};\nvar map = new Map();\nmap.set(keyObj, 'value for object key');\nmap.set('keyObj', 'value for string key');\nconsole.log(map.get(keyObj));\nconsole.log(map.get('keyObj'));\nconsole.log(map.size);", "expected": "value for object key\nvalue for string key\n2" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-5-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "對照 Q1：一般物件當容器時，屬性名稱一律會被強制轉成字串，兩個不同的物件當 key 反而會互相衝突覆蓋",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Property_Accessors",
+      "story": "",
+      "prompt": "keyA、keyB 是兩個不同的物件，被拿來當一般物件 obj 的屬性名稱使用。這段程式會印出什麼？",
+      "code": "var obj = {};\nvar keyA = {};\nvar keyB = {};\nobj[keyA] = 'A';\nobj[keyB] = 'B'; // keyA、keyB 都被強制轉成字串再當屬性名稱\nconsole.log(obj[keyA]);\nconsole.log(Object.keys(obj));",
+      "options": [
+        { "id": "a", "text": "B\n[ '[object Object]' ]" },
+        { "id": "b", "text": "A\n[ '[object Object]', '[object Object]' ]" },
+        { "id": "c", "text": "A\n[ '[object Object]' ]" },
+        { "id": "d", "text": "undefined\n[ '[object Object]' ]" }
+      ],
+      "answer": "a",
+      "explanation": "一般物件的屬性名稱只能是字串（或 Symbol），obj[keyA] 這種寫法會先把 keyA 強制轉成字串——一般物件轉字串預設是 '[object Object]'，keyB 轉字串也是同一個 '[object Object]'，結果兩次賦值其實是寫進同一個屬性名稱，後面的 'B' 直接覆蓋掉先前的 'A'。obj[keyA] 讀到的是最後寫進去的 'B'，Object.keys(obj) 也只會看到一個 '[object Object]'。這正是 Q1 用 Map 就不會遇到的問題——Map 保留 key 本身的型別，不會像一般物件這樣把不同的物件 key 都強制轉成同一個字串。",
+      "verify": {
+        "checks": [
+          { "code": "var obj = {};\nvar keyA = {};\nvar keyB = {};\nobj[keyA] = 'A';\nobj[keyB] = 'B';\nconsole.log(obj[keyA]);\nconsole.log(Object.keys(obj));", "expected": "B\n[ '[object Object]' ]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-5-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Set 自動去除重複值，而且判斷「重複」用的規則比 === 稍微寬鬆一點：NaN 會被當成跟自己相等，只會留一個",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Set",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var s = new Set([1, 2, 2, 3, NaN, NaN]);\nconsole.log(s.size);\nconsole.log([...s]);",
+      "options": [
+        { "id": "a", "text": "4\n[ 1, 2, 3, NaN ]" },
+        { "id": "b", "text": "6\n[ 1, 2, 2, 3, NaN, NaN ]" },
+        { "id": "c", "text": "5\n[ 1, 2, 3, NaN, NaN ]" },
+        { "id": "d", "text": "4\n[ 1, 2, 3, undefined ]" }
+      ],
+      "answer": "a",
+      "explanation": "Set 自動排除重複的值：兩個 2 只會留一個。NaN 是比較特別的情況——Scope & Closures／Types & Grammar 都提過 NaN === NaN 是 false（NaN 不等於自己），但 Set 判斷「重不重複」用的是稍微不同的演算法（SameValueZero），這個演算法特別把 NaN 當成跟自己相等，所以兩個 NaN 也只會留一個。最終 Set 裡剩下 4 個獨一無二的值：1、2、3、NaN。",
+      "verify": {
+        "checks": [
+          { "code": "var s = new Set([1, 2, 2, 3, NaN, NaN]);\nconsole.log(s.size);\nconsole.log([...s]);", "expected": "4\n[ 1, 2, 3, NaN ]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-5-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "Set 判斷物件重不重複，看的是「是不是同一個參照」，不會比較物件裡面的內容長得像不像",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Set",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var s = new Set();\ns.add({ id: 1 });\ns.add({ id: 1 }); // 長得一模一樣，但是兩個不同的物件字面量、不同的參照\nconsole.log(s.size);",
+      "options": [
+        { "id": "a", "text": "2" },
+        { "id": "b", "text": "1" },
+        { "id": "c", "text": "0" },
+        { "id": "d", "text": "TypeError：不能把物件加進 Set" }
+      ],
+      "answer": "a",
+      "explanation": "這兩次 add({ id: 1 }) 各自建立了一個全新的物件字面量，即使內容看起來一模一樣，也是記憶體裡兩個完全獨立的物件、兩個不同的參照。Set 判斷重複與否是看「是不是同一個參照」，不是去比較物件內容是否相等，所以這兩個物件被視為不同的值，都會被加進 Set，size 是 2。如果想要「內容一樣就視為重複」，得自己額外寫比較邏輯，Set 本身不會幫你做這件事。",
+      "verify": {
+        "checks": [
+          { "code": "var s = new Set();\ns.add({ id: 1 });\ns.add({ id: 1 });\nconsole.log(s.size);", "expected": "2" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-5-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "Map 提供 keys()／values()／entries() 三個方法，分別取出所有鍵、所有值、或鍵值配對",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Map/keys",
+      "story": "",
+      "prompt": "把空格填起來，只取出 map 裡所有的 key，印出 [ 'a', 'b' ]",
+      "code": "var map = new Map([\n  ['a', 1],\n  ['b', 2],\n]);\nconsole.log([...map.____()]);",
+      "options": [
+        { "id": "a", "text": "keys" },
+        { "id": "b", "text": "values" },
+        { "id": "c", "text": "entries" },
+        { "id": "d", "text": "size" }
+      ],
+      "answer": "a",
+      "explanation": "map.keys() 回傳一個只走訪所有鍵的迭代器，展開之後是 ['a', 'b']。選項 b 的 values() 回傳的是所有值，會印出 [1, 2]；選項 c 的 entries() 回傳的是 [鍵, 值] 配對組成的陣列，會印出 [ [ 'a', 1 ], [ 'b', 2 ] ]；選項 d 的 size 根本不是方法，是一個屬性，map.size() 這樣呼叫會直接丟出 TypeError。",
+      "verify": {
+        "checks": [
+          { "code": "var map = new Map([\n  ['a', 1],\n  ['b', 2],\n]);\nconsole.log([...map.keys()]);", "expected": "[ 'a', 'b' ]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-5-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "WeakMap 的 key 只能是物件，或是 ES2023 之後允許的非註冊 Symbol，不能是字串、數字這種一般原始值——這個限制是為了讓引擎能安全地在 key 被回收時，一併回收對應的項目",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/WeakMap",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var wm = new WeakMap();\ntry {\n  wm.set('a string key', 'value');\n} catch (e) {\n  console.log('error:', e.constructor.name);\n}\nvar objKey = {};\nwm.set(objKey, 'ok');\nconsole.log(wm.get(objKey));",
+      "options": [
+        { "id": "a", "text": "error: TypeError\nok" },
+        { "id": "b", "text": "ok\nok" },
+        { "id": "c", "text": "error: TypeError\nundefined" },
+        { "id": "d", "text": "TypeError：整段程式碼直接中止" }
+      ],
+      "answer": "a",
+      "explanation": "WeakMap 明確規定 key 只能是物件（或 ES2023 之後新增支援的非註冊 Symbol），不能是字串這種一般原始值——wm.set('a string key', 'value') 直接丟出 TypeError，被 try/catch 接住，印出 error: TypeError。這個限制不是隨意設下的：WeakMap 對它的 key 只保留「弱參照」，一旦某個 key（物件，或非註冊 Symbol）在其他地方都不再被使用、可以被垃圾回收，WeakMap 裡對應的那筆資料也會跟著自動被回收，不會阻止記憶體釋放；但字串、數字這類原始值不是用參照管理記憶體的概念，套用不了這套「跟著生命週期走」的機制，所以語言禁止用一般原始值當 WeakMap 的 key。objKey 是物件，正常運作，wm.get(objKey) 印出 ok。",
+      "verify": {
+        "checks": [
+          { "code": "var wm = new WeakMap();\ntry {\n  wm.set('a string key', 'value');\n} catch (e) {\n  console.log('error:', e.constructor.name);\n}\nvar objKey = {};\nwm.set(objKey, 'ok');\nconsole.log(wm.get(objKey));", "expected": "error: TypeError\nok" }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-sc-1",
+  "title": "Ch1：作用域是什麼",
+  "questions": [
+    {
+      "id": "ydkjs-sc-1-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Engine 和 Compiler 合作：LHS 與 RHS 查詢",
+      "docs": "",
+      "story": "",
+      "prompt": "執行 `var a = 2; console.log(a);` 時，Compiler 先掃過程式碼做「宣告」的準備工作，Engine 才負責實際執行時的變數查詢。`a = 2` 這個賦值動作，跟 `console.log(a)` 裡讀出 a 的值，這兩次對變數 a 的「查詢」在角色上有什麼不同？",
+      "code": "var a = 2;\nconsole.log(a);",
+      "options": [
+        { "id": "a", "text": "a = 2 是 LHS（left-hand-side）查詢：目標是找到 a 這個變數的容器、把值放進去；console.log(a) 裡的 a 是 RHS（right-hand-side）查詢：目標是取出 a 目前的值——LHS 關心的是「誰是賦值的目標」，RHS 關心的是「取得某個變數的值本身」" },
+        { "id": "b", "text": "兩者是同一種查詢，JS 引擎不會區分賦值動作和讀取變數值的動作" },
+        { "id": "c", "text": "a = 2 是 RHS 查詢，console.log(a) 才是 LHS 查詢，兩者定義剛好相反" },
+        { "id": "d", "text": "這種區分只存在於用 var 宣告的情況，改用 let/const 宣告就不會有 LHS/RHS 之分" }
+      ],
+      "answer": "a",
+      "explanation": "a = 2 是一次 LHS 查詢：引擎要找到「a」這個變數的容器，把 2 放進去，關心的是賦值的目標是誰。console.log(a) 裡的 a 則是 RHS 查詢：引擎要取出 a 目前的值，才能把它當參數傳給 console.log。LHS／RHS 不是語法規則，而是引擎在查詢作用域時「想拿變數做什麼」的兩種目的，這個區分會決定接下來 Q2、Q3 遇到「查不到變數」時的行為差異。",
+      "verify": { "manual": "概念題：以 var a = 2 這行具體程式碼對應 LHS/RHS 查詢，無可執行驗證程式碼。" }
+    },
+    {
+      "id": "ydkjs-sc-1-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "非嚴格模式下，LHS 查詢失敗會自動建立全域變數",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/var",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var a = 1;\nfunction foo() {\n  b = 2; // 沒有 var，這是一次 LHS 查詢\n  console.log(a + b);\n}\nfoo();\nconsole.log(b);",
+      "options": [
+        { "id": "a", "text": "3\n2" },
+        { "id": "b", "text": "3\nReferenceError" },
+        { "id": "c", "text": "NaN\n2" },
+        { "id": "d", "text": "ReferenceError：b 未宣告" }
+      ],
+      "answer": "a",
+      "explanation": "b = 2 沒有用 var 宣告，這是一次 LHS 查詢。在非嚴格模式下，LHS 查詢如果在整條作用域鏈都找不到宣告過的變數，引擎不會直接報錯，而是「自動補救」：直接在全域作用域建立一個新的變數 b。所以 foo 內的 console.log(a + b) 印出 1 + 2 = 3；foo 執行完後全域也多了一個 b，外面的 console.log(b) 印出 2。這種「補救行為」正是非嚴格模式獨有、也是後面 Q6 嚴格模式要關掉的東西。",
+      "verify": {
+        "checks": [
+          { "code": "var a = 1;\nfunction foo() {\n  b = 2;\n  console.log(a + b);\n}\nfoo();\nconsole.log(b);", "expected": "3\n2" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-1-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "RHS 查詢找不到變數時，沒有補救機制，直接丟出 ReferenceError",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Not_defined",
+      "story": "",
+      "prompt": "這段程式碼執行時會發生什麼事？",
+      "code": "function foo() {\n  console.log(a); // RHS 查詢：想要取得 a 的值\n}\nfoo();",
+      "options": [
+        { "id": "a", "text": "丟出 ReferenceError：a 從未被宣告過，RHS 查詢在整條作用域鏈都找不到 a，取值找不到目標時沒有像 LHS 那樣的自動補救機制，只能直接報錯" },
+        { "id": "b", "text": "印出 undefined，因為 JS 會自動把未宣告的變數當成 undefined" },
+        { "id": "c", "text": "自動建立一個值為 undefined 的全域變數 a，然後印出 undefined" },
+        { "id": "d", "text": "什麼事都不會發生，函式安靜地結束，不印出任何東西" }
+      ],
+      "answer": "a",
+      "explanation": "對照 Q2：Q2 的 b = 2 是 LHS 查詢，找不到宣告時非嚴格模式會自動建立全域變數補救；這裡的 console.log(a) 是 RHS 查詢，目的是「取得 a 的值」，找不到值可以取用時沒有任何補救機制，引擎只能直接丟出 ReferenceError。這正是 LHS 與 RHS 查詢在「找不到目標時的行為」上最關鍵的差異。",
+      "verify": {
+        "checks": [
+          { "code": "function foo() {\n  console.log(a);\n}\nfoo();", "expectError": "a is not defined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-1-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "巢狀作用域查詢：由內而外逐層尋找，找到第一個符合名稱就停止",
+      "docs": "https://developer.mozilla.org/en-US/docs/Glossary/Scope",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var a = 1;\nfunction outer() {\n  var a = 2;\n  function inner() {\n    var a = 3;\n    console.log(a);\n  }\n  inner();\n  console.log(a);\n}\nouter();\nconsole.log(a);",
+      "options": [
+        { "id": "a", "text": "3\n2\n1" },
+        { "id": "b", "text": "3\n3\n3" },
+        { "id": "c", "text": "1\n2\n3" },
+        { "id": "d", "text": "3\n2\n2" }
+      ],
+      "answer": "a",
+      "explanation": "outer、inner、全域各自宣告了自己的 a，彼此獨立。inner 裡的 console.log(a) 查詢作用域鏈時，在 inner 自己這一層就找到 a = 3，立刻停止查詢、不會繼續往外找，所以印出 3。回到 outer 的 console.log(a) 在 outer 自己這層找到 a = 2。最外層的 console.log(a) 則是全域的 a = 1。巢狀作用域查詢只要在某一層找到符合名稱的宣告就馬上停止，內層自己的宣告完全不會影響到外層。",
+      "verify": {
+        "checks": [
+          { "code": "var a = 1;\nfunction outer() {\n  var a = 2;\n  function inner() {\n    var a = 3;\n    console.log(a);\n  }\n  inner();\n  console.log(a);\n}\nouter();\nconsole.log(a);", "expected": "3\n2\n1" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-1-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "用 var 明確宣告，把變數限制在函式作用域內，避免外洩到全域",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/var",
+      "story": "",
+      "prompt": "把空格填起來，讓 a 只存在 foo 內部的函式作用域，不會外洩到全域作用域（印出 2 和 undefined）",
+      "code": "function foo() {\n  ____ a = 2;\n  console.log(a);\n}\nfoo();\nconsole.log(typeof a);",
+      "options": [
+        { "id": "a", "text": "var" },
+        { "id": "b", "text": "（什麼都不加，直接寫 a = 2;）" },
+        { "id": "c", "text": "window." },
+        { "id": "d", "text": "typeof" }
+      ],
+      "answer": "a",
+      "explanation": "有 var a = 2，Compiler 在處理 foo 這個函式時就會先在 foo 自己的作用域裡宣告 a，執行到這行只是單純賦值，a 完全不會被 Engine 拿去外層（全域）作用域查詢，所以 foo 外面 typeof a 是 undefined。如果選 b（什麼都不加），就變成 Q2 的情境：找不到宣告的 a 會在全域自動建立，foo 外面就能讀到 a，typeof a 會印出 number 而不是 undefined。",
+      "verify": {
+        "checks": [
+          { "code": "function foo() {\n  var a = 2;\n  console.log(a);\n}\nfoo();\nconsole.log(typeof a);", "expected": "2\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-1-q6",
+      "type": "find-bug",
+      "difficulty": 3,
+      "topic": "嚴格模式關掉 LHS 查詢失敗時的自動補救，直接丟出 ReferenceError",
+      "docs": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode",
+      "story": "",
+      "prompt": "這段程式碼在嚴格模式下執行，會發生什麼事？",
+      "code": "'use strict';\n\nfunction foo() {\n  b = 2; // 嚴格模式下的 LHS 查詢\n  console.log(b);\n}\n\nfoo();",
+      "options": [
+        { "id": "a", "text": "丟出 ReferenceError：嚴格模式關掉了非嚴格模式下 LHS 查詢失敗時「自動在全域建立變數」的補救行為，找不到宣告過的 b 就直接報錯，不會偷偷幫你建立一個全域變數" },
+        { "id": "b", "text": "印出 2，跟非嚴格模式的行為完全一樣，嚴格模式不影響變數宣告" },
+        { "id": "c", "text": "印出 undefined" },
+        { "id": "d", "text": "語法錯誤（SyntaxError），因為嚴格模式完全不允許對變數賦值" }
+      ],
+      "answer": "a",
+      "explanation": "呼應 Q2、Q3：非嚴格模式下，LHS 查詢失敗時會自動在全域建立一個新變數當補救；嚴格模式則是把這個補救行為整個關掉，LHS 查詢一樣找不到宣告時，直接丟出跟 RHS 查詢一樣的 ReferenceError。這也是為什麼嚴格模式常被拿來提早抓出「忘記宣告變數」這種手誤——不會讓錯誤悄悄變成一個意外冒出來的全域變數。",
+      "verify": {
+        "checks": [
+          { "code": "'use strict';\nfunction foo() {\n  b = 2;\n  console.log(b);\n}\nfoo();", "expectError": "b is not defined" }
+        ]
+      }
+    }
+  ]
+}

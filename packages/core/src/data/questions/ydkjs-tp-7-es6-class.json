@@ -1,0 +1,144 @@
+{
+  "id": "ydkjs-tp-7",
+  "title": "附錄A：ES6中的Class",
+  "questions": [
+    {
+      "id": "ydkjs-tp-7-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "class 只是語法糖，底層還是同一套建構函式＋[[Prototype]] 機制，不是全新的物件模型",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "class Foo {\n  constructor(who) {\n    this.me = who;\n  }\n  identify() {\n    return 'I am ' + this.me;\n  }\n}\nconsole.log(typeof Foo);\nvar a1 = new Foo('a1');\nconsole.log(a1.identify());\nconsole.log(a1 instanceof Foo);\nconsole.log(Object.getPrototypeOf(a1) === Foo.prototype);",
+      "options": [
+        { "id": "a", "text": "function\nI am a1\ntrue\ntrue" },
+        { "id": "b", "text": "class\nI am a1\ntrue\ntrue" },
+        { "id": "c", "text": "function\nI am a1\ntrue\nfalse" },
+        { "id": "d", "text": "object\nI am a1\ntrue\ntrue" }
+      ],
+      "answer": "a",
+      "explanation": "class 底下依然是一個函式：typeof Foo 印出 function，不是什麼特殊的 class 型別。new Foo('a1') 一樣是走「建立新物件、綁定 this、連結 [[Prototype]]」這整套機制（見 Ch2 的 new 綁定、Ch5 的原型），a1 instanceof Foo 是 true，Object.getPrototypeOf(a1) === Foo.prototype 也是 true。class 語法看起來比手動寫建構函式＋Foo.prototype.xxx 乾淨很多，但底層完全是同一套東西，沒有引入新的物件模型。",
+      "verify": {
+        "checks": [
+          { "code": "class Foo {\n  constructor(who) {\n    this.me = who;\n  }\n  identify() {\n    return 'I am ' + this.me;\n  }\n}\nconsole.log(typeof Foo);\nvar a1 = new Foo('a1');\nconsole.log(a1.identify());\nconsole.log(a1 instanceof Foo);\nconsole.log(Object.getPrototypeOf(a1) === Foo.prototype);", "expected": "function\nI am a1\ntrue\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-7-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "class 內定義的方法一樣掛在 prototype 上，所有實例共用同一份，不是每個實例各自複製一份",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "class Foo {\n  constructor(who) { this.me = who; }\n  identify() { return 'I am ' + this.me; }\n}\nvar a1 = new Foo('a1');\nvar a2 = new Foo('a2');\nconsole.log(a1.identify === a2.identify);\nconsole.log(a1.hasOwnProperty('identify'));",
+      "options": [
+        { "id": "a", "text": "true\nfalse" },
+        { "id": "b", "text": "false\ntrue" },
+        { "id": "c", "text": "true\ntrue" },
+        { "id": "d", "text": "false\nfalse" }
+      ],
+      "answer": "a",
+      "explanation": "identify 是寫在 class 內部、不是在 constructor 裡用 this.identify = ... 賦值的，所以它跟手動寫 Foo.prototype.identify = function () {...} 效果一樣：只建立一份，掛在 Foo.prototype 上，a1、a2 兩個實例透過原型鏈共用同一個函式，a1.identify === a2.identify 是 true。a1.hasOwnProperty('identify') 是 false，因為 identify 不是 a1 自己身上的屬性，只是透過原型鏈查詢得到的。這跟 Ch4（ydkjs-tp-4-q2）手動用 Foo.prototype.myName 的行為完全一致。",
+      "verify": {
+        "checks": [
+          { "code": "class Foo {\n  constructor(who) { this.me = who; }\n  identify() { return 'I am ' + this.me; }\n}\nvar a1 = new Foo('a1');\nvar a2 = new Foo('a2');\nconsole.log(a1.identify === a2.identify);\nconsole.log(a1.hasOwnProperty('identify'));", "expected": "true\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-7-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "extends／super：class 提供的語法糖，讓「繼承並重用父類邏輯」比手動接原型鏈好寫很多",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/super",
+      "story": "",
+      "prompt": "Bar 用 extends Foo 繼承，並且在 constructor 跟 speak 裡都用 super 呼叫父類的邏輯。這段程式會印出什麼？",
+      "code": "class Foo {\n  constructor(who) { this.me = who; }\n  identify() { return 'I am ' + this.me; }\n}\nclass Bar extends Foo {\n  constructor(who) {\n    super(who); // 呼叫 Foo 的 constructor\n    this.label = 'Bar:' + who;\n  }\n  speak() {\n    console.log(super.identify() + ', ' + this.label); // 呼叫 Foo 的 identify\n  }\n}\nvar b1 = new Bar('b1');\nb1.speak();\nconsole.log(b1 instanceof Foo, b1 instanceof Bar);",
+      "options": [
+        { "id": "a", "text": "I am b1, Bar:b1\ntrue true" },
+        { "id": "b", "text": "I am undefined, Bar:b1\ntrue true" },
+        { "id": "c", "text": "I am b1, Bar:b1\nfalse true" },
+        { "id": "d", "text": "TypeError：必須先呼叫 super()" }
+      ],
+      "answer": "a",
+      "explanation": "super(who) 在 Bar 的 constructor 裡呼叫 Foo 的 constructor，把 this.me 設定好；super.identify() 在 speak 裡呼叫 Foo.prototype.identify，一樣用當下的 this（也就是 b1）計算結果，回傳 I am b1。整體印出 I am b1, Bar:b1。因為 Bar.prototype 透過 extends 連結到 Foo.prototype，b1 instanceof Foo 和 b1 instanceof Bar 都是 true——本質上跟 Ch5 手動用 Object.create 接原型鏈是同一套機制，只是 extends／super 讓語法乾淨很多，不用自己手動處理原型連結跟父類建構函式的呼叫。",
+      "verify": {
+        "checks": [
+          { "code": "class Foo {\n  constructor(who) { this.me = who; }\n  identify() { return 'I am ' + this.me; }\n}\nclass Bar extends Foo {\n  constructor(who) {\n    super(who);\n    this.label = 'Bar:' + who;\n  }\n  speak() {\n    console.log(super.identify() + ', ' + this.label);\n  }\n}\nvar b1 = new Bar('b1');\nb1.speak();\nconsole.log(b1 instanceof Foo, b1 instanceof Bar);", "expected": "I am b1, Bar:b1\ntrue true" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-7-q4",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "class 陷阱之一：class 宣告不會像 function 宣告那樣被提升，在宣告之前存取會直接報錯",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes",
+      "story": "",
+      "prompt": "回想 Scope & Closures 那本書教的：function 宣告連同整個函式主體都會被提升，可以在宣告之前呼叫。class 宣告也一樣會被提升嗎？這段程式碼執行會發生什麼事？",
+      "code": "console.log(typeof Foo);\nclass Foo {}",
+      "options": [
+        { "id": "a", "text": "丟出 ReferenceError：Cannot access 'Foo' before initialization——class 宣告的行為比較像 let／const，會有暫時死區，在宣告之前存取直接報錯，不會像 function 宣告那樣被完整提升到最上面" },
+        { "id": "b", "text": "印出 undefined，class 跟 var 一樣，宣告會被提升但賦值不會" },
+        { "id": "c", "text": "印出 function，class 跟 function 宣告的提升行為完全一樣" },
+        { "id": "d", "text": "印出 class" }
+      ],
+      "answer": "a",
+      "explanation": "很多人會直覺以為 class 既然本質上是函式（Q1 已經證明 typeof Foo 是 function），提升行為應該跟 function 宣告一樣。但 class 宣告實際上比較像 let／const：它一樣會落在「暫時死區」（temporal dead zone）裡，在真正執行到宣告那一行之前，這個名稱雖然已經被引擎注意到，卻完全不能存取，連 typeof 都不能用來安全探測，直接丟出 ReferenceError。這是 class 語法糖跟手動用 function 宣告建構函式，少數行為不一致的地方。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(typeof Foo);\nclass Foo {}", "expectError": "Cannot access 'Foo' before initialization" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-7-q5",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "class 陷阱之二：class 方法不會自動綁定 this，脫離實例單獨呼叫一樣會壞掉，而且因為 class 內部隱含嚴格模式，壞掉的方式更直接",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Classes",
+      "story": "",
+      "prompt": "detached 是從 a1 身上單獨拿出來的方法參照，脫離了 a1.identify() 這種呼叫方式。這段程式碼執行會發生什麼事？",
+      "code": "class Foo {\n  constructor(who) { this.me = who; }\n  identify() { return 'I am ' + this.me; }\n}\nvar a1 = new Foo('a1');\nvar detached = a1.identify;\nconsole.log(detached());",
+      "options": [
+        { "id": "a", "text": "丟出 TypeError：Cannot read properties of undefined（讀取 this.me 失敗）——class 內部程式碼隱含嚴格模式，一般函式呼叫的 this 不會像非嚴格模式那樣退回全域物件，而是 undefined，this.me 直接對 undefined 取屬性，馬上炸掉" },
+        { "id": "b", "text": "印出 I am a1，class 方法會自動記住自己原本綁定的實例，跟一般函式不一樣" },
+        { "id": "c", "text": "印出 I am undefined，this 退回全域物件，跟非嚴格模式的一般函式行為一樣" },
+        { "id": "d", "text": "印出空字串" }
+      ],
+      "answer": "a",
+      "explanation": "class 語法糖完全沒有解決 this 綁定的老問題（回顧 Ch1、Ch2 的默認/隱式/顯式/new 綁定）：detached() 是一次單純的函式呼叫，沒有任何物件在前面，套用默認綁定規則。但 class 內部的程式碼隱含在嚴格模式下執行，默認綁定在嚴格模式下這是 undefined，不會像非嚴格模式的一般函式那樣退回全域物件。this.me 對 undefined 取屬性直接丟出 TypeError，比非嚴格模式「安靜地印出 undefined」更早、更明確地炸掉。想避免這個問題，一樣得靠 Ch2 教過的 bind，或是改用箭頭函式當方法（但箭頭函式作為 class 方法有自己的限制，不在這裡展開）。",
+      "verify": {
+        "checks": [
+          { "code": "class Foo {\n  constructor(who) { this.me = who; }\n  identify() { return 'I am ' + this.me; }\n}\nvar a1 = new Foo('a1');\nvar detached = a1.identify;\nconsole.log(detached());", "expectError": "Cannot read properties of undefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-7-q6",
+      "type": "fill-in",
+      "difficulty": 3,
+      "topic": "修好 Q5 的陷阱：在 constructor 裡用 bind 把方法永久綁死在這個實例身上，之後脫離呼叫也不會壞",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Function/bind",
+      "story": "",
+      "prompt": "把空格填起來，讓 identify 在 constructor 執行時就被永久綁定在這個實例身上，就算之後脫離呼叫也能正常印出 I am a1",
+      "code": "class Foo {\n  constructor(who) {\n    this.me = who;\n    this.identify = this.identify.____(this);\n  }\n  identify() {\n    return 'I am ' + this.me;\n  }\n}\nvar a1 = new Foo('a1');\nvar detached = a1.identify;\nconsole.log(detached());",
+      "options": [
+        { "id": "a", "text": "bind" },
+        { "id": "b", "text": "call" },
+        { "id": "c", "text": "apply" },
+        { "id": "d", "text": "toString" }
+      ],
+      "answer": "a",
+      "explanation": "this.identify.bind(this) 建立一個 this 永久固定綁在這個實例（a1）身上的新函式，接著把它指派回 this.identify——這等於在 a1 自己身上建立了一個屏蔽用的、已經硬綁定過的 identify（見 Ch5 的屏蔽觀念），蓋掉了原本掛在 Foo.prototype 上、沒有綁定的那一份。之後不管 detached() 用什麼方式呼叫，讀到的都是 a1 自己身上那個已經硬綁定的版本，正常印出 I am a1，不會再重演 Q5 的問題。選項 b、c 的 call／apply 會立刻執行 identify 並把回傳值（一個字串）指派給 this.identify，之後 detached() 會因為 this.identify 已經不是函式而直接丟出 TypeError。",
+      "verify": {
+        "checks": [
+          { "code": "class Foo {\n  constructor(who) {\n    this.me = who;\n    this.identify = this.identify.bind(this);\n  }\n  identify() {\n    return 'I am ' + this.me;\n  }\n}\nvar a1 = new Foo('a1');\nvar detached = a1.identify;\nconsole.log(detached());", "expected": "I am a1" }
+        ]
+      }
+    }
+  ]
+}

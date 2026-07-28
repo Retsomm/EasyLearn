@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-sc-5",
+  "title": "Ch5：作用域閉包",
+  "questions": [
+    {
+      "id": "ydkjs-sc-5-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "閉包：函式離開自己原本的作用域之後，依然記得並能存取那個作用域裡的變數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function makeCounter() {\n  var count = 0;\n  return function increment() {\n    count++;\n    return count;\n  };\n}\nvar counter = makeCounter();\nconsole.log(counter());\nconsole.log(counter());\nconsole.log(counter());",
+      "options": [
+        { "id": "a", "text": "1\n2\n3" },
+        { "id": "b", "text": "1\n1\n1" },
+        { "id": "c", "text": "undefined\nundefined\nundefined" },
+        { "id": "d", "text": "ReferenceError：count 未定義" }
+      ],
+      "answer": "a",
+      "explanation": "makeCounter 執行完就回傳了，理論上它裡面的 count 應該跟著函式呼叫結束一起消失。但 increment 這個內部函式一直「記得」自己是在 makeCounter 的作用域裡定義的，即使 makeCounter 早就執行完畢，increment 每次被呼叫依然能存取、修改同一個 count——這就是閉包：函式離開了原本的作用域，依然保有對那個作用域的記憶與存取能力。所以三次呼叫依序累加，印出 1、2、3。",
+      "verify": {
+        "checks": [
+          { "code": "function makeCounter() {\n  var count = 0;\n  return function increment() {\n    count++;\n    return count;\n  };\n}\nvar counter = makeCounter();\nconsole.log(counter());\nconsole.log(counter());\nconsole.log(counter());", "expected": "1\n2\n3" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-5-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "每次呼叫外層函式都會產生一個全新的作用域，各自的閉包互不共享",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "counterA 和 counterB 都是呼叫 makeCounter() 產生的，這段程式會印出什麼？",
+      "code": "function makeCounter() {\n  var count = 0;\n  return function () {\n    count++;\n    return count;\n  };\n}\nvar counterA = makeCounter();\nvar counterB = makeCounter();\nconsole.log(counterA());\nconsole.log(counterA());\nconsole.log(counterB());",
+      "options": [
+        { "id": "a", "text": "1\n2\n1" },
+        { "id": "b", "text": "1\n2\n3" },
+        { "id": "c", "text": "1\n1\n1" },
+        { "id": "d", "text": "1\n2\n2" }
+      ],
+      "answer": "a",
+      "explanation": "每呼叫一次 makeCounter()，就會產生一份全新、獨立的 count 和一個閉包住它的新函式，counterA 和 counterB 是兩個完全不同的閉包，各自背著自己的 count，互不干擾。counterA 呼叫兩次變成 2，跟 counterB 完全無關，counterB 第一次呼叫還是從 1 開始。",
+      "verify": {
+        "checks": [
+          { "code": "function makeCounter() {\n  var count = 0;\n  return function () {\n    count++;\n    return count;\n  };\n}\nvar counterA = makeCounter();\nvar counterB = makeCounter();\nconsole.log(counterA());\nconsole.log(counterA());\nconsole.log(counterB());", "expected": "1\n2\n1" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-5-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "for 迴圈裡用 var 建立函式，所有函式閉包住同一個共用的迴圈變數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/for",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var fns = [];\nfor (var i = 1; i <= 3; i++) {\n  fns.push(function () {\n    console.log(i);\n  });\n}\nfns[0]();\nfns[1]();\nfns[2]();",
+      "options": [
+        { "id": "a", "text": "4\n4\n4" },
+        { "id": "b", "text": "1\n2\n3" },
+        { "id": "c", "text": "1\n1\n1" },
+        { "id": "d", "text": "3\n3\n3" }
+      ],
+      "answer": "a",
+      "explanation": "var i 只有一份，屬於整個外層作用域（不是每次迴圈各自獨立），三個 push 進 fns 的函式閉包住的其實是同一個 i。迴圈結束時 i 已經被累加到 4（因為 i <= 3 這個條件在 i 變成 4 時才判斷失敗、跳出迴圈），三個函式之後才被呼叫，這時候讀到的都是同一個、已經變成 4 的 i，所以三次呼叫都印出 4。這是 var 沒有區塊作用域，搭配閉包時最經典的陷阱。",
+      "verify": {
+        "checks": [
+          { "code": "var fns = [];\nfor (var i = 1; i <= 3; i++) {\n  fns.push(function () {\n    console.log(i);\n  });\n}\nfns[0]();\nfns[1]();\nfns[2]();", "expected": "4\n4\n4" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-5-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "ES6 之前的經典解法：用 IIFE 幫每一輪迴圈建立一個新的作用域，把當下的值封住",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/IIFE",
+      "story": "",
+      "prompt": "把空格填起來，讓每個函式各自記得自己那一輪的迴圈值，印出 1、2、3",
+      "code": "var fns = [];\nfor (var i = 1; i <= 3; i++) {\n  (function (j) {\n    fns.push(function () {\n      console.log(j);\n    });\n  })(____);\n}\nfns[0]();\nfns[1]();\nfns[2]();",
+      "options": [
+        { "id": "a", "text": "i" },
+        { "id": "b", "text": "j" },
+        { "id": "c", "text": "3" },
+        { "id": "d", "text": "i + 1" }
+      ],
+      "answer": "a",
+      "explanation": "每一輪迴圈都立即呼叫這個 IIFE，把當下的 i 當參數傳進去，IIFE 內部的參數 j 是這一輪全新、獨立的變數，複製了當下 i 的值。真正 push 進 fns 的函式閉包住的是 j，不是外層共用的 i，所以三個函式各自記得自己那一輪的值，印出 1、2、3。這正是 ES6 出現 let 之前，用「多開一層函式作用域」手動模擬區塊作用域的經典寫法（效果上等同於 jsa-2-closures 那個題組的 Q8（id: jsa-2-q8）用 let 的解法，只是用函式作用域達成，不是靠區塊作用域）。",
+      "verify": {
+        "checks": [
+          { "code": "var fns = [];\nfor (var i = 1; i <= 3; i++) {\n  (function (j) {\n    fns.push(function () {\n      console.log(j);\n    });\n  })(i);\n}\nfns[0]();\nfns[1]();\nfns[2]();", "expected": "1\n2\n3" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-5-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "模組模式：用一個回傳物件的函式，把私有狀態關在閉包裡，只公開需要的方法",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Closures",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function CoolModule() {\n  var something = 'cool';\n  var another = [1, 2, 3];\n\n  function doSomething() {\n    console.log(something);\n  }\n  function doAnother() {\n    console.log(another.join(' ! '));\n  }\n\n  return {\n    doSomething: doSomething,\n    doAnother: doAnother,\n  };\n}\n\nvar foo = CoolModule();\nfoo.doSomething();\nfoo.doAnother();\nconsole.log(typeof something);",
+      "options": [
+        { "id": "a", "text": "cool\n1 ! 2 ! 3\nundefined" },
+        { "id": "b", "text": "cool\n1 ! 2 ! 3\nstring" },
+        { "id": "c", "text": "undefined\nundefined\nundefined" },
+        { "id": "d", "text": "cool\n1,2,3\nundefined" }
+      ],
+      "answer": "a",
+      "explanation": "CoolModule 回傳的物件只公開了 doSomething 和 doAnother 這兩個方法，something 和 another 這兩個變數完全沒有被回傳、外部拿不到。但 doSomething、doAnother 都是在 CoolModule 內部定義的，各自閉包住 something、another，即使 CoolModule() 已經執行完畢，透過 foo 呼叫這兩個方法時依然能正確存取到它們——這就是「模組模式」：用閉包達成私有狀態＋公開介面的封裝，外面完全碰不到 something 本身，console.log(typeof something) 印出 undefined。",
+      "verify": {
+        "checks": [
+          { "code": "function CoolModule() {\n  var something = 'cool';\n  var another = [1, 2, 3];\n\n  function doSomething() {\n    console.log(something);\n  }\n  function doAnother() {\n    console.log(another.join(' ! '));\n  }\n\n  return {\n    doSomething: doSomething,\n    doAnother: doAnother,\n  };\n}\n\nvar foo = CoolModule();\nfoo.doSomething();\nfoo.doAnother();\nconsole.log(typeof something);", "expected": "cool\n1 ! 2 ! 3\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-sc-5-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "閉包讓整個外層作用域維持存活，而不只是保留某一個變數的副本",
+      "docs": "",
+      "story": "",
+      "prompt": "在 Q5 的 CoolModule 範例裡，CoolModule() 呼叫一結束，正常情況下它內部的區域變數（something、another）應該跟著這次函式呼叫一起被回收。為什麼 doSomething、doAnother 在 CoolModule 執行完很久之後，還是能正確讀到 something 和 another 目前的值？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "因為 doSomething、doAnother 在定義的當下就把 CoolModule 整個作用域「閉包」住了——只要還有任何函式持有對這個作用域的參照（這裡是透過 foo.doSomething／foo.doAnother），JS 引擎就不會把這個作用域回收，something、another 會一直以「目前的值」的狀態存活著，不是被複製成呼叫當下的一份快照" },
+        { "id": "b", "text": "因為 JS 引擎在 CoolModule 回傳物件時，自動把 something 和 another 的值複製了一份存進回傳的物件裡" },
+        { "id": "c", "text": "因為 something 和 another 其實是全域變數，跟閉包沒有關係" },
+        { "id": "d", "text": "這是不應該發生的行為，正常來說應該要拿到 undefined，這是一種引擎的錯誤" }
+      ],
+      "answer": "a",
+      "explanation": "閉包不是「把某個變數的值複製一份帶著走」，而是讓函式保留對整個外層作用域的參照。只要 doSomething、doAnother 這兩個函式還存在（透過 foo 被外部持有），它們閉包住的 CoolModule 作用域就不會被垃圾回收機制清掉，something、another 會維持在那個作用域裡、可以被讀取也可以被修改（如同 Q1 的 count 可以持續累加）。這也是為什麼閉包很適合拿來做模組模式：外部程式碼透過回傳的方法間接讀寫內部狀態，但完全接觸不到變數本身。",
+      "verify": { "manual": "概念題：以 CoolModule 範例的記憶體存活機制取代抽象定義，說明閉包保留整個作用域而非變數快照，屬於引擎記憶體管理行為，無法用單一 console.log 直接驗證。" }
+    }
+  ]
+}

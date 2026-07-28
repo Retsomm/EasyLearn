@@ -1,0 +1,144 @@
+{
+  "id": "ydkjs-ap-3",
+  "title": "Ch3：Promise",
+  "questions": [
+    {
+      "id": "ydkjs-ap-3-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "then() 裡的回呼永遠是非同步（微任務）執行，即使 Promise 早就已經決議完成",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/then",
+      "story": "",
+      "prompt": "p 在建立的當下就立刻 resolve(42) 了。這段程式會印出什麼？",
+      "code": "var p = new Promise(function (resolve) {\n  resolve(42);\n});\np.then(function (val) {\n  console.log('got', val);\n});\nconsole.log('sync');",
+      "options": [
+        { "id": "a", "text": "sync\ngot 42" },
+        { "id": "b", "text": "got 42\nsync" },
+        { "id": "c", "text": "sync" },
+        { "id": "d", "text": "got 42" }
+      ],
+      "answer": "a",
+      "explanation": "即使 Promise 在建立的當下就已經同步呼叫了 resolve(42)、狀態立刻變成已決議，then() 裡的回呼依然保證是非同步執行（屬於微任務，見 Ch1 Q4）——絕對不會在呼叫 then() 的當下就同步執行。所以 console.log('sync') 一定會比 got 42 先印出來，這個保證讓 Promise 的行為永遠一致，不會像 Ch2 的 getData 那樣有時同步、有時非同步。",
+      "verify": {
+        "checks": [
+          { "code": "var p = new Promise(function (resolve) {\n  resolve(42);\n});\np.then(function (val) {\n  console.log('got', val);\n});\nconsole.log('sync');", "expected": "sync\ngot 42" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-3-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "Promise 只能決議一次：resolve 或 reject 一旦被呼叫過，之後再呼叫都完全沒有效果",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise",
+      "story": "",
+      "prompt": "resolve 被呼叫了兩次。這段程式會印出什麼？",
+      "code": "var p = new Promise(function (resolve) {\n  resolve('first');\n  resolve('second'); // 第二次呼叫完全沒有效果\n});\np.then(function (val) {\n  console.log(val);\n});",
+      "options": [
+        { "id": "a", "text": "first" },
+        { "id": "b", "text": "second" },
+        { "id": "c", "text": "first\nsecond" },
+        { "id": "d", "text": "TypeError：不能重複呼叫 resolve" }
+      ],
+      "answer": "a",
+      "explanation": "Promise 從語言層級直接保證「只能決議一次」：第一次呼叫 resolve('first') 就把這個 Promise 的狀態鎖定成已決議，值是 'first'，之後不管再呼叫幾次 resolve 或 reject，都不會有任何效果，也不會報錯，只是安靜地被忽略。這正是 Ch2 提到的「回呼可能被呼叫過多次」這個信任問題，Promise 用語言本身的規範直接解決掉，不用再靠開發者自己小心。",
+      "verify": {
+        "checks": [
+          { "code": "var p = new Promise(function (resolve) {\n  resolve('first');\n  resolve('second');\n});\np.then(function (val) {\n  console.log(val);\n});", "expected": "first" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-3-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "每個 then() 都會回傳一個全新的 Promise，讓你可以一路串接下去，前一個 then 的回傳值會變成下一個 then 收到的值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/then",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "Promise.resolve(1)\n  .then(function (v) { return v + 1; })\n  .then(function (v) { return v * 2; })\n  .then(function (v) { console.log(v); });",
+      "options": [
+        { "id": "a", "text": "4" },
+        { "id": "b", "text": "2" },
+        { "id": "c", "text": "1" },
+        { "id": "d", "text": "3" }
+      ],
+      "answer": "a",
+      "explanation": "Promise.resolve(1) 建立一個值是 1 的已決議 Promise。第一個 then 收到 1，回傳 1 + 1 = 2；第二個 then 收到上一步回傳的 2，回傳 2 * 2 = 4；第三個 then 收到 4，印出 4。每個 then() 都會產生一個新的 Promise，上一步的回傳值就是下一個 then 收到的值，這種一路串接下去的寫法完全避開了 Ch2 巢狀回呼一層層往右縮排的問題。",
+      "verify": {
+        "checks": [
+          { "code": "Promise.resolve(1)\n  .then(function (v) { return v + 1; })\n  .then(function (v) { return v * 2; })\n  .then(function (v) { console.log(v); });", "expected": "4" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-3-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "then() 裡拋出的錯誤，會讓整條鏈變成「已拒絕」狀態，跳過後面所有的成功回呼，一路傳到最近的 catch",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch",
+      "story": "",
+      "prompt": "第一個 then 裡直接 throw 了一個錯誤。這段程式會印出什麼？",
+      "code": "Promise.resolve(1)\n  .then(function (v) {\n    throw new Error('boom');\n  })\n  .then(function (v) {\n    console.log('never runs:', v);\n  })\n  .catch(function (err) {\n    console.log('caught:', err.message);\n  });",
+      "options": [
+        { "id": "a", "text": "caught: boom" },
+        { "id": "b", "text": "never runs: undefined\ncaught: boom" },
+        { "id": "c", "text": "TypeError：未攔截的例外" },
+        { "id": "d", "text": "caught: undefined" }
+      ],
+      "answer": "a",
+      "explanation": "第一個 then 裡的 throw new Error('boom')，等同於讓這一步回傳的新 Promise 直接變成「已拒絕」狀態。一旦鏈上某一步變成已拒絕，後面所有的「成功回呼」（then 的第一個參數）都會被整個跳過，一路往下傳，直到遇到 catch（或 then 的第二個參數）才會被接住處理。所以中間那個 then 的 console.log('never runs', v) 完全不會執行，直接跳到 catch，印出 caught: boom。這種行為很像同步程式碼裡 try/catch 對例外的處理方式，只是換成了非同步版本。",
+      "verify": {
+        "checks": [
+          { "code": "Promise.resolve(1)\n  .then(function (v) {\n    throw new Error('boom');\n  })\n  .then(function (v) {\n    console.log('never runs:', v);\n  })\n  .catch(function (err) {\n    console.log('caught:', err.message);\n  });", "expected": "caught: boom" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-3-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "Promise.race 只等第一個settle 的 Promise，不用等其他還在進行中的",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/race",
+      "story": "",
+      "prompt": "p2 的計時器比 p1 短。把空格填起來，讓程式只印出最快完成的那一個結果 p2，不等 p1",
+      "code": "var p1 = new Promise(function (resolve) {\n  setTimeout(function () { resolve('p1'); }, 10);\n});\nvar p2 = new Promise(function (resolve) {\n  setTimeout(function () { resolve('p2'); }, 5);\n});\nPromise.____([p1, p2]).then(function (result) {\n  console.log(result);\n});",
+      "options": [
+        { "id": "a", "text": "race" },
+        { "id": "b", "text": "all" },
+        { "id": "c", "text": "resolve" },
+        { "id": "d", "text": "reject" }
+      ],
+      "answer": "a",
+      "explanation": "Promise.race([...]) 只要陣列裡任何一個 Promise 先決議完成，就立刻用那個結果決議，完全不等其他還在進行中的 Promise。p2 的計時器只有 5 毫秒，比 p1 的 10 毫秒早完成，所以 race 直接用 p2 的結果 'p2' 決議，印出 p2。如果選 b 的 Promise.all，會等 p1、p2 都完成，最後印出的會是一個包含兩個結果的陣列 ['p1', 'p2']，而不是單一個字串。",
+      "verify": {
+        "checks": [
+          { "code": "var p1 = new Promise(function (resolve) {\n  setTimeout(function () { resolve('p1'); }, 10);\n});\nvar p2 = new Promise(function (resolve) {\n  setTimeout(function () { resolve('p2'); }, 5);\n});\nPromise.race([p1, p2]).then(function (result) {\n  console.log(result);\n});", "expected": "p2" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-3-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "Promise.all 只要陣列裡任何一個 Promise 被拒絕，會立刻整體拒絕，不等其他還在進行中的 Promise",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise/all",
+      "story": "",
+      "prompt": "p2 一開始就是已拒絕狀態，p3 有一個 50 毫秒的計時器還在跑。這段程式會印出什麼？",
+      "code": "var p1 = Promise.resolve('ok1');\nvar p2 = Promise.reject('fail2');\nvar p3 = new Promise(function (resolve) {\n  setTimeout(function () { resolve('ok3'); }, 50);\n});\nPromise.all([p1, p2, p3])\n  .then(function (result) {\n    console.log('all ok:', result);\n  })\n  .catch(function (err) {\n    console.log('all failed:', err);\n  });",
+      "options": [
+        { "id": "a", "text": "all failed: fail2" },
+        { "id": "b", "text": "all ok: [ 'ok1', 'fail2', 'ok3' ]" },
+        { "id": "c", "text": "（等 50 毫秒後）all ok: [ 'ok1', 'fail2', 'ok3' ]" },
+        { "id": "d", "text": "（等 50 毫秒後）all failed: fail2" }
+      ],
+      "answer": "a",
+      "explanation": "Promise.all 的行為是「全部成功才成功，任何一個失敗就立刻整體失敗」——p2 一開始就已經是拒絕狀態，Promise.all 不需要等 p3 那個 50 毫秒的計時器跑完，會立刻用 p2 的拒絕原因讓整個 Promise.all 進入拒絕狀態，馬上被 catch 接住，印出 all failed: fail2。這種「快速失敗」（fail-fast）的設計，讓你不用浪費時間等一堆平行工作裡注定要失敗的那一組跑完全部流程。",
+      "verify": {
+        "checks": [
+          { "code": "var p1 = Promise.resolve('ok1');\nvar p2 = Promise.reject('fail2');\nvar p3 = new Promise(function (resolve) {\n  setTimeout(function () { resolve('ok3'); }, 50);\n});\nPromise.all([p1, p2, p3])\n  .then(function (result) {\n    console.log('all ok:', result);\n  })\n  .catch(function (err) {\n    console.log('all failed:', err);\n  });", "expected": "all failed: fail2" }
+        ]
+      }
+    }
+  ]
+}

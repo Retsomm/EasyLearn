@@ -1,0 +1,136 @@
+{
+  "id": "ydkjs-ap-7",
+  "title": "附錄B：高級異步模式",
+  "questions": [
+    {
+      "id": "ydkjs-ap-7-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "事件響應（observable）：跟只能決議一次的 Promise 不同，一個事件來源可以持續 emit 好幾次值，每次都通知所有訂閱者",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/EventTarget/addEventListener",
+      "story": "",
+      "prompt": "stream 被兩個不同的監聽者訂閱，接著 emit 了兩次。這段程式會印出什麼？",
+      "code": "function makeObservable() {\n  var listeners = [];\n  return {\n    subscribe: function (fn) {\n      listeners.push(fn);\n    },\n    emit: function (val) {\n      listeners.forEach(function (fn) {\n        fn(val);\n      });\n    },\n  };\n}\nvar stream = makeObservable();\nstream.subscribe(function (v) {\n  console.log('listener A:', v);\n});\nstream.subscribe(function (v) {\n  console.log('listener B:', v);\n});\nstream.emit(1);\nstream.emit(2);",
+      "options": [
+        { "id": "a", "text": "listener A: 1\nlistener B: 1\nlistener A: 2\nlistener B: 2" },
+        { "id": "b", "text": "listener A: 1\nlistener A: 2\nlistener B: 1\nlistener B: 2" },
+        { "id": "c", "text": "listener A: 1\nlistener B: 1" },
+        { "id": "d", "text": "listener A: 2\nlistener B: 2" }
+      ],
+      "answer": "a",
+      "explanation": "回顧 Ch3（Promise）的一個局限性：一個 Promise 只能決議一次，之後再怎麼呼叫 resolve 都沒有效果（見 ydkjs-ap-3-q2）。observable 模式解決的正是「需要處理一連串、隨時間發生好幾次的值」這種情境：每次呼叫 emit，都會依序通知目前所有訂閱過的監聽者，可以持續 emit 任意多次，不像 Promise 只能決議一次就結束。emit(1) 時依序通知 A、B 各印一次；emit(2) 時再依序通知 A、B 各印一次。",
+      "verify": {
+        "checks": [
+          { "code": "function makeObservable() {\n  var listeners = [];\n  return {\n    subscribe: function (fn) {\n      listeners.push(fn);\n    },\n    emit: function (val) {\n      listeners.forEach(function (fn) {\n        fn(val);\n      });\n    },\n  };\n}\nvar stream = makeObservable();\nstream.subscribe(function (v) {\n  console.log('listener A:', v);\n});\nstream.subscribe(function (v) {\n  console.log('listener B:', v);\n});\nstream.emit(1);\nstream.emit(2);", "expected": "listener A: 1\nlistener B: 1\nlistener A: 2\nlistener B: 2" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-7-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "可迭代序列可以是「惰性」的：即使背後是一個永遠不會結束的無窮序列，也能安全地只取需要的前幾個值",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function*",
+      "story": "",
+      "prompt": "naturals 是一個永遠不會執行完的無窮生成器（while (true)）。這段程式會印出什麼？",
+      "code": "function* naturals() {\n  var n = 1;\n  while (true) {\n    yield n++;\n  }\n}\nfunction take(iterable, count) {\n  var result = [];\n  var it = iterable[Symbol.iterator]();\n  for (var i = 0; i < count; i++) {\n    result.push(it.next().value);\n  }\n  return result;\n}\nconsole.log(take(naturals(), 5));",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3, 4, 5 ]" },
+        { "id": "b", "text": "程式會無窮迴圈，永遠不會印出任何東西" },
+        { "id": "c", "text": "[ 0, 1, 2, 3, 4 ]" },
+        { "id": "d", "text": "RangeError：陣列長度超出限制" }
+      ],
+      "answer": "a",
+      "explanation": "naturals() 呼叫本身不會執行函式主體（跟 Ch4 教過的一樣，generator 呼叫只是建立一個生成器物件），take 函式只呼叫了 5 次 it.next()，每呼叫一次，generator 就從暫停處繼續跑到下一個 yield 再暫停，並不會一次把整個 while (true) 迴圈跑完。這正是「惰性求值」的具體展現：即使 naturals 背後邏輯上是一個永遠產生不完的無窮序列，只要每次只拿需要的那幾個值，就完全安全，不會真的卡進一個跑不完的迴圈裡。",
+      "verify": {
+        "checks": [
+          { "code": "function* naturals() {\n  var n = 1;\n  while (true) {\n    yield n++;\n  }\n}\nfunction take(iterable, count) {\n  var result = [];\n  var it = iterable[Symbol.iterator]();\n  for (var i = 0; i < count; i++) {\n    result.push(it.next().value);\n  }\n  return result;\n}\nconsole.log(take(naturals(), 5));", "expected": "[ 1, 2, 3, 4, 5 ]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-7-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "生成器協程：讓兩個各自獨立的邏輯流程，靠 yield 互相禮讓，輪流往前推進，模擬出「同時在跑」的效果",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function*",
+      "story": "",
+      "prompt": "runConcurrently 讓 processA、processB 這兩個生成器每輪各自 next() 一次，輪流推進。這段程式會印出什麼？",
+      "code": "function* processA() {\n  console.log('A: step 1');\n  yield;\n  console.log('A: step 2');\n  yield;\n  console.log('A: step 3');\n}\nfunction* processB() {\n  console.log('B: step 1');\n  yield;\n  console.log('B: step 2');\n}\nfunction runConcurrently(gens) {\n  var iterators = gens.map(function (g) {\n    return g();\n  });\n  var done = iterators.map(function () {\n    return false;\n  });\n  while (!done.every(function (d) { return d; })) {\n    iterators.forEach(function (it, i) {\n      if (!done[i]) {\n        var res = it.next();\n        if (res.done) done[i] = true;\n      }\n    });\n  }\n}\nrunConcurrently([processA, processB]);",
+      "options": [
+        { "id": "a", "text": "A: step 1\nB: step 1\nA: step 2\nB: step 2\nA: step 3" },
+        { "id": "b", "text": "A: step 1\nA: step 2\nA: step 3\nB: step 1\nB: step 2" },
+        { "id": "c", "text": "B: step 1\nB: step 2\nA: step 1\nA: step 2\nA: step 3" },
+        { "id": "d", "text": "A: step 1\nB: step 1\nA: step 2\nB: step 2\nA: step 3\nB: step 3" }
+      ],
+      "answer": "a",
+      "explanation": "runConcurrently 每一輪都輪流對兩個生成器各呼叫一次 next()（還沒結束的才呼叫），所以兩個「流程」是一步一步交錯推進的，不是各自從頭跑到尾。第一輪：A 跑到第一個 yield，印 A: step 1；B 跑到第一個 yield，印 B: step 1。第二輪：A 從暫停處繼續，印 A: step 2，又碰到 yield 暫停；B 從暫停處繼續，印 B: step 2，函式跑完（B 沒有更多程式碼了，done 變 true）。第三輪：B 已經結束跳過；A 從暫停處繼續，印 A: step 3，函式跑完。這種靠 yield 互相禮讓、輪流推進的寫法，就是用生成器模擬「協程」（coroutine）的基本手法——本質上還是完全依序執行的單執行緒，只是透過交錯排列造出了「感覺像同時進行」的效果。",
+      "verify": {
+        "checks": [
+          { "code": "function* processA() {\n  console.log('A: step 1');\n  yield;\n  console.log('A: step 2');\n  yield;\n  console.log('A: step 3');\n}\nfunction* processB() {\n  console.log('B: step 1');\n  yield;\n  console.log('B: step 2');\n}\nfunction runConcurrently(gens) {\n  var iterators = gens.map(function (g) {\n    return g();\n  });\n  var done = iterators.map(function () {\n    return false;\n  });\n  while (!done.every(function (d) { return d; })) {\n    iterators.forEach(function (it, i) {\n      if (!done[i]) {\n        var res = it.next();\n        if (res.done) done[i] = true;\n      }\n    });\n  }\n}\nrunConcurrently([processA, processB]);", "expected": "A: step 1\nB: step 1\nA: step 2\nB: step 2\nA: step 3" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-7-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "把 Promise「只決議一次」的保證，套用到可以持續 emit 好幾次的 observable 上：包一層 once，讓監聽者只在第一次事件時真正被通知到",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/EventTarget/addEventListener",
+      "story": "",
+      "prompt": "把空格填起來，讓 once 包出來的監聽者，之後被呼叫時（called 已經是 true）提前結束，不再往下執行 fn(val)，讓 received 只收到第一次 emit 的值，印出 [ 1 ]",
+      "code": "function once(fn) {\n  var called = false;\n  return function (val) {\n    if (called) ____;\n    called = true;\n    fn(val);\n  };\n}",
+      "options": [
+        { "id": "a", "text": "return" },
+        { "id": "b", "text": "continue" },
+        { "id": "c", "text": "break" },
+        { "id": "d", "text": "delete fn" }
+      ],
+      "answer": "a",
+      "explanation": "第一次呼叫時 called 還是 false，if 判斷不成立，往下把 called 設成 true，再呼叫 fn(val) 真正通知監聽者。第二次（以及之後）呼叫時，called 已經是 true，if (called) return; 讓函式直接提前結束，不會再走到 fn(val)，等於把 Promise「只決議一次」的保證，套用在這個可以重複 emit 的 observable 監聽者身上。選項 b、c 的 continue、break 只能用在迴圈或 switch 裡，寫在一般函式的 if 區塊裡會直接是語法錯誤。",
+      "verify": {
+        "checks": [
+          { "code": "function makeObservable() {\n  var listeners = [];\n  return {\n    subscribe: function (fn) {\n      listeners.push(fn);\n    },\n    emit: function (val) {\n      listeners.forEach(function (fn) {\n        fn(val);\n      });\n    },\n  };\n}\nvar stream = makeObservable();\nvar received = [];\nfunction once(fn) {\n  var called = false;\n  return function (val) {\n    if (called) return;\n    called = true;\n    fn(val);\n  };\n}\nstream.subscribe(once(function (v) {\n  received.push(v);\n}));\nstream.emit(1);\nstream.emit(2);\nstream.emit(3);\nconsole.log(received);", "expected": "[ 1 ]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-7-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "生成器協程是「合作式」（cooperative）並發，不是「搶佔式」（preemptive）並發：每個流程要自己主動用 yield 讓出控制權，不會被強迫中斷",
+      "docs": "",
+      "story": "",
+      "prompt": "在 Q3 的例子裡，如果 processA 的某一段程式碼寫得很長、中間完全沒有寫 yield，runConcurrently 有沒有辦法強迫它先暫停、讓 processB 先跑一段？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "沒辦法。生成器協程屬於「合作式」（cooperative）並發：控制權什麼時候讓出去，完全由 processA 自己內部寫在哪裡的 yield 決定，runConcurrently 這個驅動者沒有能力從外部強迫它中途暫停。如果 processA 寫了一大段完全沒有 yield 的程式碼，這段程式碼就會一次跑到底，其他生成器只能等它主動讓出控制權（遇到下一個 yield）才有機會被排到。這跟作業系統排程真正的執行緒（可以被系統「搶佔式」強制中斷）是本質上不同的並發模型" },
+        { "id": "b", "text": "可以，runConcurrently 這種驅動函式可以隨時從外部強迫任何一個生成器中途暫停，不需要生成器自己配合" },
+        { "id": "c", "text": "可以，只要把 processA 放進一個獨立的 Web Worker，就能讓它中途被強制暫停" },
+        { "id": "d", "text": "這個問題不存在，因為生成器裡的程式碼一定會被引擎自動拆成很多段，不需要手動寫 yield" }
+      ],
+      "answer": "a",
+      "explanation": "這正是「合作式」並發跟「搶佔式」並發最根本的差異：合作式並發（生成器協程屬於這一類）完全仰賴每個流程自己主動用 yield「讓出」控制權，外部的驅動者沒有任何辦法強迫它中途停下來；搶佔式並發（像作業系統排程真正的執行緒）則是系統可以隨時從外部中斷、強制切換。用生成器模擬協程時，開發者必須自己在適當的地方安插 yield，才能讓其他邏輯流程有機會插進來執行，這也是設計協程式程式碼時需要特別留意的地方——忘記加 yield，整個「並發」的錯覺就會被一段跑得太長的同步程式碼打破。",
+      "verify": { "manual": "概念題：以 Q3 的 processA/processB 範例延伸「沒有 yield 時能不能被強制中斷」的具體情境，說明合作式並發與搶佔式並發的差異，屬於並發模型層面的說明，無法用單一 console.log 驗證。" }
+    },
+    {
+      "id": "ydkjs-ap-7-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "這個附錄裡的三種進階模式，可迭代序列與生成器協程建立在 Ch4 生成器機制上，observable 則是另一套獨立機制，三者共同的地方是都在補足 Promise 解決不了的不同問題",
+      "docs": "",
+      "story": "",
+      "prompt": "把 Q1/Q4（observable，解決「多次值」）、Q2（可迭代序列，解決「惰性求值」）、Q3/Q5（生成器協程，解決「多個流程交錯執行」）放在一起看，這三種進階模式的共同基礎是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "可迭代序列（Q2）跟生成器協程（Q3、Q5）都是站在 Ch4 生成器（yield 暫停、next() 恢復、本身就是可迭代物件）這個基礎機制上延伸出來的應用：可迭代序列直接運用生成器「一次只算出下一個值、其餘留到真正需要時才算」的特性做惰性求值；生成器協程運用 yield 可以把控制權讓出去再被恢復的特性，模擬出多個流程交錯執行的效果。observable（Q1、Q4）則不是建立在生成器機制上，而是靠閉包＋監聽者（listener）模式做出「同一個來源可以持續推送多個值」的事件驅動結構，是另一套獨立的實作方式。三者用的機制不完全相同，但解決的是同一個大方向的問題——Promise 只能處理『單一時間點決議一次』的非同步值，這三種模式合起來，是在補足 Promise 沒辦法優雅處理『一連串、隨時間發生、可能無窮多次』這類情境的缺口" },
+        { "id": "b", "text": "三者其實是同一段程式碼的三種不同名稱，實作上完全一樣，沒有任何本質差異" },
+        { "id": "c", "text": "三者都完全不需要用到生成器，是三個互相獨立、彼此無關的全新語言機制" },
+        { "id": "d", "text": "這三種模式都已經被證實在效能上比 Promise 差，只有理論價值，不該在正式環境使用" }
+      ],
+      "answer": "a",
+      "explanation": "這個附錄放在整本書（尤其是 Ch3 Promise、Ch4 生成器）之後，用意就是把前面學到的機制往更進階的方向延伸：Ch4 的生成器提供了「執行到一半可以暫停、之後可以恢復、還能雙向傳值」這個核心能力，可迭代序列（Q2）拿它做惰性求值，生成器協程（Q3、Q5）拿它模擬多流程交錯執行；observable（Q1、Q4）則是從另一個角度，補上 Promise「只能決議一次」這個局限性沒辦法處理的「一連串、隨時間發生的值」這類情境。三者要解決的具體問題不同，但都是同一個核心目標的延伸：讓非同步、隨時間變化的程式邏輯，寫起來能更貼近直覺的循序思考方式，而不是回到 Ch2 那種難以掌控的巢狀回呼。",
+      "verify": { "manual": "概念題：綜合 Q1-Q5 三種進階模式的具體示範，總結它們機制不盡相同、但都各自補足 Promise 局限性的關係，屬於整章架構層面的總結，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

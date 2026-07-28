@@ -1,0 +1,144 @@
+{
+  "id": "ydkjs-tp-5",
+  "title": "Ch5：原型",
+  "questions": [
+    {
+      "id": "ydkjs-tp-5-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "屬性查詢找不到就往 [[Prototype]] 鏈往上找；找到的屬性不算是這個物件「自己的」",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/hasOwnProperty",
+      "story": "",
+      "prompt": "myObject 是用 Object.create(anotherObject) 建出來的，自己身上沒有 a 這個屬性。這段程式會印出什麼？",
+      "code": "var anotherObject = { a: 2 };\nvar myObject = Object.create(anotherObject);\nconsole.log(myObject.a);\nconsole.log(myObject.hasOwnProperty('a'));",
+      "options": [
+        { "id": "a", "text": "2\nfalse" },
+        { "id": "b", "text": "undefined\nfalse" },
+        { "id": "c", "text": "2\ntrue" },
+        { "id": "d", "text": "ReferenceError：a 未定義" }
+      ],
+      "answer": "a",
+      "explanation": "myObject 自己身上沒有 a，屬性查詢會沿著 [[Prototype]] 鏈往上找，找到 anotherObject 上的 a，所以 myObject.a 印出 2。但 hasOwnProperty 只檢查「這個物件自己身上有沒有這個屬性」，不會去看原型鏈，a 其實是繼承來的、不是 myObject 自己的，所以印出 false。",
+      "verify": {
+        "checks": [
+          { "code": "var anotherObject = { a: 2 };\nvar myObject = Object.create(anotherObject);\nconsole.log(myObject.a);\nconsole.log(myObject.hasOwnProperty('a'));", "expected": "2\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-5-q2",
+      "type": "fill-in",
+      "difficulty": 1,
+      "topic": "Object.create 建立一個真正連結到指定物件的 [[Prototype]]，不是複製一份新物件",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/create",
+      "story": "",
+      "prompt": "把空格填起來，讓 myObject 的 [[Prototype]] 真正連結到 anotherObject，印出 2 和 true",
+      "code": "var anotherObject = { a: 2 };\nvar myObject = Object.____(anotherObject);\nconsole.log(myObject.a);\nconsole.log(Object.getPrototypeOf(myObject) === anotherObject);",
+      "options": [
+        { "id": "a", "text": "create" },
+        { "id": "b", "text": "assign" },
+        { "id": "c", "text": "freeze" },
+        { "id": "d", "text": "keys" }
+      ],
+      "answer": "a",
+      "explanation": "Object.create(anotherObject) 會建立一個全新的物件，把它的 [[Prototype]] 明確指向 anotherObject，所以 Object.getPrototypeOf(myObject) === anotherObject 是 true，myObject.a 也能透過原型鏈查詢到 2。選項 b 的 Object.assign(anotherObject)（只給一個參數，沒有真正的來源物件可複製）會直接回傳 anotherObject 本身，myObject 其實就是 anotherObject 自己，它的 [[Prototype]] 是 Object.prototype，不是 anotherObject，所以第二行會印出 false，而不是建立起一個新物件、指向 anotherObject 的連結。",
+      "verify": {
+        "checks": [
+          { "code": "var anotherObject = { a: 2 };\nvar myObject = Object.create(anotherObject);\nconsole.log(myObject.a);\nconsole.log(Object.getPrototypeOf(myObject) === anotherObject);", "expected": "2\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-5-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "屏蔽（shadowing）：對繼承來的屬性賦值，一般情況下會在自己身上建立一個全新的同名屬性，不會動到原型鏈上游的那個",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/hasOwnProperty",
+      "story": "",
+      "prompt": "myObject.a 一開始是透過原型鏈繼承來的，這段程式對 myObject.a 賦值之後會印出什麼？",
+      "code": "var anotherObject = { a: 2 };\nvar myObject = Object.create(anotherObject);\nmyObject.a = 3; // 建立屏蔽屬性\nconsole.log(myObject.a, anotherObject.a);\nconsole.log(myObject.hasOwnProperty('a'));",
+      "options": [
+        { "id": "a", "text": "3 2\ntrue" },
+        { "id": "b", "text": "3 3\ntrue" },
+        { "id": "c", "text": "2 2\nfalse" },
+        { "id": "d", "text": "3 2\nfalse" }
+      ],
+      "answer": "a",
+      "explanation": "myObject.a = 3 這次賦值，是在 myObject 自己身上新建一個 a 屬性（這就叫「屏蔽」，因為它把原型鏈上游那個同名的 a 給遮住了），不會動到 anotherObject.a，anotherObject.a 還是 2。這之後 myObject.hasOwnProperty('a') 變成 true，因為 a 現在是 myObject 自己真正擁有的屬性，不再需要透過原型鏈查詢。",
+      "verify": {
+        "checks": [
+          { "code": "var anotherObject = { a: 2 };\nvar myObject = Object.create(anotherObject);\nmyObject.a = 3;\nconsole.log(myObject.a, anotherObject.a);\nconsole.log(myObject.hasOwnProperty('a'));", "expected": "3 2\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-5-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "屏蔽的例外一：如果原型鏈上游的同名屬性是唯讀的（writable:false），賦值會靜默失敗，不會建立屏蔽屬性",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty",
+      "story": "",
+      "prompt": "anotherObject.a 被明確設成唯讀（writable: false）。這段程式對 myObject.a 賦值之後會印出什麼？",
+      "code": "var anotherObject = {};\nObject.defineProperty(anotherObject, 'a', {\n  value: 2,\n  writable: false,\n});\nvar myObject = Object.create(anotherObject);\nmyObject.a = 3; // 嘗試建立屏蔽屬性\nconsole.log(myObject.a, anotherObject.a);\nconsole.log(myObject.hasOwnProperty('a'));",
+      "options": [
+        { "id": "a", "text": "2 2\nfalse" },
+        { "id": "b", "text": "3 2\ntrue" },
+        { "id": "c", "text": "3 3\ntrue" },
+        { "id": "d", "text": "TypeError：Cannot assign to read only property" }
+      ],
+      "answer": "a",
+      "explanation": "跟 Q3 不一樣：這次原型鏈上游 anotherObject.a 是唯讀的（writable: false）。JS 在建立屏蔽屬性之前，會先檢查原型鏈上游有沒有同名的唯讀屬性，一旦發現有，非嚴格模式下這次賦值會直接靜默失敗——不會在 myObject 身上建立新的屏蔽屬性，myObject.a 依然透過原型鏈讀到 anotherObject 的 2。hasOwnProperty 也證實 myObject 自己並沒有真的多出一個 a 屬性。原型鏈上游的唯讀設定，會連帶阻止下游建立屏蔽屬性。",
+      "verify": {
+        "checks": [
+          { "code": "var anotherObject = {};\nObject.defineProperty(anotherObject, 'a', {\n  value: 2,\n  writable: false,\n});\nvar myObject = Object.create(anotherObject);\nmyObject.a = 3;\nconsole.log(myObject.a, anotherObject.a);\nconsole.log(myObject.hasOwnProperty('a'));", "expected": "2 2\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-5-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "屏蔽的例外二：如果原型鏈上游的同名屬性是 setter，賦值會呼叫那個繼承來的 setter，也不會建立屏蔽屬性",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/set",
+      "story": "",
+      "prompt": "anotherObject 的 a 是一組 getter／setter。對 myObject.a 賦值之後，這段程式會印出什麼？",
+      "code": "var anotherObject = {\n  set a(val) {\n    this._a_ = val;\n  },\n  get a() {\n    return this._a_;\n  },\n};\nvar myObject = Object.create(anotherObject);\nmyObject.a = 3;\nconsole.log(myObject.a, anotherObject.a);\nconsole.log(myObject.hasOwnProperty('a'), myObject.hasOwnProperty('_a_'));",
+      "options": [
+        { "id": "a", "text": "3 undefined\nfalse true" },
+        { "id": "b", "text": "3 3\ntrue false" },
+        { "id": "c", "text": "undefined undefined\nfalse false" },
+        { "id": "d", "text": "3 undefined\ntrue true" }
+      ],
+      "answer": "a",
+      "explanation": "myObject.a = 3 找到原型鏈上游 anotherObject 定義的 setter，於是呼叫這個繼承來的 setter（而不是在 myObject 身上建立屏蔽屬性 a），setter 裡的 this 綁定到觸發賦值的 myObject，this._a_ = val 因此是在 myObject 身上新建一個 _a_ 屬性。之後讀 myObject.a，一樣是呼叫繼承來的 getter，this._a_ 讀到 myObject 自己的 _a_，印出 3。anotherObject.a 讀的是 anotherObject 自己的 _a_（從來沒被設過），印出 undefined。hasOwnProperty 也證實 myObject 自己並沒有 a 這個屬性（一直都是透過原型鏈呼叫 getter/setter），但確實多了一個自己的 _a_。",
+      "verify": {
+        "checks": [
+          { "code": "var anotherObject = {\n  set a(val) {\n    this._a_ = val;\n  },\n  get a() {\n    return this._a_;\n  },\n};\nvar myObject = Object.create(anotherObject);\nmyObject.a = 3;\nconsole.log(myObject.a, anotherObject.a);\nconsole.log(myObject.hasOwnProperty('a'), myObject.hasOwnProperty('_a_'));", "expected": "3 undefined\nfalse true" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-5-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "instanceof 檢查的是「Foo.prototype 這個物件現在在不在 a 的原型鏈上」，不是「a 是不是用 Foo 建出來的」",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/instanceof",
+      "story": "",
+      "prompt": "a 是用 new Foo() 建出來的，之後才把 Foo.prototype 整個換成一個全新的物件。這段程式會印出什麼？",
+      "code": "function Foo() {}\nvar a = new Foo();\nconsole.log(a instanceof Foo);\nconsole.log(Object.getPrototypeOf(a) === Foo.prototype);\nFoo.prototype = {}; // 之後整個替換掉 Foo.prototype\nconsole.log(a instanceof Foo);",
+      "options": [
+        { "id": "a", "text": "true\ntrue\nfalse" },
+        { "id": "b", "text": "true\ntrue\ntrue" },
+        { "id": "c", "text": "true\nfalse\ntrue" },
+        { "id": "d", "text": "TypeError：Foo.prototype 不能重新賦值" }
+      ],
+      "answer": "a",
+      "explanation": "new Foo() 建立 a 的當下，會把 a 的 [[Prototype]] 連結到「當時的」Foo.prototype 那個物件，這個連結是連到物件本身，不是連到「Foo.prototype 這個屬性名稱」。所以一開始 a instanceof Foo 是 true。但把 Foo.prototype 整個換成一個全新的空物件之後，a 的 [[Prototype]] 連結依然指向舊的那個物件，跟現在的 Foo.prototype（新物件）已經是兩個不同的物件了。instanceof 檢查的是「Foo.prototype 現在指的這個物件，在不在 a 的原型鏈上」，現在的 Foo.prototype 不在 a 的原型鏈上，所以 a instanceof Foo 變成 false——即使 a 明明就是當初用 new Foo() 建出來的。",
+      "verify": {
+        "checks": [
+          { "code": "function Foo() {}\nvar a = new Foo();\nconsole.log(a instanceof Foo);\nconsole.log(Object.getPrototypeOf(a) === Foo.prototype);\nFoo.prototype = {};\nconsole.log(a instanceof Foo);", "expected": "true\ntrue\nfalse" }
+        ]
+      }
+    }
+  ]
+}

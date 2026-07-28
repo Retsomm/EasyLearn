@@ -1,0 +1,132 @@
+{
+  "id": "ydkjs-ap-6",
+  "title": "Ch6：性能測試與調優",
+  "questions": [
+    {
+      "id": "ydkjs-ap-6-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "用 performance.now() 量測前後的時間差，是最基本的效能測試寫法",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/Performance/now",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function slowSquareSum(n) {\n  var sum = 0;\n  for (var i = 0; i < n; i++) {\n    sum += i * i;\n  }\n  return sum;\n}\nvar start = performance.now();\nvar result = slowSquareSum(100000);\nvar end = performance.now();\nconsole.log(result);\nconsole.log(typeof (end - start));\nconsole.log(end - start >= 0);",
+      "options": [
+        { "id": "a", "text": "333328333350000\nnumber\ntrue" },
+        { "id": "b", "text": "333328333350000\nstring\ntrue" },
+        { "id": "c", "text": "undefined\nnumber\ntrue" },
+        { "id": "d", "text": "333328333350000\nnumber\nfalse" }
+      ],
+      "answer": "a",
+      "explanation": "slowSquareSum(100000) 正常計算出 0² + 1² + ... + 99999² 的總和，印出固定的計算結果。performance.now() 回傳的是「從某個固定起點到現在經過的毫秒數」（一個帶小數的高精度數字），end - start 這個時間差永遠是 number 型別，而且執行一定會花掉一些時間（即使極短），所以 end - start 一定是大於或等於 0 的數字。這是最基本的效能測試寫法：在要量測的程式碼前後各記錄一次時間，相減就是這段程式碼花費的時間。",
+      "verify": {
+        "checks": [
+          { "code": "function slowSquareSum(n) {\n  var sum = 0;\n  for (var i = 0; i < n; i++) {\n    sum += i * i;\n  }\n  return sum;\n}\nvar start = performance.now();\nvar result = slowSquareSum(100000);\nvar end = performance.now();\nconsole.log(result);\nconsole.log(typeof (end - start));\nconsole.log(end - start >= 0);", "expected": "333328333350000\nnumber\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-6-q2",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "只量測一次的結果不可信，系統當下的雜訊（其他程式搶資源、JIT 剛開始還沒暖機等等）都會讓單次結果失真，要重複執行很多次取平均或中位數",
+      "docs": "",
+      "story": "",
+      "prompt": "小明用 Q1 那種寫法，把同一段程式碼「只量測一次」，得到 12 毫秒，就下結論說「這個函式平均要花 12 毫秒」。這個結論可靠嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不可靠。單次量測結果很容易被當下系統的各種雜訊影響——作業系統剛好排給別的程式跑一小段、JS 引擎的 JIT 編譯器可能才剛開始針對這段程式碼做優化（第一次執行往往比較慢）、記憶體剛好觸發了垃圾回收等等，這些都會讓單一次的數字失真。正確的做法是把同一段程式碼重複執行很多次（例如上百次、上千次），取平均值或中位數，才能得到比較能代表真實效能的數字，單次量測只能當參考，不能當結論" },
+        { "id": "b", "text": "可靠，performance.now() 本身就有做過平均運算，量一次就等於量了很多次的平均" },
+        { "id": "c", "text": "不可靠，因為 performance.now() 這個 API 本身有已知的臭蟲，量出來的數字永遠是錯的" },
+        { "id": "d", "text": "可靠，只要是用同一台電腦測，量幾次結果都會完全一樣，不用擔心雜訊" }
+      ],
+      "answer": "a",
+      "explanation": "效能測試最容易犯的錯誤，就是把單次量測的結果直接當成「平均表現」。真實環境裡有太多會讓單次數字失真的因素：作業系統排程、JS 引擎 JIT 優化尚未暖機、垃圾回收剛好被觸發等等，這些雜訊在單次量測裡完全無法分辨。要得到比較可靠的數字，必須重複執行同一段程式碼很多次，再用平均值或中位數來代表真實效能，這也是為什麼像 Benchmark.js 這類專門的效能測試工具，預設就會自動重複執行很多輪。",
+      "verify": { "manual": "概念題：以「單次量測 12 毫秒就下結論」的具體情境取代抽象定義，說明重複量測取平均的必要性，屬於測試方法論的說明，無法用單一 console.log 驗證。" }
+    },
+    {
+      "id": "ydkjs-ap-6-q3",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "「環境為王」：同一段程式碼在不同瀏覽器、不同裝置、甚至同一台機器不同時間點量出來的效能數字都可能天差地遠，測試結果不能隨便套用到別的環境",
+      "docs": "",
+      "story": "",
+      "prompt": "小華在自己的筆電上，用 jsPerf.com 之類的工具測出「寫法 A 比寫法 B 快 30%」，於是在專案的程式碼審查意見裡寫「一律要用寫法 A，因為比較快」。這個結論可以直接套用到所有情境嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不行。效能測試的結果高度依賴「測試當下的環境」：不同瀏覽器（甚至同一瀏覽器不同版本）的 JS 引擎優化策略不一樣，不同裝置的硬體規格不一樣，甚至同一台機器在不同時間點（電量、散熱、背景程式）都可能量出不同數字。在某一台筆電、某個瀏覽器版本測出來「A 比 B 快」，換到別的瀏覽器、別的裝置、甚至半年後的同一個瀏覽器，結果完全可能反過來。效能測試結果只能代表「當初測試那個特定環境下」的結論，不能直接當成放諸四海皆準的規則" },
+        { "id": "b", "text": "可以，只要是合法的 JS 語法，效能表現在所有引擎、所有裝置上都保證完全一致" },
+        { "id": "c", "text": "不行，但原因是 jsPerf.com 這個網站本身的量測方法有問題，換一個測試網站結果就會穩定" },
+        { "id": "d", "text": "可以，因為效能差異一旦被量測出來，就是這段程式碼本身固有、不會改變的特性" }
+      ],
+      "answer": "a",
+      "explanation": "「環境為王」是效能測試很容易被忽略的一條原則：JS 引擎會隨著版本演進不斷改變優化策略，今天某個寫法比較快，可能是因為引擎剛好對那種寫法做了特別優化，換一個引擎版本、換一個瀏覽器廠商，優化策略完全不同，結論可能整個反過來。把某次特定環境下測出來的結果，寫成「一律要這樣寫」的硬性規則，是效能測試裡很常見、也很危險的誤用——真正嚴謹的做法，是針對「這段程式碼實際會被跑在哪些環境」分別測試，而不是相信一次測試結果能代表所有情境。",
+      "verify": { "manual": "概念題：以「單一環境測出的結論被套用到所有情境」的具體情境取代抽象定義，說明效能測試結果的環境依賴性，屬於測試方法論的說明，無法用單一 console.log 驗證。" }
+    },
+    {
+      "id": "ydkjs-ap-6-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "尾呼叫優化（TCO）雖然寫進了 ES6 規範，但實務上大多數 JS 引擎（包含 Node.js 用的 V8）從來沒有真的實作它，深層遞迴一樣會爆堆疊",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/RangeError",
+      "story": "",
+      "prompt": "countdown 的遞迴呼叫 return countdown(n - 1) 剛好符合 ES6 規範定義的「尾呼叫」位置（遞迴呼叫是函式做的最後一件事）。理論上規範允許引擎用固定的堆疊空間執行這種遞迴。在目前主流的 Node.js（V8 引擎）裡，這段程式碼執行會發生什麼事？",
+      "code": "'use strict';\nfunction countdown(n) {\n  if (n <= 0) return 'done';\n  return countdown(n - 1); // 尾呼叫位置\n}\ntry {\n  console.log(countdown(1000000));\n} catch (e) {\n  console.log('crashed with', e.constructor.name);\n}",
+      "options": [
+        { "id": "a", "text": "crashed with RangeError" },
+        { "id": "b", "text": "done" },
+        { "id": "c", "text": "crashed with TypeError" },
+        { "id": "d", "text": "1000000" }
+      ],
+      "answer": "a",
+      "explanation": "ES6 規範確實定義了「正確尾呼叫」（proper tail calls）應該用固定堆疊空間執行，理論上這種寫法不該爆堆疊。但實務上，包含 V8（Node.js、Chrome 用的引擎）在內的大多數主流引擎，從來沒有真正落地實作這個規範特性——這正是本章「環境為王」（Q3）的一個活生生的例子：不能只因為規範允許某件事，就相信所有環境都真的支援。100 萬層的遞迴呼叫，在沒有 TCO 的引擎上會一路堆疊下去，最終丟出 RangeError（超出最大呼叫堆疊大小），被 catch 接住印出 crashed with RangeError。",
+      "verify": {
+        "checks": [
+          { "code": "'use strict';\nfunction countdown(n) {\n  if (n <= 0) return 'done';\n  return countdown(n - 1);\n}\ntry {\n  console.log(countdown(1000000));\n} catch (e) {\n  console.log('crashed with', e.constructor.name);\n}", "expected": "crashed with RangeError" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-6-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "既然不能信任引擎會做尾呼叫優化，遇到深層重複邏輯，改寫成迴圈是比遞迴更保險的做法",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/while",
+      "story": "",
+      "prompt": "把空格填起來，把 Q4 那種容易爆堆疊的遞迴倒數，改寫成不會佔用呼叫堆疊的迴圈版本，讓 100 萬次都能正常跑完，印出 1000000",
+      "code": "function countdownLoop(n) {\n  var steps = 0;\n  ____ (n > 0) {\n    n = n - 1;\n    steps++;\n  }\n  return steps;\n}\nconsole.log(countdownLoop(1000000));",
+      "options": [
+        { "id": "a", "text": "while" },
+        { "id": "b", "text": "if" },
+        { "id": "c", "text": "switch" },
+        { "id": "d", "text": "return" }
+      ],
+      "answer": "a",
+      "explanation": "while (n > 0) { ... } 會不斷重複執行區塊內容，直到 n 不再大於 0 為止，總共執行 100 萬次，steps 正確累加到 1000000，而且完全不會用到函式呼叫堆疊（迴圈本身不是遞迴呼叫），不管迴圈次數多少都不會有堆疊溢位的風險。選項 b 的 if 只會判斷一次、執行一次區塊內容，不會重複，steps 只會是 1，跟 Q4 的遞迴寫法比起來，這正是不依賴引擎有沒有實作 TCO、又能避免堆疊溢位的實務解法。",
+      "verify": {
+        "checks": [
+          { "code": "function countdownLoop(n) {\n  var steps = 0;\n  while (n > 0) {\n    n = n - 1;\n    steps++;\n  }\n  return steps;\n}\nconsole.log(countdownLoop(1000000));", "expected": "1000000" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-6-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "效能相關的假設一律要靠實測驗證，不能只憑規範「允許」或直覺「感覺應該」就相信",
+      "docs": "",
+      "story": "",
+      "prompt": "把 Q3（同一份測試結果不能隨便套用到別的環境）跟 Q4（ES6 規範允許 TCO，但主流引擎實際上沒實作）放在一起看，這一整章想傳達的核心心態是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "任何跟效能有關的假設——不管是「這個寫法感覺比較快」的直覺，還是「規範說這個特性應該被支援」的理論保證——都必須拿到實際會執行的目標環境裡親自測試過，才能相信。Q3 證明就算真的測試過，結果也只能代表當初那個特定環境；Q4 更進一步證明連寫進正式語言規範裡的保證，都可能在主流引擎上完全沒有落地。這一章反覆強調的，就是「效能沒有捷徑，一切都要靠針對目標環境的實際測試驗證，不能單憑規範條文或個人直覺下結論」" },
+        { "id": "b", "text": "只要 ECMAScript 規範裡寫了某個特性，就一定可以放心假設所有主流引擎都會確實支援，不需要額外測試" },
+        { "id": "c", "text": "效能測試已經被證明是沒有意義的活動，開發者應該完全信任自己的直覺去判斷哪種寫法比較快" },
+        { "id": "d", "text": "只要程式碼在自己的開發機器上跑起來夠快，就代表在正式環境上也一定會一樣快" }
+      ],
+      "answer": "a",
+      "explanation": "這一整章從「單次量測不可信要重複測」（Q1、Q2），到「同一份結果不能套用到別的環境」（Q3），再到「連寫進規範的 TCO 都可能沒被實作」（Q4、Q5），一路都在強調同一件事：效能相關的判斷不能靠感覺、也不能只靠規範條文的字面承諾，必須實際拿到會執行的目標環境裡測試過，才有資格下結論。這也是為什麼書中會特別提到「環境為王」——效能優化如果沒有建立在紮實的實測基礎上，很容易做出反而讓程式碼更難懂、卻沒有真正變快（甚至在別的環境上反而變慢）的錯誤優化。",
+      "verify": { "manual": "概念題：綜合 Q3（環境依賴）與 Q4（TCO 規範與實作落差），總結「效能判斷要靠實測、不能只靠規範或直覺」的核心心態，屬於工程方法論的說明，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

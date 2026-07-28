@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-tp-2",
+  "title": "Ch2：this全面解析",
+  "questions": [
+    {
+      "id": "ydkjs-tp-2-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "默認绑定 vs 隱式綁定：一般呼叫 this 綁到全域，用「物件.方法()」呼叫 this 綁到那個物件",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/this",
+      "story": "",
+      "prompt": "foo 是同一個函式，先後被兩種不同方式呼叫。這段程式會印出什麼？",
+      "code": "function foo() {\n  console.log(this.a);\n}\nvar obj = { a: 2, foo: foo };\nvar a = 'global a (leaked var)';\n\nfoo(); // 默認綁定：一般函式呼叫\nobj.foo(); // 隱式綁定：物件.方法() 的呼叫方式",
+      "options": [
+        { "id": "a", "text": "global a (leaked var)\n2" },
+        { "id": "b", "text": "2\n2" },
+        { "id": "c", "text": "global a (leaked var)\nglobal a (leaked var)" },
+        { "id": "d", "text": "undefined\n2" }
+      ],
+      "answer": "a",
+      "explanation": "foo() 是最單純的呼叫方式，沒有任何物件參與呼叫，套用「默認綁定」規則：非嚴格模式下 this 綁到全域物件，this.a 讀到的是全域的 a（跟頂層 var a 是同一個）。obj.foo() 用「物件.方法()」的語法呼叫，套用「隱式綁定」規則：this 綁到呼叫時前面那個物件，也就是 obj，this.a 讀到 obj.a = 2。同一個函式，光是呼叫的寫法不同，this 綁定就完全不同。",
+      "verify": {
+        "checks": [
+          { "code": "function foo() {\n  console.log(this.a);\n}\nvar obj = { a: 2, foo: foo };\nvar a = 'global a (leaked var)';\n\nfoo();\nobj.foo();", "expected": "global a (leaked var)\n2" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-2-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "new 綁定：用 new 呼叫函式時，this 綁到那個剛被建出來的全新物件",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/new",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "function Foo(a) {\n  this.a = a;\n}\nvar bar = new Foo(5);\nconsole.log(bar.a);",
+      "options": [
+        { "id": "a", "text": "5" },
+        { "id": "b", "text": "undefined" },
+        { "id": "c", "text": "ReferenceError：this 未定義" },
+        { "id": "d", "text": "NaN" }
+      ],
+      "answer": "a",
+      "explanation": "用 new 呼叫 Foo 時，JS 會先建立一個全新的空物件，然後把這次呼叫的 this 綁到這個新物件上，函式執行完（如果沒有明確 return 別的物件）就直接回傳這個新物件。Foo 內部的 this.a = a 等於是在這個新物件上設定 a 屬性，new Foo(5) 回傳的物件（bar）自然就有 bar.a === 5。這是四種綁定規則裡最特別的一種：this 綁的物件不是既有的、而是這次呼叫「當場生出來」的。",
+      "verify": {
+        "checks": [
+          { "code": "function Foo(a) {\n  this.a = a;\n}\nvar bar = new Foo(5);\nconsole.log(bar.a);", "expected": "5" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-2-q3",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "顯式綁定（硬綁定）：bind() 建立的新函式，this 永遠固定，不會被之後的呼叫方式改變",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Function/bind",
+      "story": "",
+      "prompt": "把空格填起來，讓 bound 這個函式的 this 永遠固定綁在 obj1，即使之後被當成 obj2 的方法呼叫，還是印出 2",
+      "code": "function foo() {\n  console.log(this.a);\n}\nvar obj1 = { a: 2 };\nvar obj2 = { a: 3 };\nvar bound = foo.____(obj1);\nobj2.foo = bound;\nobj2.foo(); // 用 obj2.foo() 呼叫，this 還是 obj1 嗎？",
+      "options": [
+        { "id": "a", "text": "bind" },
+        { "id": "b", "text": "call" },
+        { "id": "c", "text": "apply" },
+        { "id": "d", "text": "toString" }
+      ],
+      "answer": "a",
+      "explanation": "foo.bind(obj1) 不會立刻執行 foo，而是回傳一個「this 已經永久固定綁在 obj1」的新函式。就算把這個新函式指派給 obj2.foo、再用 obj2.foo() 這種隱式綁定的語法呼叫它，內部的 this 依然是 obj1，印出 2——硬綁定的優先權比隱式綁定高，事後怎麼呼叫都改變不了。選項 b、c 的 call／apply 會立刻執行 foo 並回傳它的回傳值（undefined，因為 foo 沒有 return），obj2.foo 會被指派成 undefined，之後 obj2.foo() 會直接丟出 TypeError。",
+      "verify": {
+        "checks": [
+          { "code": "function foo() {\n  console.log(this.a);\n}\nvar obj1 = { a: 2 };\nvar obj2 = { a: 3 };\nvar bound = foo.bind(obj1);\nobj2.foo = bound;\nobj2.foo();", "expected": "2" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-2-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "優先順序的例外：new 綁定連硬綁定（bind）都能蓋過去",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Function/bind",
+      "story": "",
+      "prompt": "bar 是 foo 被 bind(obj1) 硬綁定出來的函式。這段程式會印出什麼？",
+      "code": "function foo(a) {\n  this.a = a;\n}\nvar obj1 = {};\nvar bar = foo.bind(obj1);\n\nbar(2);\nconsole.log(obj1.a);\n\nvar baz = new bar(3);\nconsole.log(obj1.a);\nconsole.log(baz.a);",
+      "options": [
+        { "id": "a", "text": "2\n2\n3" },
+        { "id": "b", "text": "2\n3\n3" },
+        { "id": "c", "text": "2\n2\nundefined" },
+        { "id": "d", "text": "TypeError：不能對硬綁定的函式使用 new" }
+      ],
+      "answer": "a",
+      "explanation": "bar(2) 是一般呼叫，硬綁定生效，this 是 obj1，obj1.a 被設成 2。但 new bar(3) 用 new 呼叫 bar 時，即使 bar 已經被硬綁定到 obj1，new 還是會建立一個全新的物件，把這次的 this 改綁到這個新物件上（baz），obj1 完全沒被動到，obj1.a 還是 2，baz.a 才是 3。這是四種綁定規則裡優先權最高的例外：new 綁定連硬綁定都能蓋過去，硬綁定沒辦法阻止 new 建立新物件這件事。",
+      "verify": {
+        "checks": [
+          { "code": "function foo(a) {\n  this.a = a;\n}\nvar obj1 = {};\nvar bar = foo.bind(obj1);\n\nbar(2);\nconsole.log(obj1.a);\n\nvar baz = new bar(3);\nconsole.log(obj1.a);\nconsole.log(baz.a);", "expected": "2\n2\n3" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-2-q5",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "箭頭函式沒有自己的 this 綁定，永遠沿用它被定義當下、外層作用域的 this",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Functions/Arrow_functions",
+      "story": "",
+      "prompt": "inner 是箭頭函式，定義在 foo 內部。這段程式會印出什麼？",
+      "code": "var obj = {\n  a: 42,\n  foo: function () {\n    var inner = () => {\n      console.log(this.a);\n    };\n    inner();\n  },\n};\nobj.foo();\nvar detached = obj.foo;\ndetached();",
+      "options": [
+        { "id": "a", "text": "42\nundefined" },
+        { "id": "b", "text": "42\n42" },
+        { "id": "c", "text": "undefined\nundefined" },
+        { "id": "d", "text": "ReferenceError：this 未定義" }
+      ],
+      "answer": "a",
+      "explanation": "箭頭函式完全沒有自己的 this，四種綁定規則對它都不適用；它的 this 永遠直接沿用「定義它當下所在的外層函式」的 this。inner 是在 foo 內部定義的，所以 inner 的 this 就是 foo 那次呼叫的 this。obj.foo() 用隱式綁定呼叫，foo 的 this 是 obj，inner 也就跟著是 obj，印出 42。detached() 是一般呼叫（默認綁定），foo 的 this 變成全域物件，inner 也跟著變成全域物件，this.a 是 undefined。箭頭函式的 this 只看「寫在哪裡」，不看「自己被怎麼呼叫」。",
+      "verify": {
+        "checks": [
+          { "code": "var obj = {\n  a: 42,\n  foo: function () {\n    var inner = () => {\n      console.log(this.a);\n    };\n    inner();\n  },\n};\nobj.foo();\nvar detached = obj.foo;\ndetached();", "expected": "42\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-2-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "四種綁定規則的優先順序：new > 顯式（硬）綁定 > 隱式綁定 > 默認綁定",
+      "docs": "",
+      "story": "",
+      "prompt": "把 Q1（默認/隱式）、Q3（硬綁定蓋過隱式）、Q4（new 蓋過硬綁定）放在一起看，判斷一次函式呼叫的 this 時，應該照什麼順序檢查？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "先看這次呼叫是不是用 new：是的話 this 綁到新建立的物件（優先權最高，Q4 證明連硬綁定都蓋不過它）；不是的話再看函式是不是被 call／apply／bind 明確指定過 this（顯式/硬綁定，Q3 證明它蓋得過後續的隱式綁定）；都不是的話看呼叫時前面有沒有物件（obj.method() 的隱式綁定）；以上都沒有，才輪到默認綁定（一般呼叫，this 綁到全域物件或 undefined）——四種規則的優先順序是 new > 顯式 > 隱式 > 默認，靠後面的規則永遠贏不過前面的" },
+        { "id": "b", "text": "四種綁定規則沒有固定順序，實際綁定結果每次執行都是隨機的" },
+        { "id": "c", "text": "默認綁定的優先權最高，只要函式本來就宣告在全域，this 就一定綁到全域物件，其他規則都蓋不過它" },
+        { "id": "d", "text": "只要函式被 bind 過一次，之後不管用 new 還是物件方法呼叫，this 都無法再改變" }
+      ],
+      "answer": "a",
+      "explanation": "四種綁定規則有明確的優先順序：new 綁定＞顯式（硬）綁定＞隱式綁定＞默認綁定。判斷一次呼叫的 this，就是照這個順序由上往下檢查，符合哪一條規則就套用哪一條，不會再往下看。Q1 示範了隱式綁定蓋過默認綁定（obj.foo() vs foo()）；Q3 示範了硬綁定蓋過隱式綁定（即使把硬綁定的函式指派成另一個物件的方法呼叫，this 還是原本綁定的物件）；Q4 示範了 new 連硬綁定都蓋得過（唯一能蓋過硬綁定的規則）。記住這個優先順序，看到任何一次函式呼叫，都能照這個檢查順序準確判斷 this 是誰。",
+      "verify": { "manual": "概念題：以 Q1/Q3/Q4 三題的具體對照，總結四種綁定規則的優先順序判斷法，屬於規則體系整理，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

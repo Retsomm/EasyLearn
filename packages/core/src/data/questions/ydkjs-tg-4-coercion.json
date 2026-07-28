@@ -1,0 +1,144 @@
+{
+  "id": "ydkjs-tg-4",
+  "title": "Ch4：強制類型轉換",
+  "questions": [
+    {
+      "id": "ydkjs-tg-4-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "顯式強制類型轉換：用 String(...)、Number(...) 明確表達「我就是要轉型」",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Number/Number",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var a = 42;\nvar b = String(a);\nvar c = '3.14';\nvar d = Number(c);\nconsole.log(b, typeof b);\nconsole.log(d, typeof d);",
+      "options": [
+        { "id": "a", "text": "42 string\n3.14 number" },
+        { "id": "b", "text": "42 number\n3.14 string" },
+        { "id": "c", "text": "'42' string\n'3.14' number" },
+        { "id": "d", "text": "NaN string\nNaN number" }
+      ],
+      "answer": "a",
+      "explanation": "String(a) 把數字 42 明確轉成字串 '42'，typeof 是 string；Number(c) 把字串 '3.14' 明確轉成數字 3.14，typeof 是 number。這種直接呼叫 String(...)／Number(...) 的寫法就是「顯式強制型別轉換」——程式碼本身就清楚寫明「這裡要做型別轉換」，讀程式碼的人一眼就能看懂意圖，不用去猜測。",
+      "verify": {
+        "checks": [
+          { "code": "var a = 42;\nvar b = String(a);\nvar c = '3.14';\nvar d = Number(c);\nconsole.log(b, typeof b);\nconsole.log(d, typeof d);", "expected": "42 string\n3.14 number" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-4-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "ToBoolean 只有固定 8 個值會轉成 false（falsy），其餘所有值——包含空陣列、空物件、字串 '0'——通通是 truthy",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Falsy",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "console.log(Boolean(''));\nconsole.log(Boolean(0));\nconsole.log(Boolean(NaN));\nconsole.log(Boolean(null));\nconsole.log(Boolean(undefined));\nconsole.log(Boolean(false));\nconsole.log(Boolean('0'));\nconsole.log(Boolean([]));\nconsole.log(Boolean({}));",
+      "options": [
+        { "id": "a", "text": "false\nfalse\nfalse\nfalse\nfalse\nfalse\ntrue\ntrue\ntrue" },
+        { "id": "b", "text": "false\nfalse\nfalse\nfalse\nfalse\nfalse\nfalse\nfalse\nfalse" },
+        { "id": "c", "text": "false\nfalse\nfalse\nfalse\nfalse\nfalse\nfalse\ntrue\ntrue" },
+        { "id": "d", "text": "true\ntrue\ntrue\ntrue\ntrue\ntrue\ntrue\ntrue\ntrue" }
+      ],
+      "answer": "a",
+      "explanation": "JS 裡會被轉成 false 的值（falsy）只有固定幾個：''（空字串）、0、NaN、null、undefined、false（加上比較少見的 0n、document.all）。除了這個清單以外，其餘所有值都是 truthy，即使看起來「空空的」也一樣——字串 '0'（裡面有字元，不是空字串）、空陣列 []、空物件 {} 全部都是 truthy。這份 falsy 清單很短，也是固定的，把它記下來，就能準確判斷任何值在布林情境下的行為，不用每次都猜。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(Boolean(''));\nconsole.log(Boolean(0));\nconsole.log(Boolean(NaN));\nconsole.log(Boolean(null));\nconsole.log(Boolean(undefined));\nconsole.log(Boolean(false));\nconsole.log(Boolean('0'));\nconsole.log(Boolean([]));\nconsole.log(Boolean({}));", "expected": "false\nfalse\nfalse\nfalse\nfalse\nfalse\ntrue\ntrue\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-4-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "+ 運算子看兩個運算元的型別決定要做字串拼接還是數字相加，由左到右依序判斷",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Addition",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "console.log(1 + '2');\nconsole.log('1' + 2);\nconsole.log(1 + 2 + '3');\nconsole.log('1' + 2 + 3);\nconsole.log(1 + true);\nconsole.log('5' - 1);\nconsole.log('5' + 1);",
+      "options": [
+        { "id": "a", "text": "12\n12\n33\n123\n2\n4\n51" },
+        { "id": "b", "text": "3\n3\n33\n123\n2\n4\n6" },
+        { "id": "c", "text": "12\n12\n123\n123\n2\n4\n51" },
+        { "id": "d", "text": "12\n12\n33\n123\nNaN\n4\n51" }
+      ],
+      "answer": "a",
+      "explanation": "只要 + 運算子任一邊是字串，就會把另一邊也轉成字串做拼接：1 + '2' 和 '1' + 2 都印出 '12'。表達式由左到右計算：1 + 2 + '3' 先算 1+2=3（兩邊都是數字，正常相加），再跟 '3' 拼接成 '33'；'1' + 2 + 3 第一步 '1'+2 就先變成字串 '12'，之後 '12'+3 也是字串拼接，變成 '123'。1 + true 裡 true 會被轉成數字 1，1+1=2。減法（-）沒有「字串拼接」這個選項，只會做數字運算，'5' - 1 把 '5' 轉成數字 5，5-1=4。但 '5' + 1 因為是 +，還是字串拼接優先，印出 '51'。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(1 + '2');\nconsole.log('1' + 2);\nconsole.log(1 + 2 + '3');\nconsole.log('1' + 2 + 3);\nconsole.log(1 + true);\nconsole.log('5' - 1);\nconsole.log('5' + 1);", "expected": "12\n12\n33\n123\n2\n4\n51" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-4-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "|| 和 && 回傳的是「其中一個運算元本身」，不是單純的 true／false",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Logical_OR",
+      "story": "",
+      "prompt": "這段程式會印出什麼？",
+      "code": "var a = null;\nvar b = 'default';\nconsole.log(a || b);\nconsole.log(a && b);\nconsole.log(0 || 'x');\nconsole.log('hi' && 'bye');",
+      "options": [
+        { "id": "a", "text": "default\nnull\nx\nbye" },
+        { "id": "b", "text": "true\nfalse\ntrue\ntrue" },
+        { "id": "c", "text": "default\nnull\ntrue\nbye" },
+        { "id": "d", "text": "null\ndefault\nx\nhi" }
+      ],
+      "answer": "a",
+      "explanation": "|| 會判斷左邊是不是 truthy：是的話直接回傳左邊，不是的話回傳右邊。a 是 null（falsy），a || b 回傳 b，也就是 'default'。&& 則相反：左邊是 truthy 才會接著回傳右邊，左邊 falsy 就直接回傳左邊本身——a && b 裡 a 是 falsy，直接回傳 a（null），連 b 都不會被求值。0 || 'x'，0 是 falsy，回傳 'x'。'hi' && 'bye'，'hi' 是 truthy，回傳右邊的 'bye'。這正是 || 常被拿來設定「預設值」、&& 常被拿來做「有值才繼續」判斷的原因——回傳的是實際值，不是單純的布林結果。",
+      "verify": {
+        "checks": [
+          { "code": "var a = null;\nvar b = 'default';\nconsole.log(a || b);\nconsole.log(a && b);\nconsole.log(0 || 'x');\nconsole.log('hi' && 'bye');", "expected": "default\nnull\nx\nbye" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-4-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "== 在型別不同時會做隱式轉換再比較，容易出現直覺以為不相等卻判定相等的情況；=== 完全不轉換，型別不同直接判定不相等",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Strict_equality",
+      "story": "",
+      "prompt": "a 是字串 '0'，b 是布林值 false，用 == 比較會出乎意料地判定相等。把空格填起來，讓第二行改用完全不做型別轉換的比較方式，印出 true 和 false",
+      "code": "var a = '0';\nvar b = false;\nconsole.log(a == b);\nconsole.log(a ____ b);",
+      "options": [
+        { "id": "a", "text": "===" },
+        { "id": "b", "text": "==" },
+        { "id": "c", "text": "instanceof" },
+        { "id": "d", "text": "in" }
+      ],
+      "answer": "a",
+      "explanation": "a == b 觸發隱式轉換：false 先被轉成數字 0，字串 '0' 也被轉成數字 0，0 == 0 判定相等，印出 true——即使直覺上「有內容的字串」和「false」感覺應該是不同的東西。改成 a === b（嚴格相等），完全不做任何型別轉換，一看到 a 是 string、b 是 boolean，型別就已經不一樣，直接判定不相等，印出 false。這正是很多團隊規範「優先用 === 而不是 ==」的實務理由：=== 的行為完全可預期，不用去記一長串隱式轉換規則。",
+      "verify": {
+        "checks": [
+          { "code": "var a = '0';\nvar b = false;\nconsole.log(a == b);\nconsole.log(a === b);", "expected": "true\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tg-4-q6",
+      "type": "predict-output",
+      "difficulty": 3,
+      "topic": "== 的行為看似詭異，其實完全是照著固定規則一步步推導出來的，不是隨機或沒道理的",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Equality",
+      "story": "",
+      "prompt": "這是 JS 裡經常被拿來吐槽的經典例子。這段程式會印出什麼？",
+      "code": "console.log(![]);\nconsole.log([] == ![]);",
+      "options": [
+        { "id": "a", "text": "false\ntrue" },
+        { "id": "b", "text": "true\ntrue" },
+        { "id": "c", "text": "false\nfalse" },
+        { "id": "d", "text": "true\nfalse" }
+      ],
+      "answer": "a",
+      "explanation": "拆開一步步看：[] 本身是 truthy（Q2 已經證明空陣列不在 falsy 清單裡），所以 ![]（取反）是 false，這解釋了第一行。第二行 [] == ![] 其實就是 [] == false：== 比較時，布林值 false 會先被轉成數字 0；接著陣列 [] 要跟數字比較，也會被轉成原始值，[] 轉字串是空字串 ''，''再轉數字是 0；最後變成 0 == 0，判定相等，印出 true。整段推導完全照著 == 的隱式轉換規則走，一步都不隨機——這正是本章的核心論點：強制型別轉換的規則雖然多、剛開始不直覺，但只要一步步拆解，永遠是可以照規則推導出結果的，不是玄學。",
+      "verify": {
+        "checks": [
+          { "code": "console.log(![]);\nconsole.log([] == ![]);", "expected": "false\ntrue" }
+        ]
+      }
+    }
+  ]
+}

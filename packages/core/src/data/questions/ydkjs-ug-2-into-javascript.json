@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-ug-2",
+  "title": "Ch2：深入JavaScript",
+  "questions": [
+    {
+      "id": "ydkjs-ug-2-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "字串內建了很多方法可以直接呼叫，像 trim() 去除頭尾空白、toUpperCase() 轉大寫，而且這些方法都不會改動原本的字串本身",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/String/trim",
+      "story": "",
+      "prompt": "這段程式用 JSON.stringify 把字串印出來（方便看清楚頭尾空白有沒有被保留），會印出什麼？",
+      "code": "var a = '  Hello World  ';\nconsole.log(JSON.stringify(a.trim()));\nconsole.log(a.trim().length);\nconsole.log(JSON.stringify(a.toUpperCase()));",
+      "options": [
+        { "id": "a", "text": "\"Hello World\"\n11\n\"  HELLO WORLD  \"" },
+        { "id": "b", "text": "\"Hello World\"\n15\n\"  HELLO WORLD  \"" },
+        { "id": "c", "text": "\"  Hello World  \"\n11\n\"HELLO WORLD\"" },
+        { "id": "d", "text": "\"Hello World\"\n11\n\"HELLO WORLD\"" }
+      ],
+      "answer": "a",
+      "explanation": "a.trim() 回傳一個去除頭尾空白的全新字串 'Hello World'，長度是 11。但 trim() 不會改動 a 這個變數本身指向的原始字串（回顧 Types & Grammar 那本書：字串是不可變的），所以最後一行 a.toUpperCase() 用的還是原本、包含頭尾空白的 a，只是把裡面的英文字母轉成大寫，頭尾的空白依然保留——用 JSON.stringify 印出來，可以清楚看到頭尾的兩個空白字元都還在引號裡面。",
+      "verify": {
+        "checks": [
+          { "code": "var a = '  Hello World  ';\nconsole.log(JSON.stringify(a.trim()));\nconsole.log(a.trim().length);\nconsole.log(JSON.stringify(a.toUpperCase()));", "expected": "\"Hello World\"\n11\n\"  HELLO WORLD  \"" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ug-2-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "== 允許型別不同時互相轉換再比較，=== 完全不轉換、型別不同直接判定不相等（這裡先預告，完整規則留給 Types & Grammar）",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Equality",
+      "story": "",
+      "prompt": "a 是字串 '42'，b 是數字 42。這段程式會印出什麼？",
+      "code": "var a = '42';\nvar b = 42;\nconsole.log(a == b);\nconsole.log(a === b);",
+      "options": [
+        { "id": "a", "text": "true\nfalse" },
+        { "id": "b", "text": "false\nfalse" },
+        { "id": "c", "text": "true\ntrue" },
+        { "id": "d", "text": "false\ntrue" }
+      ],
+      "answer": "a",
+      "explanation": "a == b 型別不同（字串 vs 數字），== 會先做型別轉換再比較，'42' 轉成數字後跟 42 相等，所以是 true。a === b 完全不做任何轉換，一看到型別不一樣（string vs number）就直接判定不相等，印出 false。這裡先讓讀者知道「有這兩種比較方式、結果可能不一樣」，背後完整的轉換規則留到 Types & Grammar 那本書才會整章拆解。",
+      "verify": {
+        "checks": [
+          { "code": "var a = '42';\nvar b = 42;\nconsole.log(a == b);\nconsole.log(a === b);", "expected": "true\nfalse" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ug-2-q3",
+      "type": "find-bug",
+      "difficulty": 2,
+      "topic": "嚴格模式（'use strict'）會把「忘記宣告就賦值」這種手誤，直接變成一個明確的錯誤，而不是悄悄建立一個全域變數",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Strict_mode",
+      "story": "",
+      "prompt": "foo 內部忘記用 var／let 宣告 x，函式又開了嚴格模式。這段程式碼執行會發生什麼事？",
+      "code": "function foo() {\n  'use strict';\n  x = 10; // 忘記宣告，嚴格模式下會怎樣？\n  console.log(x);\n}\ntry {\n  foo();\n} catch (e) {\n  console.log('caught:', e.constructor.name);\n}",
+      "options": [
+        { "id": "a", "text": "caught: ReferenceError——嚴格模式關掉了非嚴格模式下「對未宣告的識別字賦值會自動建立全域變數」這個補救行為，找不到宣告的 x 直接丟出錯誤" },
+        { "id": "b", "text": "印出 10，嚴格模式不影響變數宣告，行為跟非嚴格模式一樣" },
+        { "id": "c", "text": "印出 undefined" },
+        { "id": "d", "text": "SyntaxError：'use strict' 語法錯誤" }
+      ],
+      "answer": "a",
+      "explanation": "這裡先預告了 Scope & Closures 那本書會深入教的內容：非嚴格模式下，對一個沒宣告過的識別字賦值（像 x = 10），會自動在全域建立一個新變數當作補救；嚴格模式關掉了這個補救行為，一樣找不到宣告的 x，直接丟出 ReferenceError。嚴格模式很適合拿來提早抓出這種忘記宣告變數的手誤，不會讓錯誤悄悄變成一個意外冒出來的全域變數。",
+      "verify": {
+        "checks": [
+          { "code": "function foo() {\n  'use strict';\n  x = 10;\n  console.log(x);\n}\ntry {\n  foo();\n} catch (e) {\n  console.log('caught:', e.constructor.name);\n}", "expected": "caught: ReferenceError" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ug-2-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "IIFE（立即調用函式表達式）建立一個獨立的作用域，裡面宣告的變數不會外洩到全域",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/IIFE",
+      "story": "",
+      "prompt": "name 是宣告在 IIFE 內部的。這段程式會印出什麼？",
+      "code": "var greeting = (function () {\n  var name = 'Kyle';\n  return 'Hello, ' + name;\n})();\nconsole.log(greeting);\nconsole.log(typeof name);",
+      "options": [
+        { "id": "a", "text": "Hello, Kyle\nundefined" },
+        { "id": "b", "text": "Hello, Kyle\nstring" },
+        { "id": "c", "text": "Hello, undefined\nundefined" },
+        { "id": "d", "text": "ReferenceError：name 未定義" }
+      ],
+      "answer": "a",
+      "explanation": "(function () {...})() 這種寫法會立刻定義一個函式表達式、緊接著馬上呼叫它，這就是 IIFE。函式主體內部宣告的 name 只存在於這個函式自己的作用域裡，函式執行完（回傳字串給 greeting）之後，name 就跟著消失了，外部完全存取不到，typeof name 印出 undefined。這種「用函式包一層、避免變數外洩到全域」的手法，在 Scope & Closures 那本書會有完整的說明。",
+      "verify": {
+        "checks": [
+          { "code": "var greeting = (function () {\n  var name = 'Kyle';\n  return 'Hello, ' + name;\n})();\nconsole.log(greeting);\nconsole.log(typeof name);", "expected": "Hello, Kyle\nundefined" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ug-2-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "polyfill：先檢查引擎有沒有內建某個功能，沒有的話才手動補一份等價實作，避免不小心覆蓋掉引擎原生、可能更快的版本",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Glossary/Polyfill",
+      "story": "",
+      "prompt": "把空格填起來，讓這段 polyfill 只在 Array.prototype 還沒有 myMap 這個方法時，才動手補上自己的實作，印出 [ 2, 4, 6 ]",
+      "code": "if (____ Array.prototype.myMap) {\n  Array.prototype.myMap = function (fn) {\n    var result = [];\n    for (var i = 0; i < this.length; i++) {\n      result.push(fn(this[i]));\n    }\n    return result;\n  };\n}\nconsole.log([1, 2, 3].myMap(function (x) {\n  return x * 2;\n}));",
+      "options": [
+        { "id": "a", "text": "!" },
+        { "id": "b", "text": "typeof" },
+        { "id": "c", "text": "delete" },
+        { "id": "d", "text": "" }
+      ],
+      "answer": "a",
+      "explanation": "if (!Array.prototype.myMap) 的意思是「只有在 Array.prototype 上還沒有 myMap 這個方法時才成立」——myMap 目前確實不存在（undefined 是 falsy，加上 ! 之後條件成立），所以會執行區塊裡的程式碼，手動補上自己的實作，之後 [1, 2, 3].myMap(...) 就能正常呼叫，印出 [2, 4, 6]。如果空格留空（選項 d），條件變成 if (Array.prototype.myMap)，這時候 myMap 還不存在，條件不成立，polyfill 完全不會被安裝，最後一行呼叫 myMap 會直接丟出 TypeError。這種「先檢查有沒有，沒有才補」的寫法，可以避免不小心蓋掉引擎原生（通常效能更好）的實作。",
+      "verify": {
+        "checks": [
+          { "code": "if (!Array.prototype.myMap) {\n  Array.prototype.myMap = function (fn) {\n    var result = [];\n    for (var i = 0; i < this.length; i++) {\n      result.push(fn(this[i]));\n    }\n    return result;\n  };\n}\nconsole.log([1, 2, 3].myMap(function (x) {\n  return x * 2;\n}));", "expected": "[ 2, 4, 6 ]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ug-2-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "polyfill 只能補「執行期缺少的內建功能」，補不了「語法本身」；語法層級的落差要靠 transpiling（轉譯）解決",
+      "docs": "",
+      "story": "",
+      "prompt": "Q5 示範了 polyfill：用舊引擎聽得懂的語法，手動補一個缺少的內建方法。如果今天缺的不是「內建方法」，而是全新的語法本身（例如箭頭函式 =>、class 關鍵字），還能用同樣的 polyfill 手法解決嗎？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不行。polyfill 補的是「執行期缺少的內建功能」，用的是舊引擎本身就聽得懂的語法去手動實作出等價行為（像 Q5 用一般函式手動實作 myMap）；但如果缺的是「語法本身」，舊引擎的剖析器連讀懂這段程式碼都做不到，會直接在剖析階段丟出 SyntaxError，根本沒有機會執行到任何補救邏輯——這種情況沒辦法用 polyfill 解決，只能靠 transpiling：在程式碼真正送進舊引擎執行之前，先用工具把新語法轉寫成舊引擎讀得懂的等價寫法" },
+        { "id": "b", "text": "可以，polyfill 一樣能補語法，只要把新語法的意思寫成註解放在程式碼裡，引擎就會自動看懂" },
+        { "id": "c", "text": "不需要處理，因為新語法一推出，所有舊引擎都會自動更新支援" },
+        { "id": "d", "text": "可以，只要在程式碼最上面加一行 'use new syntax' 就能讓舊引擎讀懂任何新語法" }
+      ],
+      "answer": "a",
+      "explanation": "polyfill 和 transpiling 解決的是兩個不同層次的落差：polyfill 針對的是「引擎能讀懂程式碼，只是少了某個內建方法／API」，用舊語法手動補上等價實作就能解決（Q5）。但如果缺的是「語法本身」不存在，舊引擎的剖析器連解析這段程式碼的第一步都做不到，會直接丟出 SyntaxError，完全沒有機會執行到任何 JS 邏輯去做補救——這種情況只能靠 transpiling，在程式碼送進舊引擎之前，先用建置工具把新語法轉寫成舊語法。分清楚「缺方法」該用 polyfill、「缺語法」該用 transpiling，是很多新手容易搞混的地方。",
+      "verify": { "manual": "概念題：以 Q5 的 polyfill 範例對照「語法本身缺失」的情境，說明 polyfill 與 transpiling 各自解決的問題層次不同，屬於建置工具鏈層面的說明，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

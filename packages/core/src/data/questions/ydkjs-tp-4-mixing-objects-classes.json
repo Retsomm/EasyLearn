@@ -1,0 +1,140 @@
+{
+  "id": "ydkjs-tp-4",
+  "title": "Ch4：混合對象「類」",
+  "questions": [
+    {
+      "id": "ydkjs-tp-4-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "用 new 呼叫建構函式，每一個實例的屬性都是各自獨立的一份，互不影響",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/new",
+      "story": "",
+      "prompt": "a 和 b 都是用 new Foo(...) 建出來的。這段程式會印出什麼？",
+      "code": "function Foo(name) {\n  this.name = name;\n}\nvar a = new Foo('a');\nvar b = new Foo('b');\na.name = 'changed';\nconsole.log(a.name, b.name);",
+      "options": [
+        { "id": "a", "text": "changed b" },
+        { "id": "b", "text": "changed changed" },
+        { "id": "c", "text": "a b" },
+        { "id": "d", "text": "changed undefined" }
+      ],
+      "answer": "a",
+      "explanation": "每次 new Foo(...) 都會建立一個全新的物件，建構函式裡 this.name = name 是把值寫進「這次新建立的物件」自己身上，a 和 b 是兩個完全獨立的物件，各自有自己的 name。修改 a.name 完全不會影響 b.name，這就是「類別模擬」最基本的效果：每個實例各自擁有自己的一份資料。",
+      "verify": {
+        "checks": [
+          { "code": "function Foo(name) {\n  this.name = name;\n}\nvar a = new Foo('a');\nvar b = new Foo('b');\na.name = 'changed';\nconsole.log(a.name, b.name);", "expected": "changed b" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-4-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "放在 Foo.prototype 上的方法，所有實例共用同一份，不會像實例屬性那樣各自複製一份",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Function/prototype",
+      "story": "",
+      "prompt": "myName 方法定義在 Foo.prototype 上，不是寫在建構函式裡。這段程式會印出什麼？",
+      "code": "function Foo(name) {\n  this.name = name;\n}\nFoo.prototype.myName = function () {\n  return this.name;\n};\nvar a = new Foo('a');\nvar b = new Foo('b');\nconsole.log(a.myName());\nconsole.log(b.myName());\nconsole.log(a.myName === b.myName);",
+      "options": [
+        { "id": "a", "text": "a\nb\ntrue" },
+        { "id": "b", "text": "a\nb\nfalse" },
+        { "id": "c", "text": "undefined\nundefined\ntrue" },
+        { "id": "d", "text": "a\na\ntrue" }
+      ],
+      "answer": "a",
+      "explanation": "跟 Q1 的 name（實例各自獨立一份）不同，myName 只定義了一次、掛在 Foo.prototype 上，a 和 b 兩個實例其實是透過原型鏈共用同一個函式——a.myName === b.myName 是 true，證明兩者根本是同一個函式參照，沒有被複製成兩份。呼叫時各自的 this 依然依照呼叫方式決定（a.myName() 的 this 是 a），所以回傳結果不同，但背後執行的是同一份函式邏輯。",
+      "verify": {
+        "checks": [
+          { "code": "function Foo(name) {\n  this.name = name;\n}\nFoo.prototype.myName = function () {\n  return this.name;\n};\nvar a = new Foo('a');\nvar b = new Foo('b');\nconsole.log(a.myName());\nconsole.log(b.myName());\nconsole.log(a.myName === b.myName);", "expected": "a\nb\ntrue" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-4-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "顯式混入（explicit mixin）：把來源物件當下的屬性值複製一份過去，之後來源物件再改也不會回頭影響已經複製出去的物件",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/for...in",
+      "story": "",
+      "prompt": "Car 是用 mixin(Vehicle, {...}) 混入出來的。這段程式會印出什麼？",
+      "code": "function mixin(sourceObj, targetObj) {\n  for (var key in sourceObj) {\n    if (!(key in targetObj)) {\n      targetObj[key] = sourceObj[key];\n    }\n  }\n  return targetObj;\n}\nvar Vehicle = {\n  engines: 1,\n  ignition: function () {\n    console.log('引擎啟動中');\n  },\n};\nvar Car = mixin(Vehicle, {\n  wheels: 4,\n});\nCar.ignition();\nconsole.log(Car.engines, Car.wheels);\nVehicle.engines = 2; // 混入之後才修改來源物件\nconsole.log(Car.engines);",
+      "options": [
+        { "id": "a", "text": "引擎啟動中\n1 4\n1" },
+        { "id": "b", "text": "引擎啟動中\n1 4\n2" },
+        { "id": "c", "text": "TypeError：Car.ignition 不是函式" },
+        { "id": "d", "text": "引擎啟動中\n2 4\n2" }
+      ],
+      "answer": "a",
+      "explanation": "mixin 函式做的事，是在呼叫的當下把 Vehicle 目前的每個屬性值逐一複製一份到 Car 身上——engines 是數字，複製過去的是「數字 1 這個值本身」，不是跟 Vehicle 之間的某種活連結。呼叫完 mixin 之後，Car.engines 和 Vehicle.engines 已經是兩個完全獨立的屬性，之後修改 Vehicle.engines = 2，完全不會反映到 Car.engines 上，還是原本複製過去的 1。這證明 explicit mixin 只是「複製一次」，不是「持續同步」。",
+      "verify": {
+        "checks": [
+          { "code": "function mixin(sourceObj, targetObj) {\n  for (var key in sourceObj) {\n    if (!(key in targetObj)) {\n      targetObj[key] = sourceObj[key];\n    }\n  }\n  return targetObj;\n}\nvar Vehicle = {\n  engines: 1,\n  ignition: function () {\n    console.log('引擎啟動中');\n  },\n};\nvar Car = mixin(Vehicle, {\n  wheels: 4,\n});\nCar.ignition();\nconsole.log(Car.engines, Car.wheels);\nVehicle.engines = 2;\nconsole.log(Car.engines);", "expected": "引擎啟動中\n1 4\n1" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-4-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "隱式混入（implicit mixin）：用 call／apply 在某次方法呼叫時臨時借用另一個物件的邏輯，把 this 換成自己",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Function/call",
+      "story": "",
+      "prompt": "Car.drive 和 Car.ignition 都是用 Vehicle 對應方法的 .call(this) 借用出來的，Car 跟 Vehicle 之間沒有任何正式的繼承關係。這段程式會印出什麼？",
+      "code": "var Vehicle = {\n  engines: 1,\n  ignition: function () {\n    console.log('Turning on my engine.');\n  },\n  drive: function () {\n    this.ignition();\n    console.log('Steering and moving forward!');\n  },\n};\nvar Car = {\n  wheels: 4,\n  ignition: function () {\n    Vehicle.ignition.call(this);\n  },\n  drive: function () {\n    Vehicle.drive.call(this);\n    console.log('Rolling on all ' + this.wheels + ' wheels!');\n  },\n};\nCar.drive();",
+      "options": [
+        { "id": "a", "text": "Turning on my engine.\nSteering and moving forward!\nRolling on all 4 wheels!" },
+        { "id": "b", "text": "TypeError：this.ignition is not a function" },
+        { "id": "c", "text": "Turning on my engine.\nSteering and moving forward!\nRolling on all undefined wheels!" },
+        { "id": "d", "text": "Rolling on all 4 wheels!\nTurning on my engine.\nSteering and moving forward!" }
+      ],
+      "answer": "a",
+      "explanation": "Car.drive() 呼叫時 this 是 Car，內部用 Vehicle.drive.call(this) 借用 Vehicle.drive 的邏輯來執行，但把 this 換成 Car。Vehicle.drive 內部呼叫 this.ignition()，這時 this 是 Car，剛好 Car 自己也用同樣手法（implicit mixin）借用了 Vehicle.ignition 的邏輯，所以能正常執行，印出 Turning on my engine.，接著印出 Steering and moving forward!。回到 Car.drive 自己的邏輯，繼續印出 Rolling on all 4 wheels!。整個過程 Car 和 Vehicle 之間完全沒有正式的原型鏈繼承關係，全部靠 call 在每次呼叫時「借用」對方的邏輯。",
+      "verify": {
+        "checks": [
+          { "code": "var Vehicle = {\n  engines: 1,\n  ignition: function () {\n    console.log('Turning on my engine.');\n  },\n  drive: function () {\n    this.ignition();\n    console.log('Steering and moving forward!');\n  },\n};\nvar Car = {\n  wheels: 4,\n  ignition: function () {\n    Vehicle.ignition.call(this);\n  },\n  drive: function () {\n    Vehicle.drive.call(this);\n    console.log('Rolling on all ' + this.wheels + ' wheels!');\n  },\n};\nCar.drive();", "expected": "Turning on my engine.\nSteering and moving forward!\nRolling on all 4 wheels!" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-4-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "mixin 函式的判斷式：只在目標物件「還沒有」這個屬性時才複製過去，目標已經有的屬性不會被來源覆蓋",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/for...in",
+      "story": "",
+      "prompt": "Car 自己已經有 engines: 4 這個屬性。把空格填起來，讓 mixin 不會拿 Vehicle 的 engines 覆蓋掉 Car 已經有的值，印出 4",
+      "code": "function mixin(sourceObj, targetObj) {\n  for (var key in sourceObj) {\n    if (____(key in targetObj)) {\n      targetObj[key] = sourceObj[key];\n    }\n  }\n  return targetObj;\n}\nvar Vehicle = { engines: 1 };\nvar Car = mixin(Vehicle, { engines: 4 });\nconsole.log(Car.engines);",
+      "options": [
+        { "id": "a", "text": "!" },
+        { "id": "b", "text": "" },
+        { "id": "c", "text": "typeof" },
+        { "id": "d", "text": "void" }
+      ],
+      "answer": "a",
+      "explanation": "加上 ! 讓條件變成「只有當 targetObj 還沒有這個 key 時才複製」——Car 建立時就已經自帶 engines: 4，'engines' in targetObj 是 true，加上 ! 之後條件是 false，所以不會執行複製，Car.engines 維持自己原本的 4，不會被 Vehicle 的 1 蓋掉。如果空格留空（選項 b），條件會變成「只有當 targetObj 已經有這個 key 時才複製」，邏輯完全顛倒，反而會用 Vehicle 的 1 覆蓋掉 Car 原本的 4。",
+      "verify": {
+        "checks": [
+          { "code": "function mixin(sourceObj, targetObj) {\n  for (var key in sourceObj) {\n    if (!(key in targetObj)) {\n      targetObj[key] = sourceObj[key];\n    }\n  }\n  return targetObj;\n}\nvar Vehicle = { engines: 1 };\nvar Car = mixin(Vehicle, { engines: 4 });\nconsole.log(Car.engines);", "expected": "4" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-tp-4-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "mixin 骨子裡都是「複製或借用」，不是像古典類別那樣從一份藍圖真正產生新型別的實例",
+      "docs": "",
+      "story": "",
+      "prompt": "把 Q3（explicit mixin）跟 Q4（implicit mixin）放在一起看，這兩種手法跟古典物件導向語言裡「類別繼承一份藍圖、產生實例」比起來，實際上在做的是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "兩種 mixin 骨子裡做的都是「把某個物件的屬性或方法複製／借用到另一個物件身上」——explicit mixin（Q3）是在建立物件的當下，把來源物件目前的屬性值逐一複製一份到目標物件，複製之後兩者是各自獨立的普通屬性；implicit mixin（Q4）則是在某次方法呼叫的當下，用 call 暫時借用另一個物件的方法邏輯、把 this 換成自己。這兩者都只是「在物件之間搬東西」，不是像古典類別那樣「從一份藍圖真正產生一個新型別的實例」——JavaScript 從頭到尾都只有物件，沒有真正的類別" },
+        { "id": "b", "text": "explicit mixin 和 implicit mixin 都會讓兩個物件永久共用同一份記憶體，之後改任何一邊都會同步反映到另一邊" },
+        { "id": "c", "text": "只有 explicit mixin 才算是模擬繼承，implicit mixin 只是巧合，不能算是任何一種模擬繼承的手法" },
+        { "id": "d", "text": "這兩種 mixin 手法能讓 JavaScript 完整支援跟 Java／C++ 一樣的多重繼承，可以無限疊加使用" }
+      ],
+      "answer": "a",
+      "explanation": "Q3 已經證明 explicit mixin 只是「複製一次」，複製完之後來源物件再改也不會回頭影響（不是活連結）；Q4 則是每次呼叫時才臨時借用一次邏輯，呼叫結束後這次借用就結束了。兩者都只是在物件之間搬動或借用資料／行為，跟古典物件導向語言裡「類別是一份藍圖，new 出來的每個實例都是這份藍圖真正產生出的新型別物件」是完全不同層次的東西。JavaScript 沒有真正的類別，這一整章的「混入」手法，本質上都是在用物件跟函式湊出「看起來像類別」的效果。",
+      "verify": { "manual": "概念題：以 Q3/Q4 兩種 mixin 手法的具體機制對照古典類別繼承，總結 JS 沒有真正類別、只有物件複製/借用的本質，屬於語言模型層面的說明，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

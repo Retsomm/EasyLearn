@@ -1,0 +1,132 @@
+{
+  "id": "ydkjs-ap-5",
+  "title": "Ch5：程序性能",
+  "questions": [
+    {
+      "id": "ydkjs-ap-5-q1",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "Web Worker 在完全獨立的執行緒跑，跟主執行緒之間沒有任何共用的變數或記憶體",
+      "docs": "",
+      "story": "",
+      "prompt": "假設主執行緒有一個變數 var total = 0，接著啟動一個 Web Worker，worker 內部的程式碼寫了 total = total + 1。worker 裡的這行程式碼，能不能真的讀到、修改到主執行緒那個 total 變數？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "不能。Web Worker 是在完全獨立的執行緒、獨立的全域作用域裡執行，跟主執行緒之間預設沒有共用任何一般變數或記憶體——worker 裡的 total 只會被當成一個全新、未宣告的識別字（或觸發它自己作用域內的錯誤），完全碰不到主執行緒那個 total，兩邊是徹底隔離的兩個執行環境（除非額外使用 SharedArrayBuffer 這種刻意設計的共享記憶體機制）" },
+        { "id": "b", "text": "可以，Web Worker 跟主執行緒共用同一份全域變數，跟一般函式呼叫共用外層作用域的變數是同樣的道理" },
+        { "id": "c", "text": "可以，但只有數字型別的變數才能共用，物件和陣列不行" },
+        { "id": "d", "text": "不能，但原因是瀏覽器的安全性限制，如果關掉安全性設定就可以共用" }
+      ],
+      "answer": "a",
+      "explanation": "Web Worker 存在的目的就是提供「真正的平行執行」，做法是讓它在一個完全獨立的執行緒、獨立的全域作用域裡跑，這個獨立性是設計上刻意做到的隔離，不是可以關掉的安全性限制。worker 裡用一般方式宣告的變數（像這裡的 total）看不到主執行緒宣告的任何變數，主執行緒也看不到 worker 裡宣告的變數，兩邊是徹底獨立的兩個執行環境，這也是為什麼 Ch1、Ch3 教過的那些「JS 是單執行緒、不會有競態條件」的保證，在每一個獨立的執行緒內部依然成立。（進階補充：SharedArrayBuffer 搭配 Atomics 是刻意設計的例外，能讓主執行緒和 worker 真正共用同一塊記憶體，但那是開發者主動選用的特殊機制，不是一般變數預設就有的行為。）",
+      "verify": { "manual": "概念題：以主執行緒與 Web Worker 之間變數完全隔離的具體情境取代抽象定義，Web Worker 是瀏覽器 API，無法用 node -e 直接執行驗證。" }
+    },
+    {
+      "id": "ydkjs-ap-5-q2",
+      "type": "concept",
+      "difficulty": 1,
+      "topic": "主執行緒和 Web Worker 之間，只能靠 postMessage／message 事件傳遞訊息溝通，沒有其他管道",
+      "docs": "",
+      "story": "",
+      "prompt": "Q1 已經確定主執行緒和 Web Worker 沒有共用變數。那如果主執行緒真的需要把一份資料（例如一個很大的陣列）交給 worker 去處理，唯一的辦法是什麼？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "呼叫 worker.postMessage(data) 把資料傳過去，worker 那邊監聽 message 事件接收；worker 處理完想把結果傳回來，一樣要呼叫 postMessage，主執行緒監聽自己的 message 事件接收——這是主執行緒和 worker 之間標準的溝通管道，而且整個過程都是非同步、事件驅動的，不是像一般函式呼叫那樣可以直接拿到回傳值" },
+        { "id": "b", "text": "直接把資料指派給一個全域變數，worker 就能自動讀到最新的值" },
+        { "id": "c", "text": "呼叫 worker.setData(data) 這個內建方法" },
+        { "id": "d", "text": "用 return 陳述式把資料從主執行緒回傳給 worker" }
+      ],
+      "answer": "a",
+      "explanation": "postMessage／message 事件是主執行緒和 Web Worker 之間標準的溝通橋樑：不管是主執行緒傳資料給 worker、還是 worker 把處理完的結果傳回主執行緒，一般情況下都是透過這一套非同步、事件驅動的訊息機制，沒有辦法像一般函式呼叫那樣直接拿到回傳值，也沒有辦法直接讀寫對方的一般變數（Q1）。（Q1 提過的 SharedArrayBuffer + Atomics 是另一條刻意設計的低階管道，但那是額外選用的特殊機制，postMessage 仍然是預設、最常用的溝通方式。）這也直接影響了「傳過去的資料到底是不是同一份」這個問題，下一題會具體示範。",
+      "verify": { "manual": "概念題：以主執行緒/worker 之間 postMessage 溝通的具體情境取代抽象定義，Web Worker 是瀏覽器 API，無法用 node -e 直接執行驗證。" }
+    },
+    {
+      "id": "ydkjs-ap-5-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "postMessage 傳過去的資料是「結構化複製」（等同深拷貝），worker 收到的是一份獨立的副本，不是跟主執行緒共用的參照",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/Web_Workers_API/Structured_clone_algorithm",
+      "story": "",
+      "prompt": "simulateWorkerMessage 用 JSON 序列化再反序列化，模擬 postMessage 的「結構化複製」效果（實際的結構化複製功能更完整，這裡簡化示範核心概念）。這段程式會印出什麼？",
+      "code": "function simulateWorkerMessage(data) {\n  // 結構化複製概念上等同於「深拷貝」，這裡用 JSON 模擬效果\n  return JSON.parse(JSON.stringify(data));\n}\nvar mainData = { count: 1, nested: { flag: true } };\nvar received = simulateWorkerMessage(mainData);\nreceived.nested.flag = false; // 修改「worker 收到的副本」\nconsole.log(mainData.nested.flag); // 主執行緒的原始資料還是同一個嗎？",
+      "options": [
+        { "id": "a", "text": "true" },
+        { "id": "b", "text": "false" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "TypeError" }
+      ],
+      "answer": "a",
+      "explanation": "跟 Ch2（Types & Grammar 那本書）Q4 示範的「同一個執行緒內傳物件是複製參照、修改會互相影響」完全不同：postMessage 傳給 worker 的資料，預設用的是「結構化複製」，等同於做一次深拷貝，worker 那邊收到的是一份完全獨立、互不相干的副本。這裡模擬的 received 修改了自己的 nested.flag，完全不會反映回 mainData，mainData.nested.flag 還是原本的 true。這正是「沒有共用記憶體」的具體代價：想要跨執行緒溝通，一般只能靠複製資料，不能靠共用參照，資料量大的時候這個複製動作本身也會有效能成本。（補充：postMessage 對 ArrayBuffer、MessagePort、ImageBitmap 這類物件還支援「可轉移物件」，用第二個參數指定要轉移的清單時，是直接把該物件的所有權整個移交給 worker、原執行緒那份會變成不可用，而不是複製一份，藉此避開大型資料複製的效能成本，這跟預設的結構化複製是不同的機制。）",
+      "verify": {
+        "checks": [
+          { "code": "function simulateWorkerMessage(data) {\n  return JSON.parse(JSON.stringify(data));\n}\nvar mainData = { count: 1, nested: { flag: true } };\nvar received = simulateWorkerMessage(mainData);\nreceived.nested.flag = false;\nconsole.log(mainData.nested.flag);", "expected": "true" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-5-q4",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "asm.js 是 JS 的一個嚴格子集，'use asm' 只是給支援的引擎的效能提示，不支援的引擎會直接忽略它、照普通 JS 執行",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/use_strict",
+      "story": "",
+      "prompt": "這段程式（風格上刻意模仿 asm.js 常見寫法：用 | 0 把數字限制成 32 位元整數）在一般的 JS 引擎（不支援 asm.js 特殊優化）裡執行，會印出什麼？",
+      "code": "function asmModule() {\n  'use asm'; // 給支援 asm.js 優化的引擎看的提示\n  function add(a, b) {\n    a = a | 0;\n    b = b | 0;\n    return (a + b) | 0;\n  }\n  return add;\n}\nvar add = asmModule();\nconsole.log(add(2, 3));",
+      "options": [
+        { "id": "a", "text": "5" },
+        { "id": "b", "text": "SyntaxError：不支援 asm.js" },
+        { "id": "c", "text": "undefined" },
+        { "id": "d", "text": "'2''3'" }
+      ],
+      "answer": "a",
+      "explanation": "'use asm' 這個字串常值，跟 'use strict' 很像，只是一段給引擎看的「提示」——支援 asm.js 特殊優化路徑的引擎看到它，可能會用不同的方式編譯這段程式碼、跑得更快；不支援的引擎會直接把它當成一個沒有作用的字串常值，忽略掉，照普通 JS 語意正常執行。因為 asm.js 的設計原則就是「必須是合法的 JS 子集」，所以不管引擎支不支援那個優化路徑，執行結果都完全一樣，add(2, 3) 正常印出 5。",
+      "verify": {
+        "checks": [
+          { "code": "function asmModule() {\n  'use asm';\n  function add(a, b) {\n    a = a | 0;\n    b = b | 0;\n    return (a + b) | 0;\n  }\n  return add;\n}\nvar add = asmModule();\nconsole.log(add(2, 3));", "expected": "5" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-5-q5",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "asm.js 風格程式碼常見的 | 0 寫法，是刻意用位元運算把數字截斷、限制成 32 位元整數，讓引擎能用更快的整數運算路徑",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Bitwise_OR",
+      "story": "",
+      "prompt": "把空格填起來，讓 y 變成 x 截斷、限制成 32 位元整數之後的結果，印出 3（而不是 3.7）",
+      "code": "var x = 3.7;\nvar y = x ____ 0;\nconsole.log(y);",
+      "options": [
+        { "id": "a", "text": "|" },
+        { "id": "b", "text": "+" },
+        { "id": "c", "text": "&&" },
+        { "id": "d", "text": "??" }
+      ],
+      "answer": "a",
+      "explanation": "位元運算子（像 |、&、^）在運算前，會先把運算元轉成 32 位元整數，小數部分會被直接截斷丟掉。x | 0 利用了這個特性：任何數跟 0 做位元 OR，運算結果不會被 0 改變，但過程中已經把 x 轉成 32 位元整數，等於間接完成了「截斷成整數」的效果，3.7 | 0 得到 3。這正是 asm.js 風格程式碼裡到處看得到 | 0 的原因——它同時也是在告訴引擎「這裡的值是整數」，方便引擎用比較快的整數運算路徑處理。選項 b 的 + 只是單純的數字加法，3.7 + 0 還是 3.7，不會截斷。",
+      "verify": {
+        "checks": [
+          { "code": "var x = 3.7;\nvar y = x | 0;\nconsole.log(y);", "expected": "3" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-ap-5-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "Web Worker、asm.js、SIMD 都是在「JS 引擎本身還是單執行緒」這個前提下，用不同角度去榨出更多效能的策略",
+      "docs": "",
+      "story": "",
+      "prompt": "Web Worker（真正另開一條執行緒，靠訊息溝通）、asm.js（限制自己寫的程式碼是一個好優化的 JS 子集）、SIMD（讓一個指令同時處理多筆資料），這三個技術分別想解決的效能問題，有什麼共通的前提？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "三者都建立在「單一個 JS 執行環境（realm）本身，程式碼還是照 Ch1 教過的單執行緒、一次只做一件事」這個前提上，用各自不同的角度去突破效能瓶頸：Web Worker 是另外開一條完全獨立的執行緒去平行處理，但代價是要透過訊息複製資料，不能共用記憶體；asm.js 是把自己寫的程式碼限制在一個引擎特別容易優化的子集內，讓單一執行緒本身能跑得更快；SIMD 則是想辦法讓單一個指令一次處理多筆資料，在不增加執行緒數量的情況下提高吞吐量。三者要解決的問題不同，但都沒有違反「JS 核心執行模型是單執行緒」這個根本前提" },
+        { "id": "b", "text": "三者其實是同一套技術的三個不同名稱，只是給不同瀏覽器廠商各自取的名字" },
+        { "id": "c", "text": "三者都需要先關閉 JS 引擎的單執行緒限制才能使用" },
+        { "id": "d", "text": "三者都已經被證實對效能完全沒有幫助，只是純粹的歷史錯誤" }
+      ],
+      "answer": "a",
+      "explanation": "這三個技術分別從不同角度突破效能瓶頸，但都沒有打破「JS 核心執行模型是單執行緒、一次只做一件事、執行到底」這個從 Ch1 就建立起來的根本前提：Web Worker 是額外開一條完全獨立的執行緒（Q1），預設透過訊息複製資料溝通（Q2、Q3；SharedArrayBuffer + Atomics 則是需要主動選用的例外），不是讓同一條執行緒同時做兩件事；asm.js 讓引擎能更有效率地執行同一條執行緒上的程式碼（Q4、Q5）；SIMD 則是讓底層硬體的單一個指令週期能同時處理多筆資料。三者是「在單執行緒模型不變的前提下，各自從不同層面榨出更多效能」的三種互補策略，不是互相替代的同一種東西。",
+      "verify": { "manual": "概念題：綜合 Q1-Q5 對 Web Worker／asm.js 的具體示範，總結三種效能技術的共通前提，屬於執行環境架構層面的說明，無法用單一 console.log 驗證。" }
+    }
+  ]
+}

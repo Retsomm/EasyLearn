@@ -1,0 +1,136 @@
+{
+  "id": "ydkjs-es6-3",
+  "title": "Ch3：代碼組織",
+  "questions": [
+    {
+      "id": "ydkjs-es6-3-q1",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "只要一個物件實作了 Symbol.iterator 這個方法、回傳一個有 next() 的物件，這個物件就能被展開語法、for...of 消費，即使它本來不是陣列",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Iteration_protocols",
+      "story": "",
+      "prompt": "range 是一個手動實作了 Symbol.iterator 的一般物件，不是陣列。這段程式會印出什麼？",
+      "code": "var range = {\n  from: 1,\n  to: 3,\n  [Symbol.iterator]: function () {\n    var current = this.from;\n    var last = this.to;\n    return {\n      next: function () {\n        if (current <= last) {\n          return { value: current++, done: false };\n        }\n        return { value: undefined, done: true };\n      },\n    };\n  },\n};\nconsole.log([...range]);\nfor (var v of range) {\n  console.log(v);\n}",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3 ]\n1\n2\n3" },
+        { "id": "b", "text": "TypeError：range 不是可迭代的" },
+        { "id": "c", "text": "[ 1, 2, 3 ]" },
+        { "id": "d", "text": "[ { from: 1, to: 3 } ]\n1\n2\n3" }
+      ],
+      "answer": "a",
+      "explanation": "range[Symbol.iterator] 存在，展開語法和 for...of 都會呼叫這個方法拿到一個迭代器（有 next() 方法的物件），反覆呼叫 next() 直到 done 變成 true。range 手動實作了這個協定：每次 next() 回傳目前的 current、並把 current 遞增，直到超過 last 才回傳 done: true。所以展開成陣列是 [1, 2, 3]，for...of 也能正常依序印出 1、2、3——這證明「可以被 for...of 迭代」這件事，本質上只是一份介面約定（實作 Symbol.iterator），不是陣列的專利。",
+      "verify": {
+        "checks": [
+          { "code": "var range = {\n  from: 1,\n  to: 3,\n  [Symbol.iterator]: function () {\n    var current = this.from;\n    var last = this.to;\n    return {\n      next: function () {\n        if (current <= last) {\n          return { value: current++, done: false };\n        }\n        return { value: undefined, done: true };\n      },\n    };\n  },\n};\nconsole.log([...range]);\nfor (var v of range) {\n  console.log(v);\n}", "expected": "[ 1, 2, 3 ]\n1\n2\n3" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-3-q2",
+      "type": "predict-output",
+      "difficulty": 1,
+      "topic": "生成器函式本身就自動符合迭代器協定，拿來當 Symbol.iterator 用，比 Q1 手寫 next() 的版本簡潔很多",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/function*",
+      "story": "",
+      "prompt": "range2 跟 Q1 的 range 想做一樣的事，但這次用生成器函式當 Symbol.iterator。這段程式會印出什麼？",
+      "code": "var range2 = {\n  from: 1,\n  to: 3,\n  [Symbol.iterator]: function* () {\n    for (var i = this.from; i <= this.to; i++) {\n      yield i;\n    }\n  },\n};\nconsole.log([...range2]);",
+      "options": [
+        { "id": "a", "text": "[ 1, 2, 3 ]" },
+        { "id": "b", "text": "[Function: [Symbol.iterator]]" },
+        { "id": "c", "text": "[]" },
+        { "id": "d", "text": "TypeError：range2 不是可迭代的" }
+      ],
+      "answer": "a",
+      "explanation": "生成器函式（function*）呼叫之後，回傳的生成器物件本身就已經同時符合「有 next() 方法」和「自己也是可迭代物件」這兩個要求，等於自動幫你把 Q1 那種手動維護 current、手動回傳 { value, done } 的樣板程式碼都省掉了。這裡把 Symbol.iterator 直接指定成一個生成器函式，range2 因此變成可迭代物件，[...range2] 展開出跟 Q1 一模一樣的結果 [1, 2, 3]，但程式碼簡潔非常多——這正是為什麼實務上很少有人手動實作 next()，幾乎都是直接借用生成器。",
+      "verify": {
+        "checks": [
+          { "code": "var range2 = {\n  from: 1,\n  to: 3,\n  [Symbol.iterator]: function* () {\n    for (var i = this.from; i <= this.to; i++) {\n      yield i;\n    }\n  },\n};\nconsole.log([...range2]);", "expected": "[ 1, 2, 3 ]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-3-q3",
+      "type": "predict-output",
+      "difficulty": 2,
+      "topic": "陣列解構賦值背後用的也是迭代器協定，所以不只能拆陣列，任何可迭代物件（像 Set）都能直接拿來解構",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Set",
+      "story": "",
+      "prompt": "mySet 是一個 Set，不是陣列。這段程式會印出什麼？",
+      "code": "var mySet = new Set([10, 20, 30]);\nvar [first, second] = mySet;\nconsole.log(first, second);",
+      "options": [
+        { "id": "a", "text": "10 20" },
+        { "id": "b", "text": "undefined undefined" },
+        { "id": "c", "text": "TypeError：mySet 不是陣列，不能解構" },
+        { "id": "d", "text": "0 1" }
+      ],
+      "answer": "a",
+      "explanation": "陣列解構賦值 [first, second] = ... 底層依賴的正是可迭代協定，不是「這個值一定得是陣列」。Set 本身就實作了 Symbol.iterator（依插入順序走訪元素），所以可以直接對它做陣列解構：first 拿到第一個被迭代出來的值 10，second 拿到第二個 20。這也解釋了為什麼 Q1、Q2 手動或用生成器做出來的可迭代物件，理論上一樣可以拿來解構。",
+      "verify": {
+        "checks": [
+          { "code": "var mySet = new Set([10, 20, 30]);\nvar [first, second] = mySet;\nconsole.log(first, second);", "expected": "10 20" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-3-q4",
+      "type": "fill-in",
+      "difficulty": 2,
+      "topic": "生成器版本的 Symbol.iterator 裡，迴圈的終止條件直接決定了最後一個被 yield 出來的值是不是「包含上限」",
+      "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Statements/for",
+      "story": "",
+      "prompt": "把空格填起來，讓 range3 的迭代結果包含 to 這個上限值本身，印出 [ 5, 6, 7, 8 ]",
+      "code": "var range3 = {\n  from: 5,\n  to: 8,\n  [Symbol.iterator]: function* () {\n    for (var i = this.from; i ____ this.to; i++) {\n      yield i;\n    }\n  },\n};\nconsole.log([...range3]);",
+      "options": [
+        { "id": "a", "text": "<=" },
+        { "id": "b", "text": "<" },
+        { "id": "c", "text": "!=" },
+        { "id": "d", "text": ">" }
+      ],
+      "answer": "a",
+      "explanation": "i <= this.to 讓迴圈在 i 等於 to（8）的那一輪也會執行、yield 出 8，所以結果包含上限，印出 [5, 6, 7, 8]。如果改成 i < this.to（選項 b），迴圈會在 i 等於 8 之前就停止，8 永遠不會被 yield 出來，結果會少一個，變成 [5, 6, 7]——「上限本身要不要包含在結果裡」，完全取決於迴圈條件用 <= 還是 <，這是實作範圍類迭代器時很容易搞錯的地方。",
+      "verify": {
+        "checks": [
+          { "code": "var range3 = {\n  from: 5,\n  to: 8,\n  [Symbol.iterator]: function* () {\n    for (var i = this.from; i <= this.to; i++) {\n      yield i;\n    }\n  },\n};\nconsole.log([...range3]);", "expected": "[ 5, 6, 7, 8 ]" }
+        ]
+      }
+    },
+    {
+      "id": "ydkjs-es6-3-q5",
+      "type": "concept",
+      "difficulty": 2,
+      "topic": "ES6 模組是「單例」：不管被多少個不同檔案 import，同一個模組永遠只會被執行一次、大家共用同一份匯出的內容",
+      "docs": "",
+      "story": "",
+      "prompt": "有一個 counter.js 模組，裡面用 export let count = 0 匯出一個計數器，並且匯出一個 increment() 函式會把 count 加一。專案裡有 fileA.js 和 fileB.js 都各自 import { count, increment } from './counter.js'。fileA 呼叫了一次 increment()，接著 fileB 讀取 count，會讀到多少？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "fileB 會讀到 1。ES6 模組在整個應用程式裡，不管被幾個不同的檔案 import，實際上只會被引擎執行一次、產生一份共用的模組實例——fileA、fileB 拿到的 count、increment 其實是指向同一份底層狀態，fileA 呼叫 increment() 造成的改變，fileB 之後讀取時看得到" },
+        { "id": "b", "text": "fileB 會讀到 0。每個檔案 import 同一個模組時，都會各自拿到一份獨立的副本，fileA 的修改不會影響 fileB 看到的版本" },
+        { "id": "c", "text": "這樣寫會直接讓瀏覽器丟出錯誤，因為兩個不同檔案不能 import 同一個模組" },
+        { "id": "d", "text": "無法確定，fileB 讀到的值完全隨機，取決於哪個檔案先被瀏覽器載入" }
+      ],
+      "answer": "a",
+      "explanation": "ES6 模組系統的一個重要特性是「單例」：同一個模組檔案，不管被多少個不同的地方 import，模組本身的程式碼只會被執行一次，之後每個 import 它的地方，拿到的都是同一份、共用的模組實例（這也是為什麼可以 export let 這種可變綁定，而不是每次 import 都拿到一份快照）。fileA 呼叫 increment() 改動的是這份共用狀態，fileB 之後讀取 count，看到的就是已經被改過的 1，不是各自獨立、互不相干的副本。",
+      "verify": { "manual": "概念題：以 counter.js 模組被兩個檔案 import 的具體情境取代抽象定義，說明 ES6 模組的單例特性，ES 模組載入機制無法用單一 node -e 直接執行驗證。" }
+    },
+    {
+      "id": "ydkjs-es6-3-q6",
+      "type": "concept",
+      "difficulty": 3,
+      "topic": "迭代器、生成器、模組、類別，四個機制分別從不同層次解決「怎麼把程式碼組織成可重複使用、邊界清楚的單元」這個共同問題",
+      "docs": "",
+      "story": "",
+      "prompt": "把 Q1/Q2/Q3/Q4（迭代器與生成器）、Q5（模組）放在一起看，再加上 this和物件原型 那本書教過的 class（附錄A），這四個機制在「程式碼組織」這個主題下，各自扮演什麼角色？",
+      "code": "",
+      "options": [
+        { "id": "a", "text": "迭代器協定（Q1-Q4）定義了「怎麼讓一個物件用統一的方式被逐一走訪」，讓 for...of、展開語法、解構賦值都能用同一套介面消費各種不同來源的資料（陣列、Set、自訂的 range 物件）；生成器則是實作迭代器協定最簡潔的工具。模組（Q5）定義的是「程式碼之間怎麼切分成獨立檔案、又能安全共享狀態」的邊界，靠 export/import 明確聲明對外公開的介面。class 則是把「資料＋操作資料的行為」包成一個具名的單元，方便建立多個實例。四者的共同目標，都是讓程式碼在規模變大時，依然能維持清楚的邊界、可預期的行為，不會混成一團難以維護的程式碼" },
+        { "id": "b", "text": "這四個機制其實是同一種東西的四種不同名稱，實作上完全可以互相取代，沒有各自獨立的用途" },
+        { "id": "c", "text": "只有 class 才跟「程式碼組織」有關，迭代器、生成器、模組都只是效能優化手段，跟組織程式碼無關" },
+        { "id": "d", "text": "這四個機制彼此互斥，一個專案裡只能選擇其中一種來組織程式碼，不能混用" }
+      ],
+      "answer": "a",
+      "explanation": "這一章之所以把迭代器、生成器、模組、類別放在同一章討論，是因為它們雖然解決的具體問題不同，但都是圍繞「如何組織程式碼」這個核心主題：迭代器協定統一了「走訪一份資料」的介面（Q1-Q4），模組劃出了「檔案與檔案之間，怎麼明確共享、又保持各自獨立」的邊界（Q5），class 則是把資料和操作資料的邏輯打包成一個可以重複產生實例的具名單元（this和物件原型 附錄A）。規模小的程式碼可能不需要這些機制也能維護，但專案一旦變大，這四個機制合起來，才是讓程式碼保持可讀、可維護的關鍵工具。",
+      "verify": { "manual": "概念題：綜合 Q1-Q5 對迭代器/生成器/模組的具體示範，加上先前 class 章節的知識，總結四者在「程式碼組織」主題下的各自定位，屬於整章架構層面的總結，無法用單一 console.log 驗證。" }
+    }
+  ]
+}
