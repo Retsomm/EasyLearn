@@ -121,7 +121,7 @@
       "id": "ydkjs-es6-6-q6",
       "type": "predict-output",
       "difficulty": 3,
-      "topic": "浮點數運算天生有精度誤差，Number.EPSILON 提供了一個「可接受的極小誤差範圍」，讓浮點數的相等比較變得可靠",
+      "topic": "浮點數運算天生有精度誤差，Number.EPSILON 是 1 跟大於 1 的下一個可表示浮點數之間的差距，適合拿來比較數值接近 1 這個量級的浮點數是否「實質上相等」",
       "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Number/EPSILON",
       "story": "",
       "prompt": "這段程式會印出什麼？",
@@ -133,7 +133,7 @@
         { "id": "d", "text": "true\nfalse" }
       ],
       "answer": "a",
-      "explanation": "浮點數在電腦裡用二進位表示，0.1 加 0.2 實際運算出來的結果，因為二進位沒辦法精確表示某些十進位小數，會有極其微小的誤差，導致 0.1 + 0.2 === 0.3 是 false（這正是本書之前提過「浮點數不能直接用 === 比較」的具體示範）。Number.EPSILON 是 ES6 新增的一個極小數值常數，代表浮點數運算「可接受的最小誤差範圍」，用 Math.abs(實際值 - 期望值) < Number.EPSILON 這種寫法，可以正確判斷兩個浮點數在容許誤差內是不是「實質上相等」，印出 true。這是處理浮點數比較最推薦的實務做法。",
+      "explanation": "浮點數在電腦裡用二進位表示，0.1 加 0.2 實際運算出來的結果，因為二進位沒辦法精確表示某些十進位小數，會有極其微小的誤差，導致 0.1 + 0.2 === 0.3 是 false（這正是本書之前提過「浮點數不能直接用 === 比較」的具體示範）。Number.EPSILON 是 ES6 新增的一個極小數值常數，精確定義是「1 跟大於 1 的下一個可表示浮點數之間的差距」，用 Math.abs(實際值 - 期望值) < Number.EPSILON 這種寫法，可以正確判斷兩個接近 1 這個量級的浮點數在容許誤差內是不是「實質上相等」，印出 true。但這個絕對誤差範圍只適合數值量級接近 1 的情況——數字愈大，浮點數本身能表示的精度間隔也愈大，直接拿 Number.EPSILON 當門檻會太嚴苛：例如 1000.1 + 1000.2 理論上應該等於 2000.3，但兩者實際相減的誤差會遠大於 Number.EPSILON，這種情況要改用跟數值量級成比例的誤差範圍（例如 Number.EPSILON 乘上兩數中較大的量級）才合理。",
       "verify": {
         "checks": [
           { "code": "console.log(0.1 + 0.2 === 0.3);\nconsole.log(Math.abs(0.1 + 0.2 - 0.3) < Number.EPSILON);", "expected": "false\ntrue" }

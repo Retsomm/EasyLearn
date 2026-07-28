@@ -33,7 +33,7 @@
       "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
       "story": "",
       "prompt": "getData 命中快取時直接同步呼叫 cb，沒命中才用 setTimeout 非同步呼叫。這次 key 'a' 剛好在快取裡。這段程式會印出什麼？",
-      "code": "function getData(cache, key, cb) {\n  if (cache[key]) {\n    cb(cache[key]); // 命中快取：同步呼叫\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key); // 沒命中：非同步呼叫\n    }, 0);\n  }\n}\nvar cache = { a: 'cached-a' };\nconsole.log('before');\ngetData(cache, 'a', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');",
+      "code": "function getData(cache, key, cb) {\n  if (Object.prototype.hasOwnProperty.call(cache, key)) {\n    cb(cache[key]); // 命中快取：同步呼叫\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key); // 沒命中：非同步呼叫\n    }, 0);\n  }\n}\nvar cache = { a: 'cached-a' };\nconsole.log('before');\ngetData(cache, 'a', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');",
       "options": [
         { "id": "a", "text": "before\ncallback: cached-a\nafter" },
         { "id": "b", "text": "before\nafter\ncallback: cached-a" },
@@ -44,7 +44,7 @@
       "explanation": "因為這次 'a' 剛好命中快取，getData 走的是同步分支，cb 在 getData 呼叫的當下就立刻執行了，所以 callback: cached-a 會直接插在 before 和 after 中間印出來，跟一般「非同步回呼都排在最後」的直覺不一樣。這正是回呼的信任問題之一：呼叫端完全沒辦法從函式簽名或呼叫方式看出這次呼叫到底是同步還是非同步，行為完全取決於函式內部當下的狀態（這次快取有沒有命中）。",
       "verify": {
         "checks": [
-          { "code": "function getData(cache, key, cb) {\n  if (cache[key]) {\n    cb(cache[key]);\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = { a: 'cached-a' };\nconsole.log('before');\ngetData(cache, 'a', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');", "expected": "before\ncallback: cached-a\nafter" }
+          { "code": "function getData(cache, key, cb) {\n  if (Object.prototype.hasOwnProperty.call(cache, key)) {\n    cb(cache[key]);\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = { a: 'cached-a' };\nconsole.log('before');\ngetData(cache, 'a', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');", "expected": "before\ncallback: cached-a\nafter" }
         ]
       }
     },
@@ -56,7 +56,7 @@
       "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
       "story": "",
       "prompt": "跟 Q2 一模一樣的 getData，這次改查詢 'b'，快取裡沒有 'b'。這段程式會印出什麼？",
-      "code": "function getData(cache, key, cb) {\n  if (cache[key]) {\n    cb(cache[key]);\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = {};\nconsole.log('before');\ngetData(cache, 'b', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');",
+      "code": "function getData(cache, key, cb) {\n  if (Object.prototype.hasOwnProperty.call(cache, key)) {\n    cb(cache[key]);\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = {};\nconsole.log('before');\ngetData(cache, 'b', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');",
       "options": [
         { "id": "a", "text": "before\nafter\ncallback: fetched:b" },
         { "id": "b", "text": "before\ncallback: fetched:b\nafter" },
@@ -67,7 +67,7 @@
       "explanation": "這次 'b' 沒有命中快取，getData 走的是非同步分支，callback 一定要排到 before、after 都印完之後才會執行——順序跟 Q2（命中快取、同步執行）完全相反。同一個函式、只是呼叫時傳的參數不同，回呼到底會不會插在中間執行，呼叫端完全無法預期，這正是回呼機制在「控制權交給別人」這件事上最根本的信任問題。",
       "verify": {
         "checks": [
-          { "code": "function getData(cache, key, cb) {\n  if (cache[key]) {\n    cb(cache[key]);\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = {};\nconsole.log('before');\ngetData(cache, 'b', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');", "expected": "before\nafter\ncallback: fetched:b" }
+          { "code": "function getData(cache, key, cb) {\n  if (Object.prototype.hasOwnProperty.call(cache, key)) {\n    cb(cache[key]);\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = {};\nconsole.log('before');\ngetData(cache, 'b', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');", "expected": "before\nafter\ncallback: fetched:b" }
         ]
       }
     },
@@ -79,7 +79,7 @@
       "docs": "https://developer.mozilla.org/zh-TW/docs/Web/API/setTimeout",
       "story": "",
       "prompt": "把空格填起來，讓命中快取這個分支也強制改成非同步呼叫 cb，這樣不管有沒有命中快取，callback 永遠會排在 before、after 之後，印出 before、after、callback: cached-a",
-      "code": "function getData(cache, key, cb) {\n  if (cache[key]) {\n    ____(function () {\n      cb(cache[key]);\n    }, 0); // 強制永遠非同步呼叫\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = { a: 'cached-a' };\nconsole.log('before');\ngetData(cache, 'a', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');",
+      "code": "function getData(cache, key, cb) {\n  if (Object.prototype.hasOwnProperty.call(cache, key)) {\n    ____(function () {\n      cb(cache[key]);\n    }, 0); // 強制永遠非同步呼叫\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = { a: 'cached-a' };\nconsole.log('before');\ngetData(cache, 'a', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');",
       "options": [
         { "id": "a", "text": "setTimeout" },
         { "id": "b", "text": "Promise" },
@@ -90,7 +90,7 @@
       "explanation": "在命中快取的分支也包一層 setTimeout(fn, 0)，強迫這裡的 cb 呼叫一律要排到目前這輪同步程式碼跑完之後才執行，跟原本沒命中快取那個分支的非同步時機保持一致。這樣不管呼叫端傳進來的 key 有沒有命中快取，callback 永遠會在 before、after 都印完之後才印出來，順序變得可預期、可信任，不再取決於呼叫當下快取剛好處於什麼狀態。這正是書中「省點回呼」一節建議的其中一種修法：強制讓一個原本行為不一致的函式，永遠保持同一種（非同步）呼叫時機。",
       "verify": {
         "checks": [
-          { "code": "function getData(cache, key, cb) {\n  if (cache[key]) {\n    setTimeout(function () {\n      cb(cache[key]);\n    }, 0);\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = { a: 'cached-a' };\nconsole.log('before');\ngetData(cache, 'a', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');", "expected": "before\nafter\ncallback: cached-a" }
+          { "code": "function getData(cache, key, cb) {\n  if (Object.prototype.hasOwnProperty.call(cache, key)) {\n    setTimeout(function () {\n      cb(cache[key]);\n    }, 0);\n  } else {\n    setTimeout(function () {\n      cb('fetched:' + key);\n    }, 0);\n  }\n}\nvar cache = { a: 'cached-a' };\nconsole.log('before');\ngetData(cache, 'a', function (result) {\n  console.log('callback:', result);\n});\nconsole.log('after');", "expected": "before\nafter\ncallback: cached-a" }
         ]
       }
     },

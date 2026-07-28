@@ -12,13 +12,13 @@
       "prompt": "假設主執行緒有一個變數 var total = 0，接著啟動一個 Web Worker，worker 內部的程式碼寫了 total = total + 1。worker 裡的這行程式碼，能不能真的讀到、修改到主執行緒那個 total 變數？",
       "code": "",
       "options": [
-        { "id": "a", "text": "不能。Web Worker 是在完全獨立的執行緒、獨立的全域作用域裡執行，跟主執行緒之間沒有共用任何變數或記憶體——worker 裡的 total 只會被當成一個全新、未宣告的識別字（或觸發它自己作用域內的錯誤），完全碰不到主執行緒那個 total，兩邊是徹底隔離的兩個執行環境" },
+        { "id": "a", "text": "不能。Web Worker 是在完全獨立的執行緒、獨立的全域作用域裡執行，跟主執行緒之間預設沒有共用任何一般變數或記憶體——worker 裡的 total 只會被當成一個全新、未宣告的識別字（或觸發它自己作用域內的錯誤），完全碰不到主執行緒那個 total，兩邊是徹底隔離的兩個執行環境（除非額外使用 SharedArrayBuffer 這種刻意設計的共享記憶體機制）" },
         { "id": "b", "text": "可以，Web Worker 跟主執行緒共用同一份全域變數，跟一般函式呼叫共用外層作用域的變數是同樣的道理" },
         { "id": "c", "text": "可以，但只有數字型別的變數才能共用，物件和陣列不行" },
         { "id": "d", "text": "不能，但原因是瀏覽器的安全性限制，如果關掉安全性設定就可以共用" }
       ],
       "answer": "a",
-      "explanation": "Web Worker 存在的目的就是提供「真正的平行執行」，做法是讓它在一個完全獨立的執行緒、獨立的全域作用域裡跑，這個獨立性是設計上刻意做到的隔離，不是可以關掉的安全性限制。worker 裡的程式碼看不到主執行緒宣告的任何變數，主執行緒也看不到 worker 裡宣告的變數，兩邊是徹底獨立的兩個執行環境，這也是為什麼 Ch1、Ch3 教過的那些「JS 是單執行緒、不會有競態條件」的保證，在每一個獨立的執行緒內部依然成立。",
+      "explanation": "Web Worker 存在的目的就是提供「真正的平行執行」，做法是讓它在一個完全獨立的執行緒、獨立的全域作用域裡跑，這個獨立性是設計上刻意做到的隔離，不是可以關掉的安全性限制。worker 裡用一般方式宣告的變數（像這裡的 total）看不到主執行緒宣告的任何變數，主執行緒也看不到 worker 裡宣告的變數，兩邊是徹底獨立的兩個執行環境，這也是為什麼 Ch1、Ch3 教過的那些「JS 是單執行緒、不會有競態條件」的保證，在每一個獨立的執行緒內部依然成立。（進階補充：SharedArrayBuffer 搭配 Atomics 是刻意設計的例外，能讓主執行緒和 worker 真正共用同一塊記憶體，但那是開發者主動選用的特殊機制，不是一般變數預設就有的行為。）",
       "verify": { "manual": "概念題：以主執行緒與 Web Worker 之間變數完全隔離的具體情境取代抽象定義，Web Worker 是瀏覽器 API，無法用 node -e 直接執行驗證。" }
     },
     {
@@ -31,13 +31,13 @@
       "prompt": "Q1 已經確定主執行緒和 Web Worker 沒有共用變數。那如果主執行緒真的需要把一份資料（例如一個很大的陣列）交給 worker 去處理，唯一的辦法是什麼？",
       "code": "",
       "options": [
-        { "id": "a", "text": "呼叫 worker.postMessage(data) 把資料傳過去，worker 那邊監聽 message 事件接收；worker 處理完想把結果傳回來，一樣要呼叫 postMessage，主執行緒監聽自己的 message 事件接收——這是主執行緒和 worker 之間唯一的溝通管道，而且整個過程都是非同步、事件驅動的，不是像一般函式呼叫那樣可以直接拿到回傳值" },
+        { "id": "a", "text": "呼叫 worker.postMessage(data) 把資料傳過去，worker 那邊監聽 message 事件接收；worker 處理完想把結果傳回來，一樣要呼叫 postMessage，主執行緒監聽自己的 message 事件接收——這是主執行緒和 worker 之間標準的溝通管道，而且整個過程都是非同步、事件驅動的，不是像一般函式呼叫那樣可以直接拿到回傳值" },
         { "id": "b", "text": "直接把資料指派給一個全域變數，worker 就能自動讀到最新的值" },
         { "id": "c", "text": "呼叫 worker.setData(data) 這個內建方法" },
         { "id": "d", "text": "用 return 陳述式把資料從主執行緒回傳給 worker" }
       ],
       "answer": "a",
-      "explanation": "postMessage／message 事件是主執行緒和 Web Worker 之間唯一的溝通橋樑：不管是主執行緒傳資料給 worker、還是 worker 把處理完的結果傳回主執行緒，都得透過這一套非同步、事件驅動的訊息機制，沒有辦法像一般函式呼叫那樣直接拿到回傳值，也沒有辦法直接讀寫對方的變數（Q1）。這也直接影響了「傳過去的資料到底是不是同一份」這個問題，下一題會具體示範。",
+      "explanation": "postMessage／message 事件是主執行緒和 Web Worker 之間標準的溝通橋樑：不管是主執行緒傳資料給 worker、還是 worker 把處理完的結果傳回主執行緒，一般情況下都是透過這一套非同步、事件驅動的訊息機制，沒有辦法像一般函式呼叫那樣直接拿到回傳值，也沒有辦法直接讀寫對方的一般變數（Q1）。（Q1 提過的 SharedArrayBuffer + Atomics 是另一條刻意設計的低階管道，但那是額外選用的特殊機制，postMessage 仍然是預設、最常用的溝通方式。）這也直接影響了「傳過去的資料到底是不是同一份」這個問題，下一題會具體示範。",
       "verify": { "manual": "概念題：以主執行緒/worker 之間 postMessage 溝通的具體情境取代抽象定義，Web Worker 是瀏覽器 API，無法用 node -e 直接執行驗證。" }
     },
     {
@@ -56,7 +56,7 @@
         { "id": "d", "text": "TypeError" }
       ],
       "answer": "a",
-      "explanation": "跟 Ch2（Types & Grammar 那本書）Q4 示範的「同一個執行緒內傳物件是複製參照、修改會互相影響」完全不同：postMessage 傳給 worker 的資料，用的是「結構化複製」，等同於做一次深拷貝，worker 那邊收到的是一份完全獨立、互不相干的副本。這裡模擬的 received 修改了自己的 nested.flag，完全不會反映回 mainData，mainData.nested.flag 還是原本的 true。這正是「沒有共用記憶體」的具體代價：想要跨執行緒溝通，只能靠複製資料，不能靠共用參照，資料量大的時候這個複製動作本身也會有效能成本。",
+      "explanation": "跟 Ch2（Types & Grammar 那本書）Q4 示範的「同一個執行緒內傳物件是複製參照、修改會互相影響」完全不同：postMessage 傳給 worker 的資料，預設用的是「結構化複製」，等同於做一次深拷貝，worker 那邊收到的是一份完全獨立、互不相干的副本。這裡模擬的 received 修改了自己的 nested.flag，完全不會反映回 mainData，mainData.nested.flag 還是原本的 true。這正是「沒有共用記憶體」的具體代價：想要跨執行緒溝通，一般只能靠複製資料，不能靠共用參照，資料量大的時候這個複製動作本身也會有效能成本。（補充：postMessage 對 ArrayBuffer、MessagePort、ImageBitmap 這類物件還支援「可轉移物件」，用第二個參數指定要轉移的清單時，是直接把該物件的所有權整個移交給 worker、原執行緒那份會變成不可用，而不是複製一份，藉此避開大型資料複製的效能成本，這跟預設的結構化複製是不同的機制。）",
       "verify": {
         "checks": [
           { "code": "function simulateWorkerMessage(data) {\n  return JSON.parse(JSON.stringify(data));\n}\nvar mainData = { count: 1, nested: { flag: true } };\nvar received = simulateWorkerMessage(mainData);\nreceived.nested.flag = false;\nconsole.log(mainData.nested.flag);", "expected": "true" }
@@ -125,7 +125,7 @@
         { "id": "d", "text": "三者都已經被證實對效能完全沒有幫助，只是純粹的歷史錯誤" }
       ],
       "answer": "a",
-      "explanation": "這三個技術分別從不同角度突破效能瓶頸，但都沒有打破「JS 核心執行模型是單執行緒、一次只做一件事、執行到底」這個從 Ch1 就建立起來的根本前提：Web Worker 是額外開一條完全獨立的執行緒（Q1），透過訊息複製資料溝通（Q2、Q3），不是讓同一條執行緒同時做兩件事；asm.js 讓引擎能更有效率地執行同一條執行緒上的程式碼（Q4、Q5）；SIMD 則是讓底層硬體的單一個指令週期能同時處理多筆資料。三者是「在單執行緒模型不變的前提下，各自從不同層面榨出更多效能」的三種互補策略，不是互相替代的同一種東西。",
+      "explanation": "這三個技術分別從不同角度突破效能瓶頸，但都沒有打破「JS 核心執行模型是單執行緒、一次只做一件事、執行到底」這個從 Ch1 就建立起來的根本前提：Web Worker 是額外開一條完全獨立的執行緒（Q1），預設透過訊息複製資料溝通（Q2、Q3；SharedArrayBuffer + Atomics 則是需要主動選用的例外），不是讓同一條執行緒同時做兩件事；asm.js 讓引擎能更有效率地執行同一條執行緒上的程式碼（Q4、Q5）；SIMD 則是讓底層硬體的單一個指令週期能同時處理多筆資料。三者是「在單執行緒模型不變的前提下，各自從不同層面榨出更多效能」的三種互補策略，不是互相替代的同一種東西。",
       "verify": { "manual": "概念題：綜合 Q1-Q5 對 Web Worker／asm.js 的具體示範，總結三種效能技術的共通前提，屬於執行環境架構層面的說明，無法用單一 console.log 驗證。" }
     }
   ]

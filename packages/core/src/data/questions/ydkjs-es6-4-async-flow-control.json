@@ -79,7 +79,7 @@
       "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Generator/throw",
       "story": "",
       "prompt": "main 內部用 try/catch 包住 yield，希望能接住 Promise 被拒絕的錯誤。把空格填起來，讓驅動函式在 Promise 被拒絕時，把錯誤丟回生成器內部處理，印出 caught in generator: boom",
-      "code": "function* main() {\n  try {\n    var result = yield Promise.reject('boom');\n    console.log('never:', result);\n  } catch (err) {\n    console.log('caught in generator:', err);\n  }\n}\nfunction run(gen) {\n  var it = gen();\n  function step(err, val) {\n    var res;\n    if (err) {\n      res = it.____(err); // 把錯誤丟回生成器內部的 try/catch\n    } else {\n      res = it.next(val);\n    }\n    if (res.done) return;\n    res.value.then(\n      function (v) { step(null, v); },\n      function (e) { step(e); }\n    );\n  }\n  step();\n}\nrun(main);",
+      "code": "function* main() {\n  try {\n    var result = yield Promise.reject('boom');\n    console.log('never:', result);\n  } catch (err) {\n    console.log('caught in generator:', err);\n  }\n}\nfunction run(gen) {\n  var it = gen();\n  function step(isRejected, val) {\n    var res;\n    if (isRejected) {\n      res = it.____(val); // 把錯誤丟回生成器內部的 try/catch\n    } else {\n      res = it.next(val);\n    }\n    if (res.done) return;\n    res.value.then(\n      function (v) { step(false, v); },\n      function (e) { step(true, e); }\n    );\n  }\n  step(false);\n}\nrun(main);",
       "options": [
         { "id": "a", "text": "throw" },
         { "id": "b", "text": "next" },
@@ -87,10 +87,10 @@
         { "id": "d", "text": "catch" }
       ],
       "answer": "a",
-      "explanation": "it.throw(err) 是生成器物件另一個進入點：它會讓生成器從目前暫停的 yield 處，像是那一行程式碼本身丟出了 err 一樣繼續執行——如果那個 yield 剛好被包在 try 區塊裡，就會被對應的 catch 接住。這裡 yield Promise.reject('boom') 的 Promise 被拒絕了，run 函式的 .then 第二個回呼（拒絕處理器）呼叫 step(e)，接著呼叫 it.throw(err)，把 'boom' 這個錯誤丟回 main 內部，被 catch (err) 接住，印出 caught in generator: boom。這種手法讓生成器內部可以用最熟悉的 try/catch 語法，統一處理「同步丟出的例外」和「非同步 Promise 被拒絕」這兩種錯誤來源。",
+      "explanation": "it.throw(val) 是生成器物件另一個進入點：它會讓生成器從目前暫停的 yield 處，像是那一行程式碼本身丟出了 val 一樣繼續執行——如果那個 yield 剛好被包在 try 區塊裡，就會被對應的 catch 接住。這裡用 isRejected 這個明確的布林值判斷該走哪個分支，而不是直接看錯誤值本身的真假，是為了避免 Promise 拒絕的原因剛好是 0、false、空字串這類「假值」時，被誤判成成功、走錯 it.next 分支。這裡 yield Promise.reject('boom') 的 Promise 被拒絕了，run 函式的 .then 第二個回呼（拒絕處理器）呼叫 step(true, e)，接著呼叫 it.throw(val)，把 'boom' 這個錯誤丟回 main 內部，被 catch (err) 接住，印出 caught in generator: boom。這種手法讓生成器內部可以用最熟悉的 try/catch 語法，統一處理「同步丟出的例外」和「非同步 Promise 被拒絕」這兩種錯誤來源。",
       "verify": {
         "checks": [
-          { "code": "function* main() {\n  try {\n    var result = yield Promise.reject('boom');\n    console.log('never:', result);\n  } catch (err) {\n    console.log('caught in generator:', err);\n  }\n}\nfunction run(gen) {\n  var it = gen();\n  function step(err, val) {\n    var res;\n    if (err) {\n      res = it.throw(err);\n    } else {\n      res = it.next(val);\n    }\n    if (res.done) return;\n    res.value.then(\n      function (v) { step(null, v); },\n      function (e) { step(e); }\n    );\n  }\n  step();\n}\nrun(main);", "expected": "caught in generator: boom" }
+          { "code": "function* main() {\n  try {\n    var result = yield Promise.reject('boom');\n    console.log('never:', result);\n  } catch (err) {\n    console.log('caught in generator:', err);\n  }\n}\nfunction run(gen) {\n  var it = gen();\n  function step(isRejected, val) {\n    var res;\n    if (isRejected) {\n      res = it.throw(val);\n    } else {\n      res = it.next(val);\n    }\n    if (res.done) return;\n    res.value.then(\n      function (v) { step(false, v); },\n      function (e) { step(true, e); }\n    );\n  }\n  step(false);\n}\nrun(main);", "expected": "caught in generator: boom" }
         ]
       }
     },
@@ -121,19 +121,19 @@
       "id": "ydkjs-es6-4-q6",
       "type": "concept",
       "difficulty": 3,
-      "topic": "手寫的生成器＋Promise 驅動函式（Q4、Q5），就是 async/await 語法糖底層在做的事——理解了這套手寫版本，就等於理解了 async/await 的運作原理",
+      "topic": "手寫的生成器＋Promise 驅動函式（Q4、Q5），是 async/await 概念上的類比——理解了這套手寫版本的控制流程，有助於理解 async/await 在做什麼，但兩者底層實作機制不同",
       "docs": "",
       "story": "",
       "prompt": "Q5 用生成器加一個手寫的 run 驅動函式，寫出了「看起來像同步、實際上是依序等待三個非同步步驟」的程式碼。ES6之後那一章會介紹 async/await 這個新語法，跟這裡手寫的模式有什麼關係？",
       "code": "",
       "options": [
-        { "id": "a", "text": "async/await 本質上就是把 Q4、Q5 這種「生成器 + 手寫驅動函式」的模式，直接做成語言內建的語法糖：一個 async function 大致對應這裡的 function* + run 驅動函式的組合，函式內部的每一個 await 表達式，大致對應這裡的每一個 yield——差別在於 await 不需要開發者自己手寫 run 這種驅動邏輯，JS 引擎在語言層級直接內建了這套「等 Promise 決議、再繼續往下執行」的機制。先理解 Q4、Q5 這種手寫版本背後的運作原理，再去學 async/await，會更清楚這個語法糖底層實際上在做什麼，不會只是死記語法" },
+        { "id": "a", "text": "async/await 在概念上很像 Q4、Q5 這種「生成器 + 手寫驅動函式」模式的語言內建版本：一個 async function 大致對應這裡的 function* + run 驅動函式的組合，函式內部的每一個 await 表達式，大致對應這裡的每一個 yield，控制流程「暫停、等 Promise 決議、再繼續往下執行」的思路是相通的。但兩者不是同一套機制的包裝——async function 呼叫後直接回傳一個 Promise，內部用引擎原生的 await 暫停執行，不像生成器呼叫後得到的是一個生成器物件、要靠外部呼叫 next()／throw() 才能繼續推進，也不需要開發者自己手寫 run 這種驅動邏輯。先理解 Q4、Q5 這種手寫版本背後的運作原理，再去學 async/await，會更清楚這個語法在概念上對應到什麼，不會只是死記語法" },
         { "id": "b", "text": "async/await 跟生成器完全是兩套無關的機制，語法上的相似只是巧合" },
         { "id": "c", "text": "async/await 的效能比生成器＋Promise 手寫版本差很多，實務上應該優先選擇手寫版本" },
         { "id": "d", "text": "async/await 只是 Promise.all 的另一種寫法，跟生成器完全沒有關係" }
       ],
       "answer": "a",
-      "explanation": "Q4、Q5 手寫的 run 驅動函式，做的事情正是：呼叫 next() 拿到一個 yield 出來的 Promise，等它決議（或拒絕）之後，再把結果（或錯誤）餵回生成器繼續往下跑。async/await 把這整套機制直接內建進語言：宣告成 async function 的函式，內部每一個 await 表達式都會自動暫停、等右邊的 Promise 決議完成才繼續，效果跟這裡手寫的 yield + run 驅動函式幾乎一模一樣，只是不用自己再寫一次那個驅動函式，也不用透過額外的函式包裝來取得類似同步的寫法。這也是為什麼這一章要先帶讀者理解生成器＋Promise 這個底層模式，才進入下一章去看 async/await 這個語法糖。",
+      "explanation": "Q4、Q5 手寫的 run 驅動函式，做的事情正是：呼叫 next() 拿到一個 yield 出來的 Promise，等它決議（或拒絕）之後，再把結果（或錯誤）餵回生成器繼續往下跑。async/await 在概念上延續同一種思路：宣告成 async function 的函式，內部每一個 await 表達式都會自動暫停、等右邊的 Promise 決議完成才繼續，控制流程的效果跟這裡手寫的 yield + run 驅動函式非常相似，也不用自己再寫一次那個驅動函式。但兩者在實作機制上不同：async function 呼叫後直接拿到一個 Promise，await 是引擎原生支援的暫停點；生成器呼叫後拿到的是一個生成器物件，得靠外部程式（像這裡的 run）呼叫 next()／throw() 才能推進，且沒有內建的等待機制。這也是為什麼這一章要先帶讀者理解生成器＋Promise 這個底層模式，才進入下一章去看 async/await 這個建立在相似概念上、但由引擎原生支援的語法。",
       "verify": { "manual": "概念題：以 Q4/Q5 手寫的生成器驅動函式對照 async/await 語法糖，說明兩者的對應關係，屬於整章與後續章節銜接層面的說明，無法用單一 console.log 驗證。" }
     }
   ]

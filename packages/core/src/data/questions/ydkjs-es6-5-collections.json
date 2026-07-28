@@ -121,7 +121,7 @@
       "id": "ydkjs-es6-5-q6",
       "type": "predict-output",
       "difficulty": 3,
-      "topic": "WeakMap 的 key 一定要是物件，不能是字串、數字這種原始值——這個限制是為了讓引擎能安全地在物件被回收時，一併回收對應的項目",
+      "topic": "WeakMap 的 key 只能是物件，或是 ES2023 之後允許的非註冊 Symbol，不能是字串、數字這種一般原始值——這個限制是為了讓引擎能安全地在 key 被回收時，一併回收對應的項目",
       "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/WeakMap",
       "story": "",
       "prompt": "這段程式會印出什麼？",
@@ -133,7 +133,7 @@
         { "id": "d", "text": "TypeError：整段程式碼直接中止" }
       ],
       "answer": "a",
-      "explanation": "WeakMap 明確規定 key 只能是物件，不能是字串這種原始值——wm.set('a string key', 'value') 直接丟出 TypeError，被 try/catch 接住，印出 error: TypeError。這個限制不是隨意設下的：WeakMap 對它的 key 只保留「弱參照」，一旦某個物件在其他地方都不再被使用、可以被垃圾回收，WeakMap 裡對應的那筆資料也會跟著自動被回收，不會阻止記憶體釋放；但原始值（字串、數字）不是用參照管理記憶體的概念，套用不了這套「跟著物件生命週期走」的機制，所以語言直接禁止用原始值當 WeakMap 的 key。objKey 是物件，正常運作，wm.get(objKey) 印出 ok。",
+      "explanation": "WeakMap 明確規定 key 只能是物件（或 ES2023 之後新增支援的非註冊 Symbol），不能是字串這種一般原始值——wm.set('a string key', 'value') 直接丟出 TypeError，被 try/catch 接住，印出 error: TypeError。這個限制不是隨意設下的：WeakMap 對它的 key 只保留「弱參照」，一旦某個 key（物件，或非註冊 Symbol）在其他地方都不再被使用、可以被垃圾回收，WeakMap 裡對應的那筆資料也會跟著自動被回收，不會阻止記憶體釋放；但字串、數字這類原始值不是用參照管理記憶體的概念，套用不了這套「跟著生命週期走」的機制，所以語言禁止用一般原始值當 WeakMap 的 key。objKey 是物件，正常運作，wm.get(objKey) 印出 ok。",
       "verify": {
         "checks": [
           { "code": "var wm = new WeakMap();\ntry {\n  wm.set('a string key', 'value');\n} catch (e) {\n  console.log('error:', e.constructor.name);\n}\nvar objKey = {};\nwm.set(objKey, 'ok');\nconsole.log(wm.get(objKey));", "expected": "error: TypeError\nok" }

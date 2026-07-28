@@ -6,7 +6,7 @@
       "id": "ydkjs-tg-3-q1",
       "type": "predict-output",
       "difficulty": 1,
-      "topic": "每個值內部都有一個 [[Class]] 標記，用 Object.prototype.toString.call 可以精準分辨型別",
+      "topic": "Object.prototype.toString.call 對內建型別的值會回傳一個內建的標記字串，比 typeof 更能精準分辨這些型別",
       "docs": "https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Object/toString",
       "story": "",
       "prompt": "這段程式會印出什麼？",

@@ -18,7 +18,7 @@
         { "id": "d", "text": "undefined\nobj" }
       ],
       "answer": "a",
-      "explanation": "obj.regular() 用「物件.方法()」的隱式綁定呼叫，this 是 obj，印出 obj.name = 'obj'。但 arrow 是箭頭函式，完全沒有自己的 this 綁定（this和物件原型那本書 Ch2 教過），它的 this 直接繼承自「arrow 這個箭頭函式被定義當下」所在的外層作用域——這裡 arrow 是寫在物件字面量最外層，並不是寫在任何函式內部，所以繼承到的是最外層（全域）的 this，跟 obj 完全無關，this.name 印出 undefined。同一個物件裡的兩個方法，光是宣告方式不同（function 還是箭頭函式），this 綁定的結果就完全不一樣。",
+      "explanation": "obj.regular() 用「物件.方法()」的隱式綁定呼叫，this 是 obj，印出 obj.name = 'obj'。但 arrow 是箭頭函式，完全沒有自己的 this 綁定（this和物件原型那本書 Ch2 教過），它的 this 直接繼承自「arrow 這個箭頭函式被定義當下」所在的外層作用域——這裡 arrow 是寫在物件字面量最外層，並不是寫在任何函式內部，所以繼承到的是最外層作用域的 this，跟 obj 完全無關。如果這段程式是放在 Node.js 的 CommonJS 模組（一般的 .js 檔案）最外層執行，這個最外層 this 實際上是 module.exports（一個空物件），不是瀏覽器裡的全域 window；不管是哪一種情況，module.exports 或全域物件上都沒有 name 屬性，所以 this.name 一樣印出 undefined。同一個物件裡的兩個方法，光是宣告方式不同（function 還是箭頭函式），this 綁定的結果就完全不一樣。",
       "verify": {
         "checks": [
           { "code": "var obj = {\n  name: 'obj',\n  regular: function () {\n    return this.name;\n  },\n  arrow: () => {\n    return this.name;\n  },\n};\nconsole.log(obj.regular());\nconsole.log(obj.arrow());", "expected": "obj\nundefined" }
