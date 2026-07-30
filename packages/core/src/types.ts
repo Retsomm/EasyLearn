@@ -30,6 +30,7 @@ export type IconName =
   | 'shuffle'
   | 'logout'
   | 'trash'
+  | 'smartphone'
 
 export type QuestionType = 'predict-output' | 'find-bug' | 'same-or-not' | 'fill-in' | 'concept'
 
@@ -64,6 +65,21 @@ export interface Chapter {
   title: string
   icon: IconName
   levels: Level[]
+}
+
+// 純閱讀教材：跟 Chapter/Level 不同，沒有測驗題目，只有一段段完整的文字內容
+// （不是條列重點），適合需要「從零開始讀懂」的官方文件翻譯內容
+export interface ReadingSection {
+  id: string
+  title: string
+  paragraphs: string[]
+}
+
+export interface ReadingChapter {
+  id: string
+  title: string
+  icon: IconName
+  sections: ReadingSection[]
 }
 
 // 主題：首頁卡片的顯示單位。大多數主題底下只有一個 Chapter（點卡片直接進關卡列表）；

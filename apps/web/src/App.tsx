@@ -25,6 +25,7 @@ import Quiz from '@/screens/Quiz'
 import QuestionBook from '@/screens/QuestionBook'
 import Recap from '@/screens/Recap'
 import RecapChapter from '@/screens/RecapChapter'
+import ReadingChapter from '@/screens/ReadingChapter'
 import SavedKeyPoints from '@/screens/SavedKeyPoints'
 import type { Question } from '@easylearn/core'
 
@@ -44,12 +45,13 @@ type View =
   | { name: 'savedpractice'; questions: Question[] }
   | { name: 'recap' }
   | { name: 'recap-chapter'; chapterId: string }
+  | { name: 'reading-chapter'; chapterId: string }
 
 // 決定目前畫面該讓 navbar 的哪個分頁保持高亮
 const navGroupOf = (viewName: View['name']): string => {
   if (viewName === 'stats') return 'stats'
   if (viewName === 'profile') return 'profile'
-  if (viewName === 'recap' || viewName === 'recap-chapter') return 'recap'
+  if (viewName === 'recap' || viewName === 'recap-chapter' || viewName === 'reading-chapter') return 'recap'
   if (['notes', 'review', 'wrongbook', 'savedbook', 'savedkeypoints', 'savedpractice'].includes(viewName)) return 'notes'
   return 'home'
 }
@@ -217,7 +219,12 @@ const App = () => {
         )
       }
       case 'recap':
-        return <Recap onOpenChapter={(chapterId) => setView({ name: 'recap-chapter', chapterId })} />
+        return (
+          <Recap
+            onOpenChapter={(chapterId) => setView({ name: 'recap-chapter', chapterId })}
+            onOpenReadingChapter={(chapterId) => setView({ name: 'reading-chapter', chapterId })}
+          />
+        )
       case 'recap-chapter':
         return (
           <RecapChapter
@@ -227,6 +234,8 @@ const App = () => {
             onBack={() => setView({ name: 'recap' })}
           />
         )
+      case 'reading-chapter':
+        return <ReadingChapter chapterId={view.chapterId} onBack={() => setView({ name: 'recap' })} />
       case 'savedkeypoints':
         return (
           <SavedKeyPoints
