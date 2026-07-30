@@ -8,6 +8,16 @@ export type ViewState =
   | { name: 'quiz'; levelId: string; questions: Question[] }
   | { name: 'mixed'; questions: Question[] };
 
+// Notes tab（精選筆記）自己的畫面狀態機，跟上面 Home tab 的 ViewState 分開存，理由同下方
+// notesQuizSession 的註解：兩個分頁的畫面可能同時掛載，不能共用同一份 view 狀態。
+export type NotesViewState =
+  | { name: 'notes' }
+  | { name: 'wrongbook' }
+  | { name: 'savedbook' }
+  | { name: 'savedkeypoints' }
+  | { name: 'review'; questions: Question[] }
+  | { name: 'savedpractice'; questions: Question[] };
+
 export type QuizSessionState = {
   index: number;
   selected: string | null;
@@ -36,6 +46,12 @@ type HomeViewContextValue = {
   // 因為兩個分頁的 Quiz 元件可能同時掛載（Tabs navigator 預設不會 unmount 沒在看的分頁）
   notesQuizSession: QuizSessionState;
   setNotesQuizSession: (updater: QuizSessionState | ((s: QuizSessionState) => QuizSessionState)) => void;
+  // Notes tab 目前顯示哪個子畫面（含抽到的題目），理由同上面 view／quizSession 的註解：
+  // SSO 登入回跳導致 (tabs) navigator 重建時，這裡才能連同 notesQuizSession 一起把答題進度
+  // 對應的畫面（錯題重練／收藏題庫練習）復原，不然 session 本身還在，但畫面已經退回精選筆記首頁，
+  // session 等於變成拿不到的孤兒資料。
+  notesView: NotesViewState;
+  setNotesView: (view: NotesViewState) => void;
 };
 
 const HomeViewContext = createContext<HomeViewContextValue | null>(null);
@@ -49,10 +65,20 @@ export const HomeViewProvider = ({ children }: { children: ReactNode }) => {
   const [view, setView] = useState<ViewState>({ name: 'home' });
   const [quizSession, setQuizSession] = useState<QuizSessionState>(DEFAULT_QUIZ_SESSION);
   const [notesQuizSession, setNotesQuizSession] = useState<QuizSessionState>(DEFAULT_QUIZ_SESSION);
+  const [notesView, setNotesView] = useState<NotesViewState>({ name: 'notes' });
 
   return (
     <HomeViewContext.Provider
-      value={{ view, setView, quizSession, setQuizSession, notesQuizSession, setNotesQuizSession }}>
+      value={{
+        view,
+        setView,
+        quizSession,
+        setQuizSession,
+        notesQuizSession,
+        setNotesQuizSession,
+        notesView,
+        setNotesView,
+      }}>
       {children}
     </HomeViewContext.Provider>
   );

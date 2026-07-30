@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,27 +16,19 @@ import {
   REVIEW_SIZE,
   sampleFixedQuestions,
   sampleQuestions,
-  type Question,
 } from '@easylearn/core';
-
-type ViewState =
-  | { name: 'notes' }
-  | { name: 'wrongbook' }
-  | { name: 'savedbook' }
-  | { name: 'savedkeypoints' }
-  | { name: 'review'; questions: Question[] }
-  | { name: 'savedpractice'; questions: Question[] };
 
 // 對照 apps/web App.tsx 裡 notes/wrongbook/savedbook/savedkeypoints/review/savedpractice
 // 這幾支 view，差別是這裡範圍只到 Notes tab，跟 Home tab 各自獨立一個狀態機（理由同 index.tsx 的註解）。
-// 底下的 Quiz 答題進度（session）改用 HomeViewContext 的 notesQuizSession，理由同 index.tsx：
-// SSO 登入回跳時 (tabs) navigator 可能被重新建立，local state 撐不住，見 HomeViewContext.tsx。
+// view／Quiz 答題進度（session）都改用 HomeViewContext 的 notesView／notesQuizSession，理由同
+// index.tsx：SSO 登入回跳時 (tabs) navigator 可能被重新建立，local state 撐不住，見
+// HomeViewContext.tsx。兩者要一起放在 context，只搬 session 不搬 view 的話，重建後畫面會退回
+// 精選筆記首頁，session 裡的答題進度就變成畫面對不到的孤兒資料。
 export default function NotesScreen() {
   const { progress, hydrated, toggleSaved, toggleSavedKeyPoint, answerQuestion, finishLevel, finishReview } =
     useProgress();
   const { colors } = useAppTheme();
-  const [view, setView] = useState<ViewState>({ name: 'notes' });
-  const { notesQuizSession, setNotesQuizSession } = useHomeView();
+  const { notesView: view, setNotesView: setView, notesQuizSession, setNotesQuizSession } = useHomeView();
   const insets = useSafeAreaInsets();
 
   if (!hydrated) {

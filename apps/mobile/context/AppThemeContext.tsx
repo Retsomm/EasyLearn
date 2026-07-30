@@ -81,12 +81,13 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
         let resolved: ThemeId = remoteTheme;
         if (remoteTheme === DEFAULT_THEME_ID && localTheme !== DEFAULT_THEME_ID) {
           if (cancelled || generation !== mutationGenerationRef.current) return;
-          const posted = await request<{ theme?: string }>('/api/theme', {
-            method: 'POST',
-            body: { theme: localTheme },
-            token,
-          });
-          resolved = posted.theme && isValidThemeId(posted.theme) ? posted.theme : DEFAULT_THEME_ID;
+          // 這裡不能直接 request(POST) 存檔：這個遷移寫入要跟 setThemeId 的存檔請求走同一個
+          // flushThemeSave 序列化佇列，不然遷移的舊主題 A 有機會在使用者這期間又手動選了新主題 B
+          // 之後才送達伺服器，把 B 覆蓋回 A。走 flushThemeSave 之後，「只保留最後一個待存值」的
+          // 邏輯自然會確保真正落地的是使用者最後選的那個。
+          pendingThemeSaveRef.current = localTheme;
+          flushThemeSave(token);
+          resolved = localTheme;
         }
         if (cancelled || generation !== mutationGenerationRef.current) return;
         setThemeIdState(resolved);
