@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenRoot } from '@/components/Themed';
 import { useAppTheme } from '@/context/AppThemeContext';
 import { useProgress } from '@/context/ProgressContext';
+import { DEFAULT_QUIZ_SESSION, useHomeView } from '@/context/HomeViewContext';
 import Notes from '@/screens/Notes';
 import QuestionBook from '@/screens/QuestionBook';
 import Quiz from '@/screens/Quiz';
@@ -28,12 +29,15 @@ type ViewState =
   | { name: 'savedpractice'; questions: Question[] };
 
 // 對照 apps/web App.tsx 裡 notes/wrongbook/savedbook/savedkeypoints/review/savedpractice
-// 這幾支 view，差別是這裡範圍只到 Notes tab，跟 Home tab 各自獨立一個狀態機（理由同 index.tsx 的註解）
+// 這幾支 view，差別是這裡範圍只到 Notes tab，跟 Home tab 各自獨立一個狀態機（理由同 index.tsx 的註解）。
+// 底下的 Quiz 答題進度（session）改用 HomeViewContext 的 notesQuizSession，理由同 index.tsx：
+// SSO 登入回跳時 (tabs) navigator 可能被重新建立，local state 撐不住，見 HomeViewContext.tsx。
 export default function NotesScreen() {
   const { progress, hydrated, toggleSaved, toggleSavedKeyPoint, answerQuestion, finishLevel, finishReview } =
     useProgress();
   const { colors } = useAppTheme();
   const [view, setView] = useState<ViewState>({ name: 'notes' });
+  const { notesQuizSession, setNotesQuizSession } = useHomeView();
   const insets = useSafeAreaInsets();
 
   if (!hydrated) {
@@ -48,12 +52,14 @@ export default function NotesScreen() {
     const picked = sampleFixedQuestions(getWrongQuestions(progress.wrongIds), REVIEW_SIZE);
     if (picked.length === 0) return;
     setView({ name: 'review', questions: picked });
+    setNotesQuizSession(DEFAULT_QUIZ_SESSION);
   };
 
   const startSavedPractice = () => {
     const picked = sampleQuestions(getSavedQuestions(progress.savedIds));
     if (picked.length === 0) return;
     setView({ name: 'savedpractice', questions: picked });
+    setNotesQuizSession(DEFAULT_QUIZ_SESSION);
   };
 
   let content;
@@ -64,6 +70,8 @@ export default function NotesScreen() {
         level={{ id: '__review__', title: '錯題重練', questions: view.questions }}
         mode="review"
         progress={progress}
+        session={notesQuizSession}
+        setSession={setNotesQuizSession}
         answerQuestion={answerQuestion}
         toggleSaved={toggleSaved}
         finishLevel={finishLevel}
@@ -79,6 +87,8 @@ export default function NotesScreen() {
         level={{ id: '__saved__', title: '收藏題庫練習', questions: view.questions }}
         mode="mixed"
         progress={progress}
+        session={notesQuizSession}
+        setSession={setNotesQuizSession}
         answerQuestion={answerQuestion}
         toggleSaved={toggleSaved}
         finishLevel={finishLevel}

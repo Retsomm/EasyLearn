@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
@@ -9,6 +9,7 @@ import { PrimaryButton, makeButtonTextStyles } from '@/components/Button';
 import { fonts } from '@/constants/theme';
 import type { ColorPalette, ThemeStyle } from '@/constants/themePalettes';
 import { useAppTheme } from '@/context/AppThemeContext';
+import type { QuizSessionState } from '@/context/HomeViewContext';
 import { getChapterIdForQuestion, getStage, type Level, type Progress } from '@easylearn/core';
 
 const XP_CORRECT = 10;
@@ -19,6 +20,12 @@ interface QuizProps {
   level: Level;
   mode?: 'normal' | 'review' | 'mixed';
   progress: Progress;
+  // 答題進度（第幾題／已選答案／目前對幾題等）改由呼叫端經 HomeViewContext 傳入、用 setSession
+  // 寫回去，取代這裡原本的 local useState：這個元件在 SSO 登入回跳時可能被整個重新掛載，
+  // local state 撐不住那次重新掛載，掛在 Stack 之上的 Context 才不受影響，詳見
+  // context/HomeViewContext.tsx 的說明。
+  session: QuizSessionState;
+  setSession: (updater: QuizSessionState | ((s: QuizSessionState) => QuizSessionState)) => void;
   answerQuestion: (questionId: string, correct: boolean, chapterId?: string) => void;
   toggleSaved: (questionId: string) => void;
   finishLevel: (levelId: string, correct: number, total: number, xpEarned: number) => void;
@@ -33,6 +40,8 @@ export default function Quiz({
   level,
   mode = 'normal',
   progress,
+  session,
+  setSession,
   answerQuestion,
   toggleSaved,
   finishLevel,
@@ -43,12 +52,7 @@ export default function Quiz({
   const { colors, style: themeStyle } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors, themeStyle), [colors, themeStyle]);
   const buttonTextStyles = useMemo(() => makeButtonTextStyles(colors, themeStyle), [colors, themeStyle]);
-  const [index, setIndex] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [xpEarned, setXpEarned] = useState(0);
-  const [done, setDone] = useState(false);
-  const [finalXp, setFinalXp] = useState(0);
+  const { index, selected, correctCount, xpEarned, done, finalXp } = session;
 
   const isReview = mode === 'review';
   const isMixed = mode === 'mixed';
@@ -58,17 +62,19 @@ export default function Quiz({
   const firstClear = !skipsLevelProgress && !progress.completedLevels[level.id];
 
   const handleSelect = (optId: string) => {
-    setSelected(optId);
     const isCorrect = optId === question.answer;
     answerQuestion(question.id, isCorrect, getChapterIdForQuestion(question.id));
-    if (isCorrect) setCorrectCount((c) => c + 1);
-    setXpEarned((x) => x + (isCorrect ? XP_CORRECT : XP_WRONG));
+    setSession((s) => ({
+      ...s,
+      selected: optId,
+      correctCount: isCorrect ? s.correctCount + 1 : s.correctCount,
+      xpEarned: s.xpEarned + (isCorrect ? XP_CORRECT : XP_WRONG),
+    }));
   };
 
   const handleNext = () => {
     if (index + 1 < questions.length) {
-      setIndex(index + 1);
-      setSelected(null);
+      setSession((s) => ({ ...s, index: s.index + 1, selected: null }));
     } else {
       const bonus = firstClear ? XP_FIRST_CLEAR_BONUS : 0;
       const total = xpEarned + bonus;
@@ -77,8 +83,7 @@ export default function Quiz({
       } else {
         finishLevel(level.id, correctCount, questions.length, total);
       }
-      setFinalXp(total);
-      setDone(true);
+      setSession((s) => ({ ...s, finalXp: total, done: true }));
     }
   };
 

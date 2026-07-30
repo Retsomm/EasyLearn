@@ -38,6 +38,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { tokenCache } from '@/lib/tokenCache';
 import { ProgressProvider } from '@/context/ProgressContext';
 import { AppThemeProvider } from '@/context/AppThemeContext';
+import { HomeViewProvider } from '@/context/HomeViewContext';
 
 // OAuth 登入走系統瀏覽器跳轉回 App 時，讓瀏覽器 session 正常關閉
 WebBrowser.maybeCompleteAuthSession();
@@ -116,7 +117,9 @@ export default function RootLayout() {
         <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY!} tokenCache={tokenCache}>
           <AppThemeProvider>
             <ProgressProvider>
-              <RootLayoutNav />
+              <HomeViewProvider>
+                <RootLayoutNav />
+              </HomeViewProvider>
             </ProgressProvider>
           </AppThemeProvider>
         </ClerkProvider>
