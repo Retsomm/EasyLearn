@@ -45,6 +45,7 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
   const signOutResetRef = useRef(false);
   const pendingThemeSaveRef = useRef<ThemeId | null>(null);
   const savingThemeRef = useRef(false);
+  const mutationGenerationRef = useRef(0);
 
   useEffect(() => {
     (async () => {
@@ -53,20 +54,15 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, []);
 
-  // 訪客模式：主題變動就寫回 AsyncStorage。登出瞬間 themeId 可能還是登入時的舊值（下面
-  // 登出分支的 loadLocal() 還沒 resolve），這段期間跳過寫入，避免把登入時的主題誤寫回本機、
-  // 蓋掉訪客真正的本機偏好
-  useEffect(() => {
-    if (!hydrated || isSignedIn || signOutResetRef.current) return;
-    AsyncStorage.setItem(STORAGE_KEY, themeId).catch(() => {});
-  }, [themeId, isSignedIn, hydrated]);
-
-  // 登入狀態切換：登入時去資料庫拿主題設定；登出則換回讀本機 AsyncStorage
+  // 登入狀態切換：登入時去資料庫拿主題設定；登出則換回讀本機 AsyncStorage。這個 effect
+  // 要排在下面的訪客持久化 effect 之前宣告，確保同一次 commit 裡登出分支先把
+  // signOutResetRef 設成 true，訪客持久化 effect 才不會用還沒切換過來的舊 themeId 誤寫回本機
   useEffect(() => {
     if (!isLoaded || !hydrated) return;
     if (!isSignedIn) {
       syncedRef.current = false;
       signOutResetRef.current = true;
+      pendingThemeSaveRef.current = null;
       loadLocal().then((local) => {
         setThemeIdState(local);
         signOutResetRef.current = false;
@@ -75,6 +71,7 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
     }
     if (syncedRef.current) return;
     let cancelled = false;
+    const generation = mutationGenerationRef.current;
     (async () => {
       try {
         const token = await getToken();
@@ -83,6 +80,7 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
         const localTheme = await loadLocal();
         let resolved: ThemeId = remoteTheme;
         if (remoteTheme === DEFAULT_THEME_ID && localTheme !== DEFAULT_THEME_ID) {
+          if (cancelled || generation !== mutationGenerationRef.current) return;
           const posted = await request<{ theme?: string }>('/api/theme', {
             method: 'POST',
             body: { theme: localTheme },
@@ -90,7 +88,7 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
           });
           resolved = posted.theme && isValidThemeId(posted.theme) ? posted.theme : DEFAULT_THEME_ID;
         }
-        if (cancelled) return;
+        if (cancelled || generation !== mutationGenerationRef.current) return;
         setThemeIdState(resolved);
         syncedRef.current = true;
       } catch (err) {
@@ -101,6 +99,14 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
       cancelled = true;
     };
   }, [isLoaded, isSignedIn, hydrated, getToken]);
+
+  // 訪客模式：主題變動就寫回 AsyncStorage。登出瞬間 themeId 可能還是登入時的舊值（上面
+  // 登出分支的 loadLocal() 還沒 resolve），這段期間跳過寫入，避免把登入時的主題誤寫回本機、
+  // 蓋掉訪客真正的本機偏好
+  useEffect(() => {
+    if (!hydrated || isSignedIn || signOutResetRef.current) return;
+    AsyncStorage.setItem(STORAGE_KEY, themeId).catch(() => {});
+  }, [themeId, isSignedIn, hydrated]);
 
   // 存檔請求一次只送一個，快速連續切換主題時只保留最後一個待存的值，等目前這個請求落地後
   // 才送下一個——避免多個 POST 同時飛在外面，因為網路延遲不保證誰先送誰先到，先送的
@@ -125,6 +131,7 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
 
   const setThemeId = (next: ThemeId) => {
     if (!isValidThemeId(next)) return;
+    mutationGenerationRef.current += 1;
     setThemeIdState(next);
     AsyncStorage.setItem(STORAGE_KEY, next).catch(() => {});
     if (isSignedIn) {

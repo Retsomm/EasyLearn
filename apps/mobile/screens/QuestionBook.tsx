@@ -97,7 +97,6 @@ const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.
   },
   reviewBtn: {
     width: '100%',
-    maxWidth: 280,
     marginBottom: 4,
   },
   empty: {
