@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/expo';
 
-import { View } from '@/components/Themed';
+import { ScreenRoot } from '@/components/Themed';
 
 // Android 模擬器／較慢的網路下，signIn.reload() + setActive() 這段可能不只 5 秒，
 // 拉長一點避免逾時保底提前把使用者導回未登入畫面，蓋掉原本快完成的登入
@@ -33,5 +33,5 @@ export default function SSOCallback() {
 
   // 刻意留白、不放 spinner：這個畫面應該只存在幾十毫秒，加上 _layout.tsx 已經關掉
   // header 跟切換動畫，任何內容（連 spinner 都算）反而更容易讓使用者感覺到「閃過一個畫面」
-  return <View style={{ flex: 1 }} />;
+  return <ScreenRoot style={{ flex: 1 }} />;
 }

@@ -18,10 +18,19 @@ export function Text(props: TextProps) {
   return <DefaultText style={[{ color: colors.ink, fontFamily: fonts.sans.regular }, style]} {...otherProps} />;
 }
 
-// 除了實色背景，還疊一層 ThemeBackground（星點/光暈/掃描線裝飾，對照 apps/web body::before／
-// ::after），畫在 children 之下——這支元件目前唯一的用途就是畫面最外層的背景容器（見
-// ThemeBackground.tsx 開頭的說明），所以在這裡統一疊加，不用每個畫面各自處理。
+// 純版面用途的容器：只跟著主題換 backgroundColor，不畫裝飾層，可以安心巢狀使用
+// （不會疊出好幾層 ThemeBackground）。畫面最外層想要星點/光暈/掃描線裝飾，改用下面的 ScreenRoot。
 export function View(props: ViewProps) {
+  const { style, ...otherProps } = props;
+  const { colors } = useAppTheme();
+
+  return <DefaultView style={[{ backgroundColor: colors.bg }, style]} {...otherProps} />;
+}
+
+// 疊一層 ThemeBackground（星點/光暈/掃描線裝飾，對照 apps/web body::before／::after），
+// 畫在 children 之下——只給每個 tab 畫面最外層的根容器用一次，其他巢狀版面一律用上面的 View，
+// 避免裝飾層跟著巢狀結構重複疊加。
+export function ScreenRoot(props: ViewProps) {
   const { style, children, ...otherProps } = props;
   const { colors } = useAppTheme();
 

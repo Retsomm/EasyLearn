@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { View } from '@/components/Themed';
+import { ScreenRoot } from '@/components/Themed';
 import { useAppTheme } from '@/context/AppThemeContext';
 import { useProgress } from '@/context/ProgressContext';
 import Notes from '@/screens/Notes';
@@ -38,9 +38,9 @@ export default function NotesScreen() {
 
   if (!hydrated) {
     return (
-      <View style={[styles.loading, { paddingTop: insets.top }]}>
+      <ScreenRoot style={[styles.loading, { paddingTop: insets.top }]}>
         <ActivityIndicator color={colors.primary} />
-      </View>
+      </ScreenRoot>
     );
   }
 
@@ -129,7 +129,7 @@ export default function NotesScreen() {
     );
   }
 
-  return <View style={[styles.flexFill, { paddingTop: insets.top }]}>{content}</View>;
+  return <ScreenRoot style={[styles.flexFill, { paddingTop: insets.top }]}>{content}</ScreenRoot>;
 }
 
 const styles = StyleSheet.create({
