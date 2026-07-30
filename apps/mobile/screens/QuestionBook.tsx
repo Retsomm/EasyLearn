@@ -1,10 +1,13 @@
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
-import { SecondaryButton, buttonTextStyles } from '@/components/Button';
+import { SecondaryButton, makeButtonTextStyles } from '@/components/Button';
 import QuestionReview from '@/screens/QuestionReview';
-import { colors, fonts } from '@/constants/theme';
+import { fonts } from '@/constants/theme';
+import type { ColorPalette, ThemeStyle } from '@/constants/themePalettes';
+import { useAppTheme } from '@/context/AppThemeContext';
 import type { Question, WrongEntry } from '@easylearn/core';
 
 interface QuestionBookProps {
@@ -18,6 +21,9 @@ interface QuestionBookProps {
 
 // 錯題本／收藏題目共用的清單畫面（對照 apps/web 同名畫面）
 export default function QuestionBook({ kind, entries, savedIds, onToggleSave, onBack, onReview }: QuestionBookProps) {
+  const { colors, style: themeStyle } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors, themeStyle), [colors, themeStyle]);
+  const buttonTextStyles = useMemo(() => makeButtonTextStyles(colors, themeStyle), [colors, themeStyle]);
   const isWrong = kind === 'wrong';
   const title = isWrong ? '錯題本' : '收藏題目';
 
@@ -59,7 +65,7 @@ export default function QuestionBook({ kind, entries, savedIds, onToggleSave, on
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.create({
   container: {
     paddingHorizontal: 24,
     paddingTop: 24,
@@ -76,8 +82,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: 'rgba(95, 240, 224, 0.25)',
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
+    borderColor: colors.navbarBorder,
     width: 38,
     height: 38,
   },
@@ -89,7 +97,6 @@ const styles = StyleSheet.create({
   },
   reviewBtn: {
     width: '100%',
-    maxWidth: 280,
     marginBottom: 4,
   },
   empty: {

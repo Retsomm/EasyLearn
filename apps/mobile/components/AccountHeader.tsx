@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, TextInput, View, type NativeSyntheticEvent, type ImageLoadEventData } from 'react-native';
 import { PanGestureHandler, State, type PanGestureHandlerGestureEvent, type PanGestureHandlerStateChangeEvent } from 'react-native-gesture-handler';
 import Slider from '@react-native-community/slider';
@@ -7,8 +7,10 @@ import { useUser } from '@clerk/expo';
 
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
-import { buttonTextStyles } from '@/components/Button';
-import { colors, fonts } from '@/constants/theme';
+import { makeButtonTextStyles } from '@/components/Button';
+import { fonts } from '@/constants/theme';
+import type { ColorPalette, ThemeStyle } from '@/constants/themePalettes';
+import { useAppTheme } from '@/context/AppThemeContext';
 
 type ClerkUser = NonNullable<ReturnType<typeof useUser>['user']>;
 
@@ -76,6 +78,9 @@ interface AccountHeaderProps {
 // react-native-gesture-handler 的 PanGestureHandler，translationX/Y 本來就是相對手勢起點
 // 的累計位移，跟 web 版「從 pointerdown 起點算 dx/dy」是同一個概念，換算公式整段照搬。
 export default function AccountHeader({ user }: AccountHeaderProps) {
+  const { colors, style: themeStyle } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors, themeStyle), [colors, themeStyle]);
+  const buttonTextStyles = useMemo(() => makeButtonTextStyles(colors, themeStyle), [colors, themeStyle]);
   const dragStartPos = useRef<AvatarPosition | null>(null);
 
   const [pos, setPos] = useState<AvatarPosition>(() => readAvatarPosition(user.unsafeMetadata));
@@ -302,7 +307,7 @@ export default function AccountHeader({ user }: AccountHeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.create({
   container: {
     gap: 14,
   },
@@ -333,7 +338,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   avatarInitial: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontWeight: '700',
     fontSize: 26,
     color: colors.cyan,
@@ -376,7 +381,9 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans.medium,
     fontSize: 14,
     color: colors.ink,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
     paddingHorizontal: 8,
     paddingVertical: 4,

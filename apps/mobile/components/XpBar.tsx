@@ -1,7 +1,8 @@
 import { StyleSheet, View, type DimensionValue } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors } from '@/constants/theme';
+import type { ColorPalette } from '@/constants/themePalettes';
+import { useAppTheme } from '@/context/AppThemeContext';
 
 interface XpBarProps {
   progress: number; // 0-100
@@ -12,6 +13,8 @@ interface XpBarProps {
 // 對照 index.css 的 .xp-bar／.xp-bar-fill：cyan→primary 的漸層進度條，Mascot 與 Profile
 // 的「經驗值」卡片共用同一份，避免兩處各刻一次漸層邏輯。
 export default function XpBar({ progress, height = 12, width = 220 }: XpBarProps) {
+  const { colors } = useAppTheme();
+  const styles = makeStyles(colors);
   return (
     <View style={[styles.track, { height, width }]}>
       <LinearGradient
@@ -24,7 +27,7 @@ export default function XpBar({ progress, height = 12, width = 220 }: XpBarProps
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette) => StyleSheet.create({
   track: {
     backgroundColor: colors.track,
     overflow: 'hidden',

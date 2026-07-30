@@ -5,8 +5,12 @@
   "dependencies": {
     "@clerk/expo": "^3.7.4",
     "@easylearn/core": "*",
+    "@expo-google-fonts/cinzel": "^0.4.2",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@expo-google-fonts/noto-sans-tc": "^0.4.3",
+    "@expo-google-fonts/orbitron": "^0.4.2",
+    "@expo-google-fonts/rajdhani": "^0.4.1",
+    "@expo-google-fonts/space-grotesk": "^0.4.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/slider": "5.2.0",
     "expo": "~57.0.4",

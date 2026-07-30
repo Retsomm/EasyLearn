@@ -190,6 +190,12 @@ const PATHS = {
       <line x1="14" x2="14" y1="11" y2="17" />
     </>
   ),
+  smartphone: (
+    <>
+      <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+      <path d="M12 18h.01" />
+    </>
+  ),
 } satisfies Record<IconName, ReactNode>
 
 interface IconProps {

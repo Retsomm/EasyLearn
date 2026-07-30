@@ -4,14 +4,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Icon from '@/components/Icon';
 import TabBarButton from '@/components/TabBarButton';
-import { colors, fonts } from '@/constants/theme';
+import { useAppTheme } from '@/context/AppThemeContext';
 
 const TAB_BAR_CONTENT_HEIGHT = 62;
 
-// 對應 apps/web 的 Navbar.tsx 四個分頁（home/notes/stats/profile），樣式對照
+// 對應 apps/web 的 Navbar.tsx 五個分頁（home/notes/recap/stats/profile），樣式對照
 // index.css @media(max-width:640px) 底部 tab bar 那組規則（.navbar/.navbar-tab 系列）。
 export default function TabLayout() {
   const { isSignedIn } = useAuth();
+  const { colors, style: themeStyle } = useAppTheme();
   const insets = useSafeAreaInsets();
 
   return (
@@ -22,7 +23,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: colors.navbarTabInactive,
         tabBarShowLabel: true,
         tabBarLabelStyle: {
-          fontFamily: fonts.mono.bold,
+          fontFamily: themeStyle.mono.bold,
           fontSize: 10,
           fontWeight: '700',
         },
@@ -51,6 +52,13 @@ export default function TabLayout() {
         options={{
           title: '精選筆記',
           tabBarIcon: ({ color }) => <Icon name="book-open" size={18} color={color as string} />,
+        }}
+      />
+      <Tabs.Screen
+        name="recap"
+        options={{
+          title: '章節重點',
+          tabBarIcon: ({ color }) => <Icon name="star" size={18} color={color as string} />,
         }}
       />
       <Tabs.Screen

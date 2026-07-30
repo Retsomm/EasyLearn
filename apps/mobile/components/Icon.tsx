@@ -22,6 +22,7 @@ import Rocket from 'lucide-react-native/icons/rocket';
 import RotateCcw from 'lucide-react-native/icons/rotate-ccw';
 import Search from 'lucide-react-native/icons/search';
 import Shuffle from 'lucide-react-native/icons/shuffle';
+import Smartphone from 'lucide-react-native/icons/smartphone';
 import Sprout from 'lucide-react-native/icons/sprout';
 import Star from 'lucide-react-native/icons/star';
 import Trash2 from 'lucide-react-native/icons/trash-2';
@@ -70,6 +71,7 @@ const ICONS: Record<IconName, LucideIcon> = {
   shuffle: Shuffle,
   logout: LogOut,
   trash: Trash2,
+  smartphone: Smartphone,
 };
 
 interface IconProps {

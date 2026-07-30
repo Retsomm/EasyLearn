@@ -1,16 +1,16 @@
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Icon from '@/components/Icon';
-import { PrimaryButton, buttonTextStyles } from '@/components/Button';
-import { colors, fonts } from '@/constants/theme';
+import { PrimaryButton, makeButtonTextStyles } from '@/components/Button';
+import { fonts } from '@/constants/theme';
+import type { ColorPalette, ThemeStyle } from '@/constants/themePalettes';
+import { useAppTheme } from '@/context/AppThemeContext';
 import { topics, todayStr, yesterdayStr, type Progress } from '@easylearn/core';
 
 const DAILY_GOAL = 20;
 const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日'];
-
-// 對照 index.css 的 chapter-list nth-child(1..3) 規則：三個章節依序 cyan／primary／wrong
-const CHAPTER_ACCENTS = [colors.cyan, colors.primary, colors.wrong];
 
 const getWeekDates = (): string[] => {
   const now = new Date();
@@ -33,6 +33,11 @@ interface HomeProps {
 }
 
 export default function Home({ progress, onOpenChapter, onOpenTopic, onMixedPractice }: HomeProps) {
+  const { colors, style: themeStyle } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors, themeStyle), [colors, themeStyle]);
+  const buttonTextStyles = useMemo(() => makeButtonTextStyles(colors, themeStyle), [colors, themeStyle]);
+  // 對照 index.css 的 chapter-list nth-child(1..3) 規則：三個章節依序 cyan／primary／wrong
+  const CHAPTER_ACCENTS = [colors.cyan, colors.primary, colors.wrong];
   const today = todayStr();
   const yesterday = yesterdayStr();
   const todayStats = progress.dailyStats[today] ?? { total: 0, correct: 0 };
@@ -129,7 +134,7 @@ export default function Home({ progress, onOpenChapter, onOpenTopic, onMixedPrac
                   <View style={[styles.chapterBarFill, { width: `${pct}%`, backgroundColor: accent }]} />
                 </View>
               </View>
-              <Icon name="chevron-right" size={22} color="rgba(95, 240, 224, 0.4)" />
+              <Icon name="chevron-right" size={22} color={colors.secondaryBorder} />
             </Pressable>
           );
         })}
@@ -138,15 +143,17 @@ export default function Home({ progress, onOpenChapter, onOpenTopic, onMixedPrac
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.create({
   container: {
     padding: 16,
     gap: 16,
   },
   streakCard: {
     backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 180, 84, 0.35)',
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
+    borderColor: colors.navbarActiveBorder,
     padding: 20,
     gap: 10,
   },
@@ -155,9 +162,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   streakTopText: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 12,
-    color: 'rgba(95, 240, 224, 0.6)',
+    color: colors.sectionLabel,
     letterSpacing: 0.5,
   },
   streakCount: {
@@ -166,7 +173,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   streakCountText: {
-    fontFamily: fonts.mono.extraBold,
+    fontFamily: themeStyle.mono.extraBold,
     fontSize: 30,
     fontWeight: '800',
     color: colors.primary,
@@ -183,11 +190,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: 30,
     backgroundColor: colors.track,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
   },
   streakDayDone: {
-    backgroundColor: 'rgba(95, 240, 224, 0.25)',
+    backgroundColor: colors.navbarBorder,
     borderColor: 'transparent',
   },
   streakDayToday: {
@@ -195,18 +204,18 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   streakDayText: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 12,
-    color: 'rgba(95, 240, 224, 0.55)',
+    color: colors.navbarTabInactive,
   },
   streakDayTextDone: {
     color: colors.cyan,
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontWeight: '700',
   },
   streakDayTextToday: {
-    color: '#241300',
-    fontFamily: fonts.mono.bold,
+    color: colors.primaryInk,
+    fontFamily: themeStyle.mono.bold,
     fontWeight: '700',
   },
   statRow: {
@@ -217,7 +226,9 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
     padding: 16,
   },
@@ -227,13 +238,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statCardHeadText: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 11,
     letterSpacing: 0.5,
-    color: 'rgba(95, 240, 224, 0.55)',
+    color: colors.navbarTabInactive,
   },
   statCardValue: {
-    fontFamily: fonts.mono.extraBold,
+    fontFamily: themeStyle.mono.extraBold,
     fontSize: 26,
     fontWeight: '800',
     color: colors.cyan,
@@ -250,11 +261,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   sectionTitle: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 1.5,
-    color: 'rgba(95, 240, 224, 0.65)',
+    color: colors.sectionLabel,
     marginTop: 8,
   },
   chapterList: {
@@ -267,7 +278,9 @@ const styles = StyleSheet.create({
     gap: 14,
     width: '100%',
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
     padding: 16,
   },
@@ -282,9 +295,9 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   chapterProgress: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 11,
-    color: 'rgba(95, 240, 224, 0.4)',
+    color: colors.secondaryBorder,
   },
   chapterBar: {
     height: 6,

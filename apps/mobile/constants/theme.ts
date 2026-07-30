@@ -14,9 +14,11 @@ export const colors = {
   correct: '#5ff0e0',
   correctFill: 'rgba(95, 240, 224, 0.12)',
   correctSoft: 'rgba(95, 240, 224, 0.08)',
+  correctBorder: 'rgba(95, 240, 224, 0.3)',
   wrong: '#ff5c72',
   wrongFill: 'rgba(255, 92, 114, 0.12)',
   wrongSoft: 'rgba(255, 92, 114, 0.08)',
+  wrongBorder: 'rgba(255, 92, 114, 0.3)',
   locked: 'rgba(223, 248, 244, 0.35)',
   codeBg: '#04070a',
   track: 'rgba(95, 240, 224, 0.1)',
@@ -40,6 +42,10 @@ export const colors = {
   chartCount: '#ffb454',
   chartAccuracy: '#5ff0e0',
   heroXpIconBg: '#0d1116',
+  tabActiveBg: 'rgba(255, 180, 84, 0.08)',
+  sectionLabel: 'rgba(95, 240, 224, 0.65)',
+  hairline: 'rgba(95, 240, 224, 0.12)',
+  dangerChevron: 'rgba(255, 92, 114, 0.5)',
 } as const;
 
 // RN 自訂字型要用 useFonts 載入後的 postscript 名稱，不能用 fontFamily+fontWeight 組合，

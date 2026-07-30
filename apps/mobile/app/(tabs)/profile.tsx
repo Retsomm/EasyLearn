@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth, useSSO, useUser } from '@clerk/expo';
@@ -16,8 +16,10 @@ import AccountHeader from '@/components/AccountHeader';
 import Mascot from '@/components/Mascot';
 import GrowthHistory from '@/components/GrowthHistory';
 import XpBar from '@/components/XpBar';
-import { PrimaryButton, TextButton, buttonTextStyles } from '@/components/Button';
-import { colors, fonts } from '@/constants/theme';
+import { PrimaryButton, TextButton, makeButtonTextStyles } from '@/components/Button';
+import { fonts } from '@/constants/theme';
+import { THEMES, type ColorPalette, type ThemeStyle } from '@/constants/themePalettes';
+import { useAppTheme } from '@/context/AppThemeContext';
 import { useProgress } from '@/context/ProgressContext';
 import { request } from '@/lib/api';
 import { chapters, getNextStage, getStage, getStageProgress } from '@easylearn/core';
@@ -31,6 +33,9 @@ export default function ProfileScreen() {
   const { user } = useUser();
   const { startSSOFlow } = useSSO();
   const { progress, hydrated } = useProgress();
+  const { colors, style: themeStyle, themeId, setThemeId } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors, themeStyle), [colors, themeStyle]);
+  const buttonTextStyles = useMemo(() => makeButtonTextStyles(colors, themeStyle), [colors, themeStyle]);
   const [error, setError] = useState<string | null>(null);
   const [signingIn, setSigningIn] = useState(false);
   const [showGrowth, setShowGrowth] = useState(false);
@@ -176,12 +181,33 @@ export default function ProfileScreen() {
               <ActivityIndicator style={styles.spinner} color={colors.primary} />
             ) : (
               <View style={styles.statGrid}>
-                <StatItem label="總 XP" value={progress.xp} />
-                <StatItem label="連續學習" value={`${streak} 天`} />
-                <StatItem label="完成關卡" value={`${doneLevels} / ${totalLevels}`} />
-                <StatItem label="累計答題" value={totalAnswered} />
+                <StatItem styles={styles} label="總 XP" value={progress.xp} />
+                <StatItem styles={styles} label="連續學習" value={`${streak} 天`} />
+                <StatItem styles={styles} label="完成關卡" value={`${doneLevels} / ${totalLevels}`} />
+                <StatItem styles={styles} label="累計答題" value={totalAnswered} />
               </View>
             )}
+
+            <Text style={styles.sectionTitle}>外觀主題</Text>
+            <View style={styles.themeGrid}>
+              {THEMES.map((t) => {
+                const active = themeId === t.id;
+                return (
+                  <Pressable
+                    key={t.id}
+                    style={[styles.themeSwatch, active && styles.themeSwatchActive]}
+                    onPress={() => setThemeId(t.id)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                  >
+                    <View style={[styles.themeSwatchDot, { backgroundColor: t.swatch }]} />
+                    <Text style={[styles.themeSwatchLabel, active && styles.themeSwatchLabelActive]}>
+                      {t.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
 
             <Text style={styles.sectionTitle}>帳號設定</Text>
             <View style={styles.accountList}>
@@ -190,7 +216,7 @@ export default function ProfileScreen() {
                   <Icon name="logout" size={15} color={colors.ink} />
                   <Text style={styles.accountItemText}>登出</Text>
                 </View>
-                <Icon name="chevron-right" size={16} color="rgba(95, 240, 224, 0.4)" />
+                <Icon name="chevron-right" size={16} color={colors.secondaryBorder} />
               </Pressable>
               <Pressable
                 style={[styles.accountItem, styles.accountItemDanger]}
@@ -203,7 +229,7 @@ export default function ProfileScreen() {
                     {deleting ? '刪除中…' : '刪除帳號'}
                   </Text>
                 </View>
-                <Icon name="chevron-right" size={16} color="rgba(255, 92, 114, 0.5)" />
+                <Icon name="chevron-right" size={16} color={colors.dangerChevron} />
               </Pressable>
             </View>
           </>
@@ -247,7 +273,15 @@ export default function ProfileScreen() {
   );
 }
 
-function StatItem({ label, value }: { label: string; value: string | number }) {
+function StatItem({
+  label,
+  value,
+  styles,
+}: {
+  label: string;
+  value: string | number;
+  styles: ReturnType<typeof makeStyles>;
+}) {
   return (
     <View style={styles.statItem}>
       <Text style={styles.statLabel}>{label}</Text>
@@ -256,7 +290,7 @@ function StatItem({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette, themeStyle: ThemeStyle) => StyleSheet.create({
   screenWrap: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -278,13 +312,15 @@ const styles = StyleSheet.create({
     gap: 8,
     maxWidth: 340,
     backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: 'rgba(95, 240, 224, 0.25)',
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
+    borderColor: colors.navbarBorder,
     paddingVertical: 36,
     paddingHorizontal: 28,
   },
   title: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontSize: 22,
     fontWeight: '700',
     color: colors.inkStrong,
@@ -312,7 +348,9 @@ const styles = StyleSheet.create({
   },
   hero: {
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
     padding: 22,
   },
@@ -332,13 +370,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   heroXpName: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontWeight: '700',
     fontSize: 13,
     color: colors.primary,
   },
   heroXpCount: {
-    fontFamily: fonts.mono.regular,
+    fontFamily: themeStyle.mono.regular,
     fontSize: 11,
     color: colors.inkSoft,
   },
@@ -382,17 +420,17 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   modalTitle: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontSize: 16,
     fontWeight: '700',
     color: colors.inkStrong,
   },
   sectionTitle: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: themeStyle.mono.bold,
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 1.5,
-    color: 'rgba(95, 240, 224, 0.65)',
+    color: colors.sectionLabel,
     marginTop: 24,
     marginBottom: 12,
   },
@@ -406,13 +444,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
   statValue: {
-    fontFamily: fonts.mono.extraBold,
+    fontFamily: themeStyle.mono.extraBold,
     fontSize: 18,
     fontWeight: '800',
     color: colors.cyan,
@@ -423,7 +463,9 @@ const styles = StyleSheet.create({
     color: colors.inkFaint,
   },
   accountList: {
-    borderWidth: 1,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
     borderColor: colors.optionBorder,
   },
   accountItem: {
@@ -433,7 +475,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 18,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(95, 240, 224, 0.12)',
+    borderBottomColor: colors.hairline,
   },
   accountItemDanger: {
     borderBottomWidth: 0,
@@ -450,5 +492,40 @@ const styles = StyleSheet.create({
   },
   accountItemDangerText: {
     color: colors.wrong,
+  },
+  themeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  themeSwatch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.card,
+    borderWidth: themeStyle.borderWidth,
+    borderStyle: themeStyle.borderStyle,
+    borderRadius: themeStyle.radius,
+    borderColor: colors.optionBorder,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  themeSwatchActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.badgeBg,
+  },
+  themeSwatchDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+  },
+  themeSwatchLabel: {
+    fontFamily: fonts.sans.bold,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.inkSoft,
+  },
+  themeSwatchLabelActive: {
+    color: colors.inkStrong,
   },
 });

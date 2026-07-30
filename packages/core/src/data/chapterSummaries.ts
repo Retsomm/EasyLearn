@@ -1,7 +1,6 @@
 import { chapters } from './chapters'
 
 // 章節重點整理：給「複習」分頁用，內容改寫自各書章節，不是題目本身
-// 目前只有 gfp（Grokking Functional Programming）驗證過，其餘章節之後陸續補上
 export interface LevelSummary {
   levelId: string
   keyPoints: string[]
@@ -131,6 +130,216 @@ export const chapterSummaries: Record<string, LevelSummary[]> = {
         '測試涉及 IO／副作用的函式時分兩種策略：一種是把外部資料源「寫死回傳固定值」（對應 JS 就是傳入回傳固定內容的假函式），用來驗證「資料被怎麼使用」；另一種是接一個真正的本地測試伺服器，用來驗證「跟外部服務的請求/回應格式是否正確」，兩者驗證的目標不同，不能互相取代。',
         '判斷要用哪種測試策略的準則是「這個需求的責任在自己的程式碼、還是外部服務本身」——例如排序如果本來就是外部服務做的，測試就不必驗證排序結果，只需驗證自己的程式碼有沒有正確使用回傳的資料。',
         '用測試驅動開發示範「紅－綠－重構」流程：先為還沒實作的新需求（例如失敗時要回傳整理過的錯誤報告，而不是讓整個流程直接失敗）寫一支會失敗的測試，再寫最簡單能通過測試的實作，最後重構抽出更乾淨的輔助函式，重複這個循環直到需求都被涵蓋。',
+      ],
+    },
+  ],
+  fp: [
+    {
+      levelId: 'fp-1',
+      keyPoints: [
+        '維基百科式的 FP 傳統定義（強調數學函式、避免副作用、只用純函式）對實務工程師來說有三個問題：FP 其實離不開副作用（沒有副作用的軟體毫無用處）、FP 有一整套專門處理副作用的技巧（並非只用純函式）、而且 FP 完全可以務實不抽象，不是只存在於學術論文裡。',
+        '書中定義：side effect 是函式回傳值以外的任何行為（例如寄信、修改全域狀態）；pure function 只依賴參數、沒有 side effect，給相同引數永遠回傳相同結果。',
+        '函式程式設計師看程式碼時會直接分成三類：actions（結果依賴被呼叫的時機或次數，例如寄信、讀資料庫）、calculations（單純的輸入到輸出運算，例如加總、驗證格式）、data（不可執行的事實紀錄）；偏好順序是 data 優於 calculations、calculations 優於 actions，但三者都有其用途，並非要完全消滅 actions。',
+        '用一個「任務標記完成後伺服器寄信通知」的六步驟情境示範分類：UI 事件、送出訊息、伺服器收訊息、更新資料庫都是 actions；決定要通知誰是 calculation；訊息內容本身是 data，凸顯「決定」與「執行決定」要分開看待。',
+        'FP 近年重新受重視的原因跟分散式系統有關：一旦程式跨網路溝通，會遇到「訊息可能不按順序抵達」「同一訊息可能收到 0 次、1 次或多次」「沒收到回應也無法確定對方到底有沒有處理」三個現實問題，而 calculations 與 data 不受呼叫時機/次數影響，把程式碼盡量移往這兩類可以縮小 actions 帶來的風險範圍。',
+        '本書選 JavaScript 當範例語言並非因為它適合寫 FP，而是因為它夠普及、語法夠親近多數語言背景的讀者，其本身的不完美（沒有強制不可變性等語言特性）反而逼著讀者去思考「這個原則本身在做什麼」，而不是依賴語言功能自動達成。',
+      ],
+    },
+    {
+      levelId: 'fp-2',
+      keyPoints: [
+        '用「2118 年由機器人做披薩的 Toni\'s Pizza」情境示範全書兩大主軸：第一部分是 actions/calculations/data 三分法（本章示範揉麵團、送貨、訂貨屬於 actions，加倍食譜份量、決定採購清單屬於 calculations，帳務、庫存、食譜屬於 data），第二部分是以第一級抽象為基礎的時間線圖與高階操作。',
+        '引入「分層設計」(stratified design)：把程式碼依「變動頻率」由下而上排列，最底層是語言內建的陣列/物件等結構（幾乎不變）、中層是做披薩共通的邏輯、最上層是「這週菜單」這類常變動的商業細節，上層建立在較穩定的下層之上，改動代價因此降到最低。',
+        '用時間線圖 (timeline diagram) 揭露分散式系統的問題：Toni 把原本一台機器人的工作拆成三台各自平行處理麵團、醬料、起司，因為時間線之間預設完全沒有協調機制，三個步驟理論上有六種交錯完成順序，只有醬料最後完成的兩種順序才能做出正確的披薩，結果開幕當晚出了大量做壞的披薩。',
+        '解法是「切割時間線」(cutting a timeline)，屬於一種高階操作 (higher-order operation)：讓三條平行時間線各自完成準備工作後彼此等待，確認三者都完工才進入下一步組裝，這樣就不需要在意誰先做完，也不必假設任一步驟一定花多久時間。',
+        '從這次失敗與後續修正歸納出的教訓：時間線預設互不協調需要額外機制去同步；不能依賴 action 過去花費的時間長短去預測未來順序；再罕見的排列組合，量夠大時終究會在正式環境中出現；把系統畫成時間線圖可以在寫程式之前就先看出這類排序風險。',
+      ],
+    },
+    {
+      levelId: 'fp-3',
+      keyPoints: [
+        '三大類別的判準：actions 依賴「何時執行」或「執行幾次」（例如寄信、讀資料庫，也稱 impure functions／有副作用的函式）；calculations 是從輸入到輸出的運算，不論被呼叫幾次、何時呼叫，同樣輸入永遠得到同樣輸出（也稱 pure functions），這種可以把呼叫直接替換成其結果的特性稱為「參照透明」(referentially transparent)，例如 2+3 可以直接換成常數 5；data 則是關於事件的事實紀錄。',
+        '用「去超市買菜」示範寫程式前如何先用 ACD 分析問題：檢查冰箱是 action（產出「目前庫存」這筆 data）、開車去店裡是 action、決定要買什麼則是把「想要的庫存 減去 目前庫存」算成購物清單的 calculation——很多這類決策其實原本都「在腦中」發生，從沒被明確寫下來，一旦意識到這點，就更容易在既有流程裡找出隱藏的 calculations。',
+        'actions 具有「傳染性」：只要函式內部呼叫了一個已知的 action，該函式本身就跟著變成 action。書中用 sendPayout()（真正轉帳的 action）被 figurePayout() 呼叫、figurePayout() 又被 affiliatePayout() 呼叫、affiliatePayout() 再被 main() 呼叫為例，示範一個很底層的 action 如何讓整條呼叫鏈上的每個函式都變成 action。',
+        'JavaScript 裡容易被忽略的 action 形式不只是明顯的 I/O：函式呼叫（如 alert()）、方法呼叫（如 console.log()）、建構子（如 new Date()，結果隨呼叫當下時間而變）、讀取共享可變的變數/物件屬性/陣列元素的運算式、賦值與 delete 屬性等陳述式，都可能是 action；判準永遠回到「這件事的結果是否依賴執行的時機或次數」，而不是列一份固定清單去死記。',
+        '用 CouponDog 依推薦數決定優惠券等級並寄送電子報的流程，示範 FP 常見的實作順序：先從資料庫讀出訂閱者與優惠券（actions，各自產生一批 data），再用一連串 calculations 決定每位訂閱者該收到哪些優惠券、規劃出完整的待寄郵件清單（這份清單本身是 data），最後才真正逐封寄出（action）——先產生資料，再做決策，最後才執行決策。',
+        'calculations 相對 actions 的優勢在於容易測試（可在任何時間、任何機器上重複執行而不影響結果）、容易被靜態分析、也容易組合成更大的 calculation；但兩者共有一項限制：都無法在不實際執行的情況下就確知會發生什麼，只能當作黑盒子看待——如果連這點都無法接受、需要能被完整檢視內容的東西，就必須改用 data 而非 calculation 或 action。',
+      ],
+    },
+    {
+      levelId: 'fp-4',
+      keyPoints: [
+        '用 MegaMart 購物車範例說明「actions 會傳染整條呼叫鏈」的實際後果：shopping_cart、shopping_cart_total 是全域變數，add_item_to_cart()、calc_cart_total() 只要讀寫了它們，連新加進來、原本看似單純的 update_shipping_icons()（判斷是否符合免運）、update_tax_dom()（算稅金）也全部因此變成 action，整份程式碼裡沒有任何一段是 calculation 或 data。',
+        '核心分析工具是「函式的輸入與輸出」：explicit input 是參數、explicit output 是回傳值；任何其他讓資訊進出函式的管道——讀寫全域變數、印到 console、讀寫 DOM——都是 implicit input/output，也就是所謂的「副作用」；一個函式只要消除掉全部 implicit input/output，就會從 action 變成 calculation。',
+        '從 action 萃取 calculation 的三步驟流程：(1) 選一段程式碼抽成獨立函式，這步本身屬於「extract subroutine」重構，不改變任何行為；(2) 逐一列出這個新函式所有的 implicit input（例如讀取 shopping_cart 全域陣列）與 implicit output（例如寫入 shopping_cart_total、呼叫 .push() 修改陣列）；(3) 把 implicit input 換成參數、implicit output 換成回傳值，原呼叫端改成用回傳值賦值給全域變數。',
+        '示範把 calc_cart_total() 內部加總邏輯抽成 calc_total(cart)：先把原本兩次直接寫入 shopping_cart_total 的動作，改成在函式內用一個 local 變數 total 累加、最後 return 出去；再把函式內讀取全域 shopping_cart 的地方改成透過參數 cart 傳入，兩步都做完後 calc_total() 才真正不依賴任何全域狀態，成為 calculation。',
+        '示範把 add_item_to_cart() 裡修改購物車陣列的邏輯抽成 add_item(cart, name, price)：因為直接對傳入的 cart 呼叫 .push() 會被視為隱性輸出（呼叫端傳入的陣列被就地修改了），書中改用 cart.slice() 先複製一份新陣列（copy-on-write 手法），在複本上 push 後再 return 複本，讓函式完全不修改任何外部可見的既有狀態。',
+        '依同樣流程把 update_tax_dom() 拆出 calc_tax(amount)（回傳 amount * 0.10）、把 update_shipping_icons() 拆出 gets_free_shipping(total, item_price)（回傳 item_price + total >= 20），最終加總、稅金、免運門檻等業務規則都變成不吃全域狀態、可獨立重用與測試的 calculations；本章也提醒：拆分後函式數量與程式碼總行數雖然增加了，換來的是可測試性與可重用性的提升，而且過程中對 local 變數做初始化賦值（如 var total = 0 之後再累加）並不違反不可變性，因為那是尚未離開函式、外部看不到的建構過程。',
+      ],
+    },
+    {
+      levelId: 'fp-5',
+      keyPoints: [
+        'gets_free_shipping() 原本的參數是 (total, item_price)，問錯了問題，而且在呼叫端要重複計算「總價+新品項」造成重複計算的 code smell；改成只吃 (cart) 一個參數、內部呼叫 calc_total(cart) >= 20，讓函式簽章直接對應「這個購物車能否免運」的商業問題。',
+        '「盡量減少隱性輸入輸出」原則不是只有 calculation 才適用：即使是 action，也該把讀取全域變數改成明確參數、把輸出改成回傳值。update_shipping_icons() 從直接讀取全域 shopping_cart 改成接受 cart 參數，calc_cart_total() 也把 shopping_cart_total 的賦值內縮到函式內部處理，藉此提升可測試性與可重用性。',
+        '逐一檢視現有 action 後發現兩個可清理之處：全域變數 shopping_cart_total 從沒被任何地方讀取過；calc_cart_total() 這個中介函式本身也是多餘的一層。於是把它的邏輯直接內聯（inline）進呼叫端 add_item_to_cart()，同時刪掉沒用到的全域變數，减少不必要的間接層。',
+        '「設計就是把東西拆開」原則：add_item() 表面上只做一件事，實際上同時做了複製陣列、建立 item 物件、把 item 塞進複製陣列、回傳複製陣列四件事。把「建立 item 物件」拆成獨立的 make_cart_item()，讓知道 cart 結構的部分與知道 item 結構的部分分開，兩種資料結構可以各自獨立演化（例如未來把 cart 從陣列換成雜湊表）。',
+        '拆出的「複製陣列、push、回傳複製品」這段邏輯與 cart/item 無關，純粹是通用的 copy-on-write 陣列操作，因此進一步一般化並改名為 add_element_last(array, elem)，讓這個工具函式可以在購物車以外的情境重複使用，也預告了第 6、7 章要深入的 copy-on-write 主題。',
+        '書中用 C（cart）、I（item）、B（business rule）、A（array utility）替每個函式標記類別，藉此觀察出「層級」的雛形：像 calc_total() 這種函式其實同時知道 cart 結構、也定義了 MegaMart 的商業規則，這種身兼多重身分的函式，正是後續第 8、9 章要拆解成獨立分層的訊號。',
+      ],
+    },
+    {
+      levelId: 'fp-6',
+      keyPoints: [
+        'copy-on-write 紀律固定是三個步驟：先複製一份（陣列用 .slice()，物件用 Object.assign({}, obj)，因為 JavaScript 沒有物件的原生複製方法）、在複製品上做任意修改、最後回傳複製品；只要嚴格遵守這三步，原始資料就保證不會被動到。',
+        '一個原本會修改資料的 write 操作，只要套上 copy-on-write，就變成了不會修改任何東西、只回傳新結果的 read 操作——書中把這個現象講成「copy-on-write converts writes into reads」，這也是為什麼這類函式可以被當成回答「如果這樣改，結果會長怎樣」的假設性問題來使用。',
+        '對於同時是 read 又是 write 的操作（例如 array.shift()／.pop() 既回傳被取出的元素、又修改原陣列），書中示範兩種轉換法：(1) 拆成純讀取的 first_element()/last_element() 與 copy-on-write 寫入的 drop_first()/drop_last() 兩個獨立函式；(2) 保留單一函式但改成回傳 {first, array} 這樣包含兩個值的物件。作者建議優先選第一種，因為責任分離後兩者可以分開或合併使用，彈性更大。',
+        '修改巢狀資料（例如 setPriceByName 要改 cart 陣列裡某個 item 物件的 price）必須從最內層開始逐層套用 copy-on-write：先對該 item 呼叫 setPrice() 產生新 item，再讓外層新建的 cartCopy 陣列在對應位置指向這個新 item，如此從最深層到最頂層每一層都完成複製，才算是真正不可變，不能只複製最外層就直接改內層物件的欄位。',
+        '巢狀複製其實只需要淺層複製沿著「有變動的路徑」往上複製到頂層：例如購物車有三個品項、只改其中一個的價格時，只需要複製一個陣列與一個 item 物件，另外兩個沒被動到的 item 物件仍可被原陣列與複製後的陣列共同參照，這就是結構共享（structural sharing），能省下大量記憶體與複製成本。',
+        'shopping_cart 這個全域變數本身仍然保留為可變、扮演「swap」的角色：每次修改都是先讀出目前值、丟給 copy-on-write 函式算出新值、再賦值回全域變數這三步，這是應用程式在資料完全不可變的前提下，仍能追蹤狀態隨時間變化的關鍵模式，書中提到之後在 Part 2 會進一步強化這個 swap 模式。',
+      ],
+    },
+    {
+      levelId: 'fp-7',
+      keyPoints: [
+        '當程式需要呼叫像 black_friday_promotion() 這種會直接修改傳入引數、而且我們無法修改其原始碼的舊系統（legacy code）時，copy-on-write 不夠用——因為我們無法掌控它內部究竟會怎麼修改資料、改了多少，這時需要防禦力更強的紀律：defensive copying。',
+        'defensive copying 的兩條規則：資料要離開我們信任的安全區（safe zone）、傳給不受信任的程式碼之前，先做一次 deep copy 再傳出去；資料從不受信任的程式碼回到安全區時，也要立刻做一次 deep copy 才能繼續使用，確保安全區內任何時候都不持有可能被外部程式碼持續修改的參照。',
+        '書中把這個模式包裝成 black_friday_promotion_safe(cart)：函式內部先對傳入的 cart 做 deepCopy() 才呼叫原始的 black_friday_promotion()，執行完再對結果做一次 deepCopy() 才回傳，呼叫端因此完全不需要自己處理複製細節，只要呼叫這個包裝過的安全版本即可。',
+        'deep copy 與 copy-on-write 用的淺層複製本質不同：deep copy 必須遞迴複製巢狀結構的每一層（書中範例對 Array 與一般 object 都遞迴呼叫自己），複製品與原始資料不共享任何參照，因此成本比淺層複製高很多；作者也提醒書中那版 deepCopy() 只是教學用的簡化實作，正式環境建議改用 Lodash 的 _.cloneDeep()。',
+        'copy-on-write 與 defensive copying 的分工原則：copy-on-write 用在安全區內部、彼此信任的程式碼之間，只需淺層複製、成本低；defensive copying 只在安全區邊界、與不受信任的程式碼交換資料時使用，需要深層複製、成本高但防護力更完整，兩者是互補關係而不是二選一。',
+        '「進出邊界都複製一次」的模式其實在現實系統中很常見：Web API 把請求/回應序列化成 JSON，等同於進出時各做一次隱含的 deep copy；Erlang/Elixir 的行程（process）之間傳訊息時，資料會被複製進接收端的 mailbox。這類「不共享任何資料」的設計常被稱為 shared nothing architecture，跟 defensive copying 的精神一致。',
+      ],
+    },
+    {
+      levelId: 'fp-8',
+      keyPoints: [
+        '書中把「軟體設計」定義為：用自己的美感去引導寫程式、測試、維護的選擇；分層設計（stratified design）則是把程式組織成一層層，每一層的函式都是呼叫下面層的函式來實作出來的。',
+        'Pattern 1「直觀實作（straightforward implementation）」：函式本體應該用同一個細節層級去解決問題。原本 freeTieClip() 直接寫 for 迴圈掃描 cart 陣列判斷有沒有領帶/領帶夾，把「陣列」這種底層細節跟「行銷活動」這種商業邏輯混在一起；抽出 isInCart(cart, name) 後，freeTieClip() 呼叫的三個函式都落在相近的抽象層級，才算直觀。',
+        '呼叫圖（call graph）：把函式呼叫了哪些函式或語言特性（如 for、陣列索引）畫成箭頭圖。箭頭長度不一（有些一層就到，有些要穿過三層）就是「同一層裡混用不同抽象層級」的訊號；可以用 global／layer／function 三種縮放層級分別檢視全局互動、單層內部、單一函式內部的問題。',
+        '判斷一個函式該放哪一層可以用多種線索：函式名稱透露意圖（remove_item_by_name() 一看就不是行銷邏輯，該放在購物車操作那層）；也可以比對函式彼此呼叫的對象有沒有重疊，例如 isInCart() 和 remove_item_by_name() 都指向 for 迴圈與陣列索引這兩個底層機制，這是它們該放同一層的證據。',
+        '抽出更通用的函式（例如把 remove_item_by_name() 裡的 for 迴圈抽成 indexOfItem()）常常帶來「意外的重用」：isInCart() 可以改成呼叫 indexOfItem() !== null，setPriceByName() 也能改用 arraySet() 實作。但重構後箭頭數不一定會減少（setPriceByName() 改完仍指向兩個不同層），這時該看的是有沒有替換掉「較長」的箭頭，而不是單純數箭頭數量。',
+        '書中特別提醒：把混亂的程式碼硬塞進一個「helper function」不算做到分層設計，因為分層設計要求每一層本身都得是直觀的實作，不能只是把複雜度原封不動搬到別的函式裡藏起來。',
+      ],
+    },
+    {
+      levelId: 'fp-9',
+      keyPoints: [
+        'Pattern 2「抽象屏障（abstraction barrier）」：一組函式共同構成一層，讓屏障之上的程式完全不需要知道屏障之下的實作細節。書中把購物車從陣列改成 JS 物件（hash map）後，只需要修改 add_item、calc_total、setPriceByName、remove_item_by_name、isInCart 這五個構成屏障的函式，行銷團隊呼叫這些函式的程式碼完全不必更動。',
+        '抽象屏障適合用在：實作方式還不確定、之後可能會換；讓不熟悉底層細節的人也能安全寫程式；減少開發團隊與其他團隊（如行銷）之間的溝通成本；讓自己能專心處理眼前問題不被雜訊干擾。但書中也提醒「先做起來以防以後要改」是常見陷阱——大部分時候資料結構其實從來不會變，白白多寫維護成本。',
+        'Pattern 3「最小介面（minimal interface）」：新功能應該優先用屏障層既有的函式在上層組合出來，而不是加進屏障本身。書中對比 getsWatchDiscount() 直接在屏障層操作 hash map（choice 1）跟改成呼叫 calcTotal()／isInCart() 寫在屏障之上（choice 2），後者勝出，因為屏障裡每多一個函式，就等於跟其他團隊多簽了一份要一直維持下去的契約，日後修改成本更高。',
+        'logAddToCart() 該放哪裡的案例：若直接塞進 add_item() 內部，會因為「擴散規則」讓 add_item() 從 calculation 變成 action，連帶所有呼叫它的函式也變成 action；而像 update_shipping_icons() 這種只是想試算運費、並非使用者真的按下加入購物車的呼叫，也會被誤記錄一筆日誌。正確做法是把 logAddToCart() 放在 add_item_to_cart()——也就是「加入購物車」按鈕真正的點擊事件處理函式，因為那裡本來就是 action，也是唯一能確認使用者真實意圖的地方。',
+        'Pattern 4「舒適的分層（comfortable layers）」：分層不是分越多越好，過度堆疊抽象反而常常失敗。書中給的實務判準是問自己「在這段程式碼裡工作舒不舒服」——舒服就可以停手，讓 for 迴圈留著不包裝；只有覺得不舒服（要記的細節太多、程式碼髒亂）時才需要重新套用前三個 pattern。',
+        '光看呼叫圖的結構（不看函式名稱）就能推論出三個非功能性需求：位置越靠近圖頂端（上面沒有東西依賴它）的函式越容易安全修改；被越多層依賴、位置越底層的函式越值得花心力寫測試，因為它變動頻率低，測試不會隨著上層需求改變而跟著要重寫；一個函式底下依賴的東西越少，它就越容易被重用。',
+      ],
+    },
+    {
+      levelId: 'fp-10',
+      keyPoints: [
+        'Code smell「函式名稱裡的隱性引數（implicit argument in function name）」：當好幾個函式實作幾乎一模一樣，唯一差別是名稱裡藏著的某個值時就會出現。書中的例子是 setPriceByName、setShippingByName、setQuantityByName、setTaxByName 四個函式本體幾乎相同，只差 \'price\'／\'shipping\'／\'quantity\'／\'tax\' 這個欄位字串，而這個字串恰好就寫死在函式名稱裡。',
+        'Refactoring「顯化隱性引數（express implicit argument）」的四個步驟：找出名稱裡的隱性引數、幫函式加上一個明確的引數、在函式本體用這個新引數取代原本寫死的值、更新所有呼叫端。書中示範把上述四個 setXByName() 合併成單一一個 setFieldByName(cart, name, field, value)。',
+        '第一級值（first-class value）的定義：可以指派給變數、當引數傳進函式、當函式的回傳值、存進陣列或物件裡的值。JS 裡數字、字串、函式都是第一級的，但 +、-、if、for、try/catch 這些語法本身不是——書中示範把 + 包成 function plus(a, b) { return a + b; }，讓這個運算變成可以到處傳遞的第一級函式。',
+        '關於把欄位名稱寫成字串是否安全的討論：可以用編譯期檢查（例如導入 TypeScript）、或執行期檢查（用 validItemFields 陣列配合 includes() 判斷，不合法就 throw）把關；就算欄位名稱以字串形式暴露給呼叫端，實作內部仍可以用一個 translations 對照表悄悄把舊名稱換成新名稱，不代表內部實作被永久鎖死或直接洩漏出去。',
+        'Refactoring「用回呼取代主體（replace body with callback）」：先把一段程式碼拆成 before／body／after 三段（body 是每次呼叫真正不同的那一段），把整段抽成一個具名函式，再把 body 那段抽出來、當成引數（callback）傳進去。書中用這招把散落各處的 try { f(); } catch (error) { logToSnapErrors(error); } 樣板包裝成 withLogging(f)，消除了大量重覆的 try/catch。',
+        'forEach() 的推導過程展示了同一套 refactoring 可以連續套用：先把兩段各自處理 foods 和 dishes 的 for 迴圈包成具名函式、把區域變數統一改名成 item、再把陣列本身跟迴圈內呼叫的函式逐一顯化成引數，最後兩個函式本體完全相同、能合併成 forEach(array, f)。書中特別強調要傳函式而非直接傳資料值進去，因為函式可以延後到特定情境（例如 try/catch 內部）才真正執行，資料值一旦傳入前就先被求值了，做不到這件事。',
+      ],
+    },
+    {
+      levelId: 'fp-11',
+      keyPoints: [
+        'replace body with callback 這個重構手法不只能消除 for 迴圈、try/catch 裡的重複語法，還能拿來把一套「編碼紀律」本身標準化：把 arraySet/push/drop_last/drop_first 這些 copy-on-write 函式的 before(複製)/after(回傳) 抽成 withArrayCopy(array, modify)，body（真正修改陣列的那行）變成傳進去的 modify 回呼，之後任何新的陣列操作（例如換一個更快的排序函式庫）都能直接套用同一套複製紀律，不用重寫。',
+        'withArrayCopy() 帶來的額外好處：原本連續呼叫多個 copy-on-write 函式（drop_first、push、push、arraySet）會產生多個中間陣列副本，改用 withArrayCopy(array, function(copy){...一次做完多個修改...}) 可以只複製一次陣列、在同一份 copy 上做完所有修改再回傳，減少不必要的記憶體配置。',
+        '同樣的 replace body with callback 手法可以套用到物件上，寫出 withObjectCopy(object, modify)，把 objectSet()／objectDelete() 這類物件的 copy-on-write 函式也統一成呼叫這個共用函式。',
+        'wrapLogging(f) 示範了「回傳函式的函式」這個更進一步的用法：它接收一個函式 f，回傳一個新函式，這個新函式內部用 try/catch 包住 f 的呼叫並在出錯時記錄到 Snap Errors；於是 var saveUserDataWithLogging = wrapLogging(saveUserDataNoLogging) 就能自動產生「有紀錄錯誤能力」的版本，不用替每個函式手動複製一份 try/catch 邏輯。',
+        '同一頁的練習把這個模式再延伸：tryCatch(f, errorHandler) 把 try 區塊和 catch 區塊都變成外部傳入的函式參數（而不是像 withLogging 只固定寫死 catch 的行為），when(test, then) 和 IF(test, then, ELSE) 則是把 if/else 語句本身也用 replace body with callback 包成函式，示範這個重構手法一樣可以套用在條件判斷式上。',
+        '作者特別提醒：高階函式與回傳函式很好玩、很容易讓人上癮般一直寫，但這類寫法是有取捨的——它們能大量消除重複程式碼，卻也可能犧牲可讀性；應該只在真的能讓程式碼變清楚、確實減少有意義的重複時才使用，不要為了炫技而過度使用。',
+      ],
+    },
+    {
+      levelId: 'fp-12',
+      keyPoints: [
+        'map(array, f) 把一個陣列轉換成另一個「長度相同」的新陣列，f 決定新陣列每個位置放什麼值；書中透過觀察 emailsForCustomers、customerFullNames、customerCities 等函式的 for 迴圈都只有「產生新元素」那行不同，用 replace body with callback 把共同的 before/after 抽出來，才推導出 map() 的實作（內部仍然是用 forEach 走訪陣列）。',
+        'filter(array, f) 用來從陣列中「篩選出符合條件的子集合」，f 是一個 predicate（回傳 true/false 的函式），只有回傳 true 的元素會被保留到新陣列中，且保持原本的相對順序；新陣列的長度可能小於等於原陣列，但型別不變（還是同一種元素構成的陣列）。',
+        'reduce(array, init, f) 用來把整個陣列「累積」成單一值：f 接收目前的累加值(accumulator)與陣列目前元素，回傳新的累加值；init 決定起始值該怎麼選——通常看「這個運算的起點是什麼」（加總用 0、乘積用 1）或「空陣列時應該回傳什麼」。書中約定這三個函式的參數順序都是「陣列在前、回呼在最後，其他參數放中間」。',
+        'reduce() 是三個工具中最泛用的一個：map() 和 filter() 都可以改用 reduce() 實作出來（例如用 reduce 累積一個新陣列，符合條件才 push 進去），但反過來用 map/filter 無法實作出 reduce() 的所有能力。',
+        '使用 map() 時要注意：如果傳入的函式可能回傳 null 或 undefined（例如 customer.email 可能不存在），這些 null 會直接進到新陣列裡，而且因為 map() 對整個陣列跑一次，這個問題可能被放大成一整批 null；常見解法是接著用 filter() 把 null 濾掉。',
+        'reduce() 除了做加總、串接字串這類「摘要」用途外，還能拿來『建構』出一個值：只要把初始狀態當 init、把一連串使用者操作(events)當作要走訪的陣列，reduce() 就能把整個操作序列還原成目前狀態，這正是 undo/redo、重播使用者操作做測試、時間旅行除錯、稽核軌跡等功能背後的核心概念。',
+      ],
+    },
+    {
+      levelId: 'fp-13',
+      keyPoints: [
+        '面對比較複雜的需求（例如「找出最佳顧客中，每人最大一筆消費」），可以把問題拆成一連串步驟，把上一步的輸出當作下一步的輸入，依序串接多個 functional tool（先 filter 篩出最佳顧客，再 map 找出每人最大消費），這種多步驟串接稱為 chaining。',
+        'maxKey(array, init, f) 把 reduce() 找最大值的邏輯再抽象化一層：f 決定要用元素的哪個欄位（key）來比較大小，而不是直接比較元素本身；書中原本用來找最大數字的 max() 也可以改用 maxKey() 加上 identity function（直接回傳自己的函式）來實作，顯示 maxKey() 比 max() 更通用。',
+        '串接多個 functional tool 之後，程式碼容易因為巢狀的行內回呼變得難讀，書中提出兩種釐清方式：一是把每個步驟抽出來命名成獨立函式（例如 selectBestCustomers、getBiggestPurchases）；二是只把傳給 map/filter/reduce 的『回呼函式』抽出來命名（例如 isGoodCustomer、getBiggestPurchase）。第二種方式通常更好，因為這些回呼只作用在單一元素上，在呼叫圖中位階較低，因此更容易被其他地方重複利用。',
+        '當效能真的成為瓶頸時，可以做 stream fusion 把連續呼叫的 functional tool 合併：連續兩個 map() 可以合併成一個、把兩個轉換函式組合起來呼叫；連續兩個 filter() 可以合併成一個、用 && 把兩個 predicate 串起來；map() 接著 reduce() 也能合併成一個 reduce()，把 map 的轉換邏輯搬進 reduce 的回呼裡。這樣做能省去中間陣列，但書中強調多數情況下分開幾個步驟寫反而比較清楚，只有真的需要優化時才做 fusion。',
+        '把既有的 for 迴圈改寫成 functional tool chain 有三個技巧：先把迴圈裡沒有被實體化成陣列的資料『做成資料』（例如用 array.slice() 或寫一個 range(start, end) 輔助函式把索引範圍變成一個陣列）；接著讓每一步『對整個陣列操作』而不是逐步處理片段；最後如果一個步驟同時做兩件事，就『拆成更多小步驟』分開處理。書中用一個巢狀 for 迴圈計算移動平均(moving average)的例子，一步步示範如何套用這三個技巧改寫成 range() + 兩次 map()。',
+        'reduce() 不只能拿來做加總、平均這種『摘要』計算，也能拿來『建構』出複雜的資料結構：例如把一連串使用者加入/移除購物車商品的操作記錄（一個 [操作, 商品] 的陣列）用 reduce() 摺疊，就能還原出目前的購物車物件；有時候為了讓後續步驟可行，需要刻意『擴充資料』把原本隱含的資訊變成明確的欄位（例如把單純的商品名稱陣列，改成同時記錄是新增還是移除的操作陣列）。',
+      ],
+    },
+    {
+      levelId: 'fp-14',
+      keyPoints: [
+        'update(object, key, modify) 把「取出值、呼叫 modify 計算、用 objectSet() 寫回」這三個步驟合併成一個高階函式：只要傳入物件、鍵名、以及作用在該值上的計算函式，就能得到一份遵循 copy-on-write 的新物件，取代 incrementField/doubleField/halveField 這類每個操作各寫一次get-modify-set的重複程式碼。',
+        '面對巢狀物件（例如 item.options.size）時，原本要手寫 get options→get size→modify→objectSet 兩次的巢狀流程；反覆套用 replace get, modify, set with update() 這個 refactoring，可以推導出 update2(object, key1, key2, modify)：本質上是外層 update() 的 callback 裡再包一次 update()。',
+        '繼續往 cart→item→options→size 四層巢狀延伸時，發現 updateX() 有明確規律：updateX 等於 update(X-1) 包在一層 update() 裡；把「路徑深度」改用一個依序描述如何深入巢狀物件的 key 陣列（path）取代寫死的 update2/update3，才能收斂出通用的 nestedUpdate(object, keys, modify)。',
+        'nestedUpdate() 是遞迴函式：keys.length === 0 是 base case，代表已經找到目標值，直接回傳 modify(object)；否則取出第一個 key 呼叫 update()，並在其 callback 中對剩下的 keys（用 drop_first(keys) 拿掉已用掉的第一個）遞迴呼叫自己，每次遞迴都讓 keys 陣列變短，逐步逼近 base case。',
+        '書中特別強調巢狀資料的操作需要「先一路往下 get，找到值後 modify，再一路往上做 copy-on-write 的 set」，這種對稱結構天然對應函式呼叫堆疊(call stack)的進出順序，這也是為什麼這裡遞迴比自行管理堆疊的 for/while 迴圈更直觀、更容易正確實作。',
+        '路徑（path）一旦變深，呼叫端就必須同時記住每一層物件各自用什麼 key 才能推理程式在做什麼，認知負擔會隨層數疊加；解法是在 nestedUpdate() 之上再包一層抽象屏障（例如 updatePostById()、updateAuthor()），讓外部呼叫者只需要知道有語意的操作名稱，不必記住底層每一層巢狀結構的 key。',
+      ],
+    },
+    {
+      levelId: 'fp-15',
+      keyPoints: [
+        '畫時間線圖只靠兩條規則：依序執行的動作(action)畫在同一條時間線上；可能同時發生或先後順序不確定的動作（例如非同步 callback、不同執行緒/程序）要拆到不同時間線分開畫，而計算(calculation)因為跟執行時機無關，完全不需要出現在圖上。',
+        '辨識 action 時要注意 JavaScript 裡看似一步、實際是多步的寫法：total++ 或 total += cost 其實是「讀取 total→做加法計算→寫回 total」三步驟，其中讀與寫都要各自標記成獨立 action；函式呼叫時引數會先被求值才呼叫函式本體，這個求值順序也必須反映在圖上。',
+        '分析 add_item_to_cart 案例時發現，因為 cost_ajax/shipping_ajax 各自的非同步 callback 都會另起一條時間線，快速連按兩次「加入購物車」會讓兩條時間線交錯(interleave)，唯有把兩次點擊的時間線並排比較，才能看出全域變數 total 被交錯讀寫、造成最終顯示金額算錯（$14/$16/$22 等不一致結果）。',
+        'JavaScript 是單執行緒＋事件佇列(event loop)模型：同一條時間線內的同步動作彼此不會被其他時間線打斷、也不可能同時執行，因此步驟三的化簡可以把同一時間線的動作合併成一個 box、再把因非同步呼叫串起來的多條時間線合併成一條，13 個 action 因此能簡化成 3 步。',
+        '解掉這個 bug 用的是「減少共享資源」而非直接處理交錯順序：把 total 從全域變數改成 calc_cart_total() 內的區域變數、把 cart 從全域變數改成函式參數傳入，讓兩條時間線各自使用局部狀態，能消除大部分競態，但 DOM 仍是無法去除、必須共用的資源，留給下一章處理。',
+        '非同步函式沒辦法用 return 把運算結果傳出去，因為函式本體會在 callback 真正執行完成前就先 return（呼叫當下的 call stack 早已結束）；解法是用 replace body with callback，把原本寫死呼叫 update_total_dom(total) 的地方抽成一個可由呼叫端傳入的 callback 參數，讓非同步結果算完後才呼叫它。',
+      ],
+    },
+    {
+      levelId: 'fp-16',
+      keyPoints: [
+        '兩條加入購物車的時間線都會寫入 DOM，三種可能順序（同時、左先、右先）裡「右先」——也就是先點擊的請求比後點擊的請求晚完成、把新總金額覆蓋回舊總金額——是不希望發生但單靠程式碼結構無法排除的順序，這正是總金額顯示錯誤的根因。',
+        '解法是引入佇列(queue)作為並行原語(concurrency primitive)：用陣列 queue_items 搭配 push/shift 維持先進先出順序，把「加進佇列」這個動作留在同步的 click handler 裡完成，把非同步的 calc_cart_total() 挪到佇列後段依序執行，藉此保證 DOM 更新一定照點擊發生的順序進行。',
+        'Queue() 用一個 working 旗標避免同時有兩個 worker 在跑：runNext() 一開始檢查 working 是否為真或佇列是否為空，任一成立就直接 return；worker 做完的 callback 把 working 設回 false 再呼叫 runNext()，形成一個非同步版的迴圈，逐一處理佇列裡排隊的項目。',
+        '透過 replace body with callback 依序把「操作購物車總金額的邏輯」抽成 worker 參數、把「任務完成後要通知誰」抽成每筆資料自帶的 callback，讓 Queue() 變成完全通用、跟購物車無關的高階函式，之後任何需要排隊序列化執行的非同步動作都能重複使用它。',
+        '重新分析完成後的時間線圖：cart 全域變數的存取順序受瀏覽器事件佇列保證（點擊事件本身就照發生順序進入佇列）；DOM 更新因為都被收斂進同一條 Queue 內部時間線，必然照順序發生；佇列本身雖被多個步驟共用，但任何交錯順序都不影響最終結果，三種共享資源因此都被驗證為安全。',
+        '延伸出 DroppingQueue(max, worker)：每次 push 新任務後，用 while 迴圈把佇列前端多餘的舊任務丟棄到只剩 max 筆，讓使用者連續快速點擊時不必依序把每一筆過時的請求都跑完，只保留最新的需求即可，這只是對同一個佇列原語做的一個小幅修改就能得到的變形版本。',
+      ],
+    },
+    {
+      levelId: 'fp-17',
+      keyPoints: [
+        '書中的購物車 bug 源自效能優化：把 shipping_ajax() 從 cost_ajax() 的 callback 裡移出來，讓兩個 ajax 請求變成平行發送以求更快，但也讓 total 這個區域變數同時被多個 timeline 讀寫，導致偶爾在 cost_ajax 回應抵達前就把還沒加上 cost 的 total 寫進 DOM。',
+        '畫 timeline diagram 時要完全歸零重畫，即使 total 是區域變數，只要有超過一個 timeline 存取它，就得把它當成共享資源列入分析，不能因為它是 local 就預設安全，這正是三步驟畫圖法（辨識動作、逐一畫出、化簡）刻意保留的檢查習慣。',
+        'Cut(num, callback) 是一個新的並行原語：回傳一個函式，每個 timeline 結束時呼叫它，內部計數器 num_finished 每次加一，等於 num 時才觸發 callback，藉此讓多個平行 timeline（無論誰先完成）都等待彼此結束後才繼續下一步，書中稱這條等待線為「cut」。',
+        '把 Cut() 套進 calc_cart_total()：在函式作用域內建立 done = Cut(2, function(){ callback(total) })，cost_ajax 與 shipping_ajax 的 callback 各自做完累加後呼叫 done()，如此保留了平行發送的速度優勢，同時保證兩個回應都到齊才寫入 DOM，用三種可能順序分析後兩種平行到達順序都是可接受結果。',
+        'JustOnce(action) 是另一個原語：用 alreadyCalled 布林值記錄是否已執行過，第一次呼叫才真正執行 action 並把旗標設為 true，之後的呼叫全部直接return，讓任何函式（例如 sendAddToCartText）具備「idempotent（等冪）」特性，無論被呼叫幾次只生效一次。',
+        '本章呼應「原則五：把時間本身當成可操作的一級概念」——每種語言都有隱含的時間模型（排序與重複次數），函數式工程師會用 first-class 值另外建構一個更貼近問題需求的顯式時間模型，例如 Queue、DroppingQueue、Cut、JustOnce 這幾個並行原語各自代表一種對排序或重複的不同約束方式。',
+      ],
+    },
+    {
+      levelId: 'fp-18',
+      keyPoints: [
+        '反應式架構要解決的問題是「因果的中心」造成的 n×m 耦合：購物車有多種改變方式（加入、移除、清空、改數量、套折扣碼）跟多種要連動更新的畫面效果（運費圖示、稅金、總金額、數量），若每個事件處理器都要手動呼叫所有效果，維護成本是相乘成長；改成「當 X 發生時才做 Y」的宣告式寫法後，寫因跟寫果互不影響，成長變成相加（5+4 而非 5×4）。',
+        'ValueCell(initialValue) 把可變狀態包成 first-class 物件，只透過 val() 讀取、update(f) 寫入（f 是一個計算，接收舊值回傳新值，即 swapping pattern），並規定只要初始值合法、且 f 對合法輸入永遠回傳合法輸出，cell 裡的值就能一直保持合法，即使無法保證跨 timeline 的讀寫順序。',
+        '為 ValueCell 加上 addWatcher(f)：update() 內比較 oldValue !== newValue，值真的改變時才依序呼叫所有 watcher，讓其他程式碼可以宣告「購物車改變時要做什麼」而不用在每個修改購物車的地方各自呼叫一次，watcher 也常被稱為 observer／listener／event handler，只是同一概念的不同稱呼。',
+        'FormulaCell(upstreamCell, f) 用來表示衍生值：它內部用一個 ValueCell 存放 f(upstreamCell.val())，並對 upstreamCell 掛一個 watcher，在上游改變時重新計算並更新自己；FormulaCell 沒有直接的 update 方法，值只能透過上游 cell 改變而間接改變，例如書中把 cart_total 定義成 shopping_cart 的 FormulaCell，再讓 DOM 更新函式去 watch cart_total。',
+        '洋蔥架構把服務分成三層：最外層互動層（interaction，處理資料庫、API、web 請求等一切跟外界互動的 action）、中間領域層（domain，只由 calculation 構成的商業規則）、以及語言層（language，程式語言本身與函式庫），規則是互動只能發生在互動層、層與層只能往內呼叫、內層不知道外層的存在；這跟傳統分層架構把 DB 放在最底層（導致呼叫路徑到頂層全部被迫變成 action）不同，洋蔥架構把 DB 挪到互動層畫在外圈，讓領域層能完全用 calculation 描述業務規則（例如 cart_total() 只負責加總、不管購物車從資料庫還是別處來），使領域邏輯更容易測試與重用。',
+        '判斷一段邏輯該放進領域層還是互動層，可以看程式碼用的詞彙是不是 domain 語彙（例如 product、price、discount）還是技術性字眼（例如新舊資料庫、AJAX 重試邏輯），另外也要務實考量可讀性、開發速度與效能等現實因素；洋蔥架構的三層劃分不必追求 100% 純粹，同一套劃分邏輯也會在系統的不同抽象層級上重複出現（fractal）。',
+      ],
+    },
+    {
+      levelId: 'fp-19',
+      keyPoints: [
+        '全書結語把讀者可能十年後仍記得的三件事濃縮出來：一是 action 裡常藏著可以抽出的 calculation，抽出後更容易測試、重用、理解，也不會拉長 timeline；二是高階函數能讓工程師擺脫一再重寫低階迴圈與樣板邏輯的宿命；三是可以透過 timeline diagram 與並行原語主動控制程式碼執行的排序與重複次數這兩個時間面向。',
+        '書中提出技能養成的「雙軌模型」：熱情成長速度往往比實際掌握速度快，容易在還沒練熟時就把新技巧硬套進正式程式碼、反而傷害可讀性；因此建議同時維持 sandbox 軌道（練習題、side project、可拋棄的分支）用來安全試驗，以及 production 軌道（重構既有程式碼、開發新功能、教學他人）用實戰壓力來磨練判斷力。',
+        '給出可以立刻在正式程式碼上動手的具體小步驟：找出一個全域可變變數並想辦法消除、找出一個曾造成race condition的 timeline 並用畫圖與並行原語修正、從某個 action 裡再抽出一個 calculation、把某個隱性輸入或輸出換成顯性、把某個 for 迴圈換成 forEach()/map()/filter()/reduce()，強調漸進式改善而非一次到位。',
+        '推薦練習題來源包含 Edabit（分級清楚的小題目）、Project Euler（偏數學、會逼你面對效能與記憶體限制）、CodeWars（同一題可用不同技巧重解）、Code Katas（反覆演練同一題以磨練寫程式的過程本身，而非解題結果）。',
+        '對於想繼續學函數式語言的讀者，書中依用途分類建議：以找工作機率排序（Elixir、Kotlin、Swift、Scala、Rust 較多職缺）、依平台分類（瀏覽器可選 Elm／ClojureScript／PureScript，後端更多選擇，行動端有 Swift／Kotlin／Scala 等），以及依想深入學習的面向分類（靜態型別系統首選 Haskell 一類，並行與分散式系統可看 Clojure／Erlang／Elixir／Rust 等不同機制）。',
+        '延伸閱讀推薦四本書並各自標出定位：《Functional-Light JavaScript》(Kyle Simpson) 定位為 JS 風格指南＋FP 術語入門；《Domain Modeling Made Functional》(Scott Wlaschin) 講如何從與客戶對談走到用型別建模領域、並認為是最好的 DDD 說明；《SICP》(Abelson & Sussman) 是經典但較硬核，適合長期慢慢啃；《Grokking Functional Programming》(Michał Płachta) 則從另一個角度深化對純函數、函數式工具與不可變資料的理解，並補足本書較少談的資料建模部分。',
       ],
     },
   ],
@@ -1289,6 +1498,406 @@ export const chapterSummaries: Record<string, LevelSummary[]> = {
         'useSyncExternalStore 是給狀態管理函式庫作者用的底層 Hook，讓元件可以訂閱 React 之外的外部資料來源，並在並行渲染（concurrent rendering）下不會出現資料不一致（tearing）的問題，還額外支援 getServerSnapshot 讓 SSR 時的初始快照保持一致。',
       ],
     },
+  ],
+  'ydkjs-sc': [
+  {
+    levelId: 'ydkjs-sc-1',
+    keyPoints: [
+      'JS 引擎執行程式碼分成兩個角色：Compiler 先掃過程式碼做「宣告」的準備工作，Engine 才負責執行時對變數的實際查詢。同一個變數在不同位置出現，查詢的目的可能完全不同：`a = 2` 是 LHS（left-hand-side）查詢，目標是找到 a 的容器把值放進去；`console.log(a)` 裡的 a 是 RHS（right-hand-side）查詢，目標是取出 a 目前的值——這個區分決定了接下來「查不到變數」時引擎會怎麼反應。',
+      '非嚴格模式下，LHS 查詢如果沿著整條作用域鏈都找不到宣告過的變數，引擎不會報錯，而是自動在全域補一個新變數：像 `function foo() { b = 2; console.log(a+b); }` 裡沒有 var 的 `b = 2`，會讓 b 意外變成全域變數，foo 執行完後外面也讀得到它。相對地，RHS 查詢找不到值可以取用時完全沒有這種補救機制，只能直接丟出 ReferenceError——這是 LHS 與 RHS「找不到目標時」最關鍵的行為差異。',
+      '巢狀作用域查詢是由內而外逐層尋找，只要在某一層找到符合名稱的宣告就立刻停止，不會繼續往外找：outer、inner、全域各自宣告自己的 a（分別是 2、3、1），inner 內部的 console.log(a) 印出 3、outer 印出 2、全域印出 1，彼此完全不受內層同名變數影響。',
+      '要讓變數確實限制在函式作用域內、不外洩到全域，必須用 var 明確宣告：`function foo(){ var a=2; console.log(a);} foo(); console.log(typeof a);` 因為 Compiler 處理 foo 時就已經在 foo 自己的作用域宣告了 a，執行到賦值只是單純賦值，外層 typeof a 印出 undefined；如果漏掉 var，就變成前述「自動建立全域變數」的情境，外層反而讀得到。',
+      '嚴格模式（use strict）會把非嚴格模式下 LHS 查詢失敗時「自動在全域建立變數」的補救行為整個關掉：同樣沒有 var 宣告的 `b = 2`，在嚴格模式下會直接丟出跟 RHS 查詢一樣的 ReferenceError，不會悄悄冒出一個意外的全域變數，這也是嚴格模式常被拿來提早抓出「忘記宣告變數」手誤的原因。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-sc-2',
+    keyPoints: [
+      '詞法作用域是由函式「寫在程式碼的哪個位置」決定的，跟函式「實際在哪裡被呼叫」完全無關：全域宣告 `var x = \'global\'`，foo 在全域印出 x，即使 foo 是被 bar（bar 內部另外宣告了 `var x = \'bar-local\'`）呼叫的，foo 印出的還是全域的 global，因為 foo 撰寫時的作用域鏈只包含它自己和全域，跟呼叫它的 bar 完全無關。',
+      '巢狀作用域查詢在多層函式時一樣是由內而外逐層找：`foo(a){ var b=a*2; function bar(c){ console.log(a,b,c);} bar(b*3);} foo(2)` 裡，bar 自己的作用域只有參數 c，查詢 a、b 時往外一層到 foo 找到 2 和 4，呼叫 bar(b*3) 傳入 12，印出 2 4 12——三層作用域的巢狀關係在程式碼寫下的當下就固定了，這正是「詞法」作用域的意思。',
+      'eval() 可以在執行期「欺騙」詞法作用域：`foo(str,a){ eval(str); console.log(a,b);} foo(\'var b=3;\',1)` 裡 eval 執行了字串內的 `var b=3;`，在非嚴格模式下等同真的把這行寫進 foo 的作用域，會實際新增變數 b，印出 1 3——作用域本來應該在寫程式碼當下就固定，但 eval 讓它在執行期還能被動態修改。',
+      '嚴格模式會關掉 eval 這種欺騙能力：同一段程式碼加上 \'use strict\'，eval() 執行的程式碼會擁有自己獨立的詞法作用域，內部宣告的 var b 只存在 eval 自己的作用域裡，不會外洩到 foo，foo 裡 typeof b 印出 undefined——同一段程式碼，差別只在有沒有嚴格模式，結果就從「成功欺騙」變成「完全被關進自己的小房間」。',
+      'with 語句會把物件的屬性當成該作用域內的變數來查詢，效果類似 eval：`var obj={a:3}; function foo(){ with(obj){ a=2; } } foo(); console.log(obj.a);` 因為 obj 本來就有 a 屬性，with 區塊裡的 `a=2` 被當成對 obj.a 的賦值，obj.a 變成 2；但如果 obj 裡沒有同名屬性，這個 LHS 查詢反而會落到全域、意外建立一個全域變數 a，obj.a 還是 undefined——查詢結果完全取決於物件執行期當下有哪些屬性，而不是程式碼寫在哪裡。',
+      'eval 和 with 除了讓程式碼難懂，還有實際的效能代價：引擎在編譯期本來會盡量提前把「某個變數屬於哪一層作用域」計算好，但只要函式裡包含 eval(extra) 這種執行期才知道內容的程式碼，引擎就沒辦法保證作用域結構不會被動態改變，只好放棄大部分針對變數查詢的優化，讓含 eval 的版本通常比沒有欺騙作用域的版本執行得慢。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-sc-3',
+    keyPoints: [
+      'var 宣告的變數屬於整個包住它的函式作用域，不會被 if、for 這些區塊關住：`function foo(){ if(true){ var a=2; } console.log(a); } foo();` 印出 2，因為 a 雖然寫在 if 區塊裡，但只要程式碼有執行到，a 就屬於 foo 整個函式，if 結束後依然存在。',
+      '具名函式表達式的名稱只在函式自己內部看得到，外部完全看不到：`var foo = function bar(){ console.log(typeof bar); }; foo(); console.log(typeof bar);` 印出 function 和 undefined——bar 這個名稱被引擎額外放進函式自己的作用域，內部能靠它呼叫自己，但外層只能透過變數 foo 呼叫它，外層完全沒有 bar 這個宣告。',
+      'IIFE（立即呼叫函式表達式）用一層獨立的函式作用域把內部操作包起來，不會動到外層變數：`var a=2; (function IIFE(a){ console.log(a); a=3; })(a); console.log(a);` 印出 2 和 2，因為 IIFE 內部的參數 a 只是自己作用域裡的全新容器，跟外層的 a 是兩個獨立的東西，IIFE 內部改成 3 完全不影響外層。',
+      'try/catch 的 catch(err) 會替 err 建立一個只存在於 catch 區塊內的區塊作用域，這是 JS 很早期就有的區塊作用域機制（比 let/const 早很多）：catch 區塊內能正常讀到 err.message，但一離開 catch，外面 typeof err 印出 undefined，不會外洩。',
+      'ES6 的 let 才提供真正、通用的區塊作用域：`if(true){ let a=2; a=a+1; console.log(a); } console.log(typeof a);` 印出 3 和 undefined，a 只存在 if 區塊內；同樣情境如果改用 var，a 會外洩到整個函式，typeof a 會印出 number 而不是 undefined。',
+      '把變數藏進函式作用域是避免不同程式碼互相命名衝突的基本手段：兩段各自獨立寫在全域的程式如果都宣告了 `var count`，後面的宣告會直接蓋掉前面（var 對同一作用域的重複宣告不報錯、只會合併成同一個容器），彼此的計數器會互相干擾；但如果各自被 moduleA、moduleB 這樣的函式包起來，各自的 count 就完全獨立、外部也碰不到，只能透過各自回傳的 add 方法間接操作——這正是用函式作用域隱藏實作細節、只暴露必要介面的核心價值。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-sc-4',
+    keyPoints: [
+      '「提升」常被誤解成整份程式碼的宣告被搬到最上面，但實際上只有「宣告」被提前處理，「賦值」還是留在原地依序執行：`console.log(a); var a=2;` 印出 undefined 而不是 ReferenceError，因為 Compiler 已經先處理過 var a 這個宣告，但 =2 這個賦值要等執行到那一行才真的發生，console.log(a) 執行時 a 已存在但還沒被賦值。',
+      'function 宣告式跟 var 不同，整個函式主體都會在編譯階段一起被處理好：`foo(); function foo(){ console.log(\'foo called\'); }` 可以正常呼叫成功並印出 foo called，因為呼叫發生時 foo 已經是一個完整可執行的函式，不只是「已宣告未賦值」的狀態。',
+      '同一個名字如果同時有函式宣告和 var 宣告，函式宣告在提升階段優先：`foo(); var foo=\'variable\'; function foo(){ console.log(\'function\'); } console.log(typeof foo);` 印出 function 和 string——提升階段 var foo 因為名字已被函式宣告佔用而被忽略，程式一開始呼叫 foo() 印出 function，執行到 var foo=\'variable\' 這行賦值才真的把 foo 覆蓋成字串。',
+      '同一作用域內重複的函式宣告，提升階段由原始碼裡比較晚出現的宣告覆蓋前面的：`foo(); function foo(){console.log(1);} var foo=function(){console.log(2);}; function foo(){console.log(3);}` 只印出 3，因為提升結束後 foo 對應的是最後一個函式宣告，兩個賦值都還沒執行到就已經呼叫完畢。',
+      '只有 var／function 宣告會被提升成「已宣告未賦值」，let／const 宣告在真正執行到那一行之前，處於「暫時死區」（temporal dead zone）：如果把 `console.log(a); var a=2;` 換成 let 或 const，即使引擎知道這個作用域裡有 a，提前存取一樣會直接丟出 ReferenceError：Cannot access \'a\' before initialization，而不是印出 undefined。',
+      '提升是編譯器逐一作用域各自處理，不是把整份原始碼的宣告一次搬到檔案最上面：`function inner(){ bar(); function bar(){ console.log(\'bar\'); } } inner(); bar();` inner() 內部呼叫 bar() 正常印出 bar，但外層直接呼叫 bar() 卻丟出 ReferenceError，因為 bar 這個函式宣告只在 inner 自己的作用域裡被提升登記過，出了 inner，外層完全不知道有這個宣告。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-sc-5',
+    keyPoints: [
+      '閉包指的是函式離開自己原本的作用域之後，依然記得並能存取那個作用域裡的變數：`function makeCounter(){ var count=0; return function increment(){ count++; return count; }; } var counter=makeCounter();` 連續呼叫三次 counter() 依序印出 1、2、3——makeCounter 早就執行完畢，理論上 count 應該跟著消失，但 increment 一直保有對 makeCounter 作用域的存取能力。',
+      '每次呼叫外層函式都會產生一個全新、獨立的作用域，各自的閉包互不共享：counterA 和 counterB 都是呼叫 makeCounter() 產生的，counterA 呼叫兩次變成 2，跟 counterB 完全無關，counterB 第一次呼叫依然從 1 開始——兩者是兩個完全不同的閉包，各自背著自己的 count。',
+      'for 迴圈裡直接用 var 建立函式是閉包最經典的陷阱：`for(var i=1;i<=3;i++){ fns.push(function(){console.log(i);}); }` 三個函式閉包住的其實是同一個 i，迴圈結束時 i 已經被累加到 4（因為 i<=3 在 i 變成 4 時才判斷失敗跳出），三個函式之後才被呼叫，全部印出 4，而不是各自的 1、2、3。',
+      'ES6（let）之前的經典解法是用 IIFE 幫每一輪迴圈建立一個新的作用域，把當下的值封住：`(function(j){ fns.push(function(){console.log(j);}); })(i);` 每輪立即呼叫 IIFE 把當下的 i 當參數傳進去，IIFE 內部的 j 是這一輪全新、獨立的變數，push 進去的函式閉包住的是 j 不是共用的 i，所以三個函式各自記得 1、2、3。',
+      '模組模式用一個回傳物件的函式，把私有狀態關在閉包裡，只公開需要的方法：CoolModule 內部宣告 something（\'cool\'）和 another（[1,2,3]），只回傳 doSomething、doAnother 兩個方法，兩者各自閉包住 something、another，即使 CoolModule() 已執行完畢，透過 foo 呼叫依然能正確存取；但外部完全拿不到 something 本身，console.log(typeof something) 印出 undefined，達成私有狀態＋公開介面的封裝。',
+      '閉包不是把某個變數的值複製一份帶著走，而是讓函式保留對整個外層作用域的參照：只要 doSomething、doAnother 這類函式還被外部持有，它們閉包住的整個作用域就不會被引擎回收，something、another 會維持在那個作用域裡以「目前的值」的狀態存活，可以持續被讀取甚至修改（就像 count 可以持續累加），不是一份呼叫當下的快照。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-sc-6',
+    keyPoints: [
+      'this 是依照函式「被呼叫的方式」決定，不是依照函式「寫在哪裡」決定：同一個 showValue 函式，用 obj.showValue() 呼叫時 this 綁定到 obj、印出 42；但把它賦值給 detached 再用 detached() 直接呼叫，this 不再綁定 obj，而是綁定全域物件，印出 undefined——同一段函式主體，this 綁定到誰完全取決於呼叫當下怎麼呼叫。',
+      '同一個函式裡，this 依呼叫方式改變，但一般變數的查詢永遠是固定的詞法作用域，不受呼叫方式影響：whoAmI 裡 this.name 會依 whoAmI() 直接呼叫（印出 global-name）或 context.whoAmI() 呼叫（印出 object-name）而改變，但函式裡另一行單純的 name（一般變數）查詢，不管哪種呼叫方式都固定印出撰寫時詞法作用域找到的 global-name，完全不受呼叫方式影響。',
+      'JS 不是動態作用域語言：如果 baz 呼叫 foo、foo 呼叫 bar，bar 內部想讀 baz 裡宣告的 secret，即使呼叫堆疊上 bar 確實是被 baz 間接呼叫的，bar 查詢 secret 依然只看「bar 這段程式碼寫在哪裡」（bar 寫在全域，往外找就是全域），完全不管呼叫堆疊上是誰呼叫它，所以會直接丟出 ReferenceError，而不是像動態作用域語言那樣沿呼叫堆疊找到 baz 的 secret。',
+      'call／apply 是 JS 少數真的能在執行期明確改變 this 綁定結果的機制：`whoAmI.call(obj)` 會立刻執行 whoAmI 並把這次呼叫的 this 明確指定成 obj，印出 obj-name；相對地 bind(obj) 只會回傳一個「this 已綁死成 obj」的新函式，不會立刻執行，如果沒有再呼叫這個新函式就什麼都不會印出來。',
+      'this 只看「最近一次、直接呼叫自己的呼叫方式」，不會沿著整條呼叫鏈往上找：obj2.relay() 呼叫時 relay 裡的 this 是 obj2，但 relay 內部呼叫 whoAmI 的方式其實是 obj1.say()，this 只認這一次直接呼叫 whoAmI 的方式，所以綁定到 obj1、印出 obj1，跟 relay 本身是被誰呼叫的完全無關。',
+      'this 只是表面上很像動態作用域，實際上跟真正的動態作用域是兩套不同機制：真正的動態作用域連一般變數查詢都會沿呼叫堆疊找，但 JS 的一般變數（如 secret）從頭到尾只認詞法位置；this 之所以容易讓人聯想到動態作用域，只是因為它「依呼叫當下狀況決定值」，但這僅限於 this 這個特定機制自己的行為，並不代表 JS 的變數查詢規則被改成動態的。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-sc-7',
+    keyPoints: [
+      '顯式區塊作用域：特地寫一對沒有附加在 if/for 上的裸 { }（bare block）包住 let 宣告，明確標示「這裡是刻意的區塊作用域」：`function foo(){ { let x=\'inside a bare block\'; console.log(x); } console.log(typeof x); }` 印出該字串和 undefined，讓讀者一眼看出這裡是刻意建立獨立作用域，不會誤以為漏寫了條件判斷。',
+      '相鄰但各自獨立的裸區塊，各自都是全新的作用域，可以放心重複使用同一個變數名稱：三對相鄰的裸區塊各自宣告 `let a` 為 1、2、3，完全不會衝突，依序印出 1、2、3——每個區塊結束時該區塊的 a 就已不存在，下一個區塊重新宣告一個全新的 a 完全合法。',
+      '但如果兩個 `let a` 直接寫在同一層作用域（沒有裸區塊分開），就會在解析階段直接丟出 SyntaxError：Identifier \'a\' has already been declared，函式連執行都不會開始——這正凸顯裸區塊「刻意分隔作用域」的實際用途，不只是風格問題。',
+      '裸區塊只有搭配 let／const 才有意義，搭配 var 完全達不到隔離效果：`{ let tmp = computeExpensiveThing(); }` 讓 tmp 只存在區塊內，外面 typeof tmp 印出 undefined；但如果把 let 換成 var，var 完全不理會裸區塊邊界，會直接把 tmp 宣告到整個 foo 函式作用域，外面反而讀得到，這樣裸區塊就完全沒有意義了。',
+      '裸區塊結束後才定義的閉包，完全構不到裸區塊裡的 let 變數：later 函式是在裸區塊結束之後才定義、回傳出去的，裡面讀 onlyUsedHere（在裸區塊內用 let 宣告）的 typeof 印出 undefined，因為 later 能往外構到的只有 foo 自己的作用域，構不到那個已經關閉的裸區塊。',
+      '這個「構不到」的特性帶來實際的效能／記憶體回收好處：如果把 onlyUsedHere 改成 var，它會外洩成 foo 整個函式作用域的一部分，later 這個之後才定義的閉包也構得到它，即使這個值早就用不到了，引擎也沒辦法提早判定可以回收；改用 let 搭配裸區塊明確劃出「只在這個區塊裡有用」的邊界，讓短暫使用、可能佔用不小空間的資料有機會更早被判定用不到、進而被回收，這是裸區塊除了可讀性之外，少數看得到具體效能意義的地方。',
+    ],
+  },
+  ],
+  'ydkjs-tp': [
+  {
+    levelId: 'ydkjs-tp-1',
+    keyPoints: [
+      "第一個要打破的誤解：this 不會自動指向函式自己。即使你在 foo 身上加了 foo.count = 0，函式內部用 this.count++ 想累加它，只要 foo(i) 是用一般函式呼叫（不是 foo.call(foo, i)），非嚴格模式下 this 綁的是全域物件，this.count++ 累加的其實是全域物件上一個跟 foo.count 完全無關的屬性，foo.count 從頭到尾都是 0。",
+      "第二個誤解：this 不是函式自己的詞法作用域，碰不到函式內部用 var 宣告的變數。foo 內部 var a = 2 只存在於 foo 自己的作用域，即使透過 this.bar() 呼叫另一個函式 bar，bar 裡的 this.a 找的是全域物件上的 a 屬性（從來沒被設過），印出 undefined——this 跟詞法作用域是兩套毫無關係的機制。",
+      "同一個函式呼叫方式若換了一層（例如方法內部又呼叫了一個一般函式 inner()），this 綁定不會自動延續：obj.increment() 裡的 this 確實是 obj，但 increment 內部呼叫 inner() 是一次獨立的一般函式呼叫，this 綁定會重新依這次呼叫的方式決定（綁到全域物件），inner 裡的 this.count++ 完全動不到 obj.count。",
+      "要讓 this 真正指向想要的物件，得用 call／apply 明確指定：foo.call(foo, i) 立刻執行並把這次呼叫的 this 綁到 foo 自己，this.count++ 才真的累加到 foo.count；用 bind(foo, i) 則只會回傳一個新函式、不會立刻執行，如果沒再呼叫它，count 完全不會變。",
+      "this 存在的實際價值：identify、speak 這類函式完全沒寫死要用哪個物件，靠呼叫時用 .call(me) 或 .call(you) 明確指定 this，同一份函式定義就能重複用在不同物件身上。如果沒有 this，這些函式勢必要多一個「情境參數」，呼叫端每次都要手動多傳、也更容易忘記傳或傳錯——this 把「這次呼叫代表哪個物件」直接綁進呼叫語法本身，不用額外用參數講清楚。",
+    ],
+  },
+  {
+    levelId: 'ydkjs-tp-2',
+    keyPoints: [
+      "默認綁定 vs 隱式綁定：同一個 foo 函式，用 foo() 這種最單純的呼叫方式（沒有任何物件參與），套用默認綁定，非嚴格模式下 this 綁到全域物件；用 obj.foo() 這種「物件.方法()」的語法呼叫，套用隱式綁定，this 綁到呼叫時前面那個物件 obj。同一個函式，光是呼叫的寫法不同，this 綁定就完全不同。",
+      "new 綁定：用 new 呼叫函式時，JS 會先建立一個全新的空物件，把這次呼叫的 this 綁到這個新物件上，函式內部的 this.a = a 就是在這個新物件上設屬性，new Foo(5) 回傳的 bar 自然有 bar.a === 5——this 綁的不是既有物件，而是這次呼叫「當場生出來」的物件。",
+      "顯式綁定（硬綁定）：foo.bind(obj1) 不會立刻執行，而是回傳一個 this 已經永久固定綁在 obj1 的新函式。就算把這個新函式指派給 obj2.foo、用 obj2.foo() 這種隱式綁定語法呼叫，內部的 this 依然是 obj1——硬綁定的優先權比隱式綁定高，事後怎麼呼叫都改變不了。",
+      "優先順序的例外：new 綁定連硬綁定都能蓋過去。bar 是 foo.bind(obj1) 硬綁定出來的函式，bar(2) 一般呼叫時硬綁定生效、obj1.a 被設成 2，但 new bar(3) 用 new 呼叫時，即使 bar 已經硬綁定到 obj1，new 還是會建立一個全新物件把 this 改綁過去（baz.a 是 3），obj1 完全沒被動到。",
+      "箭頭函式沒有自己的 this 綁定，四種綁定規則對它都不適用；它的 this 永遠直接沿用「定義它當下所在的外層函式」的 this。obj.foo() 裡定義的箭頭函式 inner，this 就跟著 foo 那次呼叫的 this 走（隱式綁定，印出 42）；但如果把 foo 整個拆解出來變成 detached() 呼叫（默認綁定，this 變全域物件），inner 也跟著變成全域物件，印出 undefined——箭頭函式的 this 只看「寫在哪裡」，不看「自己被怎麼呼叫」。",
+      "判斷一次函式呼叫的 this，要照優先順序由上往下檢查：new 綁定 > 顯式（硬）綁定 > 隱式綁定 > 默認綁定，符合哪一條規則就套用哪一條、不再往下看。這個順序把三個獨立範例（obj.foo() 贏過 foo()、bind 贏過事後的 obj2.foo()、new bar() 贏過已經 bind 過的 bar）串成一套完整的判斷法。",
+    ],
+  },
+  {
+    levelId: 'ydkjs-tp-3',
+    keyPoints: [
+      "存取物件屬性（[[Get]]）跟查詢一般變數是兩套不同機制：變數查詢找不到宣告會丟出 ReferenceError，但 myObject.b 這種存取物件上不存在的屬性只會安靜地回傳 undefined，不會報錯。",
+      "「屬性存在」跟「屬性的值是 undefined」是兩回事：myObject = { a: undefined } 裡 a 屬性確實存在只是值是 undefined，直接存取 myObject.a 沒辦法分辨這跟「b 根本沒被宣告過」有什麼差別，兩者存取結果看起來一樣；要用 in 運算子才能真正判斷屬性存不存在——'a' in myObject 是 true，'b' in myObject 是 false。",
+      "屬性描述符 writable:false 讓屬性變唯讀：非嚴格模式下對唯讀屬性賦值（myObject.a = 3）不會報錯，但也不會真的生效，會被靜默忽略，myObject.a 還是原本的 2（嚴格模式下同樣的賦值則會直接丟出 TypeError）。",
+      "getter／setter 讓「看起來像在存取一個普通屬性」的語法，實際上背後執行的是函式邏輯：myObject.a = 10 這行賦值其實呼叫的是 set a(val)，把 10 存進 this._a_；之後讀 myObject.a 呼叫的是 get a()，回傳 this._a_ * 2，讀出來的 20 不等於存進去的 10。",
+      "Object.freeze 是最徹底的不可變設定：不只擋新增／刪除屬性，還會把每個既有屬性的 writable 一併設成 false，之後賦值完全不生效；相較之下 Object.seal 只擋新增／刪除但既有屬性還是可以改，Object.preventExtensions 管得更少、只擋新增屬性，這三層限制程度依序遞減。",
+      "Object.assign 只做「淺拷貝」：頂層屬性值如果是原始型別（如 a: 2），會複製一份全新的值，修改 newObj.a 不影響 myObject.a；但如果屬性值是物件（如 b 指向 anotherObject），淺拷貝只複製「參照」本身，newObj.b 跟 myObject.b 其實指向同一個巢狀物件，改 newObj.b.c 會連帶反映到 myObject.b.c 上，這是淺拷貝最容易踩到的陷阱。",
+    ],
+  },
+  {
+    levelId: 'ydkjs-tp-4',
+    keyPoints: [
+      "用 new 呼叫建構函式，每個實例的屬性都是各自獨立的一份：a = new Foo('a')、b = new Foo('b') 是兩個完全獨立的物件，修改 a.name 完全不影響 b.name——這是「類別模擬」最基本的效果。",
+      "但放在 Foo.prototype 上的方法，所有實例共用同一份，不像實例屬性那樣各自複製：myName 只定義一次、掛在 Foo.prototype 上，a.myName === b.myName 是 true，證明兩者是同一個函式參照；呼叫時各自的 this 依然依呼叫方式決定（a.myName() 的 this 是 a），所以回傳結果不同，但背後執行的是同一份函式邏輯。",
+      "顯式混入（explicit mixin）：mixin(Vehicle, {...}) 這種手法，是在呼叫的當下把來源物件目前的屬性值逐一複製一份到目標物件——Car.engines 複製過去的是「數字 1 這個值本身」，不是跟 Vehicle 之間的活連結，之後修改 Vehicle.engines = 2 完全不會反映到 Car.engines，證明 explicit mixin 只是「複製一次」，不是「持續同步」。",
+      "隱式混入（implicit mixin）：Car.drive 內部用 Vehicle.drive.call(this) 在某次方法呼叫的當下臨時借用 Vehicle 的邏輯、把 this 換成自己，Car 跟 Vehicle 之間沒有任何正式的繼承關係，全部靠 call 在每次呼叫時「借用」對方的邏輯，呼叫結束後這次借用就結束了。",
+      "mixin 函式常見的判斷式 if (!(key in targetObj))：只在目標物件「還沒有」這個屬性時才複製過去，確保目標物件已經有的屬性（如 Car 自己的 engines: 4）不會被來源物件的同名屬性覆蓋。",
+      "不管是顯式還是隱式 mixin，骨子裡做的都是「把某個物件的屬性或方法複製／借用到另一個物件身上」，跟古典物件導向語言裡「類別是一份藍圖、new 出來的每個實例都是這份藍圖真正產生出的新型別物件」是完全不同層次的東西——JavaScript 從頭到尾都只有物件，沒有真正的類別，這一整章的「混入」手法本質上都是在用物件和函式湊出「看起來像類別」的效果。",
+    ],
+  },
+  {
+    levelId: 'ydkjs-tp-5',
+    keyPoints: [
+      "屬性查詢在物件自己身上找不到，就會沿著 [[Prototype]] 鏈往上找：myObject = Object.create(anotherObject) 自己身上沒有 a，myObject.a 透過原型鏈查到 anotherObject.a 印出 2；但 hasOwnProperty 只檢查「物件自己身上有沒有這個屬性」，不會看原型鏈，myObject.hasOwnProperty('a') 是 false，因為 a 其實是繼承來的、不是 myObject 自己的。",
+      "Object.create(anotherObject) 建立的是一個真正連結到 anotherObject 的 [[Prototype]]，不是複製一份新物件：Object.getPrototypeOf(myObject) === anotherObject 是 true；如果誤用 Object.assign(anotherObject)（只給一個參數），會直接回傳 anotherObject 本身，myObject 其實就是 anotherObject 自己，並沒有建立起指向它的原型連結。",
+      "屏蔽（shadowing）：對一個繼承來的屬性賦值（myObject.a = 3），一般情況下會在 myObject 自己身上建立一個全新的同名屬性，把原型鏈上游那個同名的 a 遮住，不會動到 anotherObject.a——之後 myObject.hasOwnProperty('a') 變成 true，因為 a 現在是真正屬於 myObject 自己的屬性。",
+      "屏蔽有兩個例外會讓賦值不建立屏蔽屬性：一是原型鏈上游的同名屬性若是唯讀（writable:false），非嚴格模式下賦值會直接靜默失敗；二是原型鏈上游的同名屬性若是 setter，賦值會呼叫那個繼承來的 setter（this 綁定到觸發賦值的那個物件），也不會在自己身上建立屏蔽屬性 a，而是可能連帶建立 setter 內部操作的其他屬性（如 _a_）。",
+      "instanceof 檢查的是「Foo.prototype 這個物件現在在不在 a 的原型鏈上」，不是「a 是不是用 Foo 建出來的」：new Foo() 建立 a 時把 a 的 [[Prototype]] 連結到「當時的」Foo.prototype 物件，之後如果把 Foo.prototype 整個替換成一個全新的空物件，a 的原型鏈連結依然指向舊物件，跟現在的 Foo.prototype 已經是兩個不同物件，a instanceof Foo 會從 true 變成 false，即使 a 明明就是當初用 new Foo() 建出來的。",
+    ],
+  },
+  {
+    levelId: 'ydkjs-tp-6',
+    keyPoints: [
+      "委托呼叫的核心規則：方法在自己身上找不到，會往上委托給連結的物件執行，但 this 依然綁在最初被呼叫的那個物件上，不是綁在提供方法的那個物件。Bar = Object.create(Foo) 身上沒有 init、speak，Bar.init('Bar1') 委托給 Foo.init 執行，但 this.me = who 是設在 Bar 身上（因為呼叫時的 this 是 Bar），Bar.speak() 同樣委托給 Foo.speak，讀到的是 Bar 自己的 me。",
+      "多個物件各自委托到同一個共用物件，資料還是互相獨立：Bar1、Bar2 都用 Object.create(Foo) 連結到同一個 Foo（共用同一份 init、speak 邏輯），但因為 this 永遠是「當初呼叫的那個物件」，Bar1.init(...) 的 this 是 Bar1、Bar2.init(...) 的 this 是 Bar2，各自的 me 分開存在各自身上，不會互相覆蓋。",
+      "委托可以連續往上好幾層：$btn1 委托給 Button，Button 又委托給 Widget，$btn1.setup(...) 裡的 this.init(...) 一路往上委托到 Widget.init，但 this 從頭到尾都是最底層被呼叫的 $btn1，width、height、label 全都設在 $btn1 自己身上——不管委托鏈有幾層，this 只認「最初是被誰呼叫的」。",
+      "行為委托一律要用 Object.create 建立真正的 [[Prototype]] 連結，不能用其他 Object 方法代替：Object.keys(Foo) 回傳的是屬性名稱陣列，Bar 會變成一個陣列而不是委托到 Foo 的物件，Bar.speak() 會直接丟 TypeError。",
+      "委托風格的寫法裡沒有「類別」可以用 instanceof 檢查，要用 isPrototypeOf 確認某個物件是不是在另一個物件的委托鏈上：Foo.isPrototypeOf(Bar) 問「Foo 在不在 Bar 的原型鏈上」（true，因為 Bar 是 Object.create(Foo) 建的），反過來 Bar.isPrototypeOf(Foo) 是 false，因為更早建立的 Foo 原型鏈上根本沒有 Bar。",
+      "委托是「即時查詢」，跟上一章混入（複製一次的快照）完全相反：$btn 委托給 Button 又委托給 Widget，第一次 $btn.build() 呼叫時沿著鏈找到原本的 Widget.insert，印出 original insert；之後把 Widget.insert 整個換掉，第二次 $btn.build() 呼叫時，同一條鏈查詢直接看到 Widget 身上「現在」的新方法，印出 updated insert——委托連結是活的，每次查詢都即時反映當下狀態。",
+    ],
+  },
+  {
+    levelId: 'ydkjs-tp-7',
+    keyPoints: [
+      "class 只是語法糖，底層還是同一套建構函式＋[[Prototype]] 機制，不是全新的物件模型：typeof Foo 印出 function，不是什麼特殊的 class 型別；new Foo('a1') 一樣走「建立新物件、綁定 this、連結 [[Prototype]]」這整套機制，a1 instanceof Foo 和 Object.getPrototypeOf(a1) === Foo.prototype 都是 true。",
+      "class 內定義的方法（如 identify）一樣掛在 Foo.prototype 上，所有實例共用同一份，不是每個實例各自複製一份：a1.identify === a2.identify 是 true，a1.hasOwnProperty('identify') 是 false（因為 identify 不是 a1 自己的屬性，只是透過原型鏈查詢得到的）——這跟手動寫 Foo.prototype.myName 的行為完全一致。",
+      "extends／super 是 class 提供的語法糖，讓「繼承並重用父類邏輯」比手動接原型鏈好寫很多：Bar extends Foo 讓 Bar.prototype 連結到 Foo.prototype，super(who) 在 constructor 裡呼叫 Foo 的 constructor，super.identify() 呼叫 Foo.prototype.identify（一樣用當下的 this 計算），本質上跟手動用 Object.create 接原型鏈是同一套機制，只是語法乾淨很多。",
+      "class 陷阱一：class 宣告不會像 function 宣告那樣被完整提升。console.log(typeof Foo) 寫在 class Foo {} 之前執行，會直接丟出 ReferenceError（Cannot access before initialization）——class 的行為比較像 let／const，有暫時死區，在宣告之前存取（連 typeof 都不能安全探測）直接報錯，跟 function 宣告的提升行為不一樣。",
+      "class 陷阱二：class 方法完全沒有解決 this 綁定的老問題，脫離實例單獨呼叫一樣會壞掉，而且因為 class 內部隱含嚴格模式，壞掉的方式更直接。detached = a1.identify 之後單獨呼叫 detached()，套用默認綁定但因為是嚴格模式，this 是 undefined 而不是退回全域物件，this.me 對 undefined 取屬性直接丟出 TypeError（比非嚴格模式安靜印出 undefined 更早炸掉）。",
+      "修好這個陷阱的手法呼應第一章、第二章教過的硬綁定：在 constructor 裡用 this.identify = this.identify.bind(this)，把 identify 永久綁死在這個實例身上——這等於在 a1 自己身上建立了一個屏蔽用的、已經硬綁定過的 identify，蓋掉原本掛在 Foo.prototype 上沒綁定的那一份，之後不管 detached() 怎麼呼叫，讀到的都是已經硬綁定的版本，正常印出 I am a1。",
+    ],
+  },
+  ],
+  'ydkjs-tg': [
+  {
+    levelId: 'ydkjs-tg-1',
+    keyPoints: [
+      'typeof 回傳的是內建型別的字串名稱（undefined、boolean、number、string、object、function），但 typeof null 印出的是 object，這是 JS 從最早期版本就留下來的公認 bug（null 原本設計上要表示「空的物件參照」，但因為太多既有程式碼依賴這個行為，一直沒被修正）；函式本質上也是物件的一種，但 typeof 特別把它獨立標示成 function，方便直接判斷「這是不是一個可呼叫的東西」。',
+      '「undefined」和「undeclared」是兩回事：var a; 之後 typeof a 印出 undefined，是因為 a 有宣告、只是還沒賦值；typeof b（b 完全沒宣告過）也印出 undefined——typeof 是少數對「完全沒宣告過的識別字」也安全的運算子，兩種情況剛好都回傳同一個字串，但背後的意義並不相同。',
+      'typeof 對未宣告的識別字是安全的（回傳 undefined，不會出錯），但直接讀取一個未宣告的識別字（例如 console.log(b)）依然會觸發 RHS 查詢，找不到宣告就直接丟出 ReferenceError——這個安全網僅限於 typeof 本身，一旦真的想讀取值就沒有防護。',
+      'typeof DEBUG === \'undefined\' 是 JS 裡經典的「安全存在性檢查」寫法：不用先確定 DEBUG 有沒有宣告過，就能安全判斷它是不是「未定義」狀態，藉此決定要不要使用某個可能還沒載入的全域變數（例如某個 polyfill 是否存在）；故意用 === 而不是 == 比較字串，避免任何型別轉換造成的意外。',
+      '陣列本質上也是物件的一種，typeof arr 只會印出 object，沒有專屬的 array 型別名稱；要真的分辨一個值是不是陣列，得用 Array.isArray（回傳 true），或更底層的 Object.prototype.toString.call（印出 [object Array]，讀取的是值內部真正的分類標記，這正是下一章「原生函數」要深入介紹的機制）。',
+      'typeof null 回傳 object 只是這一個特定值的分類不準確，並不影響 typeof 面對「完全沒宣告過、無法解析的識別字」時永遠不會讓程式崩潰這個核心安全性——這個安全網僅限於「未宣告」，若識別字已用 let/const 宣告但還在暫時性死區（TDZ）內，typeof 一樣會丟出 ReferenceError；只要記得對 null 額外判斷、並清楚安全網的邊界，typeof 依然是探測型別最務實、最不容易讓程式意外崩潰的做法。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-tg-2',
+    keyPoints: [
+      '字串原始值在 JS 裡是不可變的（immutable），a[0] = \'O\' 這種賦值語法看起來像在改陣列元素，套用在字串上非嚴格模式下會靜默失敗，完全不影響原字串；想「修改」字串唯一的辦法是用字串方法產生一個全新的字串，再指派回同一個變數。',
+      'NaN 的 typeof 印出的依然是 number，NaN 本質上是數字型別裡的特殊值，不是另一種型別；NaN 還是 JS 裡唯一「不等於自己」的值（a === a 印出 false），要正確判斷一個值是不是 NaN，不能用 === NaN 比較，得靠 Number.isNaN。',
+      '全域的 isNaN(\'foo\') 會先把參數強制轉成數字再判斷（\'foo\' 轉數字變 NaN，所以印出 true），但這是誤判，因為 \'foo\' 本身根本不是數字型別；Number.isNaN(\'foo\') 完全不做轉換，直接看這個值本身是不是真正的 NaN，正確印出 false——這正是為什麼 ES6 之後建議一律用 Number.isNaN，不要用全域 isNaN。',
+      '陣列（物件）是「以參照複製」傳遞：呼叫函式時參照被複製一份給參數，foo(a) 裡 x.push(4) 是透過共用的參照直接修改陣列內容，外部的 a 也會看到變化；但 x = [0] 只是讓區域變數 x 改指向一個全新建立的陣列，只影響 x 自己，跟外部的 a 完全無關——差別不在「陣列是不是物件」，而在「這個操作是動了共用的東西本身，還是只是讓區域變數改拿別的東西」。',
+      '=== 在比較 +0 和 -0 時特別把兩者視為相等（a === b 印出 true），即使兩者底層位元表示不同；Object.is(a, b) 用更嚴格的「SameValue」演算法，是少數能真正分辨 +0 和 -0 不同的方式（印出 false）——這是 JS 數字系統裡容易被忽略的邊界情況。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-tg-3',
+    keyPoints: [
+      'typeof 沒辦法分辨陣列和一般物件（兩者都印出 object），但 Object.prototype.toString.call(value) 借用 Object.prototype 上內建的 toString，讀取值內部真正的分類標記，能精準分辨 Array、String、Number，甚至連 null、undefined 這種連 typeof 都容易搞混的值，也各自有清楚獨立的標記（[object Null]、[object Undefined]）。',
+      '封裝物件（boxed object）跟原始值是兩回事：new String(a) 建出的 b 是真正的物件（typeof 印出 object），把字串內容包在裡面；a == b 用寬鬆相等比較時 b 會先被拆封（unboxing）成內部的字串原始值再比較，結果是 true，但 a === b 因為型別本身不一樣（string vs object）不會做任何拆封，直接判定不相等，印出 false。',
+      'new Array(3) 只傳一個數字參數時是特別的建構規則：建出的陣列 length 是 3，但裡面完全沒有真正存在的元素，只是一串空位，forEach 會直接跳過這些空位（count 印出 0）；相較之下 [undefined, undefined, undefined] 是三個真正存在、值恰好是 undefined 的元素，forEach 會正常走訪三次（count2 印出 3）——「長度是 3」跟「裡面真的有 3 個元素」是兩回事，要避免稀疏陣列的坑就該優先用陣列字面量而不是 new Array(數字)。',
+      '拆封物件成原始值時，JS 會依使用情境呼叫不同方法：a + 1 需要數值型的原始值，偏好先呼叫 valueOf（拿到 42，結果是 43）；模板字面量 `${a}` 和明確呼叫 String(a) 是字串化情境，偏好呼叫 toString（拿到 \'forty-two\'）——同一個物件因為使用情境不同，拆封時呼叫的方法也不同，回傳結果可以完全不一樣。',
+      '封裝物件會讓 === 判斷出乎意料地不相等，只給一個數字的 new Array(...) 會建出裡面沒有真正元素的稀疏陣列，這兩個看似不相關的例子共同指向同一個實務教訓：原生建構函式（new String(...)、new Array(...)）背後常藏著不直覺的邊界規則，日常撰寫程式碼時能用字面量（\'abc\'、[1,2,3]、{}）表達的就直接用字面量，把 new 建構式留給真正需要明確建立封裝物件或有特殊建構需求的少數場合。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-tg-4',
+    keyPoints: [
+      '顯式強制類型轉換是直接呼叫 String(...)、Number(...) 這類寫法，程式碼本身就清楚寫明「這裡要做型別轉換」，讀程式碼的人一眼就能看懂意圖，不用去猜測；String(42) 得到字串 \'42\'，Number(\'3.14\') 得到數字 3.14。',
+      'ToBoolean（決定一個值在布林情境下是 true 還是 false）只有固定 8 個值會轉成 false（falsy）：\'\'（空字串）、0、NaN、null、undefined、false（加上較少見的 0n、document.all）；除了這份清單以外其餘所有值都是 truthy，即使看起來「空空的」也一樣——字串 \'0\'、空陣列 []、空物件 {} 全部都是 truthy，把這份短清單記下來就能準確判斷任何值的布林行為。',
+      '+ 運算子只要任一邊是字串就會把另一邊也轉成字串做拼接，且由左到右依序計算：1 + 2 + \'3\' 先算 1+2=3（兩邊都是數字），再跟 \'3\' 拼接成 \'33\'；但 \'1\' + 2 + 3 第一步就變成字串 \'12\'，之後全部變成字串拼接得到 \'123\'；減法（-）沒有字串拼接這個選項，\'5\' - 1 會把 \'5\' 轉成數字算出 4，但 \'5\' + 1 因為是 + 依然字串拼接優先，得到 \'51\'。',
+      '|| 會判斷左邊是不是 truthy：是的話直接回傳左邊本身，不是的話回傳右邊本身（a || b 裡 a 是 null，回傳 b 也就是 \'default\'）；&& 相反，左邊 truthy 才回傳右邊，左邊 falsy 就直接回傳左邊本身、連右邊都不會被求值（a && b 裡 a 是 falsy 的 null，直接回傳 null）——兩者回傳的是實際運算元本身，不是單純的布林值，這正是 || 常拿來設定預設值、&& 常拿來做「有值才繼續」判斷的原因。',
+      '== 在型別不同時會做隱式轉換再比較，容易出現直覺以為不相等卻判定相等的情況：\'0\' == false 會先把 false 轉成數字 0、字串 \'0\' 也轉成數字 0，判定相等印出 true；改成 === 完全不做任何轉換，一看到型別不一樣（string vs boolean）就直接判定不相等，這正是很多團隊規範「優先用 === 而不是 ==」的實務理由。',
+      '經典的 [] == ![] 其實完全是照著固定規則一步步推導：[] 是 truthy 所以 ![] 是 false；[] == ![] 等於 [] == false，false 先轉成數字 0，陣列 [] 轉字串是空字串再轉數字也是 0，最後 0 == 0 判定相等印出 true——強制型別轉換的規則雖然多、剛開始不直覺，但一步步拆解永遠可以照規則推導出結果，不是玄學。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-tg-5',
+    keyPoints: [
+      'try 區塊裡的 return 42 並不會讓函式立刻結束返回——JS 會先「記住」這個要返回的值，一定會先執行完 finally 區塊，finally 執行完之後函式才真的把值返回出去，所以 finally 裡的 console.log 一定會在 foo() 真正回傳 42 之前先印出來。',
+      'switch 底層是用 === 嚴格相等去比對每一個 case 的值，不會像 == 那樣做隱式型別轉換：a 是字串 \'1\'，case 1（數字）型別不同不會匹配，case \'1\'（字串）型別和值都一樣才會匹配成功——如果誤以為 switch 跟 == 一樣寬鬆，容易在數字/字串混用的情境下踩坑。',
+      '承接 finally 一定會在返回前執行的規則，如果 finally 裡自己也寫了 return 99，finally 是「最後一個決定函式到底返回什麼」的地方，它的 return 會直接蓋過 try 原本記住的 42，函式最終返回 99——這種行為相當違反直覺，實務上通常建議避免在 finally 裡寫 return。',
+      'switch 沒寫 break 會一直「貫穿」（fall-through）到下一個 case，不會自動停在匹配到的那個 case：a 是 2，比對到 case 2 印出 two，但 case 2 底下沒寫 break，會直接繼續往下執行 case 3 印出 three，直到遇到 break 才真正跳出——忘記寫 break 是很常見的錯誤來源。',
+      'ES6 預設參數值的觸發條件很明確：只有當這個位置收到的引數「就是 undefined」（完全沒傳或明確傳 undefined）時才會套用預設值；null 是一個明確的值，不等於 undefined，foo(5, null) 不會觸發預設值，b 就是傳進去的 null 本身——很多人容易誤以為「沒給有效值」都會觸發預設值，實際上只有 undefined 才算數。',
+      'finally 本來的用途應該是做收尾工作（關閉檔案、釋放資源、記錄 log），而不是決定函式最終要回傳什麼；finally 一定會在函式真正返回前執行，且如果裡面自己也寫了 return，會直接蓋過 try（甚至 catch）原本要回傳的值，而且這個蓋掉的動作沒有任何錯誤或警告、非常安靜地就發生了——這正是實務上建議 finally 只保留單純收尾邏輯、不要寫 return 或拋出新例外的根本原因。',
+    ],
+  },
+  ],
+  'ydkjs-ap': [
+  {
+    levelId: 'ydkjs-ap-1',
+    keyPoints: [
+      '同步程式碼永遠先跑完：即使 setTimeout(fn, 0) 把延遲設成 0 毫秒，也不代表「立刻」執行，它只是把回呼排進佇列，一定要等目前這輪同步程式碼（例如 console.log(\'one\') 到 console.log(\'three\')）全部跑完，事件迴圈才會回頭處理，所以 three 一定比 two 先印出來。',
+      '多個非同步工作互相之間，延遲時間短的排在前面：兩個 setTimeout 都要等同步程式碼跑完才開始排隊，之後才依各自的延遲時間排序執行，延遲 0 毫秒的會比延遲 10 毫秒的先跑。',
+      '「執行完整運行」（run-to-completion）：一個回呼函式一旦開始執行，就會完整跑完，不會被另一個排隊中的回呼打斷插隊。兩個 setTimeout(increment, 0) 操作同一個共用變數 a，即使函式內部拆成「讀取、加一、寫回」三步驟，最終結果仍然確定是 2，不會有任何一次增量遺失，這跟真正多執行緒環境下的競態條件（race condition）完全不同，也不需要額外加鎖。',
+      'Promise 的回呼（微任務）永遠比 setTimeout 的回呼（巨集任務）更早執行：事件迴圈的規則是每次同步程式碼跑完後，會先把微任務佇列清空，才會處理下一個巨集任務，所以即使 setTimeout 寫在 Promise.then 前面、延遲也設成 0，promise 還是會比 timeout 更早印出來。',
+      'JS 是「單執行緒但非阻塞」：單執行緒指程式碼一次只跑一段、且完整運行到底，不會被打斷、也不會兩段程式碼交錯執行，讓開發者不用擔心競態條件；非阻塞指瀏覽器／Node.js 提供的特定非同步 API（計時器、網路請求）不會讓程式停在原地空等，而是交給底層機制處理完才把回呼排進佇列。但這不代表 JS 普遍是非阻塞的——同步程式碼、CPU 密集運算、或同步的 Node I/O（如 fs.readFileSync）一樣會整段跑完才輪到下一件事，跑得夠久照樣卡住整個程式。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-ap-2',
+    keyPoints: [
+      '巢狀回呼（回呼裡面再放回呼）讓程式碼一層層縮排下去，這正是「回呼地獄」被詬病的外觀來源：即使像 step1/step2/step3 這種同步呼叫的例子，執行順序依然是由外而內依序展開，但可以想像每一層若換成非同步操作，程式碼會迅速往右邊一直縮排、變得很難讀。',
+      '信任問題之一：同一個函式，有時候同步呼叫回呼、有時候非同步呼叫回呼，呼叫端完全猜不到順序。getData 命中快取時直接同步呼叫 cb，沒命中才用 setTimeout 非同步呼叫——查詢命中快取的 key（如範例中的 \'a\'）時，callback 會插在 before、after 中間印出來；換一次呼叫（查詢沒命中的 \'b\'）時，callback 卻要等 before、after 都印完才執行，順序完全相反，行為完全取決於呼叫當下快取剛好處於什麼狀態。',
+      '修好這種不一致的常見手法：在命中快取的分支也強制包一層 setTimeout(fn, 0)，讓 cb 永遠非同步呼叫，不管有沒有命中快取，callback 都固定排在同步程式碼之後執行，順序變得可預期、可信任，不再取決於函式內部當下的狀態。',
+      '信任問題之二：回呼被呼叫的次數不受控制。像 processItem 忘記在 if (item.valid) { cb(...) } 這個區塊後面加 return，跳出 if 之後沒有條件保護的 cb(...) 又會被多呼叫一次，導致同一個回呼被呼叫兩次——如果回呼裡有扣款、送出表單這類不該重複執行的邏輯，這種「呼叫次數過多」會直接造成實際錯誤。',
+      '回呼最根本的問題是「控制反轉」（inversion of control）：只要把一個回呼函式傳給另一段程式碼，就把「接下來這段邏輯什麼時候執行、執行幾次、用什麼參數執行」的控制權整個交給了對方，你只能相信對方會遵守某種默契（同步/非同步時機一致、只呼叫一次），但語言本身完全沒有機制強制對方做到——這正是下一章要介紹 Promise 的動機。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-ap-3',
+    keyPoints: [
+      'then() 裡的回呼永遠是非同步（微任務）執行，即使 Promise 在建立當下就已經同步呼叫 resolve、狀態立刻變成已決議，then() 的回呼依然保證不會在呼叫 then() 的當下同步執行，這個保證讓 Promise 的行為永遠一致，不會像 Ch2 的 getData 那樣有時同步、有時非同步。',
+      'Promise 只能決議一次：resolve 或 reject 一旦被呼叫過，之後再呼叫都完全沒有效果，也不會報錯，只是安靜地被忽略——這正是把 Ch2「回呼可能被呼叫過多次」的信任問題，直接用語言層級的規範解決掉，不用再靠開發者自己小心。',
+      '每個 then() 都會回傳一個全新的 Promise，讓你可以一路串接下去，前一個 then 的回傳值會變成下一個 then 收到的值：像 Promise.resolve(1).then(v => v+1).then(v => v*2) 這樣依序把 1 變成 2 再變成 4，這種串接寫法完全避開了 Ch2 巢狀回呼一層層往右縮排的問題。',
+      'then() 裡拋出的錯誤，會讓整條鏈變成「已拒絕」狀態，跳過後面所有的成功回呼，一路傳到最近的 catch：第一個 then 裡 throw 的錯誤，會讓中間那個 then 的成功回呼完全不執行，直接跳到 catch 接住——這種行為很像同步程式碼裡 try/catch 對例外的處理方式，只是換成了非同步版本。',
+      'Promise.race 只等第一個 settle 的 Promise 就決議，不等其他還在進行中的；Promise.all 則是「全部成功才成功，任何一個失敗就立刻整體拒絕」（fail-fast），不需要等其他還在進行中的 Promise 跑完，這種快速失敗的設計讓你不用浪費時間空等一組平行工作裡注定失敗的那個跑完全部流程。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-ap-4',
+    keyPoints: [
+      'generator 執行到 yield 就會暫停，回傳 { value, done }，下次呼叫 next() 才會從暫停的地方繼續往下跑：呼叫 foo() 本身不會執行函式主體，只會建立一個生成器物件，要靠反覆呼叫 next() 才會一步步推進到下一個 yield，直到函式跑完，done 才變成 true。',
+      'generator 本身就是可迭代的（iterable），呼叫之後回傳的物件不只有 next() 方法，還實作了可迭代協定，可以直接被展開語法 [...range(3)] 或 for...of 消費，不需要手動一直呼叫 next()，背後其實都是自動重複呼叫 next() 直到 done 變成 true 為止。',
+      'generator 跟外部是雙向溝通：next(值) 傳進去的值，會變成上一個 yield 表達式的運算結果，不是餵給下一個 yield。像 var x = yield \'first\' 這一行，先把 \'first\' 丟出來暫停，下一次 it.next(\'A\') 傳進去的 \'A\' 才會變成這個 yield 表達式的結果，讓 x 被賦值成 \'A\'。',
+      'yield* 把另一個 generator 的所有 yield 值，依序委托轉交出去，像是把兩個 generator 接在一起：outer 用 yield* inner()，inner 每一次 yield 的值都會依序原封不動地被 outer 接力丟出去，直到 inner 執行完畢才把控制權交還給 outer，攤平成同一層，不是巢狀陣列。',
+      'function 後面加一個 * 才是宣告 generator，函式主體裡才能使用 yield，一般函式的主體裡使用 yield 會直接丟出 SyntaxError；generator 搭配 Promise，可以寫一個小驅動函式（像範例中的 run/step），讓每個 yield 出來的 Promise 決議之後自動呼叫 next() 把結果餵回去繼續執行，寫出看起來像同步的非同步程式碼——這個小小的驅動函式，正是後來 async/await 這個語法糖底層在做的事情。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-ap-5',
+    keyPoints: [
+      'Web Worker 在完全獨立的執行緒跑，跟主執行緒之間沒有任何共用的變數或記憶體：這個隔離是設計上刻意做到的，不是可以關掉的安全性限制，worker 裡用一般方式宣告的變數完全碰不到主執行緒的變數，兩邊是徹底獨立的兩個執行環境（除非額外使用 SharedArrayBuffer 搭配 Atomics 這種刻意設計的共享記憶體機制）。',
+      '主執行緒和 Web Worker 之間，只能靠 postMessage／message 事件傳遞訊息溝通：不管是主執行緒傳資料給 worker、還是 worker 把結果傳回來，都是透過這一套非同步、事件驅動的訊息機制，沒辦法像一般函式呼叫那樣直接拿到回傳值，也不能直接讀寫對方的一般變數。',
+      'postMessage 傳過去的資料是「結構化複製」（等同深拷貝），worker 收到的是一份獨立的副本，不是跟主執行緒共用的參照：修改「worker 收到的副本」完全不會反映回主執行緒的原始資料，這正是「沒有共用記憶體」的具體代價——想跨執行緒溝通一般只能靠複製資料，資料量大時複製本身也有效能成本（ArrayBuffer、MessagePort 等物件則可以用「可轉移物件」直接移交所有權，避開複製成本）。',
+      'asm.js 是 JS 的一個嚴格子集，\'use asm\' 只是給支援的引擎的效能提示：不支援 asm.js 優化的引擎會直接把它當成沒有作用的字串常值忽略掉，照普通 JS 語意正常執行，因為 asm.js 的設計原則就是「必須是合法的 JS 子集」，所以不管引擎支不支援優化路徑，執行結果都完全一樣；asm.js 風格程式碼常見的 x | 0 寫法，是利用位元運算子會先把運算元轉成 32 位元整數、截斷小數部分的特性，間接完成「截斷成整數」的效果，同時也是告訴引擎「這裡是整數」，方便走比較快的整數運算路徑。',
+      'Web Worker（真正另開一條執行緒，靠訊息溝通）、asm.js（限制自己寫的程式碼是一個好優化的 JS 子集）、SIMD（讓一個指令同時處理多筆資料），三者分別從不同角度突破效能瓶頸，但都建立在「單一個 JS 執行環境本身還是單執行緒、一次只做一件事」這個根本前提上，是互補而非互相替代的策略。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-ap-6',
+    keyPoints: [
+      '用 performance.now() 量測前後的時間差，是最基本的效能測試寫法：它回傳一個帶小數的高精度數字（毫秒），在要量測的程式碼前後各記錄一次時間，相減就是這段程式碼花費的時間，這個時間差永遠是 number 型別、而且一定大於等於 0。',
+      '只量測一次的結果不可信：作業系統剛好排給別的程式跑一小段、JS 引擎的 JIT 編譯器可能才剛開始針對這段程式碼做優化（第一次執行往往較慢）、記憶體剛好觸發垃圾回收，這些系統雜訊都會讓單次數字失真，正確做法是把同一段程式碼重複執行很多次（上百、上千次），取平均值或中位數，才能得到比較能代表真實效能的數字。',
+      '「環境為王」：同一段程式碼在不同瀏覽器、不同裝置、甚至同一台機器不同時間點量出來的效能數字都可能天差地遠——JS 引擎會隨版本演進不斷改變優化策略，在某個環境測出「A 比 B 快」，換一個引擎版本或瀏覽器廠商，結論完全可能反過來，效能測試結果只能代表當初那個特定環境下的結論，不能直接當成放諸四海皆準的規則。',
+      '尾呼叫優化（TCO）雖然寫進了 ES6 規範、理論上允許引擎用固定堆疊空間執行符合尾呼叫位置的遞迴，但實務上包含 V8（Node.js、Chrome 用的引擎）在內的大多數主流引擎，從來沒有真正落地實作這個規範特性——100 萬層的尾遞迴呼叫一樣會爆堆疊、丟出 RangeError，這正是「環境為王」的一個活生生的例子：不能只因為規範允許某件事，就相信所有環境都真的支援；既然不能信任引擎會做 TCO，遇到深層重複邏輯，改寫成 while 迴圈（完全不佔用呼叫堆疊）是比遞迴更保險的做法。',
+      '這一整章反覆強調同一個核心心態：任何跟效能有關的假設——不管是「這個寫法感覺比較快」的直覺，還是「規範說這個特性應該被支援」的理論保證——都必須拿到實際會執行的目標環境裡親自測試過，才能相信；連寫進正式語言規範裡的保證（TCO）都可能在主流引擎上完全沒有落地，效能優化如果沒有建立在紮實的實測基礎上，很容易做出反而讓程式碼更難懂、卻沒有真正變快的錯誤優化。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-ap-7',
+    keyPoints: [
+      '事件響應（observable）：跟只能決議一次的 Promise 不同，一個事件來源可以持續 emit 好幾次值，每次都依序通知所有訂閱者。makeObservable 用一個 listeners 陣列存訂閱者，emit(1)、emit(2) 各自都會依序通知所有監聽者一次，這解決的正是「需要處理一連串、隨時間發生好幾次的值」這種 Promise 處理不來的情境。',
+      '可迭代序列可以是「惰性」的：即使背後是一個永遠不會結束的無窮生成器（像 naturals 裡的 while (true)），也能安全地只取需要的前幾個值。naturals() 呼叫本身不執行函式主體，take 函式只呼叫 5 次 it.next()，每呼叫一次就從暫停處繼續跑到下一個 yield 再暫停，並不會一次把整個無窮迴圈跑完，這正是「惰性求值」的具體展現。',
+      '生成器協程：讓兩個各自獨立的邏輯流程靠 yield 互相禮讓、輪流往前推進，模擬出「同時在跑」的效果。runConcurrently 讓 processA、processB 每輪各自 next() 一次，兩個流程的輸出因此一步步交錯出現，而不是各自從頭跑到尾——本質上仍然是完全依序執行的單執行緒，只是透過交錯排列造出「感覺像同時進行」的錯覺。',
+      '把 Promise「只決議一次」的保證套用到可以持續 emit 好幾次的 observable 上：once(fn) 包出來的監聽者用一個 called 布林值記錄「是否已經被呼叫過」，之後被呼叫時 if (called) return 提前結束、不再往下執行 fn(val)，讓監聽者只在第一次事件時真正被通知到。',
+      '生成器協程是「合作式」（cooperative）並發，不是「搶佔式」（preemptive）並發：控制權什麼時候讓出去，完全由每個流程自己內部寫在哪裡的 yield 決定，外部的驅動者（如 runConcurrently）沒有能力從外部強迫它中途暫停——如果某段程式碼寫得很長、中間完全沒有 yield，這段程式碼就會一次跑到底，其他生成器只能等它主動讓出控制權才有機會被排到，這跟作業系統排程真正的執行緒（可被系統「搶佔式」強制中斷）是本質上不同的並發模型。',
+      '這三種進階模式的共同基礎：可迭代序列與生成器協程都是站在 Ch4 生成器（yield 暫停、next() 恢復、本身就是可迭代物件）這個機制上延伸出來的應用；observable 則不是建立在生成器機制上，而是靠閉包＋監聽者模式做出「同一個來源可以持續推送多個值」的事件驅動結構，是另一套獨立的實作方式。三者用的機制不完全相同，但共同補足了 Promise「只能處理單一時間點決議一次」這個局限性沒辦法優雅處理的情境。',
+    ],
+  },
+  ],
+  'ydkjs-ug': [
+  {
+    levelId: 'ydkjs-ug-1',
+    keyPoints: [
+      '型別轉換（coercion）第一次登場：var a = 16、b = \'a suffix\'，a + b 因為其中一個運算元是字串，就會把另一邊也轉成字串再拼接，結果是字串 \'16a suffix\'（typeof 是 string），而不是數字運算——這裡只點到「有這回事」，完整的轉換規則刻意留到後面 Types & Grammar 整本書才拆解。',
+      '// 開頭的單行註解會讓引擎完全跳過那一行，即使那一行寫的是合法程式碼也一樣：var a = 5; 後面緊接著一整行被註解掉的 var a = 10;，因為前面有 //，整行都不會被執行，所以 console.log(a) 印出的還是 5。',
+      'if 的條件不需要寫成明確的布林比較，直接放一個值讓 JS 自動判斷 truthy／falsy 也完全合法：items.length 在陣列是空的時候是 0（falsy，走進 else 印出「是空的」），push 一筆資料後 length 變成 1（truthy，走進 if 印出「有東西」）。',
+      '函式可以被 return 出去，而且回傳的函式依然記得自己出生時所在的作用域：makeGreeting(\'Kyle\') 內部定義的 greet 函式被回傳、存成 greetKyle 之後才呼叫，理論上 makeGreeting 執行完 name 就該消失了，但 greet 還是能正確讀到 name（\'Kyle\'），印出 Hello, Kyle!——這種「隨身帶著出生作用域」的能力，正式名稱和規則留給 Scope & Closures 那本書。',
+      '累加迴圈是最基本的程式模式：sum += i 是「取出 sum 目前的值、加上這一輪的 i、再存回 sum」的簡寫，五輪跑完自然是 1+2+3+4+5 = 15；如果誤用 = 直接覆蓋，每一輪都會把 sum 蓋成當下的 i，跑完只會剩最後一輪的值，完全沒有累加效果。',
+      '整本《起步上路》的定位就是給完全沒寫過程式、或剛接觸 JS 的讀者畫一張「地圖」：像型別轉換（Q1）、作用域（Q4）這些概念，這裡刻意只給初步印象、讓讀者知道「有這回事」，完整精確的規則（== 的每條轉換規則、詞法作用域的查詢機制）留給後面各自獨立成冊的專書逐一深入——先建立全貌，再深入每個區域，是整個系列的編排邏輯。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-ug-2',
+    keyPoints: [
+      '字串內建方法都不會改動原本的字串本身：a = \'  Hello World  \'，a.trim() 回傳一個去頭尾空白的全新字串（長度 11），但完全不影響 a 自己；所以最後再呼叫 a.toUpperCase() 時，操作的還是原本含頭尾空白的 a，只把字母轉大寫，頭尾空白依然保留，用 JSON.stringify 印出來能清楚看到引號裡還留著空白——這也呼應了字串是不可變值的性質。',
+      '== 允許型別不同時互相轉換再比較，=== 完全不轉換：a = \'42\'（字串）、b = 42（數字），a == b 會先把型別轉成一致再比較，結果 true；a === b 一看到型別不同（string vs number）就直接判定不相等，結果 false——這裡只先讓讀者知道兩者「結果可能不一樣」，完整的轉換規則留給 Types & Grammar 那本書整章拆解。',
+      '嚴格模式（\'use strict\'）會把「忘記宣告就賦值」這種手誤變成明確錯誤：函式內忘記用 var／let 宣告就寫 x = 10，在非嚴格模式下會悄悄在全域自動建立一個新變數當補救，但開了嚴格模式後這個補救行為被關掉，一樣找不到宣告的 x 就直接丟出 ReferenceError，方便提早抓出手誤而不是讓錯誤變成一個意外冒出來的全域變數。',
+      'IIFE（立即調用函式表達式）會建立一個獨立、用完即丟的作用域：(function () { var name = \'Kyle\'; return \'Hello, \' + name; })() 裡面宣告的 name 只存在於這個函式自己的作用域，函式執行完把結果回傳給 greeting 之後 name 就跟著消失，外部完全存取不到（typeof name 印出 undefined），是「用函式包一層避免變數外洩到全域」的典型手法。',
+      'polyfill 的標準寫法是先檢查引擎有沒有內建某功能、沒有才手動補：if (!Array.prototype.myMap) { ... } 只有在 myMap 真的不存在時才會執行區塊裡的手動實作（用一般函式跑迴圈、push 結果），這樣可以避免不小心覆蓋掉引擎原生、通常效能更好的版本；如果拿掉這層檢查直接賦值，等於強制蓋掉任何原生實作，是不安全的寫法。',
+      'polyfill 和 transpiling 解決的是完全不同層次的落差：polyfill 只能補「執行期缺少的內建方法」（像 Q5 的 myMap），用的是舊引擎本身就聽得懂的語法手動實作等價行為；但如果缺的是全新「語法本身」（例如箭頭函式、class），舊引擎的剖析器連讀懂這段程式碼都做不到，會直接在剖析階段丟出 SyntaxError，根本沒機會執行到任何補救邏輯——這種語法層級的落差只能靠 transpiling，在程式碼真正送進舊引擎之前，先用工具轉寫成舊語法。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-ug-3',
+    keyPoints: [
+      '一般函式的 this 依呼叫方式決定，箭頭函式完全沒有自己的 this、直接繼承定義當下所在的作用域：obj.regular() 用「物件.方法()」呼叫，this 是 obj，印出 obj.name；但 obj.arrow 是箭頭函式，寫在物件字面量最外層而不是任何函式內部，繼承到的是最外層作用域的 this（跟 obj 無關），所以 this.name 印出 undefined——這是 this和物件原型 那本書會完整拆解的內容。',
+      '方法被單獨拿出來、脫離原本的物件呼叫，this 綁定不會自動記得原本的物件：Counter 建構式裡 this.increment 是個函式，c.increment() 用隱式綁定呼叫、this 是 c，count 從 0 累加成 1；但 inc = c.increment 只是把函式參照另外存一份，inc() 是一次單純呼叫（默認綁定），this 綁到全域物件，跟 c 完全無關，所以動到的是全域物件上的 count，c.count 兩次都還是 1。',
+      '+ 運算子只要有一邊不是數字，就會把兩邊都先拆封成字串再拼接：空陣列 [] 拆封成空字串 \'\'，一般物件 {} 拆封成 \'[object Object]\'；所以 [] + [] 是兩個空字串拼起來還是空字串，[] + {} 和 {} + [] 都是空字串拼上 \'[object Object]\'——這是 JS 社群常拿來當笑話的經典例子，但按拆封規則一步步推導，結果完全可以預測，呼應 類型和語法 那本書教的強制型別轉換規則。',
+      'var 在迴圈裡宣告沒有區塊作用域，搭配非同步回呼會共用同一個變數：for (var i = 0; i < 3; i++) 裡的三個 setTimeout 回呼閉包住的其實是同一個 i；因為這些回呼都要等目前這輪同步程式碼（整個 for 迴圈）跑完才會執行，迴圈結束時 i 已經是 3，三個回呼讀到的都是這個共用、已變成 3 的 i，印出 3、3、3——這是 作用域和閉包 與 異步和性能 兩本書知識疊在一起才會產生的經典陷阱。',
+      '把 for 迴圈的 var 換成 let，就能修好上面那個陷阱：let 讓迴圈每一輪都建立一個全新、獨立的 i（規範特別給 let 用在 for 迴圈頭部時的行為），三個 setTimeout 回呼各自閉包住自己那一輪的 i，互不干擾，最終印出 0、1、2——同樣的組合知識，換一個宣告關鍵字，行為就完全不同。',
+      '整個「你不知道的JavaScript」系列的核心精神，是把 this 綁定切換、[] + {} 拼字串、var 在非同步回呼裡共用變數這類常被當成「詭異行為、背起來就好」的知名陷阱，拆解回底層真正的機制（this 綁定規則的優先順序、拆封與型別轉換的固定步驟、詞法作用域跟事件迴圈的交互作用）——一旦理解機制本身，這些行為就不再是需要死背的陷阱，而是照規則就能推導、預測的正常結果，這正是書名「你不知道的」真正想強調的重點：多數人只熟悉 JS 表面好用的那一層，但深入理解之後其實完全可以掌握。',
+    ],
+  },
+  ],
+  'ydkjs-es6': [
+  {
+    levelId: 'ydkjs-es6-1',
+    keyPoints: [
+      'JS 語言從 ES6 開始改成每年固定改版，不再有像早期 ES5、ES6 那種間隔好幾年、界線分明的大版本；與其去記「這個功能是哪個版本加的」，實務上更常見的做法是直接用 typeof 偵測這個功能存不存在（例如 typeof Array.prototype.includes === "function"），沒有的話就退回舊寫法（例如改用 indexOf）。',
+      '特性測試（feature test）只對「方法層級」的缺失有效：判斷式本身用的是舊引擎也讀得懂的語法，可以安全解析、安全執行到判斷的那一刻。但像箭頭函式這種全新「語法」如果引擎的剖析器根本不認得，程式碼在解析階段（parse time）就會直接丟出 SyntaxError，連 if 判斷式本身都無法通過解析，沒有機會執行到任何特性測試邏輯——語法層級的缺失沒辦法用執行期的特性測試補救，只能靠轉譯器統一處理。',
+      '轉譯器（transpiler）把新語法轉寫成舊語法時，本質上是機械化地做開發者原本就能手動做的事：書中示範箭頭函式轉譯後大致就是「用一個一般變數 self 存住外層 this，內部改寫成一般函式透過 self 讀取」的寫法，效果跟直接用箭頭函式繼承 this 完全相同，證明轉譯器並不是變出什麼魔法。',
+      'TC39（負責制定 JS 規範的委員會）的提案要經過 Stage 0 到 Stage 4 好幾個階段：Stage 4 代表提案已經定案、確定收進正式規範，語法幾乎不會再變；愈早期的階段（Stage 0、1）只代表「值得繼續討論」，語法細節甚至提案本身都還可能大幅修改或撤回，貿然在正式產品裡使用這種早期提案語法，風險是之後提案改了或作廢，程式碼可能要大幅修改。',
+      '這一章想建立的核心心態貫穿整本書：把「開發者實際寫的語法」跟「最終送到使用者手上執行的程式碼」刻意分成兩件事——平常放心用最新、最舒服的語法寫程式，交給穩定的建置流程（轉譯器補語法落差、polyfill 補方法落差、謹慎篩選要不要提前用早期提案）處理相容性，這樣語言演進的速度就不再是負擔，而是隨時能享受的紅利。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-es6-2',
+    keyPoints: [
+      '展開運算子 ... 能把一個陣列「攤開」成一個一個獨立的元素：用在函式呼叫的引數裡（如 sum(...nums)）等同於把陣列元素個別當引數傳入；用在陣列字面量裡（如 [...nums, 4, 5]）會跟其他手動寫的元素合併成一個扁平的新陣列，不會巢狀。剩餘參數 ...rest 則反過來，寫在函式參數列表最後，把「沒被前面參數對應到」的引數收集成一個貨真價實的 Array 實例（不像舊式的 arguments 物件，可以直接呼叫 map、filter）。',
+      '解構賦值可以同時做「改名」「給預設值」「跳過某個元素」，不需要拆成好幾行分別處理：物件解構 { a: x = 10 } 把屬性 a 改名成 x 並在來源不存在時套用預設值 10；陣列解構 [first, , third] 用連續逗號中間留空跳過第二個元素，直接對應到第三個。',
+'標籤模板字面量：在模板字面量前面緊接一個函式名稱（如 upper 搭配 Hello, ${name}! 這樣的模板字面量），這個函式（標籤函式）會接收拆解出來的固定字串片段陣列（strings）和插入的值陣列（values），可以完全接管字串怎麼拼接、怎麼處理插入的值，不只是單純的字串插值。',
+      '計算屬性名：物件字面量的屬性名稱可以用 [表達式] 動態算出來（如 { [key]: "value" } 會先計算 key 變數的值當成屬性名稱），不用像 ES6 之前那樣得先建好物件、再用 obj[key] = ... 額外補一行；如果誤加上引號寫成 "key" 字面量，屬性名稱就會變成字面上的 key 這個字，而不是變數的值。',
+      'Symbol 是一種永遠獨一無二的原始值：即使兩次呼叫 Symbol("id") 用一模一樣的描述文字，兩個 Symbol 也完全不相等（=== 是 false），彼此當物件的 key 時互不衝突。Symbol 型別的屬性刻意被設計成不會出現在 Object.keys、for...in 這些列舉一般屬性的機制裡，適合當「不會跟一般字串屬性名稱衝突、也不容易被意外列舉出來」的特殊屬性鍵。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-es6-3',
+    keyPoints: [
+      '只要一個物件實作了 Symbol.iterator 這個方法、回傳一個有 next() 的物件（每次呼叫回傳 { value, done }），這個物件就能被展開語法、for...of 消費——書中用一個手寫的 range 物件示範，即使它本來不是陣列，也能正常被 [...range] 展開、被 for...of 依序走訪，證明「可以被迭代」本質上只是一份介面約定（迭代器協定），不是陣列的專利。',
+      '生成器函式（function*）本身就自動符合迭代器協定，拿來當 Symbol.iterator 用比手寫 next() 簡潔很多：只要在生成器裡用 for 迴圈搭配 yield 依序吐出值，就能省掉手動維護 current、手動回傳 { value, done } 的樣板程式碼，效果完全相同——這也是為什麼實務上很少有人手動實作 next()，幾乎都是直接借用生成器；生成器裡迴圈的終止條件（<= 還是 <）也直接決定了最後一個被 yield 出來的值是否包含上限本身。',
+      '陣列解構賦值背後用的也是迭代器協定，所以不只能拆陣列，任何可迭代物件都能直接拿來解構：書中示範 var [first, second] = mySet（mySet 是一個 Set，不是陣列）一樣能正常運作，first、second 依序拿到 Set 依插入順序迭代出來的前兩個元素。',
+      'ES6 模組是「單例」：不管被多少個不同檔案 import，同一個模組的程式碼實際上只會被引擎執行一次，之後每個 import 它的地方拿到的都是同一份、共用的模組實例。書中用 counter.js 匯出 export let count 和 increment() 為例：fileA 呼叫 increment() 改動的是這份共用狀態，fileB 之後讀取 count 會看到已經被改過的值，不是各自獨立的副本。',
+      '迭代器／生成器、模組、class（附錄A教過的類別）分別從不同層次解決「怎麼把程式碼組織成可重複使用、邊界清楚的單元」這個共同問題：迭代器協定統一了「走訪一份資料」的介面，模組劃出了檔案與檔案之間怎麼明確共享、又保持各自獨立的邊界，class 則把資料和操作資料的行為包成一個可重複產生實例的具名單元——規模一旦變大，這些機制合起來才是讓程式碼保持可讀、可維護的關鍵工具。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-es6-4',
+    keyPoints: [
+      'Promise.resolve(x) 有個特別行為：如果 x 本身已經是一個 Promise，不會再包一層新的 Promise，而是直接原封不動回傳這個既有的 Promise（p1 === p2 是 true）；then() 的回呼如果回傳了另一個全新的 Promise，整條鏈會自動「攤平」接上那個 Promise 真正決議出來的值，不會變成「下一步的值本身是一個 Promise」，這是 Promise 鏈能優雅串接非同步步驟、不產生巢狀的關鍵。',
+      'Promise 鏈判斷「這個回傳值要不要當成非同步值來攤平」的依據，不是嚴格檢查它是不是用 new Promise(...) 建出來的，而是看它有沒有一個 then 方法（俗稱 thenable，鴨子定型）：書中示範一個只是普通物件、剛好有 then 方法的 thenable，一樣會被 Promise 鏈呼叫、等它透過 resolve 決議出值才傳給下一個 then，這個設計讓不同函式庫各自實作的「類 Promise」物件都能無縫接進原生 Promise 鏈。',
+      '生成器＋Promise 搭配一個手寫的驅動函式（run），可以把好幾個依序執行的非同步步驟，寫成完全像同步循序程式碼的樣子：main 裡連續 yield 三個 Promise，每一步都用上一步決議出的結果去計算下一步，run 函式反覆呼叫 it.next(val) 把值餵回生成器、並用 res.value.then(step) 等下一個 Promise 決議，直到 res.done 為 true。',
+      '同一套驅動函式也能把 Promise 拒絕的錯誤，透過 it.throw() 丟回生成器內部的 try/catch 接住：it.throw(val) 會讓生成器從目前暫停的 yield 處，像那一行程式碼本身丟出了 val 一樣繼續執行，如果那個 yield 剛好包在 try 區塊裡，就會被對應的 catch 接住——用 isRejected 這個明確的布林值判斷該走 it.next 還是 it.throw，是為了避免 Promise 拒絕的原因剛好是 0、false 這類假值時被誤判。',
+      '手寫的生成器＋Promise 驅動函式，是後面 ES6之後 那一章要介紹的 async/await 概念上的類比：一個 async function 大致對應 function* + run 驅動函式的組合，每一個 await 表達式大致對應每一個 yield，控制流程「暫停、等 Promise 決議、再繼續往下執行」的思路相通。但兩者實作機制不同——async function 呼叫後直接回傳一個 Promise，內部用引擎原生的 await 暫停執行，不像生成器呼叫後只拿到一個生成器物件，得靠外部呼叫 next()／throw() 才能推進，也不需要開發者自己手寫驅動邏輯。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-es6-5',
+    keyPoints: [
+      'Map 可以用任何值（包含物件本身）當 key，不像一般物件的屬性名稱只能是字串或 Symbol：書中示範把一個物件 keyObj 本身當 key，跟字串 "keyObj" 完全是兩個不同的 key，各自對應到不同的值，map.size 是 2。對照之下，一般物件當容器時，屬性名稱一律會被強制轉成字串——兩個不同的物件 keyA、keyB 當屬性名稱都會被轉成同一個 "[object Object]"，導致後面的賦值直接覆蓋前面的，這正是 Map 保留 key 型別、一般物件做不到的地方。',
+      'Set 自動去除重複值，判斷「重複」用的規則（SameValueZero）比 === 稍微寬鬆：NaN 雖然 NaN === NaN 是 false，但 Set 特別把 NaN 當成跟自己相等，兩個 NaN 加進同一個 Set 也只會留一個。但 Set 判斷物件重不重複，看的是「是不是同一個參照」，不會比較物件裡面的內容長得像不像——書中示範兩次 add({ id: 1 }) 建立的是兩個內容相同但參照不同的物件，都會被加進 Set，size 是 2。',
+      'Map 提供 keys()／values()／entries() 三個方法，分別取出所有鍵、所有值、或 [鍵, 值] 配對組成的陣列，都回傳可迭代物件，可以直接用展開語法攤平成陣列。',
+      'WeakMap 的 key 只能是物件（或 ES2023 之後允許的非註冊 Symbol），用字串這種一般原始值當 key 會直接丟出 TypeError：這個限制是為了讓引擎能安全地在 key 物件於其他地方都不再被使用、可以被垃圾回收時，一併自動回收 WeakMap 裡對應的那筆資料，不阻止記憶體釋放；原始值不是用參照管理記憶體的概念，套用不了這套跟著生命週期走的機制。',
+      'Map／Set／WeakMap／WeakSet 這組新增的集合型別，各自解決了 ES6 之前只能用一般物件或陣列硬湊的痛點：Map 讓「任意型別的 key」變得自然、Set 讓「去除重複值」不用手動寫迴圈比對、WeakMap／WeakSet 則讓「跟著物件生命週期自動清理」的關聯資料不需要開發者手動管理記憶體。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-es6-6',
+    keyPoints: [
+      'Array.from 可以把「陣列相似物」（像函式內的 arguments，只有 length 和數字索引、不是真正的 Array 實例）或任何可迭代物件，轉成一個貨真價實的新陣列，取代 ES6 之前得寫 Array.prototype.slice.call(arguments) 這種迂迴寫法。Array.of 則修好了 new Array(數字) 的坑：Array(3) 只給一個數字引數時會建出長度 3、但沒有真正元素的稀疏陣列，Array.of(3) 一律把收到的引數當成陣列內容，不管給一個還是好幾個引數，行為都一致可預期。',
+      'find 回傳第一個讓判斷函式回傳 true 的元素本身，找不到回傳 undefined；findIndex 回傳的是這個元素的索引，找不到回傳 -1——find 找不到時回傳 undefined 而不是 -1，容易跟 findIndex 搞混，要特別留意。',
+      '字串新增了 padStart（在開頭補齊到指定長度，常用來補零做時間格式化）和 repeat（把整個字串重複指定次數接在一起）這兩個實用方法。',
+      'indexOf 底層用 === 比較每個元素，但 NaN === NaN 永遠是 false，所以陣列裡明明有 NaN，indexOf(NaN) 還是會回傳 -1，容易誤導人以為陣列裡沒有 NaN；includes 用的判斷規則跟 Set（Ch5）一樣特別把 NaN 當成能被找到的值，arr.includes(NaN) 會正確回傳 true，想準確判斷陣列裡有沒有 NaN，includes 比 indexOf 可靠。',
+      '浮點數運算天生有精度誤差（0.1 + 0.2 === 0.3 是 false），Number.EPSILON 是 ES6 新增的極小數值常數，精確定義是「1 跟大於 1 的下一個可表示浮點數之間的差距」，用 Math.abs(實際值 - 期望值) < Number.EPSILON 可以正確判斷兩個接近 1 這個量級的浮點數在容許誤差內是否「實質上相等」；但這個絕對誤差範圍只適合數值量級接近 1 的情況，數字愈大要改用跟量級成比例的誤差範圍才合理。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-es6-7',
+    keyPoints: [
+      '函式賦值給變數（var foo = function(){}）、或當成物件的方法（{ baz: function(){} }）時，引擎會自動把變數名稱或屬性名稱推斷成這個函式的 name，方便除錯時在呼叫堆疊裡辨識，不用每次都手動幫函式表達式取名。',
+      'new.target 這個元屬性讓函式內部可以判斷自己這次是被 new 呼叫、還是被一般呼叫：用 new 呼叫時 new.target 指向函式本身（truthy），一般呼叫時是 undefined（falsy），讓函式能在內部強制要求或禁止用 new 呼叫，取代舊手法 this instanceof Foo。',
+      'Proxy 可以攔截對一個物件的操作，在真正的行為之前或之外插入自訂邏輯：書中示範 get 攔截器在每次讀取屬性時被呼叫，可以判斷屬性存不存在、回傳自訂的提示字串取代預設的 undefined。Reflect API 提供跟 Proxy 攔截器一一對應的預設行為函式，攔截器裡想「做完自訂邏輯之後，繼續走預設行為」時，常會呼叫對應的 Reflect 方法（如 set 攔截器裡先印一行紀錄，再呼叫 Reflect.set 真正把值寫進去）。',
+      'Reflect.has(obj, prop) 是 in 運算子的函式版本，效果完全一樣，但可以像一般函式那樣被傳遞或呼叫——Reflect 底下這一整組方法，大多是把原本只能用特殊語法（in、delete、Object.keys 等）做的事，統一包成一致的函式介面。',
+      '公開符號（像 Symbol.hasInstance）讓開發者能客製化 instanceof 這種內建運算子的行為：instanceof 原本的語意是檢查右側物件的 prototype 有沒有出現在左側值的原型鏈上，但只要右側物件定義了 [Symbol.hasInstance] 方法，instanceof 就會改成呼叫這個方法決定結果——書中示範一個判斷「是不是偶數整數」的 EvenNumber 物件，完全脫離原型鏈語意，變成自訂邏輯判斷。',
+    ],
+  },
+  {
+    levelId: 'ydkjs-es6-8',
+    keyPoints: [
+      'async function 呼叫之後回傳的永遠是一個 Promise，即使函式主體只是單純 return 一個普通值，引擎也會自動把它包成一個已決議的 Promise；await 會暫停 async function 內部的執行，直到右邊的 Promise 決議完成，但 async function 本身呼叫時是同步開始執行的，一路跑到第一個 await 才真正暫停——await 之後的程式碼會被排進微任務佇列，所以呼叫端接下來的同步程式碼會先執行完，才輪到 await 之後的部分繼續。',
+      'await 一個最終被拒絕的 Promise，效果就像那一行程式碼直接 throw 了拒絕的原因一樣，能被包住它的 try/catch 正常接住——這正是 Ch4 用生成器搭配手寫 it.throw() 才能做到的事，async/await 讓開發者完全不用理解生成器底層機制，直接用最熟悉的同步錯誤處理語法就能處理非同步錯誤。',
+      '冪運算符 ** 是「右結合」的：連續好幾個 ** 疊在一起（如 2 ** 3 ** 2）會從最右邊開始先算（等同 2 ** (3 ** 2) = 512），跟大多數由左往右結合的運算子不一樣，如果誤以為是左結合會算出完全不同的錯誤結果（(2 ** 3) ** 2 = 64），用括號明確標示運算順序通常是更保險的寫法。',
+      '物件展開語法（ES2018）{ ...obj1, ...obj2 } 可以把好幾個物件的屬性合併成一個全新物件，合併規則是「後面出現的同名屬性蓋過前面的」，取代 ES6 之前得寫 Object.assign({}, obj1, obj2) 這種函式呼叫寫法；要注意如果漏掉展開運算子直接寫 { ...obj1, obj2 }，obj2 會被當成物件字面量簡寫屬性語法，整個物件被塞進一個叫 obj2 的屬性裡，結果完全不是合併。',
+      'Object.observe（原本設計來直接監聽物件屬性變化的 API）一度是很受期待的提案、甚至有瀏覽器實驗性支援過，最後卻因為效能疑慮、以及社群轉向用 Proxy（Ch7）達成類似效果，被 TC39 整個撤回，從未成為正式規範——這正是 Ch1 提過的提案階段風險活生生的例子，提醒開發者「正在討論中」甚至「已有瀏覽器實作」都不等於保證會變成正式語言特性。',
+    ],
+  },
   ],
 }
 
